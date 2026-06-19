@@ -19,20 +19,20 @@ entirely: ID verification, background checks, biometric proctoring.**
 
 | Inc | Pillar | Spec | Plan | Coverage |
 |----|--------|------|------|----------|
-| 0 | Compliance-ready advisory gate | [spec](2026-06-19-compliance-advisory-gate-design.md) | [plan](2026-06-19-compliance-advisory-gate.md) | BE detailed · **FE gap** (recruiter gate-mode toggle + `assessment_review` queue) |
+| 0 | Compliance-ready advisory gate | [spec](2026-06-19-compliance-advisory-gate-design.md) | [plan](2026-06-19-compliance-advisory-gate.md) | **BE + FE detailed** |
 | 1 | Job marketplace & discovery | [spec](2026-06-19-job-marketplace-design.md) | [plan](2026-06-19-job-marketplace.md) | **BE + FE detailed** |
-| 2 | Rich assessments | [spec](2026-06-19-rich-assessments-design.md) | [plan](2026-06-19-rich-assessments.md) | BE detailed · **FE gap** (candidate coding-test UI) |
+| 2 | Rich assessments | [spec](2026-06-19-rich-assessments-design.md) | [plan](2026-06-19-rich-assessments.md) | **BE + FE detailed** (candidate coding-test UI) |
 | 2 | Code-execution sandbox | [spec](2026-06-19-code-execution-sandbox-design.md) | [plan](2026-06-19-code-execution-sandbox.md) | Infra only (no FE — correct) |
 | 3 | Voice interview (frontend/E2E) | *(reuse)* | [../plans/2026-06-19-voice-interview.md](../plans/2026-06-19-voice-interview.md) | Backend built; FE/E2E in that plan (TIER D) |
 | 4 | Messaging | [spec](2026-06-19-messaging-design.md) | [plan](2026-06-19-messaging.md) | **BE + FE detailed** |
 | 4 | Notifications center | [spec](2026-06-19-notifications-center-design.md) | [plan](2026-06-19-notifications-center.md) | **BE + FE detailed** |
 | 5 | Candidate growth (practice + skill-gap) | [spec](2026-06-19-candidate-growth-design.md) | [plan](2026-06-19-candidate-growth.md) | **BE + FE detailed** |
 | 6 | Async video interview | [spec](2026-06-19-async-video-interview-design.md) | [plan](2026-06-19-async-video-interview.md) | **BE + FE detailed** |
-| — | Integrity by design (non-surveillance) | [spec](2026-06-19-integrity-by-design-design.md) | [plan](2026-06-19-integrity-by-design.md) | BE detailed · FE light (recruiter advisory band) |
+| — | Integrity by design (non-surveillance) | [spec](2026-06-19-integrity-by-design-design.md) | [plan](2026-06-19-integrity-by-design.md) | **BE + FE detailed** (recruiter advisory band) |
 
-> **Frontend coverage note (honest):** backend is fully specified across all pillars. Frontend is
-> fully specified for Inc 1/4/5/6; **thin or missing for Inc 0, Inc 2 (rich assessments), and
-> integrity** — those need a detailed frontend pass before their build (tracked as a follow-up).
+> **Frontend coverage (updated 2026-06-19):** **every pillar now carries a detailed frontend tier**
+> (routes, `@ip/ui` components, TanStack Query, api-client wiring, forms, loading/empty/error/
+> responsive/dark/a11y, build+typecheck steps). Code-execution-sandbox is infra-only (no FE, by design).
 
 ## Build sequence
 `Inc 0` (compliance-ready toggle + erasure stubs — foundational) → `Inc 1` (marketplace) →

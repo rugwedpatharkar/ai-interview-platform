@@ -66,24 +66,29 @@ src/admin/tests/
   test_resources_compliance.py             (extend — erase deletes threads+messages)
   conftest.py                              (+fake message/thread repos if the suite uses fakes)
 
-frontend/packages/shared/src/
-  messages.ts                              (NEW — createMessagesClient: send + listThreads + subscribe poll)
-  index.ts                                 (+export messages client + types)
 frontend/packages/api-client/src/
-  index.ts                                 (+MessagingService client in ApiClients + clientsFromTransport)
-frontend/apps/candidate/app/
-  messages/page.tsx                        (NEW — inbox: thread list)
-  messages/[applicationId]/page.tsx        (NEW — a thread, via MessageThreadView + ChatWindow)
-frontend/apps/company/app/
-  applicants/[id]/ (or the applicant view)  (+Messages inbox tab → MessageThreadView)
-frontend/apps/*/components/
-  message-thread-view.tsx                  (NEW — owns poll-driven turns state, feeds @ip/ui ChatWindow)
+  index.ts                                 (+messaging_pb import/re-export; +MessagingService in ApiClients + BOTH clientsFromTransport returns)
+frontend/packages/shared/src/
+  messages.ts                              (NEW — createMessagesClient: send/listThreads/listMessages/markRead + query-key helpers + subscribe() poll seam)
+  index.ts                                 (+export createMessagesClient + re-export MessageDTO/ThreadDTO)
+frontend/apps/candidate/
+  lib/use-thread-messages.ts               (NEW — poll + optimistic send + mark-read hook; the shared data seam)
+  components/message-thread-view.tsx       (NEW — app-local chat re-skin fed by the hook; NOT a ChatWindow wrapper)
+  components/candidate-shell.tsx           (+/messages nav entry + total-unread Badge)
+  app/messages/page.tsx                    (NEW — candidate inbox: thread list, list-cadence poll, unread badges)
+  app/messages/[applicationId]/page.tsx    (NEW — a thread → MessageThreadView side="candidate")
+frontend/apps/company/
+  lib/use-thread-messages.ts               (NEW — thin duplicate; identical hook body, side defaults differ)
+  components/message-thread-view.tsx       (NEW — thin duplicate of the candidate re-skin)
+  app/jobs/[id]/applicants/[appId]/page.tsx (MODIFY — wrap in Tabs: Report (existing) + Messages → MessageThreadView side="recruiter"; tab unread Badge)
 ```
 
 **Responsibilities (one job each):** `resources/messaging.py` = all logic (authz/tenancy/unread/DTO/
-best-effort notify). `routes/messaging.py` = gRPC adapter only. `messages.ts` = transport + the
-`subscribe` poll seam (the SSE swap point). `message-thread-view.tsx` = poll→`Turn[]` glue;
-`ChatWindow` itself is reused unchanged.
+best-effort notify). `routes/messaging.py` = gRPC adapter only. `messages.ts` = transport + query
+keys + the `subscribe()` poll seam (the single SSE swap point). `use-thread-messages.ts` = the
+poll/optimistic-send/mark-read behavior (shared data seam). `message-thread-view.tsx` = an app-local
+re-skin of the chat surface driven by that hook — **`@ip/ui` `ChatWindow` is closed (owns its own
+state) and is intentionally NOT reused as a node here; it is mirrored presentationally** (see Tier D).
 
 ---
 
@@ -500,5 +505,3 @@ convention, do **not** promote to `@ip/ui`/`@ip/shared` in this increment). Modi
 - **SSE is explicitly NOT built here** (spec §3.4). Do not add a stream endpoint in this increment;
   leave `messages.ts`'s `subscribe()` as the documented swap point (its body is the only thing that
   changes when SSE lands — write path, query keys, hook, and view are untouched).
-- **SSE is explicitly NOT built here** (spec §3.4). Do not add a stream endpoint in this increment;
-  leave the `subscribe` seam as the documented swap point.

@@ -45,8 +45,9 @@ integrity is handled by design, not surveillance:
   identity) proctoring.** Behavioral proctoring stays **wired-but-dormant**.
 - **v2 core scope = four pillars:** A) Job Marketplace, B) Richer Assessments, C) Video/Voice
   Interview, D) Comms & Candidate Growth.
-- **Brand name** — open parallel track (shortlist: *Caliber/Aptly/Facet* · *Lumina/Vantage/Beacon* ·
-  *Praxis/Intervia/Cogna*). The architecture is name-agnostic.
+- **Working name: Aptura** — a working title used while building. Collision-noted (an *Aptura AI*
+  software company already exists), so trademark clearance + the final brand happen at launch; the
+  architecture is name-agnostic, making the eventual swap trivial.
 
 ---
 
@@ -245,7 +246,7 @@ Each pillar gets a **design spec** (`docs/superpowers/specs/`) + a **TDD impleme
 ---
 
 ## 10. Open items
-- **Brand name** — to be chosen (parallel track; does not block design or build).
+- **Brand name** — **Aptura** (working title; trademark-clear + finalize at launch). Does not block design or build.
 - **v2 code build** — a later, separately green-lit phase. Each pillar's plan is reviewed before its
   build; `bash scripts/check.sh` (baseline 423 tests) stays green; new offline code lives behind
   injected seams (CodeRunner, voice/video engines, Notifier) with fakes so the gate stays offline.

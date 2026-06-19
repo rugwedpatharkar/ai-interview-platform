@@ -46,6 +46,7 @@ class GroqStt:
         model: Whisper model id (default: ``whisper-large-v3-turbo``).
         max_retries: Number of additional attempts after the first on transient errors.
         base_delay: Backoff base in seconds (doubles each retry).
+        timeout_seconds: Per-attempt timeout for the Groq network call.
     """
 
     def __init__(

@@ -9,7 +9,7 @@ yield 480-sample (10 ms) bytes frames to the caller.
 
 import asyncio
 import io
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterator
 
 import av
 import edge_tts
@@ -127,7 +127,7 @@ class EdgeTts:
         """
         return self._gen(text)
 
-    async def _gen(self, text: str) -> AsyncIterator[bytes]:
+    async def _gen(self, text: str) -> AsyncGenerator[bytes, None]:
         mp3_bytes = await self._stream_mp3(text)
         loop = asyncio.get_running_loop()
         pcm = await loop.run_in_executor(None, _decode_mp3_to_48k, mp3_bytes)

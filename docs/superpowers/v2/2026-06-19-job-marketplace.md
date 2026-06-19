@@ -605,12 +605,28 @@ client).
    and `SearchCandidates` = own-company applicants only.
 5. **Apply regression:** the existing apply + consent + funnel tests stay untouched + green.
 6. **Frontend:** `--filter @ip/candidate build` + `--filter @ip/company build` +
-   `--filter @ip/{ui,shared,api-client} typecheck` all green.
-7. **Smoke:** `curl -s /public/jobs` (no token) returns published-only; `sitemap.ts` enumerates public
-   URLs.
-8. **Headline E2E (manual, Chrome via preview):** **anonymous browse `/jobs` → public `/jobs/[id]`
-   (SSR, crawlable) → click Apply → sign-in (SSO) → consent → apply** completes and lands in the
-   funnel exactly as today.
+   `--filter @ip/{ui,shared,api-client} typecheck` all green. Concretely, the build proves:
+   - **SSR/island split holds** — `app/jobs/page.tsx`, `jobs/[id]/page.tsx`, `companies/[id]/page.tsx`
+     are server components (no `"use client"`, no `useAuth`/TanStack at the top); the interactive bits
+     are the islands (`JobResults`, `FilterSidebar`, `JobSearchBar`, `SortControl`, `Pagination`,
+     `ApplyButton`, `SaveJobButton`). A server component importing a client hook fails the build —
+     that's the guardrail.
+   - **`@ip/api-client` wiring** — `discovery`, `savedJobs`, `jobAlerts`, `companyProfile` (and
+     `sourcing` if split out) each appear in the import + `export *` + `ApiClients` + `clientsFromTransport`
+     quad; `--filter @ip/api-client typecheck` catches a missing touch.
+   - **Shared data layer** — `@ip/shared` typecheck proves the `PublicJob*`/`JobSearchResult`/`Facets`
+     types + `fetchPublic*` helpers compile and are re-exported.
+7. **Smoke (manual, no token):** `curl -s /public/jobs` returns published-only; `/jobs` SSR HTML
+   contains job titles + facet counts in the **first paint** (view-source, not post-hydration);
+   `sitemap.ts` enumerates `/jobs/{id}` + `/companies/{id}`; `robots.ts` allows crawl + points at the
+   sitemap. Re-check `/jobs` at ~375px (sidebar collapses to a Filters button) and in dark mode (no raw
+   colors — all tokens).
+8. **Headline E2E (manual, Chrome via preview):** **anonymous browse `/jobs` (filter/sort/paginate via
+   URL) → public `/jobs/[id]` (SSR, crawlable) → click Apply → sign-in (SSO) → consent → apply**
+   completes and lands in the funnel exactly as today; then **save a job from a `JobCard` → it appears
+   in `/saved`**, and the dashboard "Recommended for you" renders full `JobCard`s from
+   `GetRecommendedFeed`. The apply path must be byte-for-byte today's (consent key, invalidations,
+   `router.push("/")`).
 
 ## Risks / re-verify at execution
 
@@ -625,4 +641,21 @@ client).
 - **N+1 on joins** — every list join (feed/saved/company-jobs) uses one `$in` batch.
 - **`posted_at`** — set on publish only; double-check re-publish-after-pause stamps a fresh value.
 - **Logo presign** — manager-scoped, short clamped TTL, content-type/size constrained (mirror resume
-  validation).
+  validation). FE: the browser PUTs to the presigned URL with **plain `fetch`, not `authedFetch`**
+  (the URL is self-authorizing; a stray bearer header can break the S3 signature).
+- **SSR fetch origin** — `NEXT_PUBLIC_ADMIN_URL` is inlined for the **browser**; the SSR server
+  component runs on Node and needs a server-reachable origin. Route SSR fetches through
+  `publicApiBase()` (`ADMIN_INTERNAL_URL ?? NEXT_PUBLIC_ADMIN_URL`); a public page that hard-codes
+  `NEXT_PUBLIC_ADMIN_URL` for its server fetch can break in a deployed (non-localhost) topology.
+- **Island boundary leaks** — keep `useAuth`/TanStack/`next/navigation` hooks **out of the public
+  server components**; a server component that imports `lib/auth` (a `"use client"` module) turns the
+  whole route client-side and kills crawlability. The Apply/Save/Results bits stay in their own
+  `"use client"` files.
+- **Apply-contract preservation** — `ApplyButton` is the funnel regression surface: the `job-consent:{id}`
+  localStorage key, the `["recommendations"]` + `["applications"]` invalidations, and `router.push("/")`
+  must be lifted **unchanged** from today's `[id]/page.tsx`. Re-run the existing apply/consent E2E.
+- **First-paint hydration match** — `JobResults` must seed its TanStack query from the SSR result
+  (`initialData`) keyed by the **same** params string the server used, or the first client render
+  flashes/refetches and the URL-as-state contract drifts.
+- **`["recommendations"]` key stability** — repointing the feed to `GetRecommendedFeed` must keep that
+  query key so `dashboard.tsx`/`apply-button.tsx`'s apply+withdraw invalidations still refresh it.
