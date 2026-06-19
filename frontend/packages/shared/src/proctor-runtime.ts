@@ -3,7 +3,24 @@
 // camera/mic — pure Web APIs. `startProctoring` returns a stop() that detaches every
 // listener and flushes the tail. Capture only ever runs after explicit consent (the
 // caller gates the start), and nothing but typed events leaves the device.
-import type { ProctorEvent, ProctorEventType } from "./proctor.js";
+// D (device/behavior) signal types emitted by the detectors below. The backend catalog
+// (ai-agents app/model/proctoring.py) is the source of truth; B (visual) + C (audio) types
+// land with their detectors. Severity is assigned server-side and never sent from here.
+export type ProctorEventType =
+  | "tab_hidden"
+  | "window_blur"
+  | "fullscreen_exit"
+  | "copy"
+  | "paste_large"
+  | "devtools_open"
+  | "multi_monitor"
+  | "keystroke_anomaly";
+
+export interface ProctorEvent {
+  type: ProctorEventType;
+  at: string; // client ISO timestamp
+  meta?: Record<string, unknown>;
+}
 
 export interface ProctorRuntimeOptions {
   // `keepalive` is true only on the final unload flush so the request survives page

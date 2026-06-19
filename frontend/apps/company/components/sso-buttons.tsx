@@ -3,6 +3,8 @@
 import { buttonVariants, cn } from "@ip/ui";
 import { useEffect, useState } from "react";
 
+import { useAuth } from "../lib/auth";
+
 const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:8080";
 
 const LABELS: Record<string, string> = {
@@ -20,19 +22,20 @@ const LABELS: Record<string, string> = {
  * an expected, handled condition). The failure is logged at debug for observability.
  */
 export function SsoButtons() {
+  const { api } = useAuth();
   const [providers, setProviders] = useState<string[]>([]);
   const [redirect, setRedirect] = useState("");
 
   useEffect(() => {
     setRedirect(`${window.location.origin}/auth/callback`);
-    fetch(`${ADMIN_URL}/auth/oauth/providers`)
-      .then((r) => (r.ok ? r.json() : { providers: [] }))
-      .then((d) => setProviders(Array.isArray(d.providers) ? d.providers : []))
+    api.auth
+      .listOAuthProviders({})
+      .then((res) => setProviders(res.providers))
       .catch((err) => {
         console.debug("SSO providers unavailable", err);
         setProviders([]);
       });
-  }, []);
+  }, [api]);
 
   const shown = providers.filter((p) => p in LABELS);
   if (shown.length === 0) return null;

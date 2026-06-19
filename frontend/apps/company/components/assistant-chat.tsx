@@ -1,10 +1,12 @@
 "use client";
 
 import { Alert, Card, CardContent, CardHeader, CardTitle, ChatWindow, ErrorBoundary } from "@ip/ui";
+import { streamAssistantChat } from "@ip/shared";
 
-import { chat } from "../lib/auth";
+import { useAuth } from "../lib/auth";
 
 export function AssistantChat() {
+  const { api } = useAuth();
   return (
     <Card>
       <CardHeader>
@@ -20,7 +22,9 @@ export function AssistantChat() {
             }
           >
             <ChatWindow
-              send={chat.send}
+              send={(messages, handlers, signal) =>
+                streamAssistantChat(api, messages, handlers, signal)
+              }
               placeholder="Ask about a job, a candidate, or your pipeline…"
               emptyHint="Grounded answers about your jobs and applicants — scoped to your company."
             />

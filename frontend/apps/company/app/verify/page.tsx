@@ -1,7 +1,7 @@
 "use client";
 
 import { VerifyCard, type VerifyStatus } from "@ip/ui";
-import { errorMessage, resendVerification } from "@ip/shared";
+import { errorMessage } from "@ip/shared";
 import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "../../lib/auth";
@@ -35,7 +35,7 @@ export default function VerifyPage() {
       status={status}
       message={message}
       continueHref="/jobs"
-      onResend={resendVerification}
+      onResend={(email) => api.auth.resendVerification({ email }).then(() => {})}
     />
   );
 }

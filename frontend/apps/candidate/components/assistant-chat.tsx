@@ -2,10 +2,12 @@
 
 import { Alert, Card, CardContent, CardHeader, CardTitle, ChatWindow, ErrorBoundary } from "@ip/ui";
 import { Bot } from "lucide-react";
+import { streamAssistantChat } from "@ip/shared";
 
-import { chat } from "../lib/auth";
+import { useAuth } from "../lib/auth";
 
 export function AssistantChat() {
+  const { api } = useAuth();
   return (
     <Card>
       <CardHeader>
@@ -24,7 +26,9 @@ export function AssistantChat() {
             }
           >
             <ChatWindow
-              send={chat.send}
+              send={(messages, handlers, signal) =>
+                streamAssistantChat(api, messages, handlers, signal)
+              }
               placeholder="Ask about your applications…"
               emptyHint="Ask about the status of an application or a role you're considering."
             />

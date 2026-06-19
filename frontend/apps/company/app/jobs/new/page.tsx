@@ -20,7 +20,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useRef, useState } from "react";
 
 import { CompanyShell } from "../../../components/company-shell";
-import { jd as jdClient, useAuth } from "../../../lib/auth";
+import { useAuth } from "../../../lib/auth";
 
 export default function NewJobPage() {
   const { api } = useAuth();
@@ -46,9 +46,9 @@ export default function NewJobPage() {
   });
 
   const improve = useMutation({
-    mutationFn: () => jdClient.improve(jdText),
+    mutationFn: () => api.jd.improveJd({ brief: jdText }),
     onSuccess: (draft) => {
-      setJdText(draft.jd_text);
+      setJdText(draft.jdText);
       setSuggestions(draft.suggestions);
       toast.success("Draft improved");
     },

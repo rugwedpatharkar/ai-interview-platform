@@ -3,6 +3,8 @@
 import { buttonVariants, cn } from "@ip/ui";
 import { useEffect, useState } from "react";
 
+import { useAuth } from "../lib/auth";
+
 const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:8080";
 
 const LABELS: Record<string, string> = {
@@ -17,21 +19,23 @@ const LABELS: Record<string, string> = {
  * Renders nothing when no providers are configured.
  */
 export function SsoButtons() {
+  const { api } = useAuth();
   const [providers, setProviders] = useState<string[]>([]);
   const [redirect, setRedirect] = useState("");
 
   useEffect(() => {
     setRedirect(`${window.location.origin}/auth/callback`);
-    fetch(`${ADMIN_URL}/auth/oauth/providers`)
-      .then((r) => (r.ok ? r.json() : { providers: [] }))
-      .then((d) => setProviders(Array.isArray(d.providers) ? d.providers : []))
+    // Public RPC (no auth) — list configured SSO providers so we render no dead buttons.
+    api.auth
+      .listOAuthProviders({})
+      .then((res) => setProviders(res.providers))
       .catch((err) => {
-        // SSO is optional; an unreachable providers endpoint degrades silently (no
+        // SSO is optional; an unreachable providers RPC degrades silently (no
         // console.error → no dev error overlay). Logged at debug for observability.
         console.debug("SSO providers unavailable", err);
         setProviders([]);
       });
-  }, []);
+  }, [api]);
 
   const shown = providers.filter((p) => p in LABELS);
   if (shown.length === 0) return null;

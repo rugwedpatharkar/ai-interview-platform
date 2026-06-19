@@ -11,7 +11,6 @@ import {
   useState,
 } from "react";
 
-import { registerRestAuth } from "./authed-fetch.js";
 import { decodeJwtPayload } from "./jwt.js";
 import { makeTokenStore } from "./tokens.js";
 import { createClients } from "./transport.js";
@@ -36,7 +35,8 @@ export interface AuthState {
 }
 
 export interface AuthConfig {
-  baseUrl: string;
+  baseUrl: string; // admin origin (auth/jobs/... + the refresh RPC + cookie endpoint)
+  aiAgentsBaseUrl: string; // ai-agents origin (interview/chat/jd), shares the token store
   namespace: string; // localStorage scope, e.g. "candidate" | "company"
   // Optional: some apps (company) register with extra fields and call registerCompany +
   // login directly, so they don't provide this. Then AuthState.register throws.
@@ -78,12 +78,6 @@ export function makeAuth(config: AuthConfig) {
     if (typeof window !== "undefined") window.location.assign(loginPath);
   }
 
-  // The REST clients (interview/chat/jd/proctor) share this store but hit ai-agents, while
-  // refresh lives on the admin origin (config.baseUrl). Register both here so authedFetch can
-  // refresh + recover identically to the gRPC transport without changing the client factories'
-  // (baseUrl, store) signatures.
-  registerRestAuth({ store, refreshUrl: config.baseUrl, onAuthLost });
-
   function AuthProvider({ children }: { children: ReactNode }) {
     // Start null so the server render (no localStorage) and the first client render agree;
     // read the persisted token after mount, then track changes. This is what prevents a
@@ -97,7 +91,7 @@ export function makeAuth(config: AuthConfig) {
     }, []);
 
     const api = useMemo(
-      () => createClients(config.baseUrl, store, onAuthLost),
+      () => createClients(config.baseUrl, config.aiAgentsBaseUrl, store, onAuthLost),
       [],
     );
     const identity = useMemo(() => (token ? decodeIdentity(token, store) : null), [token]);

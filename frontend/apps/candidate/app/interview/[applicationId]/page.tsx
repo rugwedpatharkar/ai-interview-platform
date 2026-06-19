@@ -16,23 +16,33 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 
-import { HttpError, startProctoring, useRequireAuth } from "@ip/shared";
+import { Code, ConnectError, startProctoring, useRequireAuth } from "@ip/shared";
 
-import { interview, proctor, useAuth } from "../../../lib/auth";
+import { useAuth } from "../../../lib/auth";
 
 interface Turn {
   question: string;
   answer: string;
 }
 
-// A 409/410 means the session is gone (already completed or expired) — there's no resume,
-// so retrying can't help. Surface a terminal "ended" state with a way out instead.
+// FAILED_PRECONDITION means the interview isn't startable in its current funnel state
+// (already completed / not yet reachable) — there's no resume, so retrying can't help.
+// Surface a terminal "ended" state with a way out instead (was HTTP 409 pre-gRPC).
 function isSessionEnded(err: unknown): boolean {
-  return err instanceof HttpError && (err.status === 409 || err.status === 410);
+  return err instanceof ConnectError && err.code === Code.FailedPrecondition;
+}
+
+// A cancelled RPC (component unmount aborts the controller) surfaces as ConnectError
+// Canceled — not a real failure, so swallow it like the old fetch AbortError.
+function isAborted(err: unknown): boolean {
+  return (
+    (err instanceof ConnectError && err.code === Code.Canceled) ||
+    (err instanceof Error && err.name === "AbortError")
+  );
 }
 
 export default function InterviewPage() {
-  const { token, ready } = useAuth();
+  const { token, ready, api } = useAuth();
   useRequireAuth(token, ready);
   const { applicationId } = useParams<{ applicationId: string }>();
   const consentKey = `interview-consent:${applicationId}`;
@@ -93,10 +103,23 @@ export default function InterviewPage() {
   // and only after proctoring consent. Nothing but typed events ever leaves the device.
   useEffect(() => {
     if (phase !== "active" || !proctorConsented) return;
+    // Advisory signals over gRPC. There's no keepalive/beacon equivalent, so the final
+    // unload flush is best-effort and may drop the very last batch — acceptable for an
+    // advisory signal sink (the backend records flags for human review, never blocks).
     return startProctoring({
-      send: (events, keepalive) => proctor.send(applicationId, events, keepalive),
+      send: (events) =>
+        api.interview
+          .recordProctorEvents({
+            applicationId,
+            events: events.map((e) => ({
+              type: e.type,
+              at: e.at,
+              metaJson: e.meta ? JSON.stringify(e.meta) : "",
+            })),
+          })
+          .then(() => {}), // runtime only needs settle/throw to retry; drop the count
     });
-  }, [phase, proctorConsented, applicationId]);
+  }, [phase, proctorConsented, applicationId, api]);
 
   if (!token) return null;
 
@@ -111,14 +134,17 @@ export default function InterviewPage() {
     const ctrl = new AbortController();
     abortCtrl.current = ctrl;
     try {
-      const res = await interview.start(applicationId, ctrl.signal);
+      const res = await api.interview.startInterview(
+        { applicationId },
+        { signal: ctrl.signal },
+      );
       if (!res.question) {
         throw new Error("The interview couldn't be prepared. Please try again.");
       }
       setCurrent(res.question);
       setPhase("active");
     } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") return;
+      if (isAborted(err)) return;
       if (isSessionEnded(err)) setEnded(true);
       else setError(err instanceof Error ? err.message : "Could not start the interview");
     } finally {
@@ -137,7 +163,10 @@ export default function InterviewPage() {
     const ctrl = new AbortController();
     abortCtrl.current = ctrl;
     try {
-      const res = await interview.turn(applicationId, text, ctrl.signal);
+      const res = await api.interview.submitTurn(
+        { applicationId, answer: text },
+        { signal: ctrl.signal },
+      );
       setTurns((t) => [...t, { question: current, answer: text }]);
       setAnswer("");
       if (res.done) {
@@ -147,7 +176,7 @@ export default function InterviewPage() {
         setCurrent(res.question);
       }
     } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") return;
+      if (isAborted(err)) return;
       if (isSessionEnded(err)) setEnded(true);
       else setError(err instanceof Error ? err.message : "Could not submit your answer");
     } finally {

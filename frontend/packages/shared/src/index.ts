@@ -9,30 +9,19 @@ export {
 export { useRequireAuth, useRequireRole } from "./guards.js";
 export { errorMessage, isCode, isNotFound, isTransient, HttpError } from "./errors.js";
 export { Code, ConnectError } from "@connectrpc/connect";
-export {
-  authedFetch,
-  registerRestAuth,
-  getRestAuth,
-  restAuthFor,
-  type RestAuthContext,
-} from "./authed-fetch.js";
 export { makeQueryClient, refetchUntil } from "./query.js";
 export { useAuthedQuery } from "./use-authed-query.js";
-export { makeInterviewClient, type InterviewTurn } from "./interview.js";
 export {
-  createChatClient,
+  streamAssistantChat,
   type ChatCitation,
-  type ChatHandlers,
-  type ChatMessage,
-} from "./chat.js";
-export { createJdClient, type JdDraft } from "./jd.js";
+  type ChatStreamHandlers,
+} from "./chat-stream.js";
 export {
-  createProctorClient,
+  startProctoring,
+  type ProctorRuntimeOptions,
   type ProctorEvent,
   type ProctorEventType,
-} from "./proctor.js";
-export { startProctoring, type ProctorRuntimeOptions } from "./proctor-runtime.js";
+} from "./proctor-runtime.js";
 export { downloadBytes, XLSX_MIME } from "./download.js";
 export { TERMINAL_STATES, TERMS_VERSION } from "./constants.js";
 export { decodeJwtPayload } from "./jwt.js";
-export { resendVerification } from "./resend-verification.js";
