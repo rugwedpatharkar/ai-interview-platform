@@ -15,6 +15,7 @@ Robustness contract (per spec):
 """
 
 from lib.logging import get_logger
+from lib.resilience import OperationTimeout
 
 from app.resources.voice.engines import SttError
 
@@ -46,16 +47,21 @@ class VoiceTransport:
         await self._room.play(self._tts.synthesize(question))
 
         for attempt in range(self._max_retries + 1):
-            pcm = await self._room.next_utterance()
-            if pcm is None:
-                log.info("voice: candidate hung up; ending interview")
-                return ""
-
             try:
-                text = (await self._stt.transcribe(pcm)).strip()
-            except SttError:
-                log.exception("voice: STT failed on attempt {}", attempt)
+                pcm = await self._room.next_utterance()
+            except OperationTimeout as exc:
+                log.info("voice: no speech in {}s; re-prompting", exc.seconds)
                 text = ""
+            else:
+                if pcm is None:
+                    log.info("voice: candidate hung up; ending interview")
+                    return ""
+
+                try:
+                    text = (await self._stt.transcribe(pcm)).strip()
+                except SttError:
+                    log.exception("voice: STT failed on attempt {}", attempt)
+                    text = ""
 
             if text:
                 await self._room.send_caption("candidate", text)

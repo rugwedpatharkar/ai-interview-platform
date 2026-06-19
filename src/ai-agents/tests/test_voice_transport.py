@@ -4,6 +4,8 @@ All tests run offline: SttEngine, TtsEngine, and RoomAudio are fakes from
 conftest.py. No LiveKit, Groq, or network calls.
 """
 
+from lib.resilience import OperationTimeout
+
 from app.resources.voice.transport import VoiceTransport
 
 # ---------------------------------------------------------------------------
@@ -128,6 +130,87 @@ async def test_ask_returns_empty_when_all_stt_attempts_raise(
     tts = fake_tts()
     room.set_utterances([b"<pcm-1>", b"<pcm-2>"])
     stt.set_transcripts([None, None])  # both raise SttError
+
+    vt = VoiceTransport(stt=stt, tts=tts, room=room, max_retries=1)
+    answer = await vt.ask("Tell me about yourself.")
+
+    assert answer == ""
+
+
+# ---------------------------------------------------------------------------
+# OperationTimeout from next_utterance — silence re-prompt
+# ---------------------------------------------------------------------------
+
+
+class _TimeoutThenPcmRoom:
+    """Fake room: first next_utterance raises OperationTimeout; second returns PCM."""
+
+    def __init__(self, pcm: bytes):
+        self._calls = 0
+        self._pcm = pcm
+        self.captions = []
+        self.played = []
+
+    async def play(self, pcm16_48k):
+        async for chunk in pcm16_48k:
+            self.played.append(chunk)
+
+    async def next_utterance(self) -> bytes | None:
+        self._calls += 1
+        if self._calls == 1:
+            raise OperationTimeout("livekit.next_utterance", 0.01)
+        return self._pcm
+
+    async def send_caption(self, who: str, text: str) -> None:
+        self.captions.append((who, text))
+
+    async def aclose(self) -> None:
+        pass
+
+
+class _AlwaysTimeoutRoom:
+    """Fake room: next_utterance always raises OperationTimeout."""
+
+    def __init__(self):
+        self.captions = []
+        self.played = []
+
+    async def play(self, pcm16_48k):
+        async for chunk in pcm16_48k:
+            self.played.append(chunk)
+
+    async def next_utterance(self) -> bytes | None:
+        raise OperationTimeout("livekit.next_utterance", 0.01)
+
+    async def send_caption(self, who: str, text: str) -> None:
+        self.captions.append((who, text))
+
+    async def aclose(self) -> None:
+        pass
+
+
+async def test_ask_reprompts_on_utterance_timeout_then_returns_answer(
+    fake_stt, fake_tts
+):
+    """Silence timeout on attempt 0 triggers re-prompt; attempt 1 succeeds."""
+    room = _TimeoutThenPcmRoom(b"<pcm>")
+    stt = fake_stt()
+    tts = fake_tts()
+    stt.set_transcripts(["Recovered."])
+
+    vt = VoiceTransport(stt=stt, tts=tts, room=room, max_retries=1)
+    answer = await vt.ask("Tell me about yourself.")
+
+    assert answer == "Recovered."
+    # A re-prompt was synthesized (the retry prompt contains "repeat")
+    assert any("repeat" in spoken.lower() for spoken in tts.spoken)
+
+
+async def test_ask_returns_empty_when_all_attempts_time_out(fake_stt, fake_tts):
+    """When every attempt hits OperationTimeout, ask() returns empty string."""
+    room = _AlwaysTimeoutRoom()
+    stt = fake_stt()
+    tts = fake_tts()
 
     vt = VoiceTransport(stt=stt, tts=tts, room=room, max_retries=1)
     answer = await vt.ask("Tell me about yourself.")
