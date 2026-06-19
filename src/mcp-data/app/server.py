@@ -242,13 +242,11 @@ async def get_match_results(job_id: str = "", candidate_user_id: str = "") -> li
 
 
 def main() -> None:
-    configure_logging(_settings.service_name, _settings.log_level)
-    init_tracing(_settings.service_name, enabled=_settings.tracing_enabled)
     import asyncio
 
-    asyncio.get_event_loop().run_until_complete(
-        start_metrics_server(_settings.metrics_port)
-    )
+    configure_logging(_settings.service_name, _settings.log_level)
+    init_tracing(_settings.service_name, enabled=_settings.tracing_enabled)
+    asyncio.run(start_metrics_server(_settings.metrics_port))
     mcp.run(transport="streamable-http")
 
 

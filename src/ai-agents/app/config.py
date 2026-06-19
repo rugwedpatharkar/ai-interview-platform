@@ -40,6 +40,11 @@ class Settings(BaseServiceSettings):
     )
     metrics_port: int = 0  # 0 = disabled; set to e.g. 9090 in prod
     tracing_enabled: bool = False  # dormant by default; enables OTel spans in prod
+    # Interview/chat cap tuning — defaults match the hardcoded module constants so a
+    # default-config run is behaviour-identical; override per deployment via env vars.
+    default_aptitude_questions: int = Field(default=10, gt=0)
+    max_chat_messages: int = Field(default=50, gt=0)
+    max_proctor_events: int = Field(default=200, gt=0)
 
     # Voice pipeline tuning — defaults match Phase-3 module constants so a
     # default-config run is byte-identical; override per-env via environment variables.

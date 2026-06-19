@@ -14,6 +14,7 @@ from lib.schemas import Role
 from lib.security import hash_password, verify_password
 from pymongo.errors import DuplicateKeyError
 
+from app.config import get_settings
 from app.errors import (
     ConflictError,
     ForbiddenError,
@@ -27,10 +28,6 @@ from app.model.auth import Company, User
 
 log = get_logger(component="auth.resources")
 
-LOGIN_LIMIT = 5
-LOGIN_WINDOW_SECONDS = 900  # 15-minute lockout window
-OAUTH_LIMIT = 10  # per-IP OAuth callbacks per window
-OAUTH_WINDOW_SECONDS = 900  # 15-minute per-IP callback window
 VERIFY_NONCE_TTL = 86400  # 24h, matches the verification token
 RESET_NONCE_TTL = 3600  # 1h, matches the reset token
 
@@ -141,9 +138,10 @@ async def login(
     audit=None,
 ):
     email = email.strip().lower()  # normalize so the lockout key + lookup always agree
+    s = get_settings()
     acct_key = f"login:acct:{email}"
-    ip_hit = await limiter.hit(f"login:ip:{ip}", LOGIN_LIMIT, LOGIN_WINDOW_SECONDS)
-    acct = await limiter.peek(acct_key, LOGIN_LIMIT)
+    ip_hit = await limiter.hit(f"login:ip:{ip}", s.login_limit, s.login_window_seconds)
+    acct = await limiter.peek(acct_key, s.login_limit)
     if not ip_hit.allowed or not acct.allowed:
         retry_after = max(ip_hit.retry_after, acct.retry_after)
         log.warning("login throttled: ip={} (per-ip and/or per-account)", ip)
@@ -158,7 +156,7 @@ async def login(
         # logins never burn the lockout budget; the per-IP gate is the primary control.
         # An empty password_hash (SSO-only / erased account) fails closed here rather
         # than raising inside bcrypt — and still counts, so it can't evade the lockout.
-        await limiter.hit(acct_key, LOGIN_LIMIT, LOGIN_WINDOW_SECONDS)
+        await limiter.hit(acct_key, s.login_limit, s.login_window_seconds)
         log.warning("login failed: invalid or unset credentials")
         raise InvalidCredentialsError("Invalid credentials")
     await limiter.reset(acct_key)
@@ -335,7 +333,8 @@ async def oauth_login(
     link/create the user, mint tokens like `login` (auto-provisions a candidate)."""
     # Per-IP gate first: a callback flood must not get unlimited tries at guessing a
     # live CSRF state or hammering the provider's token endpoint.
-    hit = await limiter.hit(f"oauth:ip:{ip}", OAUTH_LIMIT, OAUTH_WINDOW_SECONDS)
+    s = get_settings()
+    hit = await limiter.hit(f"oauth:ip:{ip}", s.oauth_limit, s.oauth_window_seconds)
     if not hit.allowed:
         log.warning("oauth throttled: ip={}", ip)
         raise RateLimitedError(hit.retry_after)

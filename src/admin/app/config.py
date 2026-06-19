@@ -29,6 +29,14 @@ class Settings(BaseServiceSettings):
     add service-specific fields here as needed."""
 
     service_name: str = "admin-service"
+    # Rate-limit tuning — defaults match the hardcoded values in auth.py/oauth.py so a
+    # default-config run is behaviour-identical; override per deployment via env vars.
+    login_limit: int = Field(default=5, gt=0)
+    login_window_seconds: int = Field(default=900, gt=0)
+    oauth_limit: int = Field(default=10, gt=0)
+    oauth_window_seconds: int = Field(default=900, gt=0)
+    refresh_limit: int = Field(default=30, gt=0)
+    refresh_window_seconds: int = Field(default=900, gt=0)
     # Serves gRPC-web over HTTP (browser reaches it directly; no proxy). See
     # app/routes/grpcweb.py and docs/superpowers/plans/DEPLOYMENT.md.
     http_host: str = "0.0.0.0"  # noqa: S104 — containerized server binds all interfaces

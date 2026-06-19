@@ -10,6 +10,7 @@ dropped).
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
+from app.config import get_settings
 from app.model.interview import InterviewBlueprint, Transcript
 from app.model.profile import CandidateProfile
 from app.resources.aptitude_setter import build_aptitude_bank
@@ -20,8 +21,6 @@ from app.resources.profile_parser import parse_profile
 from app.resources.report_writer import write_report
 
 log = get_logger(component="agent.handlers")
-
-_DEFAULT_APTITUDE_QUESTIONS = 10
 
 # ---------------------------------------------------------------------------
 # Metrics — defined once at module level (safe at import time)
@@ -100,7 +99,10 @@ async def handle_job_published(payload, *, llm, data, capability, publisher):
                     bank = await build_aptitude_bank(
                         job["jd_text"],
                         topics,
-                        aptitude.get("num_questions", _DEFAULT_APTITUDE_QUESTIONS),
+                        aptitude.get(
+                            "num_questions",
+                            get_settings().default_aptitude_questions,
+                        ),
                         llm=llm,
                     )
                     await data.save_aptitude_bank(job_id, bank.model_dump())

@@ -6,11 +6,12 @@ from lib.schemas import Role
 from lib.security import RefreshSessionStore, TokenService
 from starlette.testclient import TestClient
 
+from app.config import get_settings
 from app.errors import InvalidTokenError, RateLimitedError
 from app.infra.oauth import FakeOAuthClient, HttpOAuthClient
 from app.model.auth import User
-from app.resources.auth import OAUTH_LIMIT, oauth_login
-from app.routes.oauth import REFRESH_LIMIT, create_oauth_app
+from app.resources.auth import oauth_login
+from app.routes.oauth import create_oauth_app
 
 
 class _FakeStates:
@@ -90,7 +91,7 @@ async def test_oauth_callback_rate_limited(fakes):
         "limiter": limiter,
         "refresh_ttl_seconds": 60,
     }
-    for _ in range(OAUTH_LIMIT):
+    for _ in range(get_settings().oauth_limit):
         with pytest.raises(InvalidTokenError):
             await oauth_login(
                 "google", "c", "bad", ip="5.5.5.5", states=_FakeStates([]), **kw
@@ -250,7 +251,7 @@ def test_oauth_refresh_rate_limited(fakes):
     # The cookie-refresh must also be rate-limited; a flood from one IP gets 429. The
     # gate runs before the cookie check, so no-cookie calls count too.
     client = TestClient(_oauth_app(fakes))
-    for _ in range(REFRESH_LIMIT):
+    for _ in range(get_settings().refresh_limit):
         client.post("/auth/oauth/refresh")
     assert client.post("/auth/oauth/refresh").status_code == 429
 

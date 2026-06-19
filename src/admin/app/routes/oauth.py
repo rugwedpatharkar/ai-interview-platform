@@ -16,6 +16,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse, RedirectResponse
 from starlette.routing import Route
 
+from app.config import get_settings
 from app.errors import AuthDomainError, RateLimitedError
 from app.resources.auth import oauth_login
 from app.resources.auth import refresh as _refresh_session
@@ -23,9 +24,6 @@ from app.resources.auth import refresh as _refresh_session
 log = get_logger(component="oauth.routes")
 
 _STATE_TTL = 600  # 10 minutes
-# Per-IP cookie-refresh attempts per window (~1 per access TTL for a legit client).
-REFRESH_LIMIT = 30
-REFRESH_WINDOW = 900  # 15-minute window
 
 
 def _resolve_redirect(requested, deps):
@@ -144,8 +142,9 @@ def make_oauth_routes(deps):
         # with credentials; we rotate the session + return a fresh access token.
         # Per-IP gate first (before the cookie check) so a flood can't DoS refresh.
         ip = _client_ip(request, deps.get("trusted_proxy", False))
+        s = get_settings()
         hit = await deps["limiter"].hit(
-            f"oauth_refresh:ip:{ip}", REFRESH_LIMIT, REFRESH_WINDOW
+            f"oauth_refresh:ip:{ip}", s.refresh_limit, s.refresh_window_seconds
         )
         if not hit.allowed:
             return JSONResponse(

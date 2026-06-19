@@ -16,6 +16,7 @@ from lib.logging import bind_ids, get_logger, log_context
 from lib.web import CorrelationIdMiddleware, cors_config
 from pydantic import BaseModel, Field
 
+from app.config import get_settings
 from app.errors import ConflictError, ForbiddenError, NotFoundError
 from app.model.chat import ChatMessage
 from app.model.proctoring import ProctoringEvent
@@ -27,9 +28,6 @@ from app.resources.voice.rtc_token import mint_join_token
 
 log = get_logger(component="route.interview_api")
 router = APIRouter()
-
-# A normal recruiting chat thread is short; a flood is either abuse or a client bug.
-_MAX_CHAT_MESSAGES = 50
 
 
 class TurnRequest(BaseModel):
@@ -125,15 +123,11 @@ class ProctorBatch(BaseModel):
     events: list[ProctoringEvent]
 
 
-# The browser sends small, frequent batches; cap to bound a misbehaving/abusive client.
-_MAX_PROCTOR_EVENTS = 200
-
-
 @router.post("/interview/{application_id}/proctor")
 async def proctor(application_id: str, body: ProctorBatch, request: Request):
     deps = request.app.state.deps
     user_id = _caller_user_id(request)
-    if len(body.events) > _MAX_PROCTOR_EVENTS:
+    if len(body.events) > get_settings().max_proctor_events:
         raise HTTPException(status_code=400, detail="too many events")
     async with log_context(
         log,
@@ -169,7 +163,7 @@ async def chat_turn(body: ChatRequest, request: Request):
     scope = _caller_identity(request)
     if not body.messages:
         raise HTTPException(status_code=400, detail="messages cannot be empty")
-    if len(body.messages) > _MAX_CHAT_MESSAGES:
+    if len(body.messages) > get_settings().max_chat_messages:
         raise HTTPException(status_code=400, detail="too many messages")
     # Plan + scoped fetch up front so a planner/tool failure is a clean 502 before the
     # stream starts; dump the validated ChatMessages so a bad turn never reaches it.

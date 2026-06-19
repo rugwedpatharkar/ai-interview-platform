@@ -3,6 +3,7 @@ from lib.redis import RateLimiter
 from lib.schemas import Role
 from lib.security import RefreshSessionStore, SingleUseTokenStore, TokenService
 
+from app.config import get_settings
 from app.errors import (
     ConflictError,
     ForbiddenError,
@@ -199,7 +200,7 @@ async def test_login_empty_password_hash_fails_closed(fakes):
     )
     # The per-account counter trips only once it EXCEEDS the limit, and increments after
     # the gate check, so LIMIT+1 failed attempts are needed before the next call locks.
-    for i in range(auth.LOGIN_LIMIT + 1):
+    for i in range(get_settings().login_limit + 1):
         with pytest.raises(InvalidCredentialsError):
             await auth.login(
                 "sso@x.com",
