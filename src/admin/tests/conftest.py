@@ -327,9 +327,14 @@ class FakeReportRepo:
 
     def __init__(self):
         self._by_app: dict[str, dict] = {}
+        self.list_by_applications_calls: list[list[str]] = []
 
     async def get_by_application(self, application_id):
         return self._by_app.get(application_id)
+
+    async def list_by_applications(self, application_ids):
+        self.list_by_applications_calls.append(list(application_ids))
+        return [self._by_app[aid] for aid in application_ids if aid in self._by_app]
 
     async def delete_by_applications(self, application_ids):
         for aid in application_ids:

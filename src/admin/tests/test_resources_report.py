@@ -95,3 +95,29 @@ async def test_export_reports_xlsx(fakes):
     assert ws["A2"].value == "cand"  # candidate_user_id
     assert ws["C2"].value == 0.82  # overall score
     assert ws["D2"].value == "advance"  # recommendation
+
+
+async def test_list_reports_issues_single_batch_read(fakes):
+    """AA-09 regression: list_reports must call list_by_applications once, not per-row.
+
+    A serial per-application get_by_application loop would issue N round-trips;
+    the batch path issues exactly one regardless of application count.
+    """
+    for _ in range(3):
+        await _seed(fakes)
+    await report.list_reports(
+        _identity(), "j1", applications=fakes["applications"], reports=fakes["reports"]
+    )
+    assert len(fakes["reports"].list_by_applications_calls) == 1
+    assert len(fakes["reports"].list_by_applications_calls[0]) == 3
+
+
+async def test_list_reports_empty_job_returns_empty(fakes):
+    """list_reports on a job with no applications returns an empty list."""
+    result = await report.list_reports(
+        _identity(),
+        "empty-job",
+        applications=fakes["applications"],
+        reports=fakes["reports"],
+    )
+    assert result == []

@@ -5,6 +5,8 @@ auditable, append-only ledger (one row per grant); `automated_evaluation` is the
 candidate's explicit consent to AI-driven scoring (GDPR Art. 22 territory).
 """
 
+import asyncio
+
 from lib.logging import get_logger
 
 from app.errors import ValidationError
@@ -90,10 +92,19 @@ class CandidateEraser:
         )
         log.info("candidate erased: {}", user_id)
 
+    _SWEEP_CONCURRENCY = 10
+
     async def sweep(self, cutoff):
-        erased = 0
-        for user in await self._users.list_candidates_before(cutoff):
-            await self.erase(str(user["_id"]))
-            erased += 1
-        log.info("retention sweep erased {} candidates", erased)
-        return erased
+        users = await self._users.list_candidates_before(cutoff)
+        if not users:
+            log.info("retention sweep erased 0 candidates")
+            return 0
+        sem = asyncio.Semaphore(self._SWEEP_CONCURRENCY)
+
+        async def _erase_one(user):
+            async with sem:
+                await self.erase(str(user["_id"]))
+
+        await asyncio.gather(*(_erase_one(u) for u in users))
+        log.info("retention sweep erased {} candidates", len(users))
+        return len(users)

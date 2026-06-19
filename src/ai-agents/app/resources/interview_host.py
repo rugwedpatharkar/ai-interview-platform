@@ -6,6 +6,7 @@ emitting interview.completed for the funnel + the Evaluator. Session state lives
 injected store (Redis); the agents stay stateless.
 """
 
+import asyncio
 from datetime import UTC, datetime
 
 from lib.logging import get_logger
@@ -62,37 +63,48 @@ async def _finalize(session, application_id, *, sessions, data, publisher):
     return InterviewTurnDecision(done=True)
 
 
+_ABANDON_CONCURRENCY = 10
+
+
 async def abandon_stale(*, sessions, data, publisher, clock=_utcnow):
     """Finalize in-progress interviews past their time budget as abandoned.
 
     A candidate who stops answering fires no `/turn`, so the per-turn budget check never
     runs; this sweep persists the partial transcript and emits interview.abandoned.
+    Stale sessions are finalized concurrently (bounded semaphore) so a large batch does
+    not serialize the entire reaper tick.
     """
-    abandoned = 0
-    for session in await sessions.list_in_progress():
-        if not _budget_exhausted(session, clock):
-            continue
-        await data.save_interview(
-            session.application_id,
-            {
-                "transcript": session.transcript.model_dump(),
-                "blueprint": session.blueprint.model_dump(),
-                "job_id": session.job_id,
-                "user_id": session.candidate_user_id,
-            },
-        )
-        await publisher.publish(
-            "interview.abandoned",
-            {"application_id": session.application_id, "comp_id": session.comp_id},
-        )
-        # Flip status LAST: if the save or publish above fails, the session stays
-        # in-progress and the next sweep re-picks it (no silently lost abandonment).
-        session.status = "abandoned"
-        await sessions.save(session)
-        abandoned += 1
-    if abandoned:
-        log.info("abandoned {} stale interviews", abandoned)
-    return abandoned
+    stale = [
+        s for s in await sessions.list_in_progress() if _budget_exhausted(s, clock)
+    ]
+    if not stale:
+        return 0
+
+    sem = asyncio.Semaphore(_ABANDON_CONCURRENCY)
+
+    async def _abandon_one(session):
+        async with sem:
+            await data.save_interview(
+                session.application_id,
+                {
+                    "transcript": session.transcript.model_dump(),
+                    "blueprint": session.blueprint.model_dump(),
+                    "job_id": session.job_id,
+                    "user_id": session.candidate_user_id,
+                },
+            )
+            await publisher.publish(
+                "interview.abandoned",
+                {"application_id": session.application_id, "comp_id": session.comp_id},
+            )
+            # Flip status LAST: if the save or publish above fails, the session stays
+            # in-progress and the next sweep re-picks it (no silently lost abandonment).
+            session.status = "abandoned"
+            await sessions.save(session)
+
+    await asyncio.gather(*(_abandon_one(s) for s in stale))
+    log.info("abandoned {} stale interviews", len(stale))
+    return len(stale)
 
 
 async def start_interview(

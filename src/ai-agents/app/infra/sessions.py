@@ -94,8 +94,9 @@ class RedisInterviewStore:
     async def list_in_progress(self):
         """Scan checkpointed sessions (capped) and return those still in progress.
 
-        Scans at most ``_MAX_IN_PROGRESS_SCAN`` keys per call using a non-blocking
-        ``scan_iter`` so the reaper never stalls the event loop on a large key-space.
+        Accumulates up to ``_MAX_IN_PROGRESS_SCAN`` keys via non-blocking
+        ``scan_iter``, then fetches all values in a single ``mget`` instead of
+        one ``get`` per key (eliminates the N+1 serial await).
         Sessions created after the cap are picked up on the next sweep.
         """
         import time
@@ -103,18 +104,21 @@ class RedisInterviewStore:
         _session_ops_total.labels(op="list_in_progress").inc()
         t0 = time.monotonic()
         try:
-            out = []
-            scanned = 0
+            keys = []
             async for key in self._redis.scan_iter(match=f"{self._ns}:*", count=100):
-                if scanned >= _MAX_IN_PROGRESS_SCAN:
+                if len(keys) >= _MAX_IN_PROGRESS_SCAN:
                     log.info(
                         "list_in_progress: scan cap reached ({} keys), "
                         "remaining sessions deferred to next sweep",
                         _MAX_IN_PROGRESS_SCAN,
                     )
                     break
-                scanned += 1
-                raw = await self._redis.get(key)
+                keys.append(key)
+            if not keys:
+                return []
+            raws = await self._redis.mget(*keys)
+            out = []
+            for raw in raws:
                 if raw:
                     session = InterviewSession.model_validate_json(raw)
                     if session.status == "in_progress":

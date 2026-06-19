@@ -50,13 +50,15 @@ async def get_report(identity, application_id, *, applications, reports):
 
 async def list_reports(identity, job_id, *, applications, reports):
     _require_manager(identity)
-    out = []
-    for application in await applications.list_by_job(job_id, identity["comp_id"]):
-        application_id = str(application["_id"])
-        report = await reports.get_by_application(application_id)
-        if report is not None:
-            out.append(_enrich(application_id, application, report))
-    return out
+    apps = await applications.list_by_job(job_id, identity["comp_id"])
+    app_by_id = {str(a["_id"]): a for a in apps}
+    report_rows = await reports.list_by_applications(list(app_by_id))
+    report_by_app = {r["application_id"]: r for r in report_rows}
+    return [
+        _enrich(application_id, app, report_by_app[application_id])
+        for application_id, app in app_by_id.items()
+        if application_id in report_by_app
+    ]
 
 
 _HEADERS = [

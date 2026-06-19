@@ -7,6 +7,8 @@ plan and adapts it to the candidate. `build_blueprint` takes no capability gatew
 the interview hot path cannot crawl — it only ever reads the prepared plan.
 """
 
+import asyncio
+
 from lib.logging import get_logger
 
 from app.model.interview import InterviewBlueprint, JobQuestionPlan, SourceCitation
@@ -80,11 +82,16 @@ def _validate(blueprint):
 async def build_job_question_plan(
     jd_text, topics, owner, *, capability, llm
 ) -> JobQuestionPlan:
-    citations, grounding = [], []
-    for topic in topics:
-        result = await capability.kb_search(topic, topic, owner)
-        citations.extend(SourceCitation(**c) for c in result.get("citations", []))
-        grounding.append((topic, result.get("chunks", [])))
+    results = await asyncio.gather(
+        *(capability.kb_search(topic, topic, owner) for topic in topics)
+    )
+    citations = [
+        SourceCitation(**c) for result in results for c in result.get("citations", [])
+    ]
+    grounding = [
+        (topic, result.get("chunks", []))
+        for topic, result in zip(topics, results, strict=True)
+    ]
     plan = await llm.structured(_plan_prompt(jd_text, grounding), InterviewBlueprint)
     log.info(
         "job question plan built: {} competencies, {} citations",

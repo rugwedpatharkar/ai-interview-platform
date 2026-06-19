@@ -47,6 +47,16 @@ INDEXES: list[IndexSpec] = [
     # signals); admin reads them comp-scoped for the recruiter integrity timeline.
     IndexSpec("proctoring_events", "application_id"),
     IndexSpec("proctoring_events", [("comp_id", 1), ("application_id", 1)]),
+    # BE-E: perf indexes for sweep queries and status filters.
+    # aptitude_deliveries: list_stale filters on delivered_at.
+    IndexSpec("aptitude_deliveries", "delivered_at"),
+    # users: list_candidates_before filters (role, created_at); also backs list_by_role.
+    IndexSpec("users", [("role", 1), ("created_at", 1)]),
+    # jobs: status filter used by recruiter job-list queries.
+    IndexSpec("jobs", "status"),
+    # audit_logs: entity+entity_id is the primary lookup pattern; comp_id backs scans.
+    IndexSpec("audit_logs", [("entity", 1), ("entity_id", 1)]),
+    IndexSpec("audit_logs", "comp_id"),
 ]
 
 

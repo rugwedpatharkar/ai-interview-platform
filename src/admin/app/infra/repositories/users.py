@@ -30,11 +30,15 @@ class UserRepository(BaseRepository[User]):
             },
         )
 
-    async def list_candidates_before(self, cutoff) -> list[dict]:
+    async def list_candidates_before(
+        self, cutoff, *, limit: int = 500, skip: int = 0
+    ) -> list[dict]:
         return await self.find(
             {
                 "role": "candidate",
                 "created_at": {"$lt": cutoff},
                 "erased": {"$ne": True},
-            }
+            },
+            limit=limit,
+            skip=skip,
         )

@@ -6,6 +6,7 @@ class _FakeRedis:
     def __init__(self):
         self.store = {}
         self.last_ex = None
+        self.mget_calls: list[list] = []
 
     async def set(self, key, value, ex=None):
         self.store[key] = value
@@ -13,6 +14,10 @@ class _FakeRedis:
 
     async def get(self, key):
         return self.store.get(key)
+
+    async def mget(self, *keys):
+        self.mget_calls.append(list(keys))
+        return [self.store.get(k) for k in keys]
 
     async def scan_iter(self, match=None, count=None):
         # Yield keys in insertion order; ignore count (it's a hint in real Redis).
@@ -67,6 +72,21 @@ async def test_list_in_progress_returns_in_progress_sessions():
     result = await store.list_in_progress()
     assert len(result) == 1
     assert result[0].application_id == "a1"
+
+
+async def test_list_in_progress_uses_mget_not_per_key_get():
+    """list_in_progress must batch-fetch via mget, not issue one get per key (N+1)."""
+    redis = _FakeRedis()
+    store = RedisInterviewStore(redis)
+    s1 = InterviewSession(application_id="a1", comp_id="c1")
+    s2 = InterviewSession(application_id="a2", comp_id="c1")
+    await store.save(s1)
+    await store.save(s2)
+    result = await store.list_in_progress()
+    assert len(result) == 2
+    # Exactly one mget call covering both keys — no per-key get calls.
+    assert len(redis.mget_calls) == 1
+    assert len(redis.mget_calls[0]) == 2
 
 
 async def test_list_in_progress_cap_truncates(monkeypatch):

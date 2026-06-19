@@ -9,5 +9,9 @@ class AptitudeDeliveryRepository(BaseRepository[AptitudeDelivery]):
     async def get_by_application(self, application_id: str) -> dict | None:
         return await self.find_one({"application_id": application_id})
 
-    async def list_stale(self, cutoff) -> list[dict]:
-        return await self.find({"delivered_at": {"$lt": cutoff}})
+    async def list_stale(
+        self, cutoff, *, limit: int = 500, skip: int = 0
+    ) -> list[dict]:
+        return await self.find(
+            {"delivered_at": {"$lt": cutoff}}, limit=limit, skip=skip
+        )
