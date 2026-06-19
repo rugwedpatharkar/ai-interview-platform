@@ -31,6 +31,7 @@ type NavLink = { href: string; label: string };
 
 const NAV: NavLink[] = [
   { href: "/jobs", label: "Jobs" },
+  { href: "/branding", label: "Branding" },
   { href: "/rubrics", label: "Rubrics" },
   { href: "/analytics", label: "Analytics" },
   { href: "/talent", label: "Talent" },
