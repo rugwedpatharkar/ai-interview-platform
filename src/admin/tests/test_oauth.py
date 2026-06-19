@@ -188,13 +188,6 @@ def test_callback_bad_state_redirects_with_error(fakes):
     assert resp.headers["referrer-policy"] == "no-referrer"
 
 
-def test_providers_lists_only_configured(fakes):
-    app = _oauth_app(fakes, authorize={"google": {}, "microsoft": {}})
-    resp = TestClient(app).get("/auth/oauth/providers")
-    assert resp.status_code == 200
-    assert resp.json()["providers"] == ["google", "microsoft"]
-
-
 def test_authorize_unknown_provider_redirects_friendly(fakes):
     # No configured providers -> a button click bounces to a friendly error, not a 404.
     client = TestClient(_oauth_app(fakes))

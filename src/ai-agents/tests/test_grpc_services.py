@@ -9,6 +9,7 @@ shared translator (incl. server-streaming for Chat), and the servicer logic toge
 import struct
 
 import httpx
+import jwt
 import pytest
 from lib.security import TokenService
 
@@ -473,3 +474,223 @@ async def test_jd_rejects_oversized_brief(fake_llm):
     )
     _, status = _data_and_status(resp.content)
     assert status == 3  # INVALID_ARGUMENT
+
+
+# --- behaviors ported from the deleted REST adapter tests (G6) -----------
+@pytest.mark.asyncio
+async def test_chat_streams_incremental_deltas_and_citation(fake_data, fake_capability):
+    class _StreamingKbLLM:
+        async def structured(self, prompt, schema):
+            return AssistantPlan(intent="kb_search", query="asyncio")
+
+        async def stream(self, prompt):
+            for chunk in ["Hel", "lo", "!"]:
+                yield chunk
+
+    kb = {
+        "asyncio": {
+            "chunks": ["c"],
+            "citations": [{"url": "doc://py", "topic": "asyncio"}],
+        }
+    }
+    app = _app(
+        data=fake_data(),
+        sessions=None,
+        llm=_StreamingKbLLM(),
+        capability=fake_capability(kb=kb),
+    )
+    resp = await _call(
+        app,
+        f"{_CHAT}/Chat",
+        chat_pb2.ChatRequest(
+            messages=[chat_pb2.ChatMessage(role="user", content="explain asyncio")]
+        ),
+        metadata=_auth("u1"),
+    )
+    frames, status = _stream(resp.content)
+    assert status == 0
+    events = [chat_pb2.ChatEvent.FromString(f) for f in frames]
+    texts = [e.text for e in events if e.WhichOneof("event") == "text"]
+    assert texts == ["Hel", "lo", "!"]  # genuinely incremental, not one blob
+    citations = [e.citation for e in events if e.WhichOneof("event") == "citation"]
+    assert len(citations) == 1 and citations[0].url == "doc://py"
+    assert events[-1].WhichOneof("event") == "done"
+
+
+@pytest.mark.asyncio
+async def test_chat_threads_scope_from_claims(
+    fake_data, fake_capability, fake_llm_by_schema
+):
+    data = fake_data(application_status={"state": "interview_pending"})
+    llm = fake_llm_by_schema(
+        {
+            AssistantPlan: AssistantPlan(intent="status", application_id="a1"),
+            AssistantAnswer: AssistantAnswer(text="In review."),
+        }
+    )
+    app = _app(data=data, sessions=None, llm=llm, capability=fake_capability())
+    resp = await _call(
+        app,
+        f"{_CHAT}/Chat",
+        chat_pb2.ChatRequest(
+            messages=[chat_pb2.ChatMessage(role="user", content="status?")]
+        ),
+        metadata=_auth("r1", role="recruiter", comp_id="c1"),
+    )
+    _, status = _stream(resp.content)
+    assert status == 0
+    # Scope is read straight from the signed JWT claims and threaded to the data call —
+    # tenant + role isolation enforced server-side, never trusted from the request body.
+    assert data.status_calls == [
+        ({"user_id": "r1", "role": "recruiter", "comp_id": "c1"}, "a1")
+    ]
+
+
+@pytest.mark.asyncio
+async def test_chat_mid_stream_failure_emits_error_after_text(
+    fake_data, fake_capability
+):
+    class _MidStreamFailLLM:
+        async def structured(self, prompt, schema):
+            return AssistantPlan(intent="chat")
+
+        async def stream(self, prompt):
+            yield "partial"
+            raise RuntimeError("stream died")
+
+    app = _app(
+        data=fake_data(),
+        sessions=None,
+        llm=_MidStreamFailLLM(),
+        capability=fake_capability(),
+    )
+    resp = await _call(
+        app,
+        f"{_CHAT}/Chat",
+        chat_pb2.ChatRequest(
+            messages=[chat_pb2.ChatMessage(role="user", content="hi")]
+        ),
+        metadata=_auth("u1"),
+    )
+    frames, status = _stream(resp.content)
+    assert status == 0  # headers/stream already open; the failure is an in-stream event
+    kinds = [chat_pb2.ChatEvent.FromString(f).WhichOneof("event") for f in frames]
+    assert kinds == [
+        "text",
+        "error",
+    ]  # partial delta, then a clean error, no false done
+
+
+@pytest.mark.asyncio
+async def test_chat_rejects_too_many_messages(fake_data, fake_capability, fake_llm):
+    app = _app(
+        data=fake_data(),
+        sessions=None,
+        llm=fake_llm(None),
+        capability=fake_capability(),
+    )
+    msgs = [chat_pb2.ChatMessage(role="user", content="x") for _ in range(21)]
+    resp = await _call(
+        app, f"{_CHAT}/Chat", chat_pb2.ChatRequest(messages=msgs), metadata=_auth("u1")
+    )
+    _, status = _stream(resp.content)
+    assert (
+        status == 3
+    )  # INVALID_ARGUMENT — capped before the planner (max_chat_messages=20)
+
+
+@pytest.mark.asyncio
+async def test_proctor_rejects_non_owner(fake_data, fake_sessions, fake_llm):
+    sessions = fake_sessions()
+    sessions.saved["a1"] = _session()  # owned by u1
+    app = _app(data=fake_data(), sessions=sessions, llm=fake_llm(None))
+    resp = await _call(
+        app,
+        f"{_INTERVIEW}/RecordProctorEvents",
+        interview_pb2.ProctorEventsRequest(
+            application_id="a1",
+            events=[interview_pb2.ProctorEvent(type="second_face", at="t")],
+        ),
+        metadata=_auth("intruder"),
+    )
+    _, status = _data_and_status(resp.content)
+    assert status == 7  # PERMISSION_DENIED
+
+
+@pytest.mark.asyncio
+async def test_proctor_assigns_canonical_severity(fake_data, fake_sessions, fake_llm):
+    sessions = fake_sessions()
+    sessions.saved["a1"] = _session()
+    data = fake_data()
+    app = _app(data=data, sessions=sessions, llm=fake_llm(None))
+    resp = await _call(
+        app,
+        f"{_INTERVIEW}/RecordProctorEvents",
+        interview_pb2.ProctorEventsRequest(
+            application_id="a1",
+            events=[
+                interview_pb2.ProctorEvent(type="second_face", at="t"),
+                interview_pb2.ProctorEvent(type="tab_hidden", at="t"),
+            ],
+        ),
+        metadata=_auth("u1"),
+    )
+    data_bytes, status = _data_and_status(resp.content)
+    assert status == 0
+    assert interview_pb2.ProctorAccepted.FromString(data_bytes).accepted == 2
+    application_id, comp_id, docs = data.saved_proctoring[0]
+    assert (
+        application_id == "a1" and comp_id == "c1"
+    )  # comp_id from session, not client
+    sev = {d["type"]: d["severity"] for d in docs}
+    assert sev["second_face"] == "high" and sev["tab_hidden"] == "low"
+
+
+def _voice_settings():
+    return _settings(
+        livekit_api_key="devkey",
+        livekit_api_secret="s" * 32,
+        livekit_url="ws://localhost:7880",
+    )
+
+
+@pytest.mark.asyncio
+async def test_rtc_token_not_found_session(fake_data, fake_sessions, fake_llm):
+    app = _app(
+        data=fake_data(),
+        sessions=fake_sessions(),
+        llm=fake_llm(None),
+        settings=_voice_settings(),
+    )
+    resp = await _call(
+        app,
+        f"{_INTERVIEW}/RtcToken",
+        interview_pb2.RtcTokenRequest(application_id="a1"),
+        metadata=_auth("u1"),
+    )
+    _, status = _data_and_status(resp.content)
+    assert status == 5  # NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_rtc_token_mints_for_owner(fake_data, fake_sessions, fake_llm):
+    sessions = fake_sessions()
+    sessions.saved["a1"] = _session()  # owned by u1
+    app = _app(
+        data=fake_data(),
+        sessions=sessions,
+        llm=fake_llm(None),
+        settings=_voice_settings(),
+    )
+    resp = await _call(
+        app,
+        f"{_INTERVIEW}/RtcToken",
+        interview_pb2.RtcTokenRequest(application_id="a1"),
+        metadata=_auth("u1"),
+    )
+    data_bytes, status = _data_and_status(resp.content)
+    assert status == 0
+    out = interview_pb2.RtcTokenResponse.FromString(data_bytes)
+    assert out.url == "ws://localhost:7880" and out.room == "interview-a1"
+    claims = jwt.decode(out.token, "s" * 32, algorithms=["HS256"])
+    assert claims["video"]["room"] == "interview-a1" and claims["sub"] == "u1"

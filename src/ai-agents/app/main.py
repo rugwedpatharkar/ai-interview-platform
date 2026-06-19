@@ -15,7 +15,6 @@ from app.infra.mcp_data import McpDataGateway
 from app.infra.mcp_session import McpSessionManager
 from app.infra.sessions import RedisInterviewStore
 from app.resources.interview_host import abandon_stale
-from app.routes.interview_api import create_app
 from app.routes.web import create_grpc_app
 from app.routes.worker import EVENTS, make_dispatch
 
@@ -32,22 +31,34 @@ def _token_service(s):
     )
 
 
-def _grpc_rest_dispatcher(grpc_app, rest_app):
-    """Route /aiagents.* (gRPC method paths) to the gRPC-web app; all else to REST.
+def _grpc_dispatcher(grpc_app, fallback):
+    """Route /aiagents.* (gRPC paths) to the gRPC-web app; all else to `fallback`.
 
-    gRPC-web RPC paths are /<proto package>.<Service>/<Method> and our packages are all
-    `aiagents.*`, so the prefix never collides with a REST path (/interview/..., /chat/
-    turn, /jd/improve). The gRPC app handles its own CORS preflight for those paths;
-    lifespan/other scopes fall through to the FastAPI REST app.
+    gRPC-web RPC paths are /<pkg>.<Service>/<Method> and our packages are all
+    `aiagents.*`, so the prefix is unambiguous; the gRPC app serves its own CORS
+    preflight. Everything else (just /health) goes to the fallback.
     """
 
     async def dispatch(scope, receive, send):
         if scope["type"] == "http" and scope.get("path", "").startswith("/aiagents."):
             await grpc_app(scope, receive, send)
         else:
-            await rest_app(scope, receive, send)
+            await fallback(scope, receive, send)
 
     return dispatch
+
+
+async def _health_app(scope, receive, send):
+    """Liveness probe: GET /health -> 200, anything else -> 404."""
+    ok = scope["type"] == "http" and scope.get("path") == "/health"
+    await send(
+        {
+            "type": "http.response.start",
+            "status": 200 if ok else 404,
+            "headers": [(b"content-type", b"text/plain")],
+        }
+    )
+    await send({"type": "http.response.body", "body": b"ok" if ok else b""})
 
 
 async def serve() -> None:
@@ -110,23 +121,23 @@ async def serve() -> None:
         "publisher": publisher,
         "llm": llm,
         "settings": s,
-        "cors_origins": [
-            o.strip() for o in s.cors_allow_origin.split(",") if o.strip()
-        ],
     }
-    # Application traffic is gRPC-web (interview/chat/jd/proctor/rtc) on /aiagents.*;
-    # the REST app stays mounted for endpoints not yet migrated (removed in G6). The
-    # gRPC app gets a per-request correlation_id like the REST app does (its own
-    # CorrelationIdMiddleware lives inside create_app).
+    # Application traffic is gRPC-web (interview/chat/jd/proctor/rtc) on /aiagents.*,
+    # wrapped in CorrelationIdMiddleware so each RPC carries a correlation_id; all
+    # else is /health. lifespan="off": no FastAPI app, deps are wired here directly.
     grpc_app = CorrelationIdMiddleware(
         create_grpc_app(deps, allow_origin=s.cors_allow_origin)
     )
-    api = _grpc_rest_dispatcher(grpc_app, create_app(deps))
+    api = _grpc_dispatcher(grpc_app, _health_app)
     config = uvicorn.Config(
-        api, host=s.http_host, port=s.http_port, log_level=s.log_level.lower()
+        api,
+        host=s.http_host,
+        port=s.http_port,
+        log_level=s.log_level.lower(),
+        lifespan="off",
     )
     server = uvicorn.Server(config)
-    log.info("ai-agents gRPC-web + REST on {}:{}", s.http_host, s.http_port)
+    log.info("ai-agents gRPC-web on {}:{}", s.http_host, s.http_port)
     try:
         await server.serve()
     finally:

@@ -133,10 +133,6 @@ def make_oauth_routes(deps):
         response.headers["Referrer-Policy"] = "no-referrer"
         return response
 
-    async def providers(request):
-        # Lets the FE render only configured SSO buttons (no dead 404 buttons).
-        return JSONResponse({"providers": sorted(deps["authorize"])})
-
     async def refresh(request):
         # SSO silent refresh: the SPA can't read the HttpOnly cookie, so it POSTs here
         # with credentials; we rotate the session + return a fresh access token.
@@ -177,7 +173,6 @@ def make_oauth_routes(deps):
     return [
         Route("/auth/oauth/authorize", authorize),
         Route("/auth/oauth/callback", callback),
-        Route("/auth/oauth/providers", providers),
         Route("/auth/oauth/refresh", refresh, methods=["POST"]),
     ]
 
