@@ -40,7 +40,7 @@ class Settings(BaseServiceSettings):
     resend_limit: int = Field(default=5, gt=0)
     resend_window_seconds: int = Field(default=900, gt=0)
     # Serves gRPC-web over HTTP (browser reaches it directly; no proxy). See
-    # app/routes/grpcweb.py and docs/superpowers/plans/DEPLOYMENT.md.
+    # lib/grpcweb.py and docs/superpowers/plans/DEPLOYMENT.md.
     http_host: str = "0.0.0.0"  # noqa: S104 — containerized server binds all interfaces
     http_port: int = 8080
     # Explicit FE origins so credentialed CORS (the refresh cookie) works; a "*" here

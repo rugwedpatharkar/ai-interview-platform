@@ -1,11 +1,12 @@
 """Assembles the admin gRPC-web ASGI app: registers every servicer onto a GrpcWebASGI.
 
 Used by app/main.py for serving. The browser reaches this ASGI app directly over
-gRPC-web (no proxy) — see app/routes/grpcweb.py and
-docs/superpowers/plans/DEPLOYMENT.md. Collaborators are injected so the app can be
-built against fakes in tests.
+gRPC-web (no proxy) — see lib/grpcweb.py (the shared translator, used by ai-agents
+too) and docs/superpowers/plans/DEPLOYMENT.md. Collaborators are injected so the app
+can be built against fakes in tests.
 """
 
+from lib.grpcweb import GrpcWebASGI
 from lib.redis import RateLimiter
 from lib.security import RefreshSessionStore, SingleUseTokenStore
 
@@ -30,7 +31,6 @@ from app.routes.aptitude import AptitudeServicer
 from app.routes.auth import AuthServicer
 from app.routes.compliance import ComplianceServicer
 from app.routes.decision import DecisionServicer
-from app.routes.grpcweb import GrpcWebASGI
 from app.routes.job import JobServicer
 from app.routes.pb import (
     analytics_pb2_grpc,

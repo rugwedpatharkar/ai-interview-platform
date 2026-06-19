@@ -5,7 +5,6 @@ description = "Admin service — API gateway, source of truth, funnel orchestrat
 requires-python = ">=3.12"
 dependencies = [
     "lib",
-    "grpcio>=1.60",
     "grpcio-tools>=1.60",
     "protobuf>=4",
     "pydantic>=2",

@@ -1,7 +1,7 @@
 """gRPC-web translator tests — drive the real AuthServicer over the ASGI app.
 
 The wire helpers here are an independent implementation of the gRPC-web framing, so a
-framing bug in app/routes/grpcweb.py can't be masked by reusing its own encoder.
+framing bug in lib/grpcweb.py can't be masked by reusing its own encoder.
 """
 
 import asyncio
@@ -11,12 +11,12 @@ import struct
 import grpc
 import httpx
 import pytest
+from lib.grpcweb import GrpcWebASGI
 from lib.redis import RateLimiter
 from lib.security import RefreshSessionStore, TokenService
 
 from app.infra.notifier import LoggingNotifier
 from app.routes.auth import AuthServicer
-from app.routes.grpcweb import GrpcWebASGI
 from app.routes.pb import auth_pb2, auth_pb2_grpc
 
 SECRET = "test-secret-" + "x" * 32

@@ -23,9 +23,10 @@ import struct
 from urllib.parse import quote
 
 import grpc
+
 from lib.logging import get_logger
 
-log = get_logger(component="admin.grpcweb")
+log = get_logger(component="grpcweb")
 
 _ALLOW_HEADERS = "content-type,x-grpc-web,x-user-agent,authorization,grpc-timeout"
 _EXPOSE_HEADERS = "grpc-status,grpc-message,grpc-status-details-bin"

@@ -5,6 +5,9 @@ description = "AI multi-agent service (LangGraph + Gemini) for the interview pla
 requires-python = ">=3.12"
 dependencies = [
     "lib",
+    "grpcio>=1.60",
+    "grpcio-tools>=1.60",
+    "protobuf>=4",
     "pydantic>=2",
     "langchain-google-genai>=2",
     "langgraph>=0.2",
