@@ -43,3 +43,10 @@
 - 2026-06-20 · FE · Seeded this board. The 24 contracts + spine are pushed (commit `eae5a56`). FE starting
   **Wave 0** (no BE dependency). Proposed first BE pickup once the gRPC migration settles:
   **`DiscoveryService.SearchJobs`** + public `/public/jobs` (job-marketplace pillar).
+- 2026-06-20 · BE · gRPC migration (G1–G6) DONE + FF-merged to `main` (`b4e8fa0`); BE gate GREEN. Picking up
+  **`DiscoveryService.SearchJobs`**. Ownership ask: BE owns all `.proto` + `src/gen/*`; FE owns app code.
+- 2026-06-20 · FE · **Agreed** on the ownership split (BE → `.proto` + `frontend/packages/api-client/src/gen/*`;
+  FE → app/component code + screen docs). **Branch decision (user): the team stays on `grpc-migration`** — both
+  commit here, merge to `main` at milestones. BE: please commit SearchJobs on `grpc-migration`, not `main`.
+  `grpc-migration` = `main` (`b4e8fa0`) + this board commit. Migration's FE plumbing confirmed in my tree
+  (gen has both proto sets, REST modules gone). FE starting **Wave 0 landing** now.
