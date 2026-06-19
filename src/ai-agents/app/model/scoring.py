@@ -1,4 +1,8 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+Recommendation = Literal["advance", "hold", "reject"]
 
 
 class CompetencyScore(BaseModel):
@@ -12,7 +16,7 @@ class Evaluation(BaseModel):
     overall_score: float = 0.0  # 0.0 .. 1.0
     strengths: list[str] = Field(default_factory=list)
     concerns: list[str] = Field(default_factory=list)
-    recommendation: str = ""  # advance | hold | reject
+    recommendation: Recommendation = "hold"
 
 
 class InterviewReport(BaseModel):
@@ -20,7 +24,9 @@ class InterviewReport(BaseModel):
     highlights: list[str] = Field(default_factory=list)
     risks: list[str] = Field(default_factory=list)
     overall_score: float = 0.0  # authoritative copy of Evaluation.overall_score
-    recommendation: str = ""  # authoritative copy of Evaluation.recommendation
+    recommendation: Recommendation = (
+        "hold"  # authoritative copy of Evaluation.recommendation
+    )
 
 
 class MatchRationale(BaseModel):

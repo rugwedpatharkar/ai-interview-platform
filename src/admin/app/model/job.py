@@ -12,8 +12,8 @@ class AptitudeConfig(BaseModel):
 
 class Job(BaseModel):
     comp_id: str
-    title: str
-    jd_text: str = ""
+    title: str = Field(max_length=200)
+    jd_text: str = Field(default="", max_length=50_000)
     location: str | None = None
     experience_level: str | None = None
     openings: int = 1

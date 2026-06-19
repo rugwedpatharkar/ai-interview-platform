@@ -5,14 +5,49 @@ ai-agents service connects as an MCP client. `_jsonable` stringifies BSON Object
 tool results are JSON-serializable. Run `python -m app.server`.
 """
 
+from typing import Literal
+
 from bson import ObjectId
 from lib.logging import bind_ids, configure_logging, get_logger, log_context
 from lib.mongodb import MongoManager
 from lib.observability import init_tracing, start_metrics_server
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.config import get_settings
 from app.tools import DataStore
+
+
+class _ProctoringEventInput(BaseModel):
+    type: Literal[
+        "gaze_off_screen",
+        "head_turned_away",
+        "lips_move_no_audio",
+        "audio_no_lip_move",
+        "body_out_of_frame",
+        "second_face",
+        "phone_detected",
+        "camera_occluded",
+        "virtual_camera",
+        "second_voice",
+        "keyboard_typing",
+        "synthetic_audio_suspected",
+        "tab_hidden",
+        "window_blur",
+        "fullscreen_exit",
+        "copy",
+        "paste_large",
+        "devtools_open",
+        "multi_monitor",
+        "screen_share",
+        "keystroke_anomaly",
+        "ip_geo_anomaly",
+    ]
+    at: str
+    meta: dict | None = None
+
+
+_proctoring_event_list_adapter = TypeAdapter(list[_ProctoringEventInput])
 
 log = get_logger(component="mcp_data.server")
 
@@ -167,7 +202,13 @@ async def save_proctoring_events(
         "tool.save_proctoring_events",
         **bind_ids(application_id=application_id, comp_id=comp_id),
     ):
-        return await _store.save_proctoring_events(application_id, comp_id, events)
+        try:
+            validated = _proctoring_event_list_adapter.validate_python(events)
+        except ValidationError as exc:
+            raise ValueError(f"invalid proctoring events: {exc}") from exc
+        return await _store.save_proctoring_events(
+            application_id, comp_id, [e.model_dump() for e in validated]
+        )
 
 
 @mcp.tool()

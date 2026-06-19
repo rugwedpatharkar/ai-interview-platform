@@ -116,3 +116,45 @@ def test_turn_rejects_empty_answer(fake_data, fake_sessions, fake_publisher, fak
         headers={"Authorization": f"Bearer {_token('u1')}"},
     )
     assert resp.status_code == 400
+
+
+def test_turn_rejects_oversized_answer(
+    fake_data, fake_sessions, fake_publisher, fake_llm
+):
+    sessions = fake_sessions()
+    sessions.saved["a1"] = InterviewSession(
+        application_id="a1",
+        comp_id="c1",
+        candidate_user_id="u1",
+        current_question="Q1",
+        blueprint=InterviewBlueprint(competencies=[CompetencyArea(name="python")]),
+    )
+    deps = _deps(
+        fake_data, fake_sessions, fake_publisher, fake_llm(None), sessions=sessions
+    )
+    client = TestClient(create_app(deps))
+    resp = client.post(
+        "/interview/a1/turn",
+        json={"answer": "x" * 32_001},
+        headers={"Authorization": f"Bearer {_token('u1')}"},
+    )
+    assert resp.status_code == 422
+
+
+def test_jd_improve_rejects_oversized_brief(
+    fake_data, fake_sessions, fake_publisher, fake_llm
+):
+    deps = _deps(fake_data, fake_sessions, fake_publisher, fake_llm(None))
+    deps["settings"] = type(
+        "S", (), {"livekit_api_key": None, "livekit_api_secret": None}
+    )()
+    recruiter_token = TokenService(secret=_SECRET).access_token(
+        "u2", "recruiter", "c1", "j2"
+    )
+    client = TestClient(create_app(deps))
+    resp = client.post(
+        "/jd/improve",
+        json={"brief": "x" * 16_001},
+        headers={"Authorization": f"Bearer {recruiter_token}"},
+    )
+    assert resp.status_code == 422

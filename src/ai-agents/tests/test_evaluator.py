@@ -1,4 +1,5 @@
 import pytest
+from pydantic import ValidationError
 
 from app.model.interview import Transcript, TranscriptTurn
 from app.model.scoring import CompetencyScore, Evaluation
@@ -39,3 +40,23 @@ async def test_rejects_out_of_range_score(fake_llm):
     bad = Evaluation(overall_score=1.5)
     with pytest.raises(ValueError):
         await evaluate_interview(_transcript(), ["python"], "JD", llm=fake_llm(bad))
+
+
+def test_evaluation_rejects_invalid_recommendation():
+    with pytest.raises(ValidationError):
+        Evaluation(recommendation="maybe")
+
+
+def test_evaluation_rejects_empty_recommendation():
+    with pytest.raises(ValidationError):
+        Evaluation(recommendation="")
+
+
+def test_evaluation_accepts_valid_recommendations():
+    for rec in ("advance", "hold", "reject"):
+        e = Evaluation(recommendation=rec)
+        assert e.recommendation == rec
+
+
+def test_evaluation_defaults_to_hold():
+    assert Evaluation().recommendation == "hold"

@@ -14,7 +14,7 @@ from fastapi.responses import StreamingResponse
 from jose import JWTError
 from lib.logging import bind_ids, get_logger, log_context
 from lib.web import CorrelationIdMiddleware, cors_config
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.errors import ConflictError, ForbiddenError, NotFoundError
 from app.model.chat import ChatMessage
@@ -33,7 +33,7 @@ _MAX_CHAT_MESSAGES = 50
 
 
 class TurnRequest(BaseModel):
-    answer: str
+    answer: str = Field(min_length=1, max_length=32_000)
 
 
 def _caller_user_id(request: Request) -> str:
@@ -203,7 +203,7 @@ async def chat_turn(body: ChatRequest, request: Request):
 
 
 class JdRequest(BaseModel):
-    brief: str
+    brief: str = Field(max_length=16_000)
 
 
 @router.post("/jd/improve")

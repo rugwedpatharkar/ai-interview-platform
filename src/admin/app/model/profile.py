@@ -13,9 +13,9 @@ class CandidateProfile(BaseModel):
     age: int | None = None
     willing_to_relocate: bool = False
     job_preference: str | None = None  # hybrid | remote | onsite
-    education: list = Field(default_factory=list)
-    experience: list = Field(default_factory=list)
-    skills: list = Field(default_factory=list)
+    education: list = Field(default_factory=list, max_length=50)
+    experience: list = Field(default_factory=list, max_length=50)
+    skills: list = Field(default_factory=list, max_length=100)
     location: str | None = None
     experience_level: str | None = None
     completeness: int = 0
