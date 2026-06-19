@@ -1,3 +1,5 @@
+import pytest
+
 from app.model.aptitude import AptitudeBank, AptitudeQuestion
 from app.model.interview import CompetencyArea, InterviewBlueprint
 from app.model.profile import CandidateProfile
@@ -96,6 +98,32 @@ async def test_handle_job_published(
     # The cited question plan is built + persisted alongside the aptitude bank.
     assert data.saved_question_plans["j1"]["competencies"]
     assert ("aptitude.ready", {"job_id": "j1", "comp_id": "c1"}) in pub.events
+
+
+async def test_handle_job_published_propagates_build_failure(
+    fake_capability, fake_data, fake_publisher
+):
+    """A bank/plan build failure must propagate (→ consumer retries → DLX), not be
+    swallowed — else candidates strand at aptitude_pending with no signal. BE-#9."""
+
+    class _RaisingLLM:
+        async def structured(self, prompt, schema):
+            raise RuntimeError("LLM unavailable")
+
+    data = fake_data(
+        job={
+            "jd_text": "Backend role",
+            "aptitude_config": {"topics": ["python"], "num_questions": 3},
+        }
+    )
+    with pytest.raises(RuntimeError):
+        await handlers.handle_job_published(
+            {"job_id": "j1", "comp_id": "c1"},
+            llm=_RaisingLLM(),
+            data=data,
+            capability=fake_capability(),
+            publisher=fake_publisher(),
+        )
 
 
 async def test_handle_job_published_skips_missing_job(

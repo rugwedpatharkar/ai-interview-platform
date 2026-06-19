@@ -61,20 +61,36 @@ async def handle_job_published(payload, *, llm, data, capability, publisher):
     # bank (a fresh question set corrupts an in-flight delivery's answer order), but it
     # MUST build a plan a prior partial run never saved (bank saved, then plan build
     # failed) — else every interview for this job stays ungrounded forever.
-    if await data.get_aptitude_bank(job_id) is None:
-        bank = await build_aptitude_bank(
-            job["jd_text"],
-            topics,
-            aptitude.get("num_questions", _DEFAULT_APTITUDE_QUESTIONS),
-            llm=llm,
+    try:
+        if await data.get_aptitude_bank(job_id) is None:
+            bank = await build_aptitude_bank(
+                job["jd_text"],
+                topics,
+                aptitude.get("num_questions", _DEFAULT_APTITUDE_QUESTIONS),
+                llm=llm,
+            )
+            await data.save_aptitude_bank(job_id, bank.model_dump())
+        if await data.get_question_plan(job_id) is None:
+            plan = await build_job_question_plan(
+                job["jd_text"],
+                topics,
+                payload["comp_id"],
+                capability=capability,
+                llm=llm,
+            )
+            plan.job_id = job_id
+            await data.save_question_plan(job_id, plan.model_dump())
+    except Exception:
+        # Surface a build failure with the job id + consequence BEFORE it propagates to
+        # the DLX (it otherwise only shows as a generic dead-letter). Re-raise so the
+        # consumer still retries → dead-letters; recovery is a re-publish. BE-#9.
+        log.exception(
+            "job.published: bank/plan build FAILED job_id={} comp_id={} "
+            "(candidates strand at aptitude_pending until re-published)",
+            job_id,
+            payload["comp_id"],
         )
-        await data.save_aptitude_bank(job_id, bank.model_dump())
-    if await data.get_question_plan(job_id) is None:
-        plan = await build_job_question_plan(
-            job["jd_text"], topics, payload["comp_id"], capability=capability, llm=llm
-        )
-        plan.job_id = job_id
-        await data.save_question_plan(job_id, plan.model_dump())
+        raise
     # aptitude.ready is informational (no consumer yet); re-emitting it every delivery
     # keeps the emit idempotent + independent of the save (a future consumer recovers a
     # signal lost to a publish failure). Wiring it to a recruiter notification is a
