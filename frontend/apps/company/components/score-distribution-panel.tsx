@@ -9,8 +9,7 @@ import {
   ErrorState,
   LoadingState,
 } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
-import { useQuery } from "@tanstack/react-query";
+import { errorMessage, useAuthedQuery } from "@ip/shared";
 
 import { useAuth } from "../lib/auth";
 
@@ -21,8 +20,8 @@ const pct = (v: number) => `${Math.round(v * 100)}%`;
  * min, mean, max — with NO protected attributes, matching the backend's scope.
  */
 export function ScoreDistributionPanel({ jobId }: { jobId: string }) {
-  const { api } = useAuth();
-  const dist = useQuery({
+  const { api, token } = useAuth();
+  const dist = useAuthedQuery(token, {
     queryKey: ["score-dist", jobId],
     queryFn: () => api.analytics.getJobScoreDistribution({ jobId }),
   });

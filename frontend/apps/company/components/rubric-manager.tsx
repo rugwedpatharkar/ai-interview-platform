@@ -14,9 +14,9 @@ import {
   LoadingState,
   toast,
 } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
+import { errorMessage, useAuthedQuery } from "@ip/shared";
 import type { Rubric } from "@ip/api-client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -39,7 +39,7 @@ function weightError(row: CompRow): string | null {
 }
 
 export function RubricManager() {
-  const { api } = useAuth();
+  const { api, token } = useAuth();
   const queryClient = useQueryClient();
   const nextId = useRef(0);
   const blankRow = (): CompRow => ({ id: nextId.current++, name: "", weight: "1" });
@@ -49,7 +49,7 @@ export function RubricManager() {
   const [rows, setRows] = useState<CompRow[]>([blankRow()]);
   const [showErrors, setShowErrors] = useState(false);
 
-  const rubrics = useQuery({
+  const rubrics = useAuthedQuery(token, {
     queryKey: ["rubrics"],
     queryFn: () => api.rubrics.listRubrics({}),
   });

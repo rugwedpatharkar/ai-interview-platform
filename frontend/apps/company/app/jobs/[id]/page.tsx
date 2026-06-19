@@ -14,8 +14,8 @@ import {
   jobStatus,
   toast,
 } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { errorMessage, useAuthedQuery } from "@ip/shared";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 
 import { ApplicantsTable } from "../../../components/applicants-table";
@@ -26,11 +26,11 @@ import { ScoreDistributionPanel } from "../../../components/score-distribution-p
 import { useAuth } from "../../../lib/auth";
 
 export default function JobDetailPage() {
-  const { api } = useAuth();
+  const { api, token } = useAuth();
   const queryClient = useQueryClient();
   const { id } = useParams<{ id: string }>();
 
-  const job = useQuery({
+  const job = useAuthedQuery(token, {
     queryKey: ["job", id],
     queryFn: () => api.jobs.getJob({ jobId: id }),
   });

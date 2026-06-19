@@ -16,15 +16,14 @@ import {
   TableRow,
 } from "@ip/ui";
 import { Users } from "lucide-react";
-import { errorMessage } from "@ip/shared";
-import { useQuery } from "@tanstack/react-query";
+import { errorMessage, useAuthedQuery } from "@ip/shared";
 
 import { CompanyShell } from "../../components/company-shell";
 import { useAuth } from "../../lib/auth";
 
 export default function TalentPage() {
-  const { api } = useAuth();
-  const pool = useQuery({
+  const { api, token } = useAuth();
+  const pool = useAuthedQuery(token, {
     queryKey: ["talent"],
     queryFn: () => api.talent.getTalentPool({}),
   });

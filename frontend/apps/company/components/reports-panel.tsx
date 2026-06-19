@@ -15,8 +15,8 @@ import {
   TableRow,
   toast,
 } from "@ip/ui";
-import { XLSX_MIME, downloadBytes, errorMessage } from "@ip/shared";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { XLSX_MIME, downloadBytes, errorMessage, useAuthedQuery } from "@ip/shared";
+import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 
 import { useAuth } from "../lib/auth";
@@ -28,9 +28,9 @@ const REC_TONE: Record<string, BadgeTone> = {
 };
 
 export function ReportsPanel({ jobId }: { jobId: string }) {
-  const { api } = useAuth();
+  const { api, token } = useAuth();
 
-  const reports = useQuery({
+  const reports = useAuthedQuery(token, {
     queryKey: ["reports", jobId],
     queryFn: () => api.reports.listReports({ jobId }),
   });

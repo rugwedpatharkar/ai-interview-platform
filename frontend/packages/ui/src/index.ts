@@ -83,6 +83,9 @@ export {
   TooltipContent,
 } from "./tooltip.js";
 
+// Error boundary
+export { ErrorBoundary } from "./error-boundary.js";
+
 // Theme
 export {
   ThemeProvider,

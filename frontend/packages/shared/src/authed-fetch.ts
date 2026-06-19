@@ -107,35 +107,46 @@ async function refresh(ctx: RestAuthContext): Promise<boolean> {
  * `ctx` carries the shared store, the admin refresh origin, and the recovery callback. The
  * caller owns `init` (method/headers/body/keepalive); we only manage the Authorization
  * header and clone `init` for the retry so a one-shot body isn't reused.
+ *
+ * `signal` is forwarded to every `fetch` call so an `AbortController` on the call site
+ * can cancel an in-flight request on component unmount.
  */
 export async function authedFetch(
   url: string,
   init: RequestInit,
   ctx: RestAuthContext,
+  signal?: AbortSignal,
 ): Promise<Response> {
   const sent = ctx.store.get()?.access;
-  const res = await fetch(url, withAuth(init, sent));
+  const res = await fetch(url, withAuth(init, sent, signal));
   if (res.status !== 401) return res;
+
+  // If the signal was aborted during the first fetch, propagate immediately.
+  signal?.throwIfAborted?.();
 
   // If a concurrent request already refreshed, retry with the current token rather than
   // refreshing again (which would reuse a now-rotated refresh token and log the user out).
   const current = ctx.store.get()?.access;
   if (current && current !== sent) {
-    return fetch(url, withAuth(init, current));
+    return fetch(url, withAuth(init, current, signal));
   }
   // We sent a token and it was rejected -> refresh once, then retry. Skip tokenless requests
   // (nothing to refresh) and the unregistered case (no refreshUrl) — there the 401 surfaces,
   // preserving the clients' pre-authedFetch behavior.
   if (sent && ctx.refreshUrl && (await refresh(ctx))) {
     const fresh = ctx.store.get()?.access;
-    return fetch(url, withAuth(init, fresh));
+    return fetch(url, withAuth(init, fresh, signal));
   }
   return res;
 }
 
-function withAuth(init: RequestInit, token: string | undefined): RequestInit {
+function withAuth(
+  init: RequestInit,
+  token: string | undefined,
+  signal?: AbortSignal,
+): RequestInit {
   const headers = new Headers(init.headers);
   if (token) headers.set("authorization", `Bearer ${token}`);
   else headers.delete("authorization");
-  return { ...init, headers };
+  return { ...init, headers, ...(signal !== undefined ? { signal } : {}) };
 }

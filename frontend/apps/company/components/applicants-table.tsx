@@ -19,9 +19,9 @@ import {
   buttonVariants,
   toast,
 } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
+import { errorMessage, useAuthedQuery } from "@ip/shared";
 import type { ApplicationResponse } from "@ip/api-client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 
 import { useAuth } from "../lib/auth";
@@ -45,10 +45,10 @@ const POLL_MS = 10_000;
 const MAX_POLLS = 120;
 
 export function ApplicantsTable({ jobId }: { jobId: string }) {
-  const { api } = useAuth();
+  const { api, token } = useAuth();
   const queryClient = useQueryClient();
 
-  const applicants = useQuery({
+  const applicants = useAuthedQuery(token, {
     queryKey: ["applicants", jobId],
     queryFn: () => api.applications.listApplicants({ jobId }),
     refetchInterval: (query) => {

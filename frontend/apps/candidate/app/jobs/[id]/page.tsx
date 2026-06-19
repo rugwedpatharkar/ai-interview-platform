@@ -12,8 +12,8 @@ import {
   LoadingState,
   toast,
 } from "@ip/ui";
-import { HttpError, errorMessage, isNotFound, useRequireAuth } from "@ip/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { HttpError, errorMessage, isNotFound, useAuthedQuery, useRequireAuth } from "@ip/shared";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -51,7 +51,7 @@ export default function PublicJobPage() {
     localStorage.setItem(consentKey, String(v));
   }
 
-  const job = useQuery({
+  const job = useAuthedQuery(token, {
     queryKey: ["public-job", id],
     queryFn: () => api.jobs.getPublicJob({ jobId: id }),
   });

@@ -12,7 +12,7 @@ export interface JdDraft {
 
 export function createJdClient(baseUrl: string, store: TokenStore) {
   const auth = restAuthFor(store);
-  async function improve(brief: string): Promise<JdDraft> {
+  async function improve(brief: string, signal?: AbortSignal): Promise<JdDraft> {
     const res = await authedFetch(
       `${baseUrl}/jd/improve`,
       {
@@ -21,6 +21,7 @@ export function createJdClient(baseUrl: string, store: TokenStore) {
         body: JSON.stringify({ brief }),
       },
       auth,
+      signal,
     );
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { detail?: string } | null;

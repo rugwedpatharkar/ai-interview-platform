@@ -1,9 +1,8 @@
 "use client";
 
 import { Alert, ErrorState, LoadingState, Spinner, buttonVariants } from "@ip/ui";
-import { errorMessage, isNotFound, isTransient } from "@ip/shared";
+import { errorMessage, isNotFound, isTransient, useAuthedQuery } from "@ip/shared";
 import { ArrowLeft } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -12,10 +11,10 @@ import { ReportView } from "../../../../../components/report-view";
 import { useAuth } from "../../../../../lib/auth";
 
 export default function ReportPage() {
-  const { api } = useAuth();
+  const { api, token } = useAuth();
   const { id, appId } = useParams<{ id: string; appId: string }>();
 
-  const report = useQuery({
+  const report = useAuthedQuery(token, {
     queryKey: ["report", appId],
     retry: false,
     queryFn: () => api.reports.getReport({ applicationId: appId }),

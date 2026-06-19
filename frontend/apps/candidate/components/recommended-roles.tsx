@@ -10,8 +10,7 @@ import {
   buttonVariants,
   cn,
 } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
-import { useQuery } from "@tanstack/react-query";
+import { errorMessage, useAuthedQuery } from "@ip/shared";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
 import Link from "next/link";
 
@@ -30,9 +29,9 @@ function scoreTone(score: number) {
  * the fit.
  */
 export function RecommendedRoles() {
-  const { api } = useAuth();
+  const { api, token } = useAuth();
 
-  const recs = useQuery({
+  const recs = useAuthedQuery(token, {
     queryKey: ["recommendations"],
     queryFn: () => api.recommendations.getCandidateRecommendations({}),
   });

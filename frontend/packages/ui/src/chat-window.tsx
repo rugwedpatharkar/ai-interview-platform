@@ -24,13 +24,18 @@ interface Turn {
 }
 
 export interface ChatWindowProps {
-  /** Streams one assistant turn: calls onText/onCitation as SSE events arrive. */
+  /**
+   * Streams one assistant turn: calls onText/onCitation as SSE events arrive.
+   * An optional `signal` is passed so the caller can cancel a stalled stream on
+   * component unmount — preventing `busy`/`inFlight` from pinning indefinitely.
+   */
   send: (
     messages: { role: string; content: string }[],
     handlers: {
       onText: (text: string) => void;
       onCitation: (citation: ChatCitation) => void;
     },
+    signal?: AbortSignal,
   ) => Promise<void>;
   placeholder?: string;
   emptyHint?: string;
@@ -51,6 +56,14 @@ export function ChatWindow({
   const nextId = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  // Controller aborted on unmount so a stalled stream can't pin inFlight indefinitely.
+  const abortCtrl = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortCtrl.current?.abort();
+    };
+  }, []);
 
   // Auto-stick to the bottom as new content streams in — but only when the user
   // hasn't scrolled up to read earlier messages.
@@ -71,6 +84,11 @@ export function ChatWindow({
     setError(null);
     setInput("");
     setAtBottom(true);
+
+    // Replace any previous controller so a retry after an error can abort cleanly.
+    abortCtrl.current?.abort();
+    const ctrl = new AbortController();
+    abortCtrl.current = ctrl;
 
     const history: Turn[] = [
       ...turns,
@@ -99,8 +117,11 @@ export function ChatWindow({
           onCitation: (c) =>
             patchAssistant((a) => ({ ...a, citations: [...a.citations, c] })),
         },
+        ctrl.signal,
       );
     } catch (e) {
+      // Suppress abort errors — the user navigated away, not a real failure.
+      if (e instanceof Error && e.name === "AbortError") return;
       setError(e instanceof Error ? e.message : "Chat failed");
       // Roll the failed exchange back (the user turn + the reserved assistant turn) and
       // restore the message so a transient failure doesn't lose the user's question.

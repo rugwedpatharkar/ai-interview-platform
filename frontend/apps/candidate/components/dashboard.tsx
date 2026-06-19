@@ -17,8 +17,8 @@ import {
   applicationStatus,
   toast,
 } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { errorMessage, useAuthedQuery } from "@ip/shared";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, FileText, Send, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -37,7 +37,7 @@ const TERMINAL = new Set([
 ]);
 
 export function Dashboard() {
-  const { api } = useAuth();
+  const { api, token } = useAuth();
   const queryClient = useQueryClient();
   const [jobId, setJobId] = useState("");
   const [consent, setConsent] = useState(false);
@@ -45,7 +45,7 @@ export function Dashboard() {
   // double-invoke that the `apply.isPending` flag (stale closure) cannot catch.
   const inFlight = useRef(false);
 
-  const applications = useQuery({
+  const applications = useAuthedQuery(token, {
     queryKey: ["applications"],
     queryFn: () => api.applications.listMyApplications({}),
     // Notifications are email-only, so poll while anything is still in flight.

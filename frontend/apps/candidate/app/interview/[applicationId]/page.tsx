@@ -53,6 +53,14 @@ export default function InterviewPage() {
   // Synchronous in-flight latch: survives a StrictMode double-invoke and a same-tick
   // double Enter that the `busy` state flag (read from a stale closure) cannot.
   const inFlight = useRef(false);
+  // Aborted on unmount so a stalled start/turn call can't pin `busy` indefinitely.
+  const abortCtrl = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortCtrl.current?.abort();
+    };
+  }, []);
 
   // Restore consent from a prior visit — an accidental refresh on the intro shouldn't
   // force the candidate to re-tick the boxes.
@@ -97,14 +105,18 @@ export default function InterviewPage() {
     inFlight.current = true;
     setBusy(true);
     setError(null);
+    abortCtrl.current?.abort();
+    const ctrl = new AbortController();
+    abortCtrl.current = ctrl;
     try {
-      const res = await interview.start(applicationId);
+      const res = await interview.start(applicationId, ctrl.signal);
       if (!res.question) {
         throw new Error("The interview couldn't be prepared. Please try again.");
       }
       setCurrent(res.question);
       setPhase("active");
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
       if (isSessionEnded(err)) setEnded(true);
       else setError(err instanceof Error ? err.message : "Could not start the interview");
     } finally {
@@ -119,8 +131,11 @@ export default function InterviewPage() {
     inFlight.current = true;
     setBusy(true);
     setError(null);
+    abortCtrl.current?.abort();
+    const ctrl = new AbortController();
+    abortCtrl.current = ctrl;
     try {
-      const res = await interview.turn(applicationId, text);
+      const res = await interview.turn(applicationId, text, ctrl.signal);
       setTurns((t) => [...t, { question: current, answer: text }]);
       setAnswer("");
       if (res.done) {
@@ -130,6 +145,7 @@ export default function InterviewPage() {
         setCurrent(res.question);
       }
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
       if (isSessionEnded(err)) setEnded(true);
       else setError(err instanceof Error ? err.message : "Could not submit your answer");
     } finally {

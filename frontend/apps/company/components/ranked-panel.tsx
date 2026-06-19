@@ -14,8 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@ip/ui";
-import { errorMessage, isNotFound, isTransient } from "@ip/shared";
-import { useQuery } from "@tanstack/react-query";
+import { errorMessage, isNotFound, isTransient, useAuthedQuery } from "@ip/shared";
 
 import { useAuth } from "../lib/auth";
 
@@ -30,9 +29,9 @@ const MAX_POLLS = 60;
  * the per-applicant report links.
  */
 export function RankedPanel({ jobId }: { jobId: string }) {
-  const { api } = useAuth();
+  const { api, token } = useAuth();
 
-  const ranked = useQuery({
+  const ranked = useAuthedQuery(token, {
     queryKey: ["ranked", jobId],
     retry: false,
     queryFn: () => api.recommendations.getJobRankedCandidates({ jobId }),

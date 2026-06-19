@@ -16,6 +16,7 @@ export {
   type RestAuthContext,
 } from "./authed-fetch.js";
 export { makeQueryClient, refetchUntil } from "./query.js";
+export { useAuthedQuery } from "./use-authed-query.js";
 export { makeInterviewClient, type InterviewTurn } from "./interview.js";
 export {
   createChatClient,

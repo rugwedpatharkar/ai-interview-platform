@@ -12,9 +12,8 @@ import {
   PageHeader,
   applicationStatus,
 } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
+import { errorMessage, useAuthedQuery } from "@ip/shared";
 import type { FunnelAnalytics } from "@ip/api-client";
-import { useQuery } from "@tanstack/react-query";
 
 import { CompanyShell } from "../../components/company-shell";
 import { useAuth } from "../../lib/auth";
@@ -95,8 +94,8 @@ function FunnelView({ data }: { data: FunnelAnalytics }) {
 }
 
 export default function AnalyticsPage() {
-  const { api } = useAuth();
-  const funnel = useQuery({
+  const { api, token } = useAuth();
+  const funnel = useAuthedQuery(token, {
     queryKey: ["analytics", "funnel"],
     queryFn: () => api.analytics.getFunnelAnalytics({}),
   });

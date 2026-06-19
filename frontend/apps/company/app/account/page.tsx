@@ -15,9 +15,9 @@ import {
   PageHeader,
   toast,
 } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
+import { errorMessage, useAuthedQuery } from "@ip/shared";
 import { Trash2 } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { CompanyShell } from "../../components/company-shell";
 import { useAuth } from "../../lib/auth";
@@ -29,10 +29,10 @@ const SCOPES = [
 ];
 
 export default function AccountPage() {
-  const { api, logout } = useAuth();
+  const { api, logout, token } = useAuth();
   const queryClient = useQueryClient();
 
-  const consents = useQuery({
+  const consents = useAuthedQuery(token, {
     queryKey: ["consents"],
     queryFn: () => api.compliance.getMyConsent({}),
   });

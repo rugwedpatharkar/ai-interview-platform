@@ -11,8 +11,7 @@ import {
   buttonVariants,
   jobStatus,
 } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
-import { useQuery } from "@tanstack/react-query";
+import { errorMessage, useAuthedQuery } from "@ip/shared";
 import {
   Archive,
   ArrowRight,
@@ -43,8 +42,8 @@ const STATUS_HINT: Record<string, string> = {
 };
 
 export default function JobsPage() {
-  const { api } = useAuth();
-  const jobs = useQuery({
+  const { api, token } = useAuth();
+  const jobs = useAuthedQuery(token, {
     queryKey: ["jobs"],
     queryFn: () => api.jobs.listJobs({}),
   });

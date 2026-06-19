@@ -48,7 +48,11 @@ function handleFrame(frame: string, handlers: ChatHandlers): void {
 
 export function createChatClient(baseUrl: string, store: TokenStore) {
   const auth = restAuthFor(store);
-  async function send(messages: ChatMessage[], handlers: ChatHandlers): Promise<void> {
+  async function send(
+    messages: ChatMessage[],
+    handlers: ChatHandlers,
+    signal?: AbortSignal,
+  ): Promise<void> {
     const res = await authedFetch(
       `${baseUrl}/chat/turn`,
       {
@@ -57,6 +61,7 @@ export function createChatClient(baseUrl: string, store: TokenStore) {
         body: JSON.stringify({ messages }),
       },
       auth,
+      signal,
     );
     if (!res.ok || !res.body) {
       const body = (await res.json().catch(() => null)) as { detail?: string } | null;

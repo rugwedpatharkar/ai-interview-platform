@@ -4,7 +4,7 @@ import { Alert, Card, CardContent, CardHeader, CardTitle, Spinner } from "@ip/ui
 import { errorMessage } from "@ip/shared";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "../../lib/auth";
 
@@ -16,8 +16,13 @@ export default function VerifyPage() {
     "working",
   );
   const [message, setMessage] = useState("");
+  // Inflight ref prevents StrictMode double-fire from consuming a single-use token twice.
+  const called = useRef(false);
 
   useEffect(() => {
+    if (called.current) return;
+    called.current = true;
+
     const token = new URLSearchParams(window.location.search).get("token") ?? "";
     if (!token) {
       setStatus("invalid");

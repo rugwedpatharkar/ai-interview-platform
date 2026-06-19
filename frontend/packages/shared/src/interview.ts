@@ -12,7 +12,7 @@ export interface InterviewTurn {
 
 export function makeInterviewClient(baseUrl: string, store: TokenStore) {
   const auth = restAuthFor(store);
-  async function post<T>(path: string, body?: unknown): Promise<T> {
+  async function post<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
     const res = await authedFetch(
       `${baseUrl}${path}`,
       {
@@ -21,18 +21,19 @@ export function makeInterviewClient(baseUrl: string, store: TokenStore) {
         body: body === undefined ? undefined : JSON.stringify(body),
       },
       auth,
+      signal,
     );
     if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { detail?: string } | null;
-      throw new HttpError(res.status, body?.detail ?? `Request failed (${res.status})`, body?.detail);
+      const errBody = (await res.json().catch(() => null)) as { detail?: string } | null;
+      throw new HttpError(res.status, errBody?.detail ?? `Request failed (${res.status})`, errBody?.detail);
     }
     return (await res.json()) as T;
   }
 
   return {
-    start: (applicationId: string) =>
-      post<{ question: string }>(`/interview/${applicationId}/start`),
-    turn: (applicationId: string, answer: string) =>
-      post<InterviewTurn>(`/interview/${applicationId}/turn`, { answer }),
+    start: (applicationId: string, signal?: AbortSignal) =>
+      post<{ question: string }>(`/interview/${applicationId}/start`, undefined, signal),
+    turn: (applicationId: string, answer: string, signal?: AbortSignal) =>
+      post<InterviewTurn>(`/interview/${applicationId}/turn`, { answer }, signal),
   };
 }
