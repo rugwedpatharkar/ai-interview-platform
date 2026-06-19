@@ -37,6 +37,7 @@ def _setup():
         "candidate_user_id": "u1",
         "jd_text": "Backend role",
         "profile": {"headline": "Engineer", "skills": ["python"]},
+        "state": "interview_pending",
     }
 
 

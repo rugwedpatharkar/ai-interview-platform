@@ -16,7 +16,7 @@ from lib.logging import get_logger
 from lib.web import cors_config
 from pydantic import BaseModel
 
-from app.errors import ForbiddenError, NotFoundError
+from app.errors import ConflictError, ForbiddenError, NotFoundError
 from app.model.chat import ChatMessage
 from app.model.proctoring import ProctoringEvent
 from app.resources.assistant import prepare_answer
@@ -83,6 +83,8 @@ async def start(application_id: str, request: Request):
         raise HTTPException(status_code=404, detail=str(e)) from e
     except ForbiddenError as e:
         raise HTTPException(status_code=403, detail=str(e)) from e
+    except ConflictError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
     return {"question": question}
 
 

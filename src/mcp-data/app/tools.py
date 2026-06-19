@@ -92,6 +92,7 @@ class DataStore:
             "comp_id": application.get("comp_id", ""),
             "job_id": application.get("job_id", ""),
             "candidate_user_id": application.get("candidate_user_id", ""),
+            "state": application.get("state", ""),
             "jd_text": job.get("jd_text", ""),
             "profile": profile or {},
             "question_plan": question_plan,

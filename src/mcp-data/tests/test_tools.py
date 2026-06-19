@@ -138,6 +138,7 @@ async def test_get_interview_setup_assembles_join():
             "comp_id": "c1",
             "job_id": str(oid),
             "candidate_user_id": "u1",
+            "state": "interview_pending",
         }
     )
     jobs = _FakeCollection(find_result={"_id": oid, "jd_text": "Backend role"})
@@ -146,6 +147,7 @@ async def test_get_interview_setup_assembles_join():
     setup = await store.get_interview_setup(str(ObjectId()))
     assert setup["comp_id"] == "c1"
     assert setup["jd_text"] == "Backend role"
+    assert setup["state"] == "interview_pending"
 
 
 async def test_save_report_and_interview_upsert_by_application():

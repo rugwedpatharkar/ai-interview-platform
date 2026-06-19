@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from app.errors import ForbiddenError, NotFoundError
+from app.errors import ConflictError, ForbiddenError, NotFoundError
 from app.model.interview import (
     CompetencyArea,
     InterviewBlueprint,
@@ -19,6 +19,7 @@ def _setup():
         "candidate_user_id": "u1",
         "jd_text": "Backend role",
         "profile": {"headline": "Engineer", "skills": ["python"]},
+        "state": "interview_pending",
     }
 
 
@@ -70,6 +71,19 @@ async def test_start_interview_rejects_non_owner(fake_llm, fake_data, fake_sessi
             "a1",
             caller_user_id="someone-else",
             data=fake_data(interview_setup=_setup()),
+            sessions=fake_sessions(),
+            llm=fake_llm(None),
+        )
+
+
+async def test_start_interview_rejects_wrong_state(fake_llm, fake_data, fake_sessions):
+    # Aptitude not yet passed → the interview must not be startable (BE-#5).
+    setup = {**_setup(), "state": "aptitude_pending"}
+    with pytest.raises(ConflictError):
+        await start_interview(
+            "a1",
+            caller_user_id="u1",
+            data=fake_data(interview_setup=setup),
             sessions=fake_sessions(),
             llm=fake_llm(None),
         )

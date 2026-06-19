@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 
 from lib.logging import get_logger
 
-from app.errors import ForbiddenError, NotFoundError
+from app.errors import ConflictError, ForbiddenError, NotFoundError
 from app.model.interview import (
     InterviewSession,
     InterviewTurnDecision,
@@ -103,6 +103,13 @@ async def start_interview(
         raise NotFoundError("interview setup not found")
     if setup["candidate_user_id"] != caller_user_id:
         raise ForbiddenError("not your interview")
+    # Gate on funnel state — only runnable once aptitude is passed (defense-in-depth
+    # against an early/replayed start; the FE only exposes it when state ==
+    # interview_pending). BE-#5.
+    if setup.get("state") != "interview_pending":
+        raise ConflictError(
+            f"interview not startable in state {setup.get('state', '')!r}"
+        )
     profile = CandidateProfile(**setup["profile"])
     blueprint = await build_blueprint(
         setup["jd_text"], profile, llm=llm, question_plan=setup.get("question_plan")
