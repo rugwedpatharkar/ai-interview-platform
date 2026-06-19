@@ -98,8 +98,10 @@ class UtteranceSegmenter:
 
         # PCM16 bytes not yet consumed into a complete 512-sample window
         self._pcm_buf: bytes = b""
-        # int16 samples in the current speech accumulation buffer
-        self._speech_samples: list[np.ndarray] = []
+        # raw window bytes in the current speech accumulation buffer
+        self._speech_windows: list[bytes] = []
+        # preallocated float32 buffer reused every window (avoids per-window alloc)
+        self._f32_buf = np.zeros(_WINDOW_SAMPLES, dtype=np.float32)
 
         # VAD state machine
         self._speaking: bool = False
@@ -135,7 +137,7 @@ class UtteranceSegmenter:
     def reset(self) -> None:
         """Clear all state; discard any in-progress utterance."""
         self._pcm_buf = b""
-        self._speech_samples.clear()
+        self._speech_windows.clear()
         self._speaking = False
         self._speech_run = 0
         self._silence_run = 0
@@ -151,15 +153,20 @@ class UtteranceSegmenter:
 
     def _process_window(self, window_bytes: bytes) -> None:
         """Run VAD on exactly one 512-sample window and update state machine."""
-        # Decode int16 -> float32 in [-1, 1] for Silero
+        # Decode int16 -> float32 in [-1, 1] for Silero, reusing preallocated buffer.
         int16_arr = np.frombuffer(window_bytes, dtype=np.int16)
-        f32_arr = int16_arr.astype(np.float32) / 32768.0
-
-        prob = self._vad(f32_arr)
+        np.true_divide(int16_arr, 32768.0, out=self._f32_buf)
+        # VAD inference: sub-millisecond single-window run on a 1.8 MB model
+        # configured single-threaded/sequential; onnxruntime releases the GIL during
+        # Run. Moving to a thread would force feed() async (it is called synchronously
+        # from the LiveKit AudioStream callback) and add cross-thread hazards to the
+        # stateful RNN. Keep inline.
+        prob = self._vad(self._f32_buf)
 
         if self._speaking:
-            # Accumulate every window while speaking
-            self._speech_samples.append(int16_arr.copy())
+            # Accumulate raw window bytes (window_bytes is already an immutable bytes
+            # object from slicing -- no copy needed)
+            self._speech_windows.append(window_bytes)
 
             if prob > self._deact:
                 # Still speech -- reset silence counter
@@ -173,7 +180,7 @@ class UtteranceSegmenter:
             if prob >= self._act:
                 self._speech_run += _WINDOW_SAMPLES
                 # Buffer candidate window even before confirming speech
-                self._speech_samples.append(int16_arr.copy())
+                self._speech_windows.append(window_bytes)
                 if self._speech_run >= self._min_speech_samples:
                     self._speaking = True
                     self._silence_run = 0
@@ -183,15 +190,15 @@ class UtteranceSegmenter:
             else:
                 # Sub-threshold -- discard candidate buffer
                 self._speech_run = 0
-                self._speech_samples.clear()
+                self._speech_windows.clear()
 
     def _finalize_utterance(self) -> None:
-        """Pack accumulated samples into PCM16 bytes and enqueue the utterance."""
-        if not self._speech_samples:
+        """Pack accumulated window bytes into PCM16 bytes and enqueue the utterance."""
+        if not self._speech_windows:
             self._reset_speech_state()
             return
 
-        pcm_bytes = b"".join(arr.tobytes() for arr in self._speech_samples)
+        pcm_bytes = b"".join(self._speech_windows)
         log.info(
             "VAD: utterance complete samples={} duration_ms={:.0f}",
             len(pcm_bytes) // 2,
@@ -211,7 +218,7 @@ class UtteranceSegmenter:
         self._speaking = False
         self._speech_run = 0
         self._silence_run = 0
-        self._speech_samples.clear()
+        self._speech_windows.clear()
         self._vad.reset()
 
 

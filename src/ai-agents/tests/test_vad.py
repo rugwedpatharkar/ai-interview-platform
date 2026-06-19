@@ -233,7 +233,7 @@ async def test_reset_clears_in_progress():
     seg.reset()
 
     assert not seg._speaking
-    assert seg._speech_samples == []
+    assert seg._speech_windows == []
     assert seg._pcm_buf == b""
     assert seg._queue.empty()
     assert vad.resets >= 1
@@ -295,3 +295,24 @@ async def test_utterance_bytes_are_valid_int16():
     arr = np.frombuffer(utterance, dtype=np.int16)
     assert arr.dtype == np.int16
     assert len(arr) > 0
+
+
+# ---------------------------------------------------------------------------
+# Test: raw-bytes accumulation (Phase 3a)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_utterance_equals_concatenation_of_fed_windows():
+    """Emitted utterance bytes == exact concatenation of the fed window bytes."""
+    noise = _noise_window()
+    silence = _silence_window()
+    probs = [0.8, 0.8, 0.1]
+    seg, _ = _make_seg(probs, min_speech_ms=32, min_silence_ms=32)
+
+    seg.feed(noise)
+    seg.feed(noise)
+    seg.feed(silence)
+
+    utterance = await asyncio.wait_for(seg.next_utterance(), timeout=1.0)
+    assert utterance == noise + noise + silence
