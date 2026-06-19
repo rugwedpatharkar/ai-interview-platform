@@ -99,3 +99,22 @@ async def test_poison_message_dead_lettered_before_handler():
     assert called is False  # handler never ran — poison caught pre-execution
     assert msg.nack_requeue is False  # dead-lettered via DLX
     assert msg.acked is False
+
+
+@pytest.mark.asyncio
+async def test_correlation_id_bound_for_handler_then_reset():
+    """The event's correlation_id is bound for the handler and reset afterwards."""
+    from lib.logging import current_correlation_id
+
+    seen = {}
+
+    async def handler(routing_key, payload):
+        seen["cid"] = current_correlation_id()
+
+    consumer = Consumer("amqp://test")
+    msg = FakeMessage(body=b'{"correlation_id": "abc-123"}')
+    await consumer._process_message(msg, handler)
+
+    assert seen["cid"] == "abc-123"  # bound during the handler
+    assert msg.acked is True
+    assert current_correlation_id() is None  # reset in finally

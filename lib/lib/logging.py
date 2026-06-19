@@ -48,6 +48,11 @@ def reset_correlation_id(token: Token) -> None:
     _correlation_id.reset(token)
 
 
+def current_correlation_id() -> str | None:
+    """Return the correlation ID for the current async context, if set."""
+    return _correlation_id.get()
+
+
 def bind_ids(**ids: Any) -> dict[str, Any]:
     """Return a dict of the given ids plus the current correlation_id (when set).
 

@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from lib.rabbitmq import Publisher
 
@@ -5,6 +7,7 @@ from lib.rabbitmq import Publisher
 class _FakeExchange:
     def __init__(self, fail_once: bool = False):
         self.calls = []
+        self.messages = []
         self._fail_once = fail_once
         self._failed = False
 
@@ -13,6 +16,7 @@ class _FakeExchange:
             self._failed = True
             raise RuntimeError("simulated channel error")
         self.calls.append((routing_key, kwargs))
+        self.messages.append(message)
 
 
 class _FakeConn:
@@ -88,3 +92,28 @@ async def test_publisher_logs_on_send():
     pub._exchange = fake_exchange
     await pub.publish("interview.started", {"session_id": "s1"})
     assert len(pub._exchange.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_publish_injects_correlation_id_when_none_set():
+    """Every event gets a correlation_id; one is generated when none is set."""
+    fake_exchange = _FakeExchange()
+    pub = Publisher("amqp://unused")
+    pub._conn = _FakeConn(fake_exchange)
+    pub._exchange = fake_exchange
+    await pub.publish("application.created", {"application_id": "a1"})
+    body = json.loads(fake_exchange.messages[0].body)
+    assert body["application_id"] == "a1"
+    assert body["correlation_id"]  # present + non-empty
+
+
+@pytest.mark.asyncio
+async def test_publish_preserves_existing_correlation_id():
+    """A correlation_id already on the payload is preserved (not regenerated)."""
+    fake_exchange = _FakeExchange()
+    pub = Publisher("amqp://unused")
+    pub._conn = _FakeConn(fake_exchange)
+    pub._exchange = fake_exchange
+    await pub.publish("x.y", {"correlation_id": "fixed-123"})
+    body = json.loads(fake_exchange.messages[0].body)
+    assert body["correlation_id"] == "fixed-123"

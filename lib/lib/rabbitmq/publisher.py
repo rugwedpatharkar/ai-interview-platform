@@ -2,7 +2,7 @@ import json
 
 import aio_pika
 
-from lib.logging import get_logger
+from lib.logging import current_correlation_id, get_logger, new_correlation_id
 
 log = get_logger(component="rabbitmq.publisher")
 
@@ -46,6 +46,15 @@ class Publisher:
         if self._exchange is None:
             log.info("publisher.reacquire exchange={}", self._exchange_name)
             self._exchange = await self._acquire_exchange()
+
+        # Stamp a correlation_id onto every event (existing > current context > new) so
+        # the consumer binds it and one interview/request is traceable across services.
+        cid = (
+            payload.get("correlation_id")
+            or current_correlation_id()
+            or new_correlation_id()
+        )
+        payload = {**payload, "correlation_id": cid}
 
         message = aio_pika.Message(
             body=json.dumps(payload).encode(),

@@ -3,7 +3,7 @@ from collections.abc import Awaitable, Callable
 
 import aio_pika
 
-from lib.logging import get_logger
+from lib.logging import get_logger, reset_correlation_id, set_correlation_id
 
 Handler = Callable[[str, dict], Awaitable[None]]
 
@@ -98,8 +98,14 @@ class Consumer:
             )
             await message.nack(requeue=False)
             return
+        token = None
         try:
             payload = json.loads(message.body)
+            # Bind the event's correlation_id so the handler's logs + any events it
+            # re-publishes carry the same id (cross-service tracing). Phase-1 helper.
+            cid = payload.get("correlation_id")
+            if cid:
+                token = set_correlation_id(cid)
             await handler(message.routing_key or "", payload)
             await message.ack()
         except Exception:
@@ -111,6 +117,9 @@ class Consumer:
                 delivery_count,
             )
             await message.nack(requeue=True)
+        finally:
+            if token is not None:
+                reset_correlation_id(token)
 
     async def close(self) -> None:
         if self._conn is not None:
