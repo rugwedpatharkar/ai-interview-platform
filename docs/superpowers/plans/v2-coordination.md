@@ -28,7 +28,7 @@
 | W0 auth restyle | existing `Auth.*` | ✅ | ⬜ | — | presentational |
 | W0 candidate profile | existing `Profile.*` | ✅ | ⬜ | — | |
 | W0 candidate dashboard | existing `Application/Recommendation` | ✅ | ⬜ | — | |
-| W1 marketplace search | `DiscoveryService.SearchJobs` + `/public/jobs` | ⬜ | ⬜ | ⬜ | **proposed first BE pickup** |
+| W1 marketplace search | `DiscoveryService.SearchJobs` + `/public/jobs` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `api.discovery.searchJobs`; public `GET /public/jobs` (snake_case). FE: flip off mock |
 | W1 job detail | extend `GetPublicJobDetail` | ⬜ | ⬜ | ⬜ | |
 | W1 company profile | `CompanyProfileService` | ⬜ | ⬜ | ⬜ | |
 | W1 saved jobs | `SavedJobsService` | ⬜ | ⬜ | ⬜ | |
@@ -58,3 +58,19 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   commit here, merge to `main` at milestones. BE: please commit SearchJobs on `grpc-migration`, not `main`.
   `grpc-migration` = `main` (`b4e8fa0`) + this board commit. Migration's FE plumbing confirmed in my tree
   (gen has both proto sets, REST modules gone). FE starting **Wave 0 landing** now.
+- 2026-06-20 · BE · 🔨 **SearchJobs**: building `admin.discovery.v1` proto + `resources/discovery.py`
+  (`$text`+`$facet` over published jobs) + `DiscoveryServicer` + public `/public/jobs` (no-auth, rate-limited,
+  page_size≤24). DESIGN NOTE for the later **extend-Job** step: SearchJobs reads `remote_mode`/
+  `employment_type`/`salary_*`/`skills` via `$ifNull`, so they return null/empty facets **until** extend-Job
+  adds + populates those Job fields — no SearchJobs change needed then. `posted_at`←`created_at` for now.
+  DTO scrubbed of `comp_id`-internals/`aptitude_config`/`required_topics`/drafts; `company_id`=comp_id,
+  `company_name` via batch companies lookup. Holding pushes (user asleep).
+- 2026-06-20 · BE · ✅ **SearchJobs LANDED** (gate GREEN: admin 244). `admin.discovery.v1.DiscoveryService.SearchJobs`
+  (authed) + public `GET /public/jobs?q&location&remote&type&level&skills&sort&page&page_size` (no-auth,
+  per-IP rate-limited, page_size≤24, `Cache-Control: public, max-age=60`). **FE integration:** `pnpm gen` now
+  exposes `useAuth().api.discovery.searchJobs({...})` (gRPC, camelCase fields per protobuf-es) AND the public
+  REST returns **snake_case** JSON `{jobs:[{job_id,title,company_name,company_id,location,remote_mode,
+  employment_type,salary_min,salary_max,salary_currency,skills,posted_at,snippet}],facets:{remote_mode,
+  employment_type,experience_level},total,page,page_size}` — flip `marketplace-search` off `NEXT_PUBLIC_MOCK`.
+  Reminder: remote/employment/salary/skills are empty until the extend-Job step populates them. Next BE pickup:
+  **CompanyProfileService**. Also bumped venv msgpack→1.2.1 + pydantic-settings→2.14.2 (new CVEs; pip-audit clean).
