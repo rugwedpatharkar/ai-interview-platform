@@ -32,7 +32,7 @@ class _MatchCollection:
         self.docs[key] = update["$set"]
         return _Result("oid" if new else None)
 
-    def find(self, query):
+    def find(self, query, projection=None):
         return _Cursor(
             [
                 d

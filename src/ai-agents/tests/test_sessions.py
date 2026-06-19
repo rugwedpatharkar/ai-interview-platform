@@ -1,4 +1,4 @@
-from app.infra.sessions import RedisInterviewStore
+from app.infra.sessions import _MAX_IN_PROGRESS_SCAN, RedisInterviewStore
 from app.model.interview import InterviewSession
 
 
@@ -13,6 +13,13 @@ class _FakeRedis:
 
     async def get(self, key):
         return self.store.get(key)
+
+    async def scan_iter(self, match=None, count=None):
+        # Yield keys in insertion order; ignore count (it's a hint in real Redis).
+        prefix = match.rstrip("*") if match and match.endswith("*") else ""
+        for key in self.store:
+            if key.startswith(prefix):
+                yield key
 
 
 async def test_save_and_get_round_trip():
@@ -47,3 +54,38 @@ async def test_ttl_outlives_a_large_time_budget():
     session.blueprint.time_budget_min = 200  # 12000s > 7200s default TTL
     await store.save(session)
     assert redis.last_ex >= 200 * 60
+
+
+async def test_list_in_progress_returns_in_progress_sessions():
+    redis = _FakeRedis()
+    store = RedisInterviewStore(redis)
+    s1 = InterviewSession(application_id="a1", comp_id="c1")
+    s2 = InterviewSession(application_id="a2", comp_id="c1")
+    s2.status = "completed"
+    await store.save(s1)
+    await store.save(s2)
+    result = await store.list_in_progress()
+    assert len(result) == 1
+    assert result[0].application_id == "a1"
+
+
+async def test_list_in_progress_cap_truncates(monkeypatch):
+    """With more keys than _MAX_IN_PROGRESS_SCAN, the result is capped."""
+    logged = []
+    import app.infra.sessions as sessions_mod
+
+    monkeypatch.setattr(
+        sessions_mod.log,
+        "info",
+        lambda msg, *a, **kw: logged.append(msg.format(*a) if a else msg),
+    )
+
+    redis = _FakeRedis()
+    store = RedisInterviewStore(redis)
+    # Insert _MAX_IN_PROGRESS_SCAN + 10 in-progress sessions.
+    for i in range(_MAX_IN_PROGRESS_SCAN + 10):
+        s = InterviewSession(application_id=f"a{i}", comp_id="c1")
+        await store.save(s)
+    result = await store.list_in_progress()
+    assert len(result) == _MAX_IN_PROGRESS_SCAN
+    assert any("scan cap reached" in msg for msg in logged)

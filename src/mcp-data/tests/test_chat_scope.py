@@ -40,7 +40,7 @@ class _AppCollection:
     def __init__(self, docs):
         self._docs = docs
 
-    def find(self, query):
+    def find(self, query, projection=None):
         return _Cursor(
             [d for d in self._docs if all(d.get(k) == v for k, v in query.items())]
         )

@@ -5,6 +5,7 @@ idempotent upserts so an at-least-once redelivered event re-runs cleanly. Transp
 agnostic + testable; the MCP server (server.py) wraps each method as a tool.
 """
 
+import asyncio
 import time
 
 from bson import ObjectId
@@ -152,15 +153,15 @@ class DataStore:
             )
             if interview is None:
                 return None
-            job = await self.get_job(interview["job_id"]) or {}
-            profile = (
-                await self._profiles.find_one({"user_id": interview["user_id"]}) or {}
+            job, profile = await asyncio.gather(
+                self.get_job(interview["job_id"]),
+                self._profiles.find_one({"user_id": interview["user_id"]}),
             )
             return {
                 "transcript": interview.get("transcript", {}),
                 "blueprint": interview.get("blueprint", {}),
-                "jd_text": job.get("jd_text", ""),
-                "profile": profile,
+                "jd_text": (job or {}).get("jd_text", ""),
+                "profile": profile or {},
             }
 
     async def save_report(self, application_id, doc):
@@ -214,17 +215,17 @@ class DataStore:
             application = await self._applications.find_one({"_id": oid})
             if application is None:
                 return None
-            job = await self.get_job(application["job_id"]) or {}
-            profile = await self._profiles.find_one(
-                {"user_id": application["candidate_user_id"]}
+            job, profile, question_plan = await asyncio.gather(
+                self.get_job(application["job_id"]),
+                self._profiles.find_one({"user_id": application["candidate_user_id"]}),
+                self.get_question_plan(application.get("job_id", "")),
             )
-            question_plan = await self.get_question_plan(application.get("job_id", ""))
             return {
                 "comp_id": application.get("comp_id", ""),
                 "job_id": application.get("job_id", ""),
                 "candidate_user_id": application.get("candidate_user_id", ""),
                 "state": application.get("state", ""),
-                "jd_text": job.get("jd_text", ""),
+                "jd_text": (job or {}).get("jd_text", ""),
                 "profile": profile or {},
                 "question_plan": question_plan,
             }
@@ -401,7 +402,8 @@ class DataStore:
                     comp_id=scope.get("comp_id", ""),
                 ):
                     apps = await self._applications.find(
-                        {"job_id": job_id, "comp_id": scope.get("comp_id")}
+                        {"job_id": job_id, "comp_id": scope.get("comp_id")},
+                        {"_id": 1, "candidate_user_id": 1, "state": 1},
                     ).to_list(length=200)
             except Exception:
                 _mongo_errors.labels(op=op).inc()

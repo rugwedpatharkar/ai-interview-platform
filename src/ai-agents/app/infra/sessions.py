@@ -35,6 +35,12 @@ _session_ops_duration = histogram(
 # budget extends the TTL to track it.
 _REAPER_MARGIN_SECONDS = 1800
 
+# Safety cap for the abandon-stale reaper scan.  A single scheduler tick should
+# never stall while scanning a very large key-space; sessions created after the
+# cap are picked up on the next sweep.  Log at INFO when the cap fires so
+# truncation is always observable in traces.
+_MAX_IN_PROGRESS_SCAN = 1000
+
 
 class RedisInterviewStore:
     def __init__(self, redis, namespace="interview", ttl_seconds=7200):
@@ -86,14 +92,28 @@ class RedisInterviewStore:
         return result
 
     async def list_in_progress(self):
-        """Scan all checkpointed sessions and return those still in progress."""
+        """Scan checkpointed sessions (capped) and return those still in progress.
+
+        Scans at most ``_MAX_IN_PROGRESS_SCAN`` keys per call using a non-blocking
+        ``scan_iter`` so the reaper never stalls the event loop on a large key-space.
+        Sessions created after the cap are picked up on the next sweep.
+        """
         import time
 
         _session_ops_total.labels(op="list_in_progress").inc()
         t0 = time.monotonic()
         try:
             out = []
-            async for key in self._redis.scan_iter(match=f"{self._ns}:*"):
+            scanned = 0
+            async for key in self._redis.scan_iter(match=f"{self._ns}:*", count=100):
+                if scanned >= _MAX_IN_PROGRESS_SCAN:
+                    log.info(
+                        "list_in_progress: scan cap reached ({} keys), "
+                        "remaining sessions deferred to next sweep",
+                        _MAX_IN_PROGRESS_SCAN,
+                    )
+                    break
+                scanned += 1
                 raw = await self._redis.get(key)
                 if raw:
                     session = InterviewSession.model_validate_json(raw)
