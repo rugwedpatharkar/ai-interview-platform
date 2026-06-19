@@ -485,3 +485,16 @@ async def test_edge_tts_offloads_mp3_decode_to_executor(monkeypatch):
 
     assert recorded_ident, "spy was never called"
     assert recorded_ident[0] != threading.main_thread().ident
+
+
+def test_is_retryable_matches_status_codes_on_word_boundary():
+    """Status codes match on a word boundary so '500' can't match '50000'."""
+    from app.infra.voice.edge_tts import _is_retryable
+
+    assert _is_retryable(RuntimeError("HTTP 503 Service Unavailable"))
+    assert _is_retryable(RuntimeError("429 Too Many Requests"))
+    assert _is_retryable(ConnectionError("connection reset"))
+    assert not _is_retryable(
+        RuntimeError("decoded 50000 frames")
+    )  # 500 substr, not status
+    assert not _is_retryable(RuntimeError("edge-tts hard failure"))

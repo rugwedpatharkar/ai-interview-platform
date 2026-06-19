@@ -9,11 +9,14 @@ yield 480-sample (10 ms) bytes frames to the caller.
 
 import asyncio
 import io
+import re
+import time
 from collections.abc import AsyncGenerator, AsyncIterator
 
 import av
 import edge_tts
 from lib.logging import get_logger
+from lib.observability import counter, histogram
 from lib.resilience import OperationTimeout, with_timeout
 
 from app.resources.voice.engines import TtsError
@@ -28,16 +31,14 @@ _FRAME_SAMPLES = 480  # 10 ms @ 48 kHz
 _FRAME_BYTES = _FRAME_SAMPLES * 2  # int16 = 2 bytes per sample
 _TTS_STREAM_TIMEOUT_S = 30.0
 
-_RETRYABLE_TOKENS = (
-    "403",
-    "429",
-    "500",
-    "502",
-    "503",
-    "504",
-    "Forbidden",
-    "Too Many Requests",
-    "Temporarily",
+# HTTP status codes matched on a word boundary so "500" can't match "50000"/"1500ms".
+_RETRYABLE_STATUS = re.compile(r"\b(?:403|429|500|502|503|504)\b")
+_RETRYABLE_PHRASES = ("Forbidden", "Too Many Requests", "Temporarily")
+
+_tts_total = counter("tts_synthesize_total", "edge-tts synthesis calls")
+_tts_errors = counter("tts_synthesize_errors_total", "edge-tts calls that failed")
+_tts_duration = histogram(
+    "tts_synthesize_duration_ms", "edge-tts synthesis duration (ms)"
 )
 
 
@@ -46,7 +47,9 @@ def _is_retryable(exc: Exception) -> bool:
     if isinstance(exc, (ConnectionError, TimeoutError, OperationTimeout)):
         return True
     msg = str(exc)
-    return any(token in msg for token in _RETRYABLE_TOKENS)
+    if _RETRYABLE_STATUS.search(msg):
+        return True
+    return any(p in msg for p in _RETRYABLE_PHRASES)
 
 
 def _decode_mp3_to_48k(mp3_bytes: bytes) -> bytes:
@@ -136,6 +139,8 @@ class EdgeTts:
 
     async def _stream_mp3(self, text: str) -> bytes:
         """Accumulate all MP3 audio chunks from the edge-tts stream with retries."""
+        _tts_total.inc()
+        t0 = time.monotonic()
         last: Exception | None = None
         for attempt in range(self._attempts):
             communicate = self._communicate_factory(text, self._voice)
@@ -149,6 +154,7 @@ class EdgeTts:
             except Exception as exc:
                 last = exc
                 if not _is_retryable(exc):
+                    _tts_errors.inc()
                     log.error("edge-tts synthesis failed (non-retryable): {}", exc)
                     raise TtsError("TTS synthesis failed") from exc
                 log.warning(
@@ -162,7 +168,9 @@ class EdgeTts:
                 continue
 
             if not chunks:
+                _tts_errors.inc()
                 raise TtsError("edge-tts returned no audio data")
+            _tts_duration.observe((time.monotonic() - t0) * 1000)
             log.info(
                 "TTS synthesis OK text_len={} mp3_bytes={}",
                 len(text),
@@ -170,4 +178,5 @@ class EdgeTts:
             )
             return b"".join(chunks)
 
+        _tts_errors.inc()
         raise TtsError("TTS synthesis failed after retries") from last

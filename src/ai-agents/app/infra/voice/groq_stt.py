@@ -13,6 +13,7 @@ import wave
 
 from groq import AsyncGroq
 from lib.logging import get_logger
+from lib.observability import counter, histogram
 from lib.resilience import with_timeout
 
 from app.resources.voice.engines import SttError
@@ -24,6 +25,12 @@ _SAMPLE_RATE = 16_000
 _SAMPLE_WIDTH = 2  # 16-bit = 2 bytes
 _CHANNELS = 1
 _STT_TIMEOUT_S = 30.0
+
+_stt_total = counter("stt_transcribe_total", "Groq STT transcription calls")
+_stt_errors = counter("stt_transcribe_errors_total", "Groq STT calls that failed")
+_stt_duration = histogram(
+    "stt_transcribe_duration_ms", "Groq STT transcription duration (ms)"
+)
 
 
 def _pcm_to_wav(pcm16_16k: bytes) -> bytes:
@@ -74,6 +81,7 @@ class GroqStt:
         """
         loop = asyncio.get_running_loop()
         wav_bytes = await loop.run_in_executor(None, _pcm_to_wav, pcm16_16k)
+        _stt_total.inc()
         last: Exception | None = None
         for attempt in range(self._attempts):
             t0 = time.monotonic()
@@ -89,6 +97,7 @@ class GroqStt:
                     op="groq.transcribe",
                 )
                 elapsed = time.monotonic() - t0
+                _stt_duration.observe(elapsed * 1000)
                 log.info(
                     "STT transcription OK attempt={} duration_ms={:.0f}",
                     attempt + 1,
@@ -107,4 +116,5 @@ class GroqStt:
                 )
                 if attempt + 1 < self._attempts:
                     await asyncio.sleep(self._base_delay * (2**attempt))
+        _stt_errors.inc()
         raise SttError("STT failed after retries") from last
