@@ -39,6 +39,14 @@
 
 *(Waves 3–5: messaging, notifications, settings/2FA, team, practice, scheduling — rows added as we reach them.)*
 
+## 🌙 Tonight's autonomous run (2026-06-20 night)
+User asleep; FE + BE sessions complete as much of v2 as possible **via the repo** (no live messaging — sends
+need approval the user can't give overnight). **FE** (this session) builds screens vs mocks in `frontend/`,
+per-step commits; **BE** ("Project handoff") builds contracts in `src/` + proto + `pnpm gen`. Both: claim a
+row (🔨) → mark ✅ on landing → append to the log. Explicit-path commits on `grpc-migration`; FE never blocks
+on BE (mocks). BE order: W1 (SearchJobs → CompanyProfile → SavedJobs → JobAlerts → Job-extend → Sourcing →
+Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 screens.
+
 ## Handoff log (append; newest last)
 - 2026-06-20 · FE · Seeded this board. The 24 contracts + spine are pushed (commit `eae5a56`). FE starting
   **Wave 0** (no BE dependency). Proposed first BE pickup once the gRPC migration settles:
