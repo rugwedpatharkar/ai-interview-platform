@@ -60,7 +60,7 @@ export function DecisionControl({
       </Select>
       <ConfirmDialog
         trigger={
-          <Button size="sm" disabled={!outcome}>
+          <Button size="sm" disabled={!outcome || decide.isPending}>
             Apply
           </Button>
         }

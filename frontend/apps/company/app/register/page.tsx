@@ -34,11 +34,20 @@ export default function RegisterPage() {
     setError(null);
     try {
       await api.auth.registerCompany({ companyName, email, password });
+    } catch (err) {
+      setError(errorMessage(err));
+      setBusy(false);
+      return;
+    }
+    // Registration succeeded. Attempt auto-login; if it fails for any reason
+    // (e.g. the account needs email verification first), route to /login with a
+    // friendly message rather than surfacing a raw login error.
+    try {
       await login(email, password);
       toast.success("Company created — check your email to verify.");
       router.push("/jobs");
-    } catch (err) {
-      setError(errorMessage(err));
+    } catch {
+      router.push("/login?notice=account-created");
     } finally {
       setBusy(false);
     }

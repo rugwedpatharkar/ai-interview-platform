@@ -44,19 +44,34 @@ export interface AuthConfig {
   loginPath?: string;
 }
 
-function decodeIdentity(jwt: string): Identity | null {
-  const part = jwt.split(".")[1];
-  if (!part) return null;
+function decodeIdentity(jwt: string, store: ReturnType<typeof makeTokenStore>): Identity | null {
+  const parts = jwt.split(".");
+  // A structurally-invalid token (not 3 non-empty segments) can never be valid.
+  // Clear storage immediately so a corrupt localStorage entry can't loop the user
+  // to /login indefinitely (malformed-token redirect-loop, B-2).
+  if (parts.length !== 3 || parts.some((p) => !p)) {
+    store.clear();
+    return null;
+  }
+  // length === 3 and all segments non-empty, so parts[1] is a non-empty string.
+  const payload64 = parts[1] as string;
   try {
-    const json = atob(part.replace(/-/g, "+").replace(/_/g, "/"));
-    const payload = JSON.parse(json) as {
+    const json = atob(payload64.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload: unknown = JSON.parse(json);
+    // Guard against non-object payloads before field access (I-2).
+    if (typeof payload !== "object" || payload === null) {
+      store.clear();
+      return null;
+    }
+    const { sub, role, comp_id } = payload as {
       sub?: string;
       role?: string;
       comp_id?: string;
     };
-    if (!payload.sub || !payload.role) return null;
-    return { id: payload.sub, role: payload.role, compId: payload.comp_id ?? "" };
+    if (!sub || !role) return null;
+    return { id: sub, role, compId: comp_id ?? "" };
   } catch {
+    store.clear();
     return null;
   }
 }
@@ -95,7 +110,7 @@ export function makeAuth(config: AuthConfig) {
       () => createClients(config.baseUrl, store, onAuthLost),
       [],
     );
-    const identity = useMemo(() => (token ? decodeIdentity(token) : null), [token]);
+    const identity = useMemo(() => (token ? decodeIdentity(token, store) : null), [token]);
 
     const login = useCallback(
       async (email: string, password: string) => {

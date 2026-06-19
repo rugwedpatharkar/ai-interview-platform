@@ -12,6 +12,25 @@ import { store } from "../../../lib/auth";
 // fail to a clear error with a way back rather than spinning forever.
 const RESOLVE_TIMEOUT_MS = 8000;
 
+/** Returns true iff `token` is a structurally-valid JWT with a non-empty JSON payload. */
+function isValidJwt(token: string): boolean {
+  const parts = token.split(".");
+  if (parts.length !== 3 || parts.some((p) => !p)) return false;
+  // length === 3 and all segments non-empty — parts[1] is a non-empty string here.
+  const payload64 = parts[1] as string;
+  try {
+    const json = atob(payload64.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload: unknown = JSON.parse(json);
+    if (typeof payload !== "object" || payload === null) return false;
+    // Reject tokens that are already expired (clock-skew: 10 s grace).
+    const exp = (payload as Record<string, unknown>).exp;
+    if (typeof exp === "number" && exp < Date.now() / 1000 - 10) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export default function AuthCallbackPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +44,10 @@ export default function AuthCallbackPage() {
     const access = params.get("access_token");
     if (!access) {
       setError("No session was returned.");
+      return;
+    }
+    if (!isValidJwt(access)) {
+      setError("The session token was invalid. Please sign in again.");
       return;
     }
     // The SSO refresh token rides an HttpOnly cookie (not readable by JS). Seed the

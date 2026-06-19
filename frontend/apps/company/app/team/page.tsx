@@ -14,7 +14,7 @@ import {
   PageHeader,
   toast,
 } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
+import { errorMessage, useRequireRole } from "@ip/shared";
 import { UserPlus } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
@@ -25,7 +25,10 @@ import { useAuth } from "../../lib/auth";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function TeamPage() {
-  const { api, identity } = useAuth();
+  const { api, identity, ready } = useAuth();
+  // Page-level role guard: redirect non-admins before they can interact with
+  // the invite form (defence in depth — nav-hiding is not enough).
+  useRequireRole(identity?.role, ["company_admin"], ready);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
