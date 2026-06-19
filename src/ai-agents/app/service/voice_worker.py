@@ -41,6 +41,7 @@ from fastapi import FastAPI, HTTPException, Request
 from lib.logging import configure_logging, get_logger
 from lib.rabbitmq import Publisher
 from lib.redis import create_redis
+from lib.resilience import OperationTimeout, with_timeout
 
 from app.config import get_settings
 from app.infra.factory import get_llm
@@ -63,6 +64,9 @@ _ROOM_RE = re.compile(r"^interview-(.+)$")
 # The event type LiveKit sends when a participant enters a room
 _PARTICIPANT_JOINED = "participant_joined"
 
+# Maximum time to wait for in-flight session tasks to cancel on shutdown
+_SHUTDOWN_TIMEOUT_S = 10.0
+
 
 # ---------------------------------------------------------------------------
 # Pure decision function — fully unit-testable, no I/O
@@ -74,7 +78,7 @@ def should_start_session(
     room_name: str,
     participant_identity: str,
     worker_identity_prefix: str,
-    in_flight: set[str],
+    in_flight: set[str] | dict[str, asyncio.Task],
 ) -> str | None:
     """Decide whether this webhook event should trigger a new voice session.
 
@@ -120,6 +124,32 @@ def should_start_session(
 
 
 # ---------------------------------------------------------------------------
+# Shutdown helper
+# ---------------------------------------------------------------------------
+
+
+async def cancel_in_flight(in_flight: dict[str, asyncio.Task], *, timeout: float) -> None:
+    """Cancel and await all in-flight session tasks (bounded)."""
+    tasks = list(in_flight.values())
+    if not tasks:
+        return
+    for t in tasks:
+        t.cancel()
+    try:
+        await with_timeout(
+            asyncio.gather(*tasks, return_exceptions=True),
+            timeout,
+            op="voice_worker.shutdown",
+        )
+    except OperationTimeout:
+        log.warning(
+            "voice_worker: {} session(s) did not cancel within {}s",
+            len(tasks),
+            timeout,
+        )
+
+
+# ---------------------------------------------------------------------------
 # Per-room session runner
 # ---------------------------------------------------------------------------
 
@@ -133,7 +163,7 @@ async def _run_session(
     data,
     publisher,
     llm,
-    in_flight: set[str],
+    in_flight: dict[str, asyncio.Task],
 ) -> None:
     """Build media objects, run the interview, tear down on exit."""
     worker_identity = f"{settings.voice_worker_identity_prefix}{application_id}"
@@ -157,7 +187,7 @@ async def _run_session(
         vad = SileroOnnxVad.load()
     except Exception as exc:
         log.error("voice_worker: failed to load Silero VAD: {}", exc)
-        in_flight.discard(application_id)
+        in_flight.pop(application_id, None)
         return
 
     segmenter = UtteranceSegmenter(vad)
@@ -171,7 +201,7 @@ async def _run_session(
         await room_audio.connect()
     except Exception as exc:
         log.error("voice_worker: failed to connect to room {} : {}", room_name, exc)
-        in_flight.discard(application_id)
+        in_flight.pop(application_id, None)
         await room_audio.aclose()
         return
 
@@ -196,7 +226,7 @@ async def _run_session(
             application_id,
         )
     finally:
-        in_flight.discard(application_id)
+        in_flight.pop(application_id, None)
         try:
             await room_audio.aclose()
         except Exception as exc:
@@ -210,12 +240,13 @@ async def _run_session(
 # ---------------------------------------------------------------------------
 
 
-def _build_webhook_app(*, settings, sessions, data, publisher, llm) -> FastAPI:
+def _build_webhook_app(
+    *, settings, sessions, data, publisher, llm, in_flight: dict[str, asyncio.Task]
+) -> FastAPI:
     """Construct the FastAPI webhook listener with all deps closed over."""
     from livekit import api as livekit_api
 
     app = FastAPI(title="voice-worker-webhook")
-    in_flight: set[str] = set()
     receiver = livekit_api.WebhookReceiver(
         settings.livekit_api_key, settings.livekit_api_secret
     )
@@ -251,8 +282,8 @@ def _build_webhook_app(*, settings, sessions, data, publisher, llm) -> FastAPI:
         )
 
         if application_id is not None:
-            in_flight.add(application_id)
-            task = asyncio.ensure_future(
+            # in-process dedup; cross-replica dedup (Redis SETNX) deferred to Phase 4.
+            in_flight[application_id] = asyncio.ensure_future(
                 _run_session(
                     application_id,
                     participant_identity,
@@ -267,7 +298,7 @@ def _build_webhook_app(*, settings, sessions, data, publisher, llm) -> FastAPI:
             log.info(
                 "voice_worker: session task spawned application_id={} task={}",
                 application_id,
-                task.get_name(),
+                in_flight[application_id].get_name(),
             )
 
         return {"ok": True}
@@ -302,12 +333,15 @@ async def serve() -> None:
     data = McpDataGateway(data_manager)
     sessions = RedisInterviewStore(redis)
 
+    registry: dict[str, asyncio.Task] = {}
+
     webhook_app = _build_webhook_app(
         settings=s,
         sessions=sessions,
         data=data,
         publisher=publisher,
         llm=llm,
+        in_flight=registry,
     )
 
     config = uvicorn.Config(
@@ -325,6 +359,7 @@ async def serve() -> None:
     try:
         await server.serve()
     finally:
+        await cancel_in_flight(registry, timeout=_SHUTDOWN_TIMEOUT_S)
         await publisher.close()
         await redis.aclose()
         await data_manager.aclose()

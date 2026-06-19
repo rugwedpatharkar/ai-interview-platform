@@ -1,8 +1,9 @@
 """Unit tests for the voice_worker webhook decision logic (Task 9).
 
-Only the pure ``should_start_session`` function is tested here — it has no I/O,
-no LiveKit connection, and no uvicorn server.  The live media path (LiveKit room,
-Groq STT, edge-tts) is verified manually in E2E.
+Only the pure ``should_start_session`` function and the ``cancel_in_flight``
+helper are tested here — no I/O, no LiveKit connection, no uvicorn server.
+The live media path (LiveKit room, Groq STT, edge-tts) is verified manually
+in E2E.
 
 Test matrix:
   - participant_joined for an interview room with a candidate identity → application_id
@@ -11,11 +12,14 @@ Test matrix:
   - joining identity is the worker (has the worker prefix) → None
   - room already in-flight (duplicate event before task starts) → None
   - room name with a complex application_id (hyphens, digits) → correct extraction
+  - cancel_in_flight: cancels all tasks, noop on empty, bounded by timeout
 """
+
+import asyncio
 
 import pytest
 
-from app.service.voice_worker import should_start_session
+from app.service.voice_worker import cancel_in_flight, should_start_session
 
 # Default test constants
 _WORKER_PREFIX = "agent-"
@@ -175,3 +179,41 @@ def test_in_flight_set_is_not_mutated_by_should_start():
         "participant_joined", _ROOM, _CANDIDATE, _WORKER_PREFIX, in_flight
     )
     assert len(in_flight) == 0
+
+
+# ---------------------------------------------------------------------------
+# cancel_in_flight — shutdown helper
+# ---------------------------------------------------------------------------
+
+
+async def test_cancel_in_flight_cancels_all_tasks():
+    """All tasks in the registry are cancelled and awaited."""
+    d: dict[str, asyncio.Task] = {}
+    for i in range(3):
+        d[str(i)] = asyncio.ensure_future(asyncio.sleep(3600))
+
+    await cancel_in_flight(d, timeout=1.0)
+
+    assert all(t.cancelled() for t in d.values())
+
+
+async def test_cancel_in_flight_empty_is_noop():
+    """cancel_in_flight on an empty dict returns without error."""
+    await cancel_in_flight({}, timeout=1.0)  # must not raise
+
+
+async def test_cancel_in_flight_bounded_by_timeout():
+    """cancel_in_flight returns within the timeout even if a task is slow to cancel."""
+
+    async def _stubborn():
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            # Swallow cancel and sleep again — simulates a task that ignores cancellation
+            await asyncio.sleep(3600)
+
+    d: dict[str, asyncio.Task] = {"stubborn": asyncio.ensure_future(_stubborn())}
+    # Should return quickly (timeout=0.05) rather than hanging
+    await cancel_in_flight(d, timeout=0.05)
+    # Task was cancelled (first CancelledError was delivered)
+    assert d["stubborn"].cancelled() or d["stubborn"].done()
