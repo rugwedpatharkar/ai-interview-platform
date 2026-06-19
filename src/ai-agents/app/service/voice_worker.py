@@ -66,7 +66,8 @@ _ROOM_RE = re.compile(r"^interview-(.+)$")
 # The event type LiveKit sends when a participant enters a room
 _PARTICIPANT_JOINED = "participant_joined"
 
-# Maximum time to wait for in-flight session tasks to cancel on shutdown
+# Fallback shutdown timeout used only if settings cannot be loaded (unreachable in
+# normal operation — settings are validated at startup before serve() runs).
 _SHUTDOWN_TIMEOUT_S = 10.0
 
 
@@ -158,6 +159,14 @@ async def cancel_in_flight(
 # ---------------------------------------------------------------------------
 
 
+async def _safe_aclose_room(room_audio, application_id: str) -> None:
+    """Close the LiveKit room, logging (not raising) any teardown error."""
+    try:
+        await room_audio.aclose()
+    except Exception as exc:
+        log.warning("voice_worker: room.aclose() error for {}: {}", application_id, exc)
+
+
 async def _run_session(
     application_id: str,
     candidate_identity: str,
@@ -194,11 +203,20 @@ async def _run_session(
         in_flight.pop(application_id, None)
         return
 
-    segmenter = UtteranceSegmenter(vad)
+    segmenter = UtteranceSegmenter(
+        vad,
+        activation_threshold=settings.voice_vad_activation,
+        deactivation_threshold=settings.voice_vad_deactivation,
+        min_speech_ms=settings.voice_vad_min_speech_ms,
+        min_silence_ms=settings.voice_vad_min_silence_ms,
+    )
     room_audio = LiveKitRoomAudio(
         url=settings.livekit_url,
         token=worker_token,
         segmenter=segmenter,
+        utterance_timeout_s=settings.voice_utterance_timeout_s,
+        play_timeout_s=settings.voice_play_timeout_s,
+        disconnect_timeout_s=settings.voice_disconnect_timeout_s,
     )
 
     try:
@@ -206,11 +224,19 @@ async def _run_session(
     except Exception as exc:
         log.error("voice_worker: failed to connect to room {} : {}", room_name, exc)
         in_flight.pop(application_id, None)
-        await room_audio.aclose()
+        await _safe_aclose_room(room_audio, application_id)
         return
 
-    stt = GroqStt(api_key=settings.groq_api_key)
-    tts = EdgeTts()
+    stt = GroqStt(
+        api_key=settings.groq_api_key,
+        timeout_seconds=settings.voice_stt_timeout_s,
+        max_retries=settings.voice_stt_max_retries,
+    )
+    tts = EdgeTts(
+        voice=settings.voice_tts_voice,
+        max_retries=settings.voice_tts_max_retries,
+        stream_timeout_seconds=settings.voice_tts_stream_timeout_s,
+    )
     transport = VoiceTransport(stt=stt, tts=tts, room=room_audio)
 
     try:
@@ -231,12 +257,7 @@ async def _run_session(
         )
     finally:
         in_flight.pop(application_id, None)
-        try:
-            await room_audio.aclose()
-        except Exception as exc:
-            log.warning(
-                "voice_worker: room.aclose() error for {}: {}", application_id, exc
-            )
+        await _safe_aclose_room(room_audio, application_id)
 
 
 # ---------------------------------------------------------------------------
@@ -366,7 +387,7 @@ async def serve() -> None:
     try:
         await server.serve()
     finally:
-        await cancel_in_flight(registry, timeout_s=_SHUTDOWN_TIMEOUT_S)
+        await cancel_in_flight(registry, timeout_s=s.voice_shutdown_timeout_s)
         await publisher.close()
         await redis.aclose()
         await data_manager.aclose()

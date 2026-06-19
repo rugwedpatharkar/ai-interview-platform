@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from lib.config import BaseServiceSettings
+from pydantic import Field, field_validator
 
 
 class Settings(BaseServiceSettings):
@@ -39,6 +40,29 @@ class Settings(BaseServiceSettings):
     )
     metrics_port: int = 0  # 0 = disabled; set to e.g. 9090 in prod
     tracing_enabled: bool = False  # dormant by default; enables OTel spans in prod
+
+    # Voice pipeline tuning — defaults match Phase-3 module constants so a
+    # default-config run is byte-identical; override per-env via environment variables.
+    voice_utterance_timeout_s: float = Field(default=90.0, gt=0)
+    voice_play_timeout_s: float = Field(default=120.0, gt=0)
+    voice_disconnect_timeout_s: float = Field(default=10.0, gt=0)
+    voice_stt_timeout_s: float = Field(default=30.0, gt=0)
+    voice_stt_max_retries: int = Field(default=2, ge=0)
+    voice_tts_stream_timeout_s: float = Field(default=30.0, gt=0)
+    voice_tts_max_retries: int = Field(default=2, ge=0)
+    voice_tts_voice: str = "en-US-AvaNeural"
+    voice_vad_activation: float = Field(default=0.5, ge=0.0, le=1.0)
+    voice_vad_deactivation: float = Field(default=0.35, ge=0.0, le=1.0)
+    voice_vad_min_speech_ms: int = Field(default=50, gt=0)
+    voice_vad_min_silence_ms: int = Field(default=550, gt=0)
+    voice_shutdown_timeout_s: float = Field(default=10.0, gt=0)
+
+    @field_validator("mcp_data_url", "mcp_capability_url")
+    @classmethod
+    def _require_http_scheme(cls, v: str) -> str:
+        if not v.startswith(("http://", "https://")):
+            raise ValueError(f"MCP URL must start with http:// or https://; got: {v!r}")
+        return v
 
 
 @lru_cache

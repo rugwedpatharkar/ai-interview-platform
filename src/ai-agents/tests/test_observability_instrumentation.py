@@ -159,3 +159,93 @@ def test_config_has_metrics_and_tracing_defaults():
     )
     assert s.metrics_port == 0
     assert s.tracing_enabled is False
+
+
+# ---------------------------------------------------------------------------
+# 6. Voice config fields — validators reject invalid values (Phase 6)
+# ---------------------------------------------------------------------------
+
+
+def _base_settings(**overrides):
+    """Minimal valid Settings with overrides applied."""
+    return dict(
+        gemini_api_key="x",
+        jwt_secret="x" * 32,
+        rabbitmq_url="amqp://localhost/",
+        redis_url="redis://localhost",
+        **overrides,
+    )
+
+
+def test_voice_config_defaults_match_constants():
+    """Default voice config values must equal the Phase-3 module constants."""
+    s = Settings(**_base_settings())
+    assert s.voice_utterance_timeout_s == 90.0
+    assert s.voice_play_timeout_s == 120.0
+    assert s.voice_disconnect_timeout_s == 10.0
+    assert s.voice_stt_timeout_s == 30.0
+    assert s.voice_stt_max_retries == 2
+    assert s.voice_tts_stream_timeout_s == 30.0
+    assert s.voice_tts_max_retries == 2
+    assert s.voice_tts_voice == "en-US-AvaNeural"
+    assert s.voice_vad_activation == 0.5
+    assert s.voice_vad_deactivation == 0.35
+    assert s.voice_vad_min_speech_ms == 50
+    assert s.voice_vad_min_silence_ms == 550
+    assert s.voice_shutdown_timeout_s == 10.0
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("voice_stt_timeout_s", 0),
+        ("voice_stt_timeout_s", -1),
+        ("voice_tts_stream_timeout_s", 0),
+        ("voice_utterance_timeout_s", 0),
+        ("voice_play_timeout_s", -5),
+        ("voice_disconnect_timeout_s", 0),
+        ("voice_shutdown_timeout_s", 0),
+        ("voice_vad_min_speech_ms", 0),
+        ("voice_vad_min_silence_ms", -10),
+        ("voice_vad_activation", -0.1),
+        ("voice_vad_activation", 1.1),
+        ("voice_vad_deactivation", -0.01),
+        ("voice_vad_deactivation", 1.5),
+    ],
+)
+def test_voice_config_rejects_invalid_numeric(field, value):
+    """Out-of-range voice config values must raise ValidationError at load."""
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        Settings(**_base_settings(**{field: value}))
+
+
+@pytest.mark.parametrize(
+    "field,url",
+    [
+        ("mcp_data_url", "ftp://localhost:8100/mcp"),
+        ("mcp_data_url", "localhost:8100/mcp"),
+        ("mcp_data_url", "ws://localhost:8100/mcp"),
+        ("mcp_capability_url", "grpc://localhost:8101"),
+        ("mcp_capability_url", "not-a-url"),
+    ],
+)
+def test_mcp_url_scheme_validator_rejects_bad_schemes(field, url):
+    """MCP URLs without http:// or https:// scheme must raise ValidationError."""
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="must start with http"):
+        Settings(**_base_settings(**{field: url}))
+
+
+def test_mcp_url_scheme_validator_accepts_valid_schemes():
+    """http:// and https:// MCP URLs must be accepted."""
+    s = Settings(
+        **_base_settings(
+            mcp_data_url="https://mcp-data.example.com/mcp",
+            mcp_capability_url="https://mcp-cap.example.com/mcp",
+        )
+    )
+    assert s.mcp_data_url == "https://mcp-data.example.com/mcp"
+    assert s.mcp_capability_url == "https://mcp-cap.example.com/mcp"
