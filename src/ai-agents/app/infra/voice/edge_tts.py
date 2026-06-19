@@ -69,6 +69,13 @@ def _decode_mp3_to_48k(mp3_bytes: bytes) -> bytes:
     return b"".join(pcm_chunks)
 
 
+async def _consume_stream(communicate, chunks: list[bytes]) -> None:
+    """Drain one edge-tts communicate stream into *chunks* (audio chunks only)."""
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            chunks.append(chunk["data"])
+
+
 def _chunk_into_frames(pcm: bytes) -> list[bytes]:
     """Slice PCM bytes into 480-sample (10 ms) frames; pad the last frame if needed."""
     frames: list[bytes] = []
@@ -133,15 +140,11 @@ class EdgeTts:
         for attempt in range(self._attempts):
             communicate = self._communicate_factory(text, self._voice)
             chunks: list[bytes] = []
-
-            async def _consume() -> None:
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        chunks.append(chunk["data"])
-
             try:
                 await with_timeout(
-                    _consume(), self._stream_timeout_seconds, op="edge_tts.stream"
+                    _consume_stream(communicate, chunks),
+                    self._stream_timeout_seconds,
+                    op="edge_tts.stream",
                 )
             except Exception as exc:
                 last = exc
