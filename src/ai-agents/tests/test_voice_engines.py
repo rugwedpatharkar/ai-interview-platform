@@ -411,3 +411,77 @@ async def test_edge_tts_raises_tts_error_on_empty_audio():
     with pytest.raises(TtsError):
         async for _ in tts.synthesize("Hello"):
             pass
+
+
+# ---------------------------------------------------------------------------
+# EdgeTts — Phase 3a: retry, timeout, executor offload
+# ---------------------------------------------------------------------------
+
+
+async def test_edge_tts_retries_on_transient_status():
+    """Factory raising 503 on first call is retried; second yields audio."""
+    mp3 = _make_silence_mp3()
+    call_count = 0
+
+    class _CountingCommunicate:
+        def __init__(self, mp3_bytes: bytes, *, fail_first: bool):
+            self._mp3 = mp3_bytes
+            self._fail_first = fail_first
+
+        async def stream(self):
+            if self._fail_first:
+                raise RuntimeError("503 Service Unavailable")
+            if False:
+                yield {}
+            yield {"type": "audio", "data": self._mp3}
+
+    def factory(text, voice):
+        nonlocal call_count
+        call_count += 1
+        return _CountingCommunicate(mp3, fail_first=(call_count == 1))
+
+    tts = EdgeTts(communicate_factory=factory, max_retries=2, base_delay=0.0)
+    frames = [frame async for frame in tts.synthesize("hi")]
+    assert frames, "must yield at least one frame"
+    assert call_count == 2
+
+
+async def test_edge_tts_times_out_then_raises():
+    """Stream that never completes within timeout raises TtsError."""
+    import asyncio
+
+    class _SlowCommunicate:
+        async def stream(self):
+            await asyncio.sleep(10)
+            if False:
+                yield {}
+
+    tts = EdgeTts(
+        communicate_factory=lambda t, v: _SlowCommunicate(),
+        max_retries=0,
+        base_delay=0.0,
+        stream_timeout_seconds=0.01,
+    )
+    with pytest.raises(TtsError):
+        async for _ in tts.synthesize("hi"):
+            pass
+
+
+async def test_edge_tts_offloads_mp3_decode_to_executor(monkeypatch):
+    """MP3 decode runs in a thread pool thread, not the main thread."""
+    recorded_ident: list[int] = []
+    real_decode = _edge_tts_mod._decode_mp3_to_48k
+
+    def spy(mp3_bytes: bytes) -> bytes:
+        recorded_ident.append(threading.get_ident())
+        return real_decode(mp3_bytes)
+
+    monkeypatch.setattr(_edge_tts_mod, "_decode_mp3_to_48k", spy)
+
+    mp3 = _make_silence_mp3()
+    tts = EdgeTts(communicate_factory=_make_factory(mp3))
+    async for _ in tts.synthesize("x"):
+        pass
+
+    assert recorded_ident, "spy was never called"
+    assert recorded_ident[0] != threading.main_thread().ident
