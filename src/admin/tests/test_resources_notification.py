@@ -1,3 +1,4 @@
+from app.infra.notifier import NotificationRequestPublisher
 from app.model.application import Application
 from app.resources import funnel
 from app.resources.notification import TransitionNotifier
@@ -91,3 +92,33 @@ async def test_advance_application_soft_fails_on_notifier_error(fakes):
         notifier=_Boom(),
     )
     assert new == "aptitude_pending"  # transition still succeeds despite notifier error
+
+
+async def test_notification_request_publisher_queues_event():
+    """NotificationRequestPublisher.notify enqueues a notification.requested event
+    instead of sending inline (a transient failure is retried → DLX). BE-#10."""
+
+    class _Pub:
+        def __init__(self):
+            self.events = []
+
+        async def publish(self, key, payload):
+            self.events.append((key, payload))
+
+    pub = _Pub()
+    await NotificationRequestPublisher(pub).notify(
+        {"candidate_user_id": "u1", "comp_id": "c1"},
+        "shortlisted",
+        "recruiter.decision",
+    )
+    assert pub.events == [
+        (
+            "notification.requested",
+            {
+                "candidate_user_id": "u1",
+                "comp_id": "c1",
+                "to_state": "shortlisted",
+                "event": "recruiter.decision",
+            },
+        )
+    ]

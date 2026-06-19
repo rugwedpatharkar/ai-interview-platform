@@ -76,7 +76,7 @@ def create_web_app(
     publisher,
     tokens,
     notifier,
-    transition_notifier,
+    notification_publisher,
     refresh_ttl_seconds,
     allow_origin="*",
     max_message_bytes=4 * 1024 * 1024,
@@ -124,7 +124,7 @@ def create_web_app(
             publisher=publisher,
             tokens=tokens,
             audit=AuditLogRepository(db),
-            notifier=transition_notifier,
+            notifier=notification_publisher,
         ),
         app,
     )
@@ -133,7 +133,7 @@ def create_web_app(
             applications=ApplicationRepository(db),
             audit=AuditLogRepository(db),
             tokens=tokens,
-            notifier=transition_notifier,
+            notifier=notification_publisher,
         ),
         app,
     )

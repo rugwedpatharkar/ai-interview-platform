@@ -92,9 +92,12 @@ async def advance_application(
     log.info(
         "funnel: application {} {} -> {} ({})", application_id, current, new, event
     )
+    # The injected notifier QUEUES a notification.requested event (see
+    # NotificationRequestPublisher) rather than sending inline, so a transient send
+    # failure is retried by its own consumer (→ DLX) instead of being dropped. BE-#10.
     if notifier is not None:
         try:
             await notifier.notify(application, new, event)
         except Exception:
-            log.exception("funnel: notification failed for {}", application_id)
+            log.exception("funnel: notification enqueue failed for {}", application_id)
     return new

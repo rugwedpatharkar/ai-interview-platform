@@ -13,7 +13,7 @@ from lib.storage import ObjectStorage
 from app.config import get_settings
 from app.errors import InvalidTransition, NotFoundError
 from app.infra.db import INDEXES
-from app.infra.notifier import LoggingNotifier
+from app.infra.notifier import LoggingNotifier, NotificationRequestPublisher
 from app.infra.oauth import HttpOAuthClient
 from app.infra.repositories.applications import ApplicationRepository
 from app.infra.repositories.aptitude_deliveries import AptitudeDeliveryRepository
@@ -86,6 +86,9 @@ async def serve() -> None:
     transition_notifier = TransitionNotifier(
         users=UserRepository(mongo.db), notifier=notifier
     )
+    # advance_application's notifier QUEUES notification.requested (retryable consumer);
+    # transition_notifier does the real send in the handler. BE-#10.
+    notification_publisher = NotificationRequestPublisher(publisher)
 
     # Browser → gRPC-web (no proxy); the same servicers, registered onto an ASGI app.
     grpc_app = create_web_app(
@@ -95,7 +98,7 @@ async def serve() -> None:
         publisher=publisher,
         tokens=_token_service(s),
         notifier=notifier,
-        transition_notifier=transition_notifier,
+        notification_publisher=notification_publisher,
         refresh_ttl_seconds=s.refresh_token_minutes * 60,
         allow_origin=s.cors_allow_origin,
         max_message_bytes=s.grpc_max_message_bytes,
@@ -142,6 +145,15 @@ async def serve() -> None:
                 limit=s.recommend_fanout_limit,
             )
             return
+        if routing_key == "notification.requested":
+            # Decoupled candidate notification (BE-#10): deliver here so a transient
+            # send failure is retried by the consumer (→ DLX), never swallowed.
+            await transition_notifier.notify(
+                {"candidate_user_id": payload["candidate_user_id"]},
+                payload["to_state"],
+                payload["event"],
+            )
+            return
         application_id = payload.get("application_id")
         if not application_id:
             log.warning("funnel: {} missing application_id, dropping", routing_key)
@@ -153,7 +165,7 @@ async def serve() -> None:
                 payload,
                 applications=funnel_apps,
                 audit=funnel_audit,
-                notifier=transition_notifier,
+                notifier=notification_publisher,
             )
         except InvalidTransition as exc:
             if funnel.is_retryable_conflict(routing_key):
@@ -169,7 +181,9 @@ async def serve() -> None:
     consumer = Consumer(s.rabbitmq_url, s.rabbitmq_exchange)
     await consumer.connect()
     await consumer.subscribe(
-        "admin.funnel", [*_FUNNEL_EVENTS, "profile.parsed"], on_funnel_event
+        "admin.funnel",
+        [*_FUNNEL_EVENTS, "profile.parsed", "notification.requested"],
+        on_funnel_event,
     )
 
     # Liveness reapers: purge past-retention candidates + expire abandoned aptitude.

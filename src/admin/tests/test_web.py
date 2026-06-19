@@ -15,7 +15,7 @@ def test_registers_all_twelve_services():
         publisher=MagicMock(),
         tokens=TokenService("s" * 40),
         notifier=MagicMock(),
-        transition_notifier=MagicMock(),
+        notification_publisher=MagicMock(),
         refresh_ttl_seconds=60,
     )
     services = {path.rsplit("/", 1)[0] for path in app.methods}
