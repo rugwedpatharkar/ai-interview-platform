@@ -86,19 +86,31 @@ class Consumer:
         self, message: aio_pika.abc.AbstractIncomingMessage, handler: Handler
     ) -> None:
         delivery_count = (message.headers or {}).get("x-delivery-count", 0)
+        # Absolute ceiling, checked BEFORE the handler: x-delivery-count bumps on
+        # every (re)delivery, including a requeue after a crash that closed the
+        # channel pre-ack. Checking here (not just in except) stops a process-
+        # crashing payload from hot-looping; it's dead-lettered next delivery. BE-#7.
+        if delivery_count >= self._max_retries:
+            self._log.error(
+                "dead-lettering poison message {} pre-handler after {} deliveries",
+                message.routing_key,
+                delivery_count,
+            )
+            await message.nack(requeue=False)
+            return
         try:
             payload = json.loads(message.body)
             await handler(message.routing_key or "", payload)
             await message.ack()
         except Exception:
-            requeue = delivery_count < self._max_retries
-            if not requeue:
-                self._log.exception(
-                    "dead-lettering {} after {} deliveries",
-                    message.routing_key,
-                    delivery_count,
-                )
-            await message.nack(requeue=requeue)
+            # delivery_count < max_retries here (pre-check), so requeue; once
+            # the broker's count reaches the cap, the pre-check dead-letters.
+            self._log.exception(
+                "handler failed for {} (delivery {}); requeueing",
+                message.routing_key,
+                delivery_count,
+            )
+            await message.nack(requeue=True)
 
     async def close(self) -> None:
         if self._conn is not None:

@@ -79,3 +79,23 @@ async def test_max_retries_is_configurable():
     await consumer._process_message(msg, failing)
 
     assert msg.nack_requeue is False  # cap of 1 reached at delivery 1
+
+
+@pytest.mark.asyncio
+async def test_poison_message_dead_lettered_before_handler():
+    """Past the ceiling, the message is dead-lettered WITHOUT running the handler
+    — so a payload that crashes the process can't hot-loop forever (BE-#7)."""
+    called = False
+
+    async def handler(routing_key, payload):
+        nonlocal called
+        called = True
+
+    consumer = Consumer("amqp://test", max_retries=3)
+    msg = FakeMessage(headers={"x-delivery-count": 3})
+
+    await consumer._process_message(msg, handler)
+
+    assert called is False  # handler never ran — poison caught pre-execution
+    assert msg.nack_requeue is False  # dead-lettered via DLX
+    assert msg.acked is False
