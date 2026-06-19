@@ -26,6 +26,7 @@ from collections.abc import AsyncIterator
 import livekit.rtc as rtc
 import numpy as np
 from lib.logging import get_logger
+from lib.resilience import OperationTimeout, with_timeout
 
 from app.infra.voice.vad import UtteranceSegmenter
 from app.resources.voice.engines import RoomError
@@ -36,6 +37,10 @@ _PUBLISH_RATE = 48_000
 _PUBLISH_CHANNELS = 1
 _PUBLISH_FRAME_SAMPLES = 480  # 10 ms @ 48 kHz (matches edge_tts output)
 _SUBSCRIBE_RATE = 16_000  # livekit resamples to 16 kHz on subscribe
+
+_UTTERANCE_TIMEOUT_S = 90.0   # max wait for a candidate utterance before a re-prompt
+_PLAY_TIMEOUT_S = 120.0       # max wall-clock to publish one TTS utterance
+_DISCONNECT_TIMEOUT_S = 10.0  # max wait for room.disconnect() during teardown
 
 
 class LiveKitRoomAudio:
@@ -58,11 +63,17 @@ class LiveKitRoomAudio:
         token: str,
         segmenter: UtteranceSegmenter,
         room: rtc.Room | None = None,
+        utterance_timeout_s: float = _UTTERANCE_TIMEOUT_S,
+        play_timeout_s: float = _PLAY_TIMEOUT_S,
+        disconnect_timeout_s: float = _DISCONNECT_TIMEOUT_S,
     ) -> None:
         self._url = url
         self._token = token
         self._segmenter = segmenter
         self._room = room or rtc.Room()
+        self._utterance_timeout_s = utterance_timeout_s
+        self._play_timeout_s = play_timeout_s
+        self._disconnect_timeout_s = disconnect_timeout_s
 
         # Publish-side objects created on first ``play()`` call
         self._audio_source: rtc.AudioSource | None = None
@@ -122,8 +133,15 @@ class LiveKitRoomAudio:
             pcm16_48k: Async iterator yielding 480-sample (960-byte) int16 frames.
 
         Raises:
+            OperationTimeout: When the full publish exceeds ``_play_timeout_s``.
             RoomError: On fatal publish failure.
         """
+        await with_timeout(
+            self._play_impl(pcm16_48k), self._play_timeout_s, op="livekit.play"
+        )
+
+    async def _play_impl(self, pcm16_48k: AsyncIterator[bytes]) -> None:
+        """Inner publish loop — track lifecycle is owned by connect/aclose, not here."""
         try:
             await self._ensure_audio_source()
             if self._audio_source is None:
@@ -154,10 +172,16 @@ class LiveKitRoomAudio:
     async def next_utterance(self) -> bytes | None:
         """Return the next complete VAD-segmented utterance (16 kHz PCM16).
 
-        Blocks until an utterance is available.  Returns ``None`` when the
-        candidate participant has disconnected (hangup signal).
+        Blocks until an utterance is available, or raises ``OperationTimeout``
+        on prolonged silence (after ``_utterance_timeout_s``).  Returns ``None``
+        when the candidate participant has disconnected (hangup signal).
 
-        The caller (VoiceTransport) interprets ``None`` as end-of-interview.
+        The caller (VoiceTransport) interprets ``None`` as end-of-interview and
+        ``OperationTimeout`` as a silence re-prompt opportunity.
+
+        Raises:
+            OperationTimeout: When no utterance arrives within the timeout and
+                the candidate has not disconnected.
         """
         # Race: either the segmenter emits an utterance, or the candidate leaves
         done, pending = await asyncio.wait(
@@ -166,13 +190,18 @@ class LiveKitRoomAudio:
                 asyncio.create_task(self._candidate_left.wait(), name="hangup"),
             ],
             return_when=asyncio.FIRST_COMPLETED,
+            timeout=self._utterance_timeout_s,
         )
 
-        # Cancel the task that lost the race
+        # Cancel the task that lost the race (no task leaks)
         for task in pending:
             task.cancel()
             with contextlib.suppress(asyncio.CancelledError, Exception):
                 await task
+
+        if not done:
+            # Timeout elapsed: candidate still connected but silent → re-prompt
+            raise OperationTimeout("livekit.next_utterance", self._utterance_timeout_s)
 
         for task in done:
             if task.get_name() == "hangup":
@@ -187,7 +216,7 @@ class LiveKitRoomAudio:
                 log.error("LiveKitRoomAudio: utterance task error: {}", exc)
                 raise RoomError(f"Utterance segmenter error: {exc}") from exc
 
-        return None  # unreachable, makes mypy happy
+        return None  # unreachable
 
     async def send_caption(self, who: str, text: str) -> None:
         """Publish a JSON caption message to all room participants.
@@ -234,7 +263,11 @@ class LiveKitRoomAudio:
 
         finally:
             try:
-                await self._room.disconnect()
+                await with_timeout(
+                    self._room.disconnect(),
+                    self._disconnect_timeout_s,
+                    op="livekit.disconnect",
+                )
                 log.info("LiveKitRoomAudio: disconnected cleanly")
             except Exception as exc:
                 log.warning("LiveKitRoomAudio: disconnect error (ignored): {}", exc)
@@ -326,3 +359,5 @@ class LiveKitRoomAudio:
             )
         finally:
             log.info("LiveKitRoomAudio: feed loop exited identity={}", identity)
+            # feed loop exit ⇒ no more audio ⇒ unblock next_utterance().
+            self._candidate_left.set()
