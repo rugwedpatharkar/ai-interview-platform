@@ -11,10 +11,9 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
-from app.infra.voice.livekit_room import LiveKitRoomAudio
 from lib.resilience import OperationTimeout
 
+from app.infra.voice.livekit_room import LiveKitRoomAudio
 
 # ---------------------------------------------------------------------------
 # Fakes
@@ -28,7 +27,7 @@ class _FakeSegmenter:
         self._utterance = utterance
         self._hang = hang
 
-    def feed(self, data: bytes) -> None:  # noqa: ARG002
+    def feed(self, data: bytes) -> None:
         pass
 
     async def next_utterance(self) -> bytes:

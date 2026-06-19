@@ -128,7 +128,9 @@ def should_start_session(
 # ---------------------------------------------------------------------------
 
 
-async def cancel_in_flight(in_flight: dict[str, asyncio.Task], *, timeout: float) -> None:
+async def cancel_in_flight(
+    in_flight: dict[str, asyncio.Task], *, timeout_s: float
+) -> None:
     """Cancel and await all in-flight session tasks (bounded)."""
     tasks = list(in_flight.values())
     if not tasks:
@@ -138,14 +140,14 @@ async def cancel_in_flight(in_flight: dict[str, asyncio.Task], *, timeout: float
     try:
         await with_timeout(
             asyncio.gather(*tasks, return_exceptions=True),
-            timeout,
+            timeout_s,
             op="voice_worker.shutdown",
         )
     except OperationTimeout:
         log.warning(
             "voice_worker: {} session(s) did not cancel within {}s",
             len(tasks),
-            timeout,
+            timeout_s,
         )
 
 
@@ -359,7 +361,7 @@ async def serve() -> None:
     try:
         await server.serve()
     finally:
-        await cancel_in_flight(registry, timeout=_SHUTDOWN_TIMEOUT_S)
+        await cancel_in_flight(registry, timeout_s=_SHUTDOWN_TIMEOUT_S)
         await publisher.close()
         await redis.aclose()
         await data_manager.aclose()

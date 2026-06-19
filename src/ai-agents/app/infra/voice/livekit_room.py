@@ -38,8 +38,8 @@ _PUBLISH_CHANNELS = 1
 _PUBLISH_FRAME_SAMPLES = 480  # 10 ms @ 48 kHz (matches edge_tts output)
 _SUBSCRIBE_RATE = 16_000  # livekit resamples to 16 kHz on subscribe
 
-_UTTERANCE_TIMEOUT_S = 90.0   # max wait for a candidate utterance before a re-prompt
-_PLAY_TIMEOUT_S = 120.0       # max wall-clock to publish one TTS utterance
+_UTTERANCE_TIMEOUT_S = 90.0  # max wait for a candidate utterance before a re-prompt
+_PLAY_TIMEOUT_S = 120.0  # max wall-clock to publish one TTS utterance
 _DISCONNECT_TIMEOUT_S = 10.0  # max wait for room.disconnect() during teardown
 
 

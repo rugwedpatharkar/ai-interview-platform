@@ -192,14 +192,14 @@ async def test_cancel_in_flight_cancels_all_tasks():
     for i in range(3):
         d[str(i)] = asyncio.ensure_future(asyncio.sleep(3600))
 
-    await cancel_in_flight(d, timeout=1.0)
+    await cancel_in_flight(d, timeout_s=1.0)
 
     assert all(t.cancelled() for t in d.values())
 
 
 async def test_cancel_in_flight_empty_is_noop():
     """cancel_in_flight on an empty dict returns without error."""
-    await cancel_in_flight({}, timeout=1.0)  # must not raise
+    await cancel_in_flight({}, timeout_s=1.0)  # must not raise
 
 
 async def test_cancel_in_flight_bounded_by_timeout():
@@ -209,11 +209,11 @@ async def test_cancel_in_flight_bounded_by_timeout():
         try:
             await asyncio.sleep(3600)
         except asyncio.CancelledError:
-            # Swallow cancel and sleep again — simulates a task that ignores cancellation
+            # Swallow the cancel and sleep again (ignores cancellation)
             await asyncio.sleep(3600)
 
     d: dict[str, asyncio.Task] = {"stubborn": asyncio.ensure_future(_stubborn())}
-    # Should return quickly (timeout=0.05) rather than hanging
-    await cancel_in_flight(d, timeout=0.05)
+    # Should return quickly (timeout_s=0.05) rather than hanging
+    await cancel_in_flight(d, timeout_s=0.05)
     # Task was cancelled (first CancelledError was delivered)
     assert d["stubborn"].cancelled() or d["stubborn"].done()
