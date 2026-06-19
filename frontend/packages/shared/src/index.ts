@@ -33,3 +33,6 @@ export {
 } from "./proctor.js";
 export { startProctoring, type ProctorRuntimeOptions } from "./proctor-runtime.js";
 export { downloadBytes, XLSX_MIME } from "./download.js";
+export { TERMINAL_STATES, TERMS_VERSION } from "./constants.js";
+export { decodeJwtPayload } from "./jwt.js";
+export { resendVerification } from "./resend-verification.js";

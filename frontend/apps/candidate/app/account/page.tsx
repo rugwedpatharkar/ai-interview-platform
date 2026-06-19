@@ -14,14 +14,13 @@ import {
   PageHeader,
   toast,
 } from "@ip/ui";
-import { errorMessage, useRequireAuth } from "@ip/shared";
+import { TERMS_VERSION, errorMessage, useRequireAuth } from "@ip/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check } from "lucide-react";
 import Link from "next/link";
 
 import { useAuth } from "../../lib/auth";
 
-const TERMS_VERSION = "1.0";
 const SCOPES = [
   { scope: "data_processing", label: "Processing my data to evaluate my application" },
   { scope: "automated_evaluation", label: "AI-assisted scoring of my interview" },

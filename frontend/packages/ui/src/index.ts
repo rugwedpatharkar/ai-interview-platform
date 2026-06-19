@@ -59,6 +59,7 @@ export {
 export { RadioGroup, RadioGroupItem } from "./radio-group.js";
 export { Checkbox } from "./checkbox.js";
 export { ConfirmDialog } from "./confirm-dialog.js";
+export { VerifyCard, type VerifyCardProps, type VerifyStatus } from "./verify-card.js";
 export {
   ChatWindow,
   type ChatCitation,

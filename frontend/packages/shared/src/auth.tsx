@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { registerRestAuth } from "./authed-fetch.js";
+import { decodeJwtPayload } from "./jwt.js";
 import { makeTokenStore } from "./tokens.js";
 import { createClients } from "./transport.js";
 
@@ -53,27 +54,16 @@ function decodeIdentity(jwt: string, store: ReturnType<typeof makeTokenStore>): 
     store.clear();
     return null;
   }
-  // length === 3 and all segments non-empty, so parts[1] is a non-empty string.
-  const payload64 = parts[1] as string;
-  try {
-    const json = atob(payload64.replace(/-/g, "+").replace(/_/g, "/"));
-    const payload: unknown = JSON.parse(json);
-    // Guard against non-object payloads before field access (I-2).
-    if (typeof payload !== "object" || payload === null) {
-      store.clear();
-      return null;
-    }
-    const { sub, role, comp_id } = payload as {
-      sub?: string;
-      role?: string;
-      comp_id?: string;
-    };
-    if (!sub || !role) return null;
-    return { id: sub, role, compId: comp_id ?? "" };
-  } catch {
+  const payload = decodeJwtPayload(jwt);
+  if (!payload) {
     store.clear();
     return null;
   }
+  const sub = payload.sub as string | undefined;
+  const role = payload.role as string | undefined;
+  const comp_id = payload.comp_id as string | undefined;
+  if (!sub || !role) return null;
+  return { id: sub, role, compId: comp_id ?? "" };
 }
 
 /** Build an app-specific AuthProvider + useAuth bound to a token namespace + register RPC. */

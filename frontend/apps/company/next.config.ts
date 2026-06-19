@@ -7,7 +7,6 @@ const isDev = process.env.NODE_ENV !== "production";
 // Defense-in-depth for the localStorage-token tradeoff (see frontend/README.md
 // "Security notes"): a strict CSP narrows the XSS surface. `script-src 'unsafe-inline'`
 // is required for Next's bootstrap; strict per-request nonces are a documented follow-up.
-// ai-agents is permitted for the recruiting-assistant chat SSE stream.
 const csp = [
   "default-src 'self'",
   `connect-src 'self' ${ADMIN} ${AIAGENTS}`,
@@ -23,7 +22,11 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  // The workspace packages ship TypeScript source, so Next compiles them itself.
   transpilePackages: ["@ip/ui", "@ip/api-client", "@ip/shared"],
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
   async headers() {
     return [
       {
@@ -36,7 +39,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  webpack: (config) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  webpack(config: any) {
+    // Workspace packages use `.js` import specifiers that resolve to `.ts` sources
+    // (TS "Bundler" resolution); teach webpack to try `.ts`/`.tsx` for a `.js` import.
     config.resolve.extensionAlias = {
       ".js": [".ts", ".tsx", ".js"],
       ".jsx": [".tsx", ".jsx"],

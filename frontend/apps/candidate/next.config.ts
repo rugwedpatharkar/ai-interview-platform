@@ -24,6 +24,9 @@ const csp = [
 const nextConfig: NextConfig = {
   // The workspace packages ship TypeScript source, so Next compiles them itself.
   transpilePackages: ["@ip/ui", "@ip/api-client", "@ip/shared"],
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
   async headers() {
     return [
       {
@@ -36,8 +39,9 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  webpack: (config) => {
-    // Those packages use `.js` import specifiers that resolve to `.ts` sources
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  webpack(config: any) {
+    // Workspace packages use `.js` import specifiers that resolve to `.ts` sources
     // (TS "Bundler" resolution); teach webpack to try `.ts`/`.tsx` for a `.js` import.
     config.resolve.extensionAlias = {
       ".js": [".ts", ".tsx", ".js"],

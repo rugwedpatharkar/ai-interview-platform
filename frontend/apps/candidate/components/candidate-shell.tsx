@@ -17,6 +17,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { decodeJwtPayload } from "@ip/shared";
+
 import { useAuth } from "../lib/auth";
 
 const NAV = [
@@ -24,21 +26,6 @@ const NAV = [
   { href: "/profile", label: "Profile" },
   { href: "/account", label: "Account" },
 ] as const;
-
-/** Read the email claim straight off the JWT. The shared `decodeIdentity` only surfaces
- * id/role/comp_id, so the user-menu email is decoded here (read-only, no extra request). */
-function emailFromToken(token: string | null): string | null {
-  if (!token) return null;
-  const part = token.split(".")[1];
-  if (!part) return null;
-  try {
-    const json = atob(part.replace(/-/g, "+").replace(/_/g, "/"));
-    const payload = JSON.parse(json) as { email?: string };
-    return payload.email ?? null;
-  } catch {
-    return null;
-  }
-}
 
 function NavLink({
   href,
@@ -65,7 +52,7 @@ function NavLink({
 export function CandidateShell({ children }: { children: ReactNode }) {
   const { token, identity, logout } = useAuth();
   const pathname = usePathname();
-  const email = emailFromToken(token);
+  const email = token ? (decodeJwtPayload(token)?.email as string | undefined) ?? null : null;
   const label = email ?? identity?.id ?? "Account";
 
   return (

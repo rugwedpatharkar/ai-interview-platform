@@ -32,11 +32,13 @@ import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "r
 import { useAuth } from "../../lib/auth";
 
 interface Exp {
+  _key: string;
   company: string;
   title: string;
   summary: string;
 }
 interface Edu {
+  _key: string;
   institution: string;
   degree: string;
   year: string;
@@ -126,12 +128,14 @@ export default function ProfilePage() {
       willingToRelocate: p.willingToRelocate,
       jobPreference: p.jobPreference,
       skills: p.skills.join(", "),
-      experience: p.experience.map((e) => ({
+      experience: p.experience.map((e, i) => ({
+        _key: `${e.company}-${e.title}-${i}`,
         company: e.company,
         title: e.title,
         summary: e.summary,
       })),
-      education: p.education.map((e) => ({
+      education: p.education.map((e, i) => ({
+        _key: `${e.institution}-${e.degree}-${i}`,
         institution: e.institution,
         degree: e.degree,
         year: e.year,
@@ -392,7 +396,7 @@ export default function ProfilePage() {
             <CardContent className="flex flex-col gap-4">
               {form.experience.map((exp, i) => (
                 <fieldset
-                  key={i}
+                  key={exp._key}
                   className="flex flex-col gap-3 rounded-md border border-border p-3"
                 >
                   <legend className="px-1 text-xs font-medium text-muted-foreground">
@@ -461,7 +465,7 @@ export default function ProfilePage() {
                   update({
                     experience: [
                       ...form.experience,
-                      { company: "", title: "", summary: "" },
+                      { _key: crypto.randomUUID(), company: "", title: "", summary: "" },
                     ],
                   })
                 }
@@ -478,7 +482,7 @@ export default function ProfilePage() {
             <CardContent className="flex flex-col gap-4">
               {form.education.map((edu, i) => (
                 <fieldset
-                  key={i}
+                  key={edu._key}
                   className="flex flex-col gap-3 rounded-md border border-border p-3"
                 >
                   <legend className="px-1 text-xs font-medium text-muted-foreground">
@@ -547,7 +551,7 @@ export default function ProfilePage() {
                   update({
                     education: [
                       ...form.education,
-                      { institution: "", degree: "", year: "" },
+                      { _key: crypto.randomUUID(), institution: "", degree: "", year: "" },
                     ],
                   })
                 }

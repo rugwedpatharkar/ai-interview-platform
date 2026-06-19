@@ -19,21 +19,13 @@ import {
   buttonVariants,
   toast,
 } from "@ip/ui";
-import { errorMessage, useAuthedQuery } from "@ip/shared";
+import { TERMINAL_STATES, errorMessage, useAuthedQuery } from "@ip/shared";
 import type { ApplicationResponse } from "@ip/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 
 import { useAuth } from "../lib/auth";
 import { DecisionControl } from "./decision-control";
-
-const TERMINAL = new Set([
-  "withdrawn",
-  "hired",
-  "rejected",
-  "expired",
-  "abandoned",
-]);
 
 // States where a recruiter can open the report + record/adjust a decision. Shortlisted
 // is included so a shortlisted candidate can still be moved to hired/rejected.
@@ -53,7 +45,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
     queryFn: () => api.applications.listApplicants({ jobId }),
     refetchInterval: (query) => {
       const apps = query.state.data?.applications ?? [];
-      const pending = apps.some((a) => !TERMINAL.has(a.state));
+      const pending = apps.some((a) => !TERMINAL_STATES.has(a.state));
       return pending && query.state.dataUpdateCount < MAX_POLLS ? POLL_MS : false;
     },
   });
@@ -160,6 +152,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
               return (
                 <TableRow key={a.applicationId}>
                   <TableCell
+                    scope="row"
                     className="font-mono text-xs"
                     aria-label={`Candidate ${a.candidateUserId}`}
                   >

@@ -86,8 +86,8 @@ function ReportSection({
     <div>
       <p className="mb-1.5 text-sm font-medium text-foreground">{title}</p>
       <ul className={`flex list-inside list-disc flex-col gap-1 text-sm ${tone}`}>
-        {items.map((item, i) => (
-          <li key={i}>{item}</li>
+        {items.map((item) => (
+          <li key={item}>{item}</li>
         ))}
       </ul>
     </div>

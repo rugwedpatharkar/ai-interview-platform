@@ -15,14 +15,13 @@ import {
   PageHeader,
   toast,
 } from "@ip/ui";
-import { errorMessage, useAuthedQuery } from "@ip/shared";
+import { TERMS_VERSION, errorMessage, useAuthedQuery } from "@ip/shared";
 import { Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { CompanyShell } from "../../components/company-shell";
 import { useAuth } from "../../lib/auth";
 
-const TERMS_VERSION = "1.0";
 const SCOPES = [
   { scope: "data_processing", label: "Processing my data to operate the platform" },
   { scope: "automated_evaluation", label: "AI-assisted evaluation features" },

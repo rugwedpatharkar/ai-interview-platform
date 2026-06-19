@@ -17,7 +17,7 @@ import {
   applicationStatus,
   toast,
 } from "@ip/ui";
-import { errorMessage, useAuthedQuery } from "@ip/shared";
+import { TERMINAL_STATES, errorMessage, useAuthedQuery } from "@ip/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, FileText, Send, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -27,14 +27,6 @@ import { useAuth } from "../lib/auth";
 import { AssistantChat } from "./assistant-chat";
 import { CandidateShell } from "./candidate-shell";
 import { RecommendedRoles } from "./recommended-roles";
-
-const TERMINAL = new Set([
-  "withdrawn",
-  "hired",
-  "rejected",
-  "expired",
-  "abandoned",
-]);
 
 export function Dashboard() {
   const { api, token } = useAuth();
@@ -51,7 +43,7 @@ export function Dashboard() {
     // Notifications are email-only, so poll while anything is still in flight.
     refetchInterval: (query) => {
       const apps = query.state.data?.applications ?? [];
-      return apps.some((a) => !TERMINAL.has(a.state)) ? 10_000 : false;
+      return apps.some((a) => !TERMINAL_STATES.has(a.state)) ? 10_000 : false;
     },
   });
 
@@ -205,7 +197,7 @@ export function Dashboard() {
                         <Button size="sm">Start interview</Button>
                       </Link>
                     )}
-                    {!TERMINAL.has(a.state) && (
+                    {!TERMINAL_STATES.has(a.state) && (
                       <ConfirmDialog
                         trigger={
                           <Button variant="ghost" size="sm">

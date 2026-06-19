@@ -100,6 +100,8 @@ export default function InterviewPage() {
 
   if (!token) return null;
 
+  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPod|iPad/.test(navigator.platform);
+
   async function start() {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -272,7 +274,7 @@ export default function InterviewPage() {
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               onKeyDown={onKeyDown}
-              placeholder="Type your answer… (⌘/Ctrl+Enter to send)"
+              placeholder={`Type your answer… (${isMac ? "⌘" : "Ctrl"}+Enter to send)`}
               disabled={busy}
               rows={4}
             />
