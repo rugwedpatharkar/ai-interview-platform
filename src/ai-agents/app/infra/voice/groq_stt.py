@@ -13,6 +13,7 @@ import wave
 
 from groq import AsyncGroq
 from lib.logging import get_logger
+from lib.resilience import with_timeout
 
 from app.resources.voice.engines import SttError
 
@@ -22,6 +23,7 @@ _MODEL = "whisper-large-v3-turbo"
 _SAMPLE_RATE = 16_000
 _SAMPLE_WIDTH = 2  # 16-bit = 2 bytes
 _CHANNELS = 1
+_STT_TIMEOUT_S = 30.0
 
 
 def _pcm_to_wav(pcm16_16k: bytes) -> bytes:
@@ -54,11 +56,13 @@ class GroqStt:
         model: str = _MODEL,
         max_retries: int = 2,
         base_delay: float = 0.5,
+        timeout_seconds: float = _STT_TIMEOUT_S,
     ) -> None:
         self._client = client or AsyncGroq(api_key=api_key)
         self._model = model
         self._attempts = max_retries + 1
         self._base_delay = base_delay
+        self._timeout_seconds = timeout_seconds
 
     async def transcribe(self, pcm16_16k: bytes) -> str:
         """Transcribe one VAD-segmented utterance to text.
@@ -67,16 +71,21 @@ class GroqStt:
         bounded retries on transient errors. Raises ``SttError`` after all
         attempts fail. Never logs the audio bytes or API key.
         """
-        wav_bytes = _pcm_to_wav(pcm16_16k)
+        loop = asyncio.get_running_loop()
+        wav_bytes = await loop.run_in_executor(None, _pcm_to_wav, pcm16_16k)
         last: Exception | None = None
         for attempt in range(self._attempts):
             t0 = time.monotonic()
             try:
-                resp = await self._client.audio.transcriptions.create(
-                    file=("u.wav", wav_bytes),
-                    model=self._model,
-                    language="en",
-                    temperature=0.0,
+                resp = await with_timeout(
+                    self._client.audio.transcriptions.create(
+                        file=("u.wav", wav_bytes),
+                        model=self._model,
+                        language="en",
+                        temperature=0.0,
+                    ),
+                    self._timeout_seconds,
+                    op="groq.transcribe",
                 )
                 elapsed = time.monotonic() - t0
                 log.info(

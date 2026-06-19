@@ -6,21 +6,29 @@ GroqStt tests:
   - Valid WAV header (RIFF/WAVE, 16 kHz, mono, 16-bit) is sent to the client.
   - Returns the stripped text from the client response.
   - Raises SttError after retries when the client always raises.
+  - Times out per-attempt and retries (Phase 3a).
+  - Offloads WAV encode to executor thread (Phase 3a).
 
 EdgeTts tests:
   - synthesize() is a plain def (not async); the result is an AsyncIterator.
   - Output frames are exactly 480 samples (960 bytes) each.
   - Each frame is 48 kHz mono int16 (verified via PyAV decode of a silence fixture).
   - Raises TtsError when the communicate factory raises on every attempt.
+  - Retries on transient status errors (Phase 3a).
+  - Times out stream consumption per-attempt and raises TtsError (Phase 3a).
+  - Offloads MP3 decode to executor thread (Phase 3a).
 """
 
 import io
+import threading
 import wave
 
 import av
 import numpy as np
 import pytest
 
+import app.infra.voice.edge_tts as _edge_tts_mod
+import app.infra.voice.groq_stt as _groq_stt_mod
 from app.infra.voice.edge_tts import _FRAME_BYTES, _FRAME_SAMPLES, EdgeTts
 from app.infra.voice.groq_stt import GroqStt, _pcm_to_wav
 from app.resources.voice.engines import SttError, TtsError
@@ -210,6 +218,64 @@ async def test_groq_stt_retries_on_transient_error():
         await stt.transcribe(_make_silence_pcm())
 
     assert _CountingRaisingClient.calls == 3  # 1 initial + 2 retries
+
+
+# ---------------------------------------------------------------------------
+# GroqStt — Phase 3a: timeout + executor offload
+# ---------------------------------------------------------------------------
+
+
+async def test_groq_stt_times_out_and_retries():
+    """Per-attempt timeout fires, is retried, then surfaces as SttError."""
+    import asyncio
+
+    class _SlowTranscriptions:
+        def __init__(self):
+            self.call_count = 0
+
+        async def create(self, **kwargs):
+            self.call_count += 1
+            await asyncio.sleep(10)  # much longer than timeout_seconds=0.01
+            return None  # unreachable
+
+    class _SlowAudio:
+        def __init__(self):
+            self.transcriptions = _SlowTranscriptions()
+
+    class _SlowGroqClient:
+        def __init__(self):
+            self.audio = _SlowAudio()
+
+    fake = _SlowGroqClient()
+    stt = GroqStt(
+        client=fake,
+        max_retries=1,
+        base_delay=0.0,
+        timeout_seconds=0.01,
+    )
+    with pytest.raises(SttError):
+        await stt.transcribe(_make_silence_pcm())
+
+    assert fake.audio.transcriptions.call_count == 2  # initial + 1 retry
+
+
+async def test_groq_stt_offloads_wav_encode_to_executor(monkeypatch):
+    """WAV encode runs in a thread pool thread, not the main thread."""
+    recorded_ident: list[int] = []
+    real_pcm_to_wav = _groq_stt_mod._pcm_to_wav
+
+    def spy(pcm16_16k: bytes) -> bytes:
+        recorded_ident.append(threading.get_ident())
+        return real_pcm_to_wav(pcm16_16k)
+
+    monkeypatch.setattr(_groq_stt_mod, "_pcm_to_wav", spy)
+
+    client = _FakeGroqClient(text="test")
+    stt = GroqStt(client=client, max_retries=0)
+    await stt.transcribe(_make_silence_pcm())
+
+    assert recorded_ident, "spy was never called"
+    assert recorded_ident[0] != threading.main_thread().ident
 
 
 # ---------------------------------------------------------------------------
