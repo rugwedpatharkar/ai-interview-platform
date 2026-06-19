@@ -1,11 +1,11 @@
-"""In-process gRPC-web → gRPC translation (unary), served as an ASGI app.
+"""In-process gRPC-web → gRPC translation (unary + server-streaming), served as ASGI.
 
 Browsers can't speak native gRPC (HTTP/2 frame control and trailers aren't
 reachable from `fetch`), so the browser uses gRPC-web and this layer translates
 it into ordinary gRPC servicer calls — no Envoy/proxy. It consumes the *same*
 grpcio-generated registration (`add_<Svc>Servicer_to_server(servicer, app)`), so
-servicers and protos stay unchanged. Unary only: every admin RPC is unary, and
-gRPC-web has no client/bidi streaming.
+servicers and protos stay unchanged. Unary + server-streaming are supported
+(gRPC-web has no client/bidi streaming).
 
 Wire format (unary): request body = one length-prefixed frame
 `[1 flag byte][4-byte big-endian length][protobuf]`; response = a data frame then
@@ -183,6 +183,13 @@ class GrpcWebASGI:
 
         context = _Context(_metadata(scope["headers"]), _peer(scope.get("client")))
         timeout = _parse_timeout(scope["headers"], self._timeout_seconds)
+
+        if handler.response_streaming:
+            await self._respond_stream(
+                send, handler, message, context, timeout, is_text, origin, scope["path"]
+            )
+            return
+
         data = None
         try:
             request = handler.request_deserializer(message)
@@ -226,7 +233,7 @@ class GrpcWebASGI:
             return origin
         return None
 
-    async def _send(self, send, status, body, *, content_type, origin):
+    def _response_headers(self, content_type, origin):
         headers = [
             (b"access-control-allow-methods", b"POST,OPTIONS"),
             (b"access-control-allow-headers", _ALLOW_HEADERS.encode()),
@@ -240,10 +247,76 @@ class GrpcWebASGI:
             headers.append((b"vary", b"origin"))
         if content_type:
             headers.append((b"content-type", content_type.encode()))
+        return headers
+
+    async def _send(self, send, status, body, *, content_type, origin):
         await send(
-            {"type": "http.response.start", "status": status, "headers": headers}
+            {
+                "type": "http.response.start",
+                "status": status,
+                "headers": self._response_headers(content_type, origin),
+            }
         )
         await send({"type": "http.response.body", "body": body})
+
+    async def _respond_stream(
+        self, send, handler, message, context, timeout_s, is_text, origin, path
+    ):
+        """Server-streaming: one data frame per yielded message, then a trailer frame.
+
+        Binary streams frame-by-frame (ASGI ``more_body``). gRPC-web-text base64s the
+        whole stream as one blob, so text frames are buffered + encoded once at the end
+        (browsers use binary). Abort/error/deadline ends with a non-OK trailer; frames
+        already sent stay sent (standard gRPC-web).
+        """
+        ct = (
+            "application/grpc-web-text+proto"
+            if is_text
+            else "application/grpc-web+proto"
+        )
+        buffered: list[bytes] = []
+
+        async def emit(frame, *, last):
+            if is_text:
+                buffered.append(frame)
+                if last:
+                    body = base64.b64encode(b"".join(buffered))
+                    await send({"type": "http.response.body", "body": body})
+                return
+            await send(
+                {"type": "http.response.body", "body": frame, "more_body": not last}
+            )
+
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": self._response_headers(ct, origin),
+            }
+        )
+        try:
+            request = handler.request_deserializer(message)
+            async with asyncio.timeout(timeout_s):
+                async for response in handler.unary_stream(request, context):
+                    await emit(
+                        _encode_frame(handler.response_serializer(response)), last=False
+                    )
+        except _Abort:
+            pass
+        except TimeoutError:
+            context.code = grpc.StatusCode.DEADLINE_EXCEEDED
+            context.details = "Deadline exceeded"
+        except (
+            Exception
+        ):  # servicer bug — clean INTERNAL trailer, never leak a traceback
+            log.exception("grpc-web stream handler failed on {}", path)
+            context.code, context.details = grpc.StatusCode.INTERNAL, "Internal error"
+        await emit(
+            _encode_frame(
+                _trailer_payload(context.code, context.details), trailer=True
+            ),
+            last=True,
+        )
 
 
 async def _read_body(receive, max_bytes):

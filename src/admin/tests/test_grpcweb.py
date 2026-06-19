@@ -4,8 +4,11 @@ The wire helpers here are an independent implementation of the gRPC-web framing,
 framing bug in app/routes/grpcweb.py can't be masked by reusing its own encoder.
 """
 
+import asyncio
+import base64
 import struct
 
+import grpc
 import httpx
 import pytest
 from lib.redis import RateLimiter
@@ -225,3 +228,110 @@ async def test_cors_allowlist_omits_disallowed_origin(fakes):
         )
     assert ok.headers["access-control-allow-origin"] == "https://app.example"
     assert "access-control-allow-origin" not in bad.headers
+
+
+# --- server-streaming ----------------------------------------------------
+# AuthService is all-unary, so register a synthetic unary_stream handler via the
+# same registration surface the generated add_*_to_server helpers use. Identity
+# (de)serializers let the behaviour yield raw frame payloads directly.
+_STREAM_SVC = "test.stream.v1.Echo"
+
+
+def _stream_app(behavior, **kwargs):
+    app = GrpcWebASGI(**kwargs)
+    handler = grpc.unary_stream_rpc_method_handler(
+        behavior, request_deserializer=lambda b: b, response_serializer=lambda r: r
+    )
+    app.add_registered_method_handlers(_STREAM_SVC, {"Stream": handler})
+    return app
+
+
+async def _stream_call(app, content_type="application/grpc-web+proto"):
+    content = _frame(b"go")
+    if "text" in content_type:  # grpc-web-text base64s the request body too
+        content = base64.b64encode(content)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://t") as client:
+        return await client.post(
+            f"/{_STREAM_SVC}/Stream",
+            content=content,
+            headers={"content-type": content_type},
+        )
+
+
+def _stream_payloads(body):
+    data, status = [], None
+    for flag, payload in _frames(body):
+        if flag & 0x80:
+            for line in payload.decode().replace("\r\n", "\n").splitlines():
+                if line.startswith("grpc-status:"):
+                    status = int(line.split(":", 1)[1])
+        else:
+            data.append(payload)
+    return data, status
+
+
+@pytest.mark.asyncio
+async def test_server_stream_emits_each_message_then_ok_trailer():
+    async def behavior(request, context):
+        for i in range(3):
+            yield f"m{i}".encode()
+
+    resp = await _stream_call(_stream_app(behavior))
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/grpc-web+proto"
+    data, status = _stream_payloads(resp.content)
+    assert data == [b"m0", b"m1", b"m2"]
+    assert status == 0
+
+
+@pytest.mark.asyncio
+async def test_server_stream_midstream_error_keeps_frames_and_sets_trailer():
+    async def behavior(request, context):
+        yield b"m0"
+        yield b"m1"
+        raise RuntimeError("boom")
+
+    resp = await _stream_call(_stream_app(behavior))
+    data, status = _stream_payloads(resp.content)
+    assert data == [b"m0", b"m1"]  # frames already sent stay sent
+    assert status == 13  # INTERNAL — servicer bug never leaks a traceback
+
+
+@pytest.mark.asyncio
+async def test_server_stream_abort_carries_status():
+    async def behavior(request, context):
+        yield b"m0"
+        await context.abort(grpc.StatusCode.PERMISSION_DENIED, "denied")
+
+    resp = await _stream_call(_stream_app(behavior))
+    data, status = _stream_payloads(resp.content)
+    assert data == [b"m0"]
+    assert status == 7  # PERMISSION_DENIED
+
+
+@pytest.mark.asyncio
+async def test_server_stream_deadline_exceeded():
+    async def behavior(request, context):
+        yield b"m0"
+        await asyncio.sleep(5)  # far exceeds the 50ms deadline below
+        yield b"never"
+
+    resp = await _stream_call(_stream_app(behavior, timeout_seconds=0.05))
+    _, status = _stream_payloads(resp.content)
+    assert status == 4  # DEADLINE_EXCEEDED
+
+
+@pytest.mark.asyncio
+async def test_server_stream_text_mode_base64_buffers_whole_stream():
+    async def behavior(request, context):
+        for i in range(2):
+            yield f"t{i}".encode()
+
+    resp = await _stream_call(
+        _stream_app(behavior), content_type="application/grpc-web-text+proto"
+    )
+    assert resp.headers["content-type"] == "application/grpc-web-text+proto"
+    data, status = _stream_payloads(base64.b64decode(resp.content))
+    assert data == [b"t0", b"t1"]
+    assert status == 0
