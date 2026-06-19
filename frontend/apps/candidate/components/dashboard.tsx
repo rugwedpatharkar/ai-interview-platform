@@ -1,29 +1,26 @@
 "use client";
 
 import {
-  Badge,
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Checkbox,
-  ConfirmDialog,
   EmptyState,
   ErrorState,
   Field,
   Input,
   LoadingState,
-  applicationStatus,
   toast,
 } from "@ip/ui";
 import { TERMINAL_STATES, errorMessage, useAuthedQuery } from "@ip/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Briefcase, FileText, Send, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { Briefcase, Send, Sparkles } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { useAuth } from "../lib/auth";
+import { ApplicationCard } from "./application-card";
 import { AssistantChat } from "./assistant-chat";
 import { CandidateShell } from "./candidate-shell";
 import { RecommendedRoles } from "./recommended-roles";
@@ -168,55 +165,14 @@ export function Dashboard() {
                 icon={Briefcase}
               />
             )}
-          {list.map((a) => {
-            const status = applicationStatus(a.state);
-            return (
-              <Card key={a.applicationId} hoverable>
-                <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-                      <FileText className="size-4" aria-hidden />
-                    </span>
-                    <div className="flex flex-col gap-1">
-                      <p className="font-medium text-foreground">Job {a.jobId}</p>
-                      <Badge tone={status.tone} className="w-fit">
-                        {status.label}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {a.state === "aptitude_pending" && (
-                      <Link href={`/aptitude/${a.applicationId}`}>
-                        <Button variant="secondary" size="sm">
-                          Take test
-                        </Button>
-                      </Link>
-                    )}
-                    {a.state === "interview_pending" && (
-                      <Link href={`/interview/${a.applicationId}`}>
-                        <Button size="sm">Start interview</Button>
-                      </Link>
-                    )}
-                    {!TERMINAL_STATES.has(a.state) && (
-                      <ConfirmDialog
-                        trigger={
-                          <Button variant="ghost" size="sm">
-                            Withdraw
-                          </Button>
-                        }
-                        title="Withdraw application?"
-                        description="This can't be undone — you'd need to re-apply."
-                        confirmLabel="Withdraw"
-                        destructive
-                        busy={withdraw.isPending}
-                        onConfirm={() => withdraw.mutate(a.applicationId)}
-                      />
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {list.map((a) => (
+            <ApplicationCard
+              key={a.applicationId}
+              app={a}
+              withdrawing={withdraw.isPending}
+              onWithdraw={(id) => withdraw.mutate(id)}
+            />
+          ))}
         </section>
 
         <AssistantChat />
