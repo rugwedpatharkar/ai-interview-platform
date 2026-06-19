@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package admin.recommendation.v1;
+
+// RecommendationService — candidates see their own job matches; recruiters see a job's
+// ranked applicants. Reads the match_results the AI Matcher (ai-agents) writes;
+// comp_id-scoped via the job (the tenant source of truth).
+service RecommendationService {
+  rpc GetCandidateRecommendations(CandidateRecommendationsRequest) returns (MatchList);
+  rpc GetJobRankedCandidates(JobRankedRequest) returns (MatchList);
+}
+
+message CandidateRecommendationsRequest {}
+
+message JobRankedRequest {
+  string job_id = 1;
+}
+
+message Match {
+  string job_id = 1;
+  string candidate_user_id = 2;
+  double score = 3;
+  repeated string reasons = 4;
+}
+
+message MatchList {
+  repeated Match matches = 1;
+}

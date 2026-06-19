@@ -1,0 +1,11 @@
+[project]
+name = "mcp-data"
+version = "0.1.0"
+description = "MCP server — the platform's data-access tools over MongoDB"
+requires-python = ">=3.12"
+dependencies = ["lib", "mcp>=1.2"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,0 +1,33 @@
+[project]
+name = "lib"
+version = "0.1.0"
+description = "Shared infrastructure library for the AI interview platform (Mongo, Redis, RabbitMQ, storage, config, logging, security, schemas)"
+requires-python = ">=3.12"
+dependencies = [
+    "pymongo>=4.13",
+    "redis>=5",
+    "aio-pika>=9",
+    "pydantic>=2",
+    "pydantic-settings>=2",
+    "python-jose[cryptography]>=3",
+    "bcrypt>=4",
+    "loguru>=0.7",
+    "aioboto3>=13",
+    "prometheus-client>=0.25",
+    "opentelemetry-api>=1.42",
+    "opentelemetry-sdk>=1.42",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.42",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lib*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]

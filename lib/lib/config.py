@@ -1,0 +1,53 @@
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class BaseServiceSettings(BaseSettings):
+    """Common settings for every service. Subclass per service to add specifics.
+
+    Values come from environment / `.env`. Infra defaults point at local
+    docker-compose; production overrides via env.
+    """
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    service_name: str = "service"
+    environment: str = "dev"
+    log_level: str = "INFO"
+
+    # MongoDB — connection-pool sizing is the primary per-replica scale lever.
+    mongo_uri: str = "mongodb://localhost:27017"
+    mongo_db_name: str = "interview_platform"
+    mongo_max_pool_size: int = 100
+    mongo_min_pool_size: int = 0
+
+    # Redis (cache + live state).
+    redis_url: str = "redis://localhost:6379/0"
+
+    # RabbitMQ (events: routing keys are "{domain}.{action}").
+    rabbitmq_url: str = "amqp://guest:guest@localhost:5672/"
+    rabbitmq_exchange: str = "interview"
+
+    # JWT (used where tokens are issued/verified; required there).
+    jwt_secret: str = ""
+    jwt_algorithm: str = "HS256"
+    access_token_minutes: int = 15
+    refresh_token_minutes: int = 10080  # 7 days (shorter token-theft blast radius)
+    email_verification_minutes: int = 1440
+
+    # Object storage (S3-compatible: Cloudflare R2 / MinIO). Secrets via env only.
+    s3_endpoint_url: str | None = None
+    s3_region: str = "auto"
+    s3_access_key_id: str = ""
+    s3_secret_access_key: str = ""
+    s3_bucket: str = "interview-platform"
+    storage_presign_ttl_seconds: int = 900
+
+    @field_validator("jwt_secret")
+    @classmethod
+    def _jwt_secret_strength(cls, v: str) -> str:
+        # Empty is allowed (TokenService fails closed at construction); a non-empty but
+        # weak secret is rejected so a committed dev value can't ship to production.
+        if v and len(v) < 32:
+            raise ValueError("jwt_secret must be at least 32 characters")
+        return v

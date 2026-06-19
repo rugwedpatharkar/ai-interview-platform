@@ -1,0 +1,71 @@
+import json
+
+import aio_pika
+
+from lib.logging import get_logger
+
+log = get_logger(component="rabbitmq.publisher")
+
+
+class Publisher:
+    """Publishes JSON events to a durable topic exchange.
+
+    Routing keys follow `"{domain}.{action}"`. Uses a robust connection that
+    transparently reconnects. One Publisher per service process; call `connect()`
+    on startup and `close()` on shutdown.
+
+    BE-#12: If a publish fails (channel closed, broker restart, etc.), the
+    exchange handle is cleared. The next publish re-acquires a channel and
+    redeclares the exchange before sending, so the publisher self-heals without
+    a service restart.
+    """
+
+    def __init__(self, url: str, exchange: str = "interview") -> None:
+        self._url = url
+        self._exchange_name = exchange
+        self._conn: aio_pika.abc.AbstractRobustConnection | None = None
+        self._exchange: aio_pika.abc.AbstractExchange | None = None
+
+    async def connect(self) -> None:
+        self._conn = await aio_pika.connect_robust(self._url)
+        self._exchange = await self._acquire_exchange()
+        log.info("publisher.connected exchange={}", self._exchange_name)
+
+    async def _acquire_exchange(self) -> aio_pika.abc.AbstractExchange:
+        """Open a new channel and (re)declare the exchange."""
+        channel = await self._conn.channel(publisher_confirms=True)
+        return await channel.declare_exchange(
+            self._exchange_name, aio_pika.ExchangeType.TOPIC, durable=True
+        )
+
+    async def publish(self, routing_key: str, payload: dict) -> None:
+        if self._conn is None:
+            raise RuntimeError("Publisher.connect() must be called first")
+        # Re-acquire a fresh exchange handle if the previous one was invalidated
+        # by a publish error (BE-#12).
+        if self._exchange is None:
+            log.info("publisher.reacquire exchange={}", self._exchange_name)
+            self._exchange = await self._acquire_exchange()
+
+        message = aio_pika.Message(
+            body=json.dumps(payload).encode(),
+            content_type="application/json",
+            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+        )
+        try:
+            # publisher_confirms + mandatory: an unroutable or unacked publish raises
+            # instead of vanishing, so a lost funnel event surfaces to the caller.
+            await self._exchange.publish(
+                message, routing_key=routing_key, mandatory=True
+            )
+            log.debug("publisher.sent routing_key={}", routing_key)
+        except Exception:
+            # Invalidate the exchange handle so the next call re-acquires it.
+            self._exchange = None
+            log.exception("publisher.error routing_key={}", routing_key)
+            raise
+
+    async def close(self) -> None:
+        if self._conn is not None:
+            await self._conn.close()
+            log.info("publisher.closed exchange={}", self._exchange_name)

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package admin.talent.v1;
+
+// TalentService — recruiters browse their company's talent pool: candidates who have
+// applied to the company's jobs, with their application count. Comp-scoped, read-only.
+// (Membership = applied-to-this-comp; explicit add-to-pool is a follow-up.)
+service TalentService {
+  rpc GetTalentPool(TalentPoolRequest) returns (TalentPool);
+}
+
+message TalentPoolRequest {}
+
+message TalentEntry {
+  string candidate_user_id = 1;
+  int64 application_count = 2;
+}
+
+message TalentPool {
+  repeated TalentEntry entries = 1;
+}

@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package admin.analytics.v1;
+
+// AnalyticsService — recruiters see funnel metrics for their company: per-state counts
+// and the bottom-of-funnel conversion (hired / total). Comp-scoped, read-only, capped.
+service AnalyticsService {
+  rpc GetFunnelAnalytics(FunnelAnalyticsRequest) returns (FunnelAnalytics);
+  // Bias view: the distribution of overall scores across a job's scored candidates.
+  // v1 reports score-spread stats only (no protected attributes — P1 collects none).
+  rpc GetJobScoreDistribution(JobScoreRequest) returns (ScoreDistribution);
+}
+
+message FunnelAnalyticsRequest {}
+
+message JobScoreRequest {
+  string job_id = 1;
+}
+
+message ScoreDistribution {
+  int64 count = 1;
+  double min = 2;
+  double max = 3;
+  double mean = 4;
+  double p25 = 5;
+  double p50 = 6;  // median
+  double p75 = 7;
+}
+
+message StateCount {
+  string state = 1;
+  int64 count = 2;
+}
+
+message FunnelAnalytics {
+  repeated StateCount states = 1;
+  int64 total = 2;
+  double conversion_rate = 3;  // hired / total
+}

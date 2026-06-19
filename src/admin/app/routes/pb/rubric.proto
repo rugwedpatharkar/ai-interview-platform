@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package admin.rubric.v1;
+
+// RubricService — recruiters manage reusable interview rubrics (named competency sets)
+// for their company. Comp-scoped CRUD; a rubric can later seed an interview blueprint.
+service RubricService {
+  rpc CreateRubric(CreateRubricRequest) returns (Rubric);
+  rpc ListRubrics(ListRubricsRequest) returns (RubricList);
+  rpc UpdateRubric(UpdateRubricRequest) returns (Rubric);
+  rpc DeleteRubric(DeleteRubricRequest) returns (DeleteRubricResponse);
+}
+
+message Competency {
+  string name = 1;
+  double weight = 2;
+}
+
+message Rubric {
+  string id = 1;
+  string name = 2;
+  repeated Competency competencies = 3;
+}
+
+message CreateRubricRequest {
+  string name = 1;
+  repeated Competency competencies = 2;
+}
+
+message ListRubricsRequest {}
+
+message UpdateRubricRequest {
+  string id = 1;
+  string name = 2;
+  repeated Competency competencies = 3;
+}
+
+message DeleteRubricRequest {
+  string id = 1;
+}
+
+message DeleteRubricResponse {
+  bool ok = 1;
+}
+
+message RubricList {
+  repeated Rubric rubrics = 1;
+}

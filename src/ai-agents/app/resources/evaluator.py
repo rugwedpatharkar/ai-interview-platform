@@ -1,0 +1,47 @@
+"""Evaluator agent: interview transcript + competencies -> a scored Evaluation.
+
+The prompt asks the LLM to ground every score in the transcript; this agent enforces
+the numeric invariant (scores in 0.0..1.0) so a malformed score can never reach the
+report or the funnel decision.
+"""
+
+from lib.logging import get_logger
+
+from app.model.scoring import Evaluation
+from app.resources._prompt_safety import UNTRUSTED_NOTICE, fence
+
+log = get_logger(component="agent.evaluator")
+
+
+def _prompt(transcript, competencies, jd_text):
+    turns = "\n\n".join(f"Q: {t.question}\nA: {t.answer}" for t in transcript.turns)
+    return (
+        "You are evaluating a candidate interview for a software/IT role. Score each "
+        "competency from 0.0 to 1.0 with a one-line rationale grounded in the "
+        "transcript, then give an overall score, key strengths, concerns, and a "
+        "recommendation (advance / hold / reject). Judge only what the transcript "
+        "supports.\n\n"
+        f"{UNTRUSTED_NOTICE}\n\n"
+        f"Competencies: {fence('competencies', ', '.join(competencies))}\n\n"
+        f"Job description:\n{fence('jd', jd_text)}\n\n"
+        f"Transcript:\n{fence('transcript', turns)}"
+    )
+
+
+def _validate(evaluation):
+    if not 0.0 <= evaluation.overall_score <= 1.0:
+        raise ValueError("overall_score must be within 0.0..1.0")
+    for cs in evaluation.competency_scores:
+        if not 0.0 <= cs.score <= 1.0:
+            raise ValueError(f"competency score out of range: {cs.competency}")
+
+
+async def evaluate_interview(transcript, competencies, jd_text, *, llm) -> Evaluation:
+    if not transcript.turns:
+        raise ValueError("transcript is empty — nothing to evaluate")
+    evaluation = await llm.structured(
+        _prompt(transcript, competencies, jd_text), Evaluation
+    )
+    _validate(evaluation)
+    log.info("interview evaluated: overall={:.2f}", evaluation.overall_score)
+    return evaluation

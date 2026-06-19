@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package admin.application.v1;
+
+// ApplicationService — candidate applies to a published job; recruiters list
+// applicants for their own jobs. Auth via `authorization` metadata.
+service ApplicationService {
+  rpc Apply(ApplyRequest) returns (ApplicationResponse);
+  rpc ListMyApplications(ListMyApplicationsRequest) returns (ApplicationList);
+  rpc ListApplicants(ListApplicantsRequest) returns (ApplicationList);
+  rpc WithdrawApplication(WithdrawApplicationRequest) returns (ApplicationResponse);
+}
+
+message ApplyRequest {
+  string job_id = 1;
+  bool consent = 2;
+}
+
+message ListMyApplicationsRequest {}
+
+message ListApplicantsRequest {
+  string job_id = 1;
+}
+
+message WithdrawApplicationRequest {
+  string application_id = 1;
+}
+
+message ApplicationResponse {
+  string application_id = 1;
+  string job_id = 2;
+  string candidate_user_id = 3;
+  string state = 4;
+}
+
+message ApplicationList {
+  repeated ApplicationResponse applications = 1;
+}

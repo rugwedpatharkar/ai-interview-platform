@@ -1,0 +1,40 @@
+# ── Secrets / env (NEVER commit) ───────────────────────────────
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.local
+**/.env.*.local
+*.pem
+*.key
+*_secret*
+*-secret*
+
+# ── Python ─────────────────────────────────────────────────────
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ── Node / Next (frontend) ─────────────────────────────────────
+node_modules/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+.turbo/
+
+# ── OS / editor ────────────────────────────────────────────────
+.DS_Store
+*.swp
+*~
+
+# ── Local tooling / machine-specific ───────────────────────────
+.playwright-mcp/
+.claude/settings.local.json
+.claude/launch.json

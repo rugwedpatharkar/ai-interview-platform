@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package admin.aptitude.v1;
+
+// AptitudeService — the candidate fetches the test (questions only, no answer key) and
+// submits answers; grading emits aptitude.graded to drive the funnel gate. Candidate-only,
+// scoped to the caller's own application.
+service AptitudeService {
+  rpc GetAptitudeTest(GetTestRequest) returns (AptitudeTest);
+  rpc SubmitAptitude(SubmitRequest) returns (AptitudeResult);
+}
+
+message GetTestRequest {
+  string application_id = 1;
+}
+
+message AptitudeQuestion {
+  int32 index = 1;
+  string question = 2;
+  repeated string options = 3;
+  string topic = 4;
+}
+
+message AptitudeTest {
+  string application_id = 1;
+  repeated AptitudeQuestion questions = 2;
+}
+
+message SubmitRequest {
+  string application_id = 1;
+  repeated int32 answers = 2;
+}
+
+message AptitudeResult {
+  string application_id = 1;
+  int32 score = 2;
+  bool passed = 3;
+}

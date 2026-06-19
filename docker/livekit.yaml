@@ -1,0 +1,15 @@
+port: 7880
+rtc:
+  tcp_port: 7881
+  port_range_start: 51000
+  port_range_end: 51019
+  use_external_ip: false   # advertise 127.0.0.1 in ICE; true breaks same-machine browser<->server
+keys:
+  devkey: devsecret_change_me_min_32_chars_long
+webhook:
+  # Notify the voice-worker on room events (participant_joined triggers a session).
+  # The api_key here must match the key in the [keys] section above so LiveKit
+  # can sign the webhook body and the worker can verify it.
+  api_key: devkey
+  urls:
+    - http://voice-worker:8090/livekit/webhook

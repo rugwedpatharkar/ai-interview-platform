@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package admin.compliance.v1;
+
+// ComplianceService — candidate data-rights, self-service (caller acts on their own data).
+// Consent ledger now; right-to-erasure (RTBF) added next.
+service ComplianceService {
+  rpc RecordConsent(RecordConsentRequest) returns (ConsentReceipt);
+  rpc GetMyConsent(GetMyConsentRequest) returns (ConsentList);
+  rpc EraseMe(EraseMeRequest) returns (EraseReceipt);  // right-to-erasure (self)
+}
+
+message RecordConsentRequest {
+  string scope = 1;          // data_processing | automated_evaluation
+  string terms_version = 2;
+}
+
+message GetMyConsentRequest {}
+
+message ConsentReceipt {
+  string user_id = 1;
+  string scope = 2;
+  string terms_version = 3;
+}
+
+message ConsentItem {
+  string scope = 1;
+  string terms_version = 2;
+  string granted_at = 3;
+}
+
+message ConsentList {
+  repeated ConsentItem items = 1;
+}
+
+message EraseMeRequest {}
+
+message EraseReceipt {
+  string user_id = 1;
+  bool erased = 2;
+}

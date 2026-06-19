@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package admin.auth.v1;
+
+// AuthService — identity + session for company users and candidates.
+// Routes are thin: each RPC just calls an app/resources function.
+service AuthService {
+  rpc RegisterCompany(RegisterCompanyRequest) returns (UserResponse);
+  rpc RegisterCandidate(RegisterCandidateRequest) returns (UserResponse);
+  rpc Verify(VerifyRequest) returns (UserResponse);
+  rpc Login(LoginRequest) returns (TokenResponse);
+  rpc Refresh(RefreshRequest) returns (TokenResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc InviteRecruiter(InviteRecruiterRequest) returns (UserResponse);
+  rpc ForgotPassword(ForgotPasswordRequest) returns (OkResponse);
+  rpc ResetPassword(ResetPasswordRequest) returns (OkResponse);
+  rpc Me(MeRequest) returns (IdentityResponse);
+}
+
+message RegisterCompanyRequest {
+  string company_name = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message RegisterCandidateRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message VerifyRequest {
+  string token = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message MeRequest {}
+
+message UserResponse {
+  string id = 1;
+  string email = 2;
+  string role = 3;
+  string comp_id = 4;  // empty for candidates
+  bool email_verified = 5;
+}
+
+message TokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string token_type = 3;
+}
+
+message IdentityResponse {
+  string id = 1;
+  string role = 2;
+  string comp_id = 3;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {
+  bool ok = 1;
+}
+
+message InviteRecruiterRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message ForgotPasswordRequest {
+  string email = 1;
+}
+
+message ResetPasswordRequest {
+  string token = 1;
+  string new_password = 2;
+}
+
+message OkResponse {
+  bool ok = 1;
+}

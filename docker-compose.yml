@@ -1,0 +1,175 @@
+# Local full-stack runner: infra (Mongo/Redis/RabbitMQ/MinIO) + the 4 services.
+#   docker compose up --build
+#   python scripts/smoke_login.py          # after the stack is up (ADMIN_URL defaults :8080)
+# Mirrors the free-tier topology in docs/superpowers/plans/DEPLOYMENT.md (shape A).
+name: interview-platform
+
+x-common-env: &common-env
+  MONGO_URI: mongodb://mongo:27017
+  REDIS_URL: redis://redis:6379/0
+  RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+  RABBITMQ_EXCHANGE: interview
+  JWT_SECRET: ${JWT_SECRET:-dev-insecure-change-me-000000000000000000}
+  S3_ENDPOINT_URL: http://minio:9000
+  S3_REGION: us-east-1
+  S3_ACCESS_KEY_ID: minioadmin
+  S3_SECRET_ACCESS_KEY: minioadmin
+  S3_BUCKET: interview-platform
+
+services:
+  mongo:
+    image: mongo:7
+    ports: ["27017:27017"]
+    volumes: ["mongo_data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: ["5672:5672", "15672:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports: ["9000:9000", "9001:9001"]
+    volumes: ["minio_data:/data"]
+
+  minio-setup:
+    image: minio/mc
+    depends_on: [minio]
+    entrypoint: >
+      /bin/sh -c "
+      until /usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 1; done;
+      /usr/bin/mc mb -p local/interview-platform || true;
+      exit 0;"
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    # Distroless image (no shell) → no in-container healthcheck; depend on service_started.
+    ports: ["6333:6333", "6334:6334"]
+    volumes: ["qdrant_data:/qdrant/storage"]
+
+  mcp-data:
+    build: {context: ., dockerfile: docker/Dockerfile, args: {SERVICE: mcp-data}}
+    restart: unless-stopped
+    command: python -m app.server
+    environment:
+      <<: *common-env
+      MCP_PORT: 8100
+    ports: ["8100:8100"]
+    depends_on:
+      mongo: {condition: service_healthy}
+
+  mcp-capability:
+    build: {context: ., dockerfile: docker/Dockerfile, args: {SERVICE: mcp-capability}}
+    restart: unless-stopped
+    command: python -m app.server
+    environment:
+      <<: *common-env
+      MCP_PORT: 8101
+      QDRANT_URL: http://qdrant:6333
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports: ["8101:8101"]
+    depends_on:
+      minio-setup: {condition: service_completed_successfully}
+      qdrant: {condition: service_started}
+
+  admin:
+    build: {context: ., dockerfile: docker/Dockerfile, args: {SERVICE: admin}}
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      HTTP_PORT: 8080
+      # Explicit FE origins so credentialed CORS (the refresh cookie) works; a "*" here
+      # would disable credentials (see lib/lib/web.py). Set to your real origins in prod.
+      CORS_ALLOW_ORIGIN: "http://localhost:3000,http://localhost:3001"
+    ports: ["8080:8080"]
+    depends_on:
+      mongo: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      minio-setup: {condition: service_completed_successfully}
+
+  ai-agents:
+    build: {context: ., dockerfile: docker/Dockerfile, args: {SERVICE: ai-agents}}
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      HTTP_PORT: 8080
+      # The SPAs hit ai-agents' chat/jd/interview endpoints cross-origin too; keep its
+      # CORS allow-list in lockstep with admin's (a "*" here disables credentials).
+      CORS_ALLOW_ORIGIN: "http://localhost:3000,http://localhost:3001"
+      MCP_DATA_URL: http://mcp-data:8100/mcp
+      MCP_CAPABILITY_URL: http://mcp-capability:8101/mcp
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports: ["8081:8080"]
+    depends_on:
+      mongo: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      mcp-data: {condition: service_started}
+      mcp-capability: {condition: service_started}
+
+  livekit:
+    image: livekit/livekit-server:v1.9
+    command: --config /etc/livekit.yaml --dev
+    restart: unless-stopped
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "51000-51019:51000-51019/udp"
+    volumes:
+      - ./docker/livekit.yaml:/etc/livekit.yaml:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7880/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  voice-worker:
+    build: {context: ., dockerfile: docker/Dockerfile, args: {SERVICE: ai-agents}}
+    restart: unless-stopped
+    command: python -m app.service.voice_worker
+    environment:
+      <<: *common-env
+      # Only the data gateway + the LLM are used by the live interview loop — no
+      # document parsing — so mcp-capability is intentionally not wired here.
+      MCP_DATA_URL: http://mcp-data:8100/mcp
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      LIVEKIT_URL: ws://livekit:7880
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-devsecret_change_me_min_32_chars_long}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      VOICE_WORKER_HTTP_PORT: 8090
+    ports:
+      - "8090:8090"
+    depends_on:
+      livekit: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      mcp-data: {condition: service_started}
+
+volumes:
+  mongo_data:
+  minio_data:
+  qdrant_data:

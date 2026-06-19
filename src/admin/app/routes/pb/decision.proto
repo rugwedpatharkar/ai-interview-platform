@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package admin.decision.v1;
+
+// DecisionService — recruiter decision loop + gate override. Both advance the
+// funnel through the single authority (app/resources/funnel). Manager-only.
+service DecisionService {
+  rpc DecideApplication(DecideRequest) returns (DecisionResponse);
+  rpc OverrideGate(OverrideGateRequest) returns (DecisionResponse);
+}
+
+message DecideRequest {
+  string application_id = 1;
+  string outcome = 2;  // shortlisted | rejected | hired
+}
+
+message OverrideGateRequest {
+  string application_id = 1;
+}
+
+message DecisionResponse {
+  string application_id = 1;
+  string state = 2;
+}

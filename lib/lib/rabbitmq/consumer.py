@@ -1,0 +1,105 @@
+import json
+from collections.abc import Awaitable, Callable
+
+import aio_pika
+
+from lib.logging import get_logger
+
+Handler = Callable[[str, dict], Awaitable[None]]
+
+
+class Consumer:
+    """Subscribes a handler to topic routing keys on a durable quorum queue.
+
+    The handler receives `(routing_key, payload)`. On success the message is
+    acked. On failure it is retried up to `max_retries` times — the quorum queue
+    tracks redeliveries via the `x-delivery-count` header — and once the cap is
+    reached the message is dead-lettered to `"{exchange}.dlx"` instead of being
+    requeued forever (which a poison message would otherwise trigger). `prefetch`
+    bounds in-flight messages for backpressure.
+    """
+
+    def __init__(
+        self,
+        url: str,
+        exchange: str = "interview",
+        prefetch: int = 16,
+        max_retries: int = 3,
+    ) -> None:
+        self._url = url
+        self._exchange_name = exchange
+        self._prefetch = prefetch
+        self._max_retries = max_retries
+        self._conn: aio_pika.abc.AbstractRobustConnection | None = None
+        self._queue: aio_pika.abc.AbstractQueue | None = None
+        self._log = get_logger(component="rabbitmq.consumer")
+
+    async def connect(self) -> None:
+        self._conn = await aio_pika.connect_robust(self._url)
+        # RobustConnection/RobustChannel auto-restore the bindings + consumer after a
+        # broker blip; log reconnects so a silent stall is at least observable.
+        self._conn.reconnect_callbacks.add(self._on_reconnect)
+
+    def _on_reconnect(self, *args) -> None:
+        self._log.warning("rabbitmq consumer reconnected; consumers restored")
+
+    async def declare(
+        self, queue_name: str, routing_keys: list[str]
+    ) -> aio_pika.abc.AbstractQueue:
+        """Declare the durable queue + DLX + bindings WITHOUT consuming yet.
+
+        Call this as early as possible (before any slow startup like MCP/LLM init): once
+        the durable queue + bindings exist, the broker HOLDS every matching event, so a
+        message published while this consumer is starting up is never dropped by the
+        topic exchange. Idempotent — `subscribe()` re-declares the same topology.
+        """
+        if self._conn is None:
+            raise RuntimeError("Consumer.connect() must be called first")
+        channel = await self._conn.channel()
+        await channel.set_qos(prefetch_count=self._prefetch)
+        exchange = await channel.declare_exchange(
+            self._exchange_name, aio_pika.ExchangeType.TOPIC, durable=True
+        )
+        dlx_name = f"{self._exchange_name}.dlx"
+        dlx = await channel.declare_exchange(
+            dlx_name, aio_pika.ExchangeType.FANOUT, durable=True
+        )
+        dead_queue = await channel.declare_queue(f"{queue_name}.dead", durable=True)
+        await dead_queue.bind(dlx)
+        queue = await channel.declare_queue(
+            queue_name,
+            durable=True,
+            arguments={"x-queue-type": "quorum", "x-dead-letter-exchange": dlx_name},
+        )
+        for key in routing_keys:
+            await queue.bind(exchange, routing_key=key)
+        self._queue = queue
+        return queue
+
+    async def subscribe(
+        self, queue_name: str, routing_keys: list[str], handler: Handler
+    ) -> None:
+        queue = await self.declare(queue_name, routing_keys)
+        await queue.consume(lambda message: self._process_message(message, handler))
+
+    async def _process_message(
+        self, message: aio_pika.abc.AbstractIncomingMessage, handler: Handler
+    ) -> None:
+        delivery_count = (message.headers or {}).get("x-delivery-count", 0)
+        try:
+            payload = json.loads(message.body)
+            await handler(message.routing_key or "", payload)
+            await message.ack()
+        except Exception:
+            requeue = delivery_count < self._max_retries
+            if not requeue:
+                self._log.exception(
+                    "dead-lettering {} after {} deliveries",
+                    message.routing_key,
+                    delivery_count,
+                )
+            await message.nack(requeue=requeue)
+
+    async def close(self) -> None:
+        if self._conn is not None:
+            await self._conn.close()

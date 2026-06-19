@@ -1,0 +1,40 @@
+# Repo-wide lint + format gate.
+# `S` (flake8-bandit) is our static-security ruleset — the bandit-equivalent, so we
+# need no second tool; `ASYNC` catches blocking calls in async code; `SIM`/`C4` align
+# with the project's minimalism rules. Dependency CVEs are covered by pip-audit in
+# scripts/check.sh. See docs/superpowers/plans/PRODUCTION_STANDARDS.md.
+target-version = "py312"
+line-length = 88
+
+# **/pb holds generated protobuf stubs (never linted).
+extend-exclude = ["**/pb"]
+
+[lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # flake8-bugbear
+    "S",        # flake8-bandit (security)
+    "ASYNC",    # flake8-async
+    "UP",       # pyupgrade
+    "C4",       # flake8-comprehensions
+    "SIM",      # flake8-simplify
+    "RUF",      # ruff-specific
+]
+
+[lint.flake8-bugbear]
+# FastAPI dependency-injection markers are immutable call defaults, not B008 bugs.
+extend-immutable-calls = [
+    "fastapi.Depends", "fastapi.Query", "fastapi.Header", "fastapi.Path",
+    "fastapi.Cookie", "fastapi.Body", "fastapi.Form", "fastapi.File",
+    "fastapi.Security",
+]
+
+[lint.isort]
+# each service's local package is `app`; keep it a distinct first-party import group.
+known-first-party = ["app"]
+
+[lint.per-file-ignores]
+# Asserts and fake secrets are expected in tests, not security findings.
+"**/tests/**" = ["S101", "S105", "S106", "S107"]

@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package admin.report.v1;
+
+// ReportService — recruiters read the AI-generated interview report for scored
+// applications in their company. Read-only, manager-only, comp_id-scoped (via the
+// application, the source of truth for tenant + funnel state).
+service ReportService {
+  rpc GetReport(GetReportRequest) returns (InterviewReport);
+  rpc ListReports(ListReportsRequest) returns (ReportList);
+  rpc ExportReports(ListReportsRequest) returns (ReportExport);
+}
+
+message GetReportRequest {
+  string application_id = 1;
+}
+
+message ListReportsRequest {
+  string job_id = 1;
+}
+
+message InterviewReport {
+  string application_id = 1;
+  string candidate_user_id = 2;
+  string state = 3;  // application funnel state
+  string executive_summary = 4;
+  repeated string highlights = 5;
+  repeated string risks = 6;
+  double overall_score = 7;
+  string recommendation = 8;
+}
+
+message ReportList {
+  repeated InterviewReport reports = 1;
+}
+
+message ReportExport {
+  string filename = 1;
+  bytes content = 2;  // .xlsx workbook of scored candidates
+}

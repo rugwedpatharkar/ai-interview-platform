@@ -1,0 +1,41 @@
+from datetime import UTC, datetime, timedelta
+
+import pytest
+from jose import JWTError, jwt
+from lib.security import TokenService
+
+SECRET = "test-secret-" + "x" * 32
+
+
+def test_access_token_roundtrip_carries_aud_and_iss():
+    svc = TokenService(SECRET)
+    token = svc.access_token(sub="u1", role="candidate", comp_id=None, jti="j1")
+    claims = svc.decode(token, expected_type="access")
+    assert claims["sub"] == "u1"
+    assert claims["iss"] == "admin"
+    assert claims["aud"] == "interview-platform"
+
+
+def test_decode_rejects_foreign_audience():
+    # A token signed with the same secret but a different audience must be rejected.
+    now = datetime.now(UTC)
+    forged = jwt.encode(
+        {
+            "sub": "u1",
+            "iat": now,
+            "exp": now + timedelta(minutes=5),
+            "iss": "admin",
+            "aud": "someone-else",
+        },
+        SECRET,
+        algorithm="HS256",
+    )
+    with pytest.raises(JWTError):
+        TokenService(SECRET).decode(forged)
+
+
+def test_reset_token_expires_sooner_than_verify_token():
+    svc = TokenService(SECRET)
+    verify = svc.decode(svc.verification_token("u1"))
+    reset = svc.decode(svc.reset_token("u1"))
+    assert reset["exp"] < verify["exp"]

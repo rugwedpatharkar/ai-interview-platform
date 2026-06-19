@@ -1,0 +1,8 @@
+version: v2
+# Generates message types + service descriptors (protobuf-es v2; connect-web v2 needs no
+# separate plugin). Input is admin's proto dir — the single source of truth for the API.
+plugins:
+  - local: protoc-gen-es
+    out: src/gen
+    opt:
+      - target=ts

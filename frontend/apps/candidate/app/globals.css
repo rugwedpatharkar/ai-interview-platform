@@ -1,0 +1,231 @@
+@import "tailwindcss";
+
+/* Scan the shared UI package so its component classes make it into the build. */
+@source "../../../packages/ui/src";
+
+/* Dark mode is class-based: a `dark` class anywhere up the tree flips the palette.
+   The pre-paint script in layout.tsx sets this on <html> before first paint. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   Design tokens — violet / AI-forward brand on a zinc neutral.
+   Raw values live in :root (light) and .dark; the @theme inline block at the
+   bottom maps them onto Tailwind color utilities (bg-background, text-foreground,
+   bg-primary, ring-ring, bg-brand-600, …) so they auto-adapt to the active theme.
+--------------------------------------------------------------------------- */
+:root {
+  /* Brand scale (Tailwind violet). Fixed across themes — used for accents. */
+  --brand-50: #f5f3ff;
+  --brand-100: #ede9fe;
+  --brand-200: #ddd6fe;
+  --brand-300: #c4b5fd;
+  --brand-400: #a78bfa;
+  --brand-500: #8b5cf6;
+  --brand-600: #7c3aed;
+  --brand-700: #6d28d9;
+  --brand-800: #5b21b6;
+  --brand-900: #4c1d95;
+  --brand-950: #2e1065;
+
+  /* Semantic surface tokens (light). */
+  --background: #fafafa; /* zinc-50 */
+  --surface: #ffffff;
+  --surface-muted: #f4f4f5; /* zinc-100 */
+  --border: #e4e4e7; /* zinc-200 */
+  --input: #d4d4d8; /* zinc-300 — control borders read a touch stronger */
+  --foreground: #18181b; /* zinc-900 */
+  --muted-foreground: #71717a; /* zinc-500 */
+  --primary: #7c3aed; /* violet-600 */
+  --primary-hover: #6d28d9; /* violet-700 */
+  --primary-foreground: #ffffff;
+  --ring: #8b5cf6; /* violet-500 */
+
+  /* Status tokens (light): solid color + tinted surface + text + border. */
+  --success: #059669; /* emerald-600 */
+  --success-surface: #ecfdf5;
+  --success-foreground: #065f46;
+  --success-border: #a7f3d0;
+  --warning: #f59e0b; /* amber-500 */
+  --warning-surface: #fffbeb;
+  --warning-foreground: #92400e;
+  --warning-border: #fde68a;
+  --danger: #e11d48; /* rose-600 */
+  --danger-surface: #fff1f2;
+  --danger-foreground: #9f1239;
+  --danger-border: #fecdd3;
+  --info: #0284c7; /* sky-600 */
+  --info-surface: #f0f9ff;
+  --info-foreground: #075985;
+  --info-border: #bae6fd;
+}
+
+.dark {
+  --background: #09090b; /* zinc-950 */
+  --surface: #18181b; /* zinc-900 */
+  --surface-muted: #27272a; /* zinc-800 */
+  --border: #27272a; /* zinc-800 */
+  --input: #3f3f46; /* zinc-700 — visible against zinc-900 surfaces */
+  --foreground: #fafafa; /* zinc-50 */
+  --muted-foreground: #a1a1aa; /* zinc-400 */
+  --primary: #8b5cf6; /* violet-500 */
+  --primary-hover: #a78bfa; /* violet-400 */
+  --primary-foreground: #09090b; /* zinc-950 — readable on violet-500 */
+  --ring: #a78bfa; /* violet-400 */
+
+  --success: #10b981; /* emerald-500 */
+  --success-surface: #022c22;
+  --success-foreground: #6ee7b7;
+  --success-border: #065f46;
+  --warning: #f59e0b; /* amber-500 */
+  --warning-surface: #2e1c00;
+  --warning-foreground: #fcd34d;
+  --warning-border: #92400e;
+  --danger: #fb7185; /* rose-400 */
+  --danger-surface: #3f0d18;
+  --danger-foreground: #fda4af;
+  --danger-border: #9f1239;
+  --info: #38bdf8; /* sky-400 */
+  --info-surface: #082f49;
+  --info-foreground: #7dd3fc;
+  --info-border: #075985;
+}
+
+/* ---------------------------------------------------------------------------
+   Map raw tokens onto Tailwind v4 color utilities. `@theme inline` keeps the
+   var() reference live, so utilities resolve against the active :root/.dark scope.
+--------------------------------------------------------------------------- */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-border: var(--success-border);
+  --color-warning: var(--warning);
+  --color-warning-surface: var(--warning-surface);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-border: var(--warning-border);
+  --color-danger: var(--danger);
+  --color-danger-surface: var(--danger-surface);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-border: var(--danger-border);
+  --color-info: var(--info);
+  --color-info-surface: var(--info-surface);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-border: var(--info-border);
+
+  /* Fonts wired via next/font in layout.tsx. */
+  --font-sans:
+    var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-display: var(--font-display), var(--font-sans), sans-serif;
+
+  /* Motion utilities (enter/exit) keyed off Radix data-[state]. */
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-fade-out: fade-out 120ms ease-in;
+  --animate-zoom-in: zoom-in 150ms ease-out;
+  --animate-zoom-out: zoom-out 120ms ease-in;
+  --animate-slide-up: slide-up 200ms ease-out;
+  --animate-slide-down: slide-down 200ms ease-out;
+  --animate-overlay-in: fade-in 150ms ease-out;
+  --animate-overlay-out: fade-out 120ms ease-in;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes zoom-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@keyframes zoom-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+}
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth the theme flip and give form controls a sensible default focus color. */
+* {
+  border-color: var(--border);
+}
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
+html.dark {
+  color-scheme: dark;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

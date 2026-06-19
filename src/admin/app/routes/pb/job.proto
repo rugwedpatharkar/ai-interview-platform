@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package admin.job.v1;
+
+// JobService — company-side job posting + lifecycle. Auth via `authorization`
+// metadata; jobs are scoped to the caller's company (comp_id from the token).
+service JobService {
+  rpc CreateJob(CreateJobRequest) returns (JobResponse);
+  rpc GetJob(GetJobRequest) returns (JobResponse);
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
+  rpc PublishJob(PublishJobRequest) returns (JobResponse);
+  // Public read of a PUBLISHED job (any authenticated user) — title + JD only.
+  rpc GetPublicJob(GetJobRequest) returns (PublicJob);
+}
+
+message PublicJob {
+  string job_id = 1;
+  string title = 2;
+  string jd_text = 3;
+}
+
+message CreateJobRequest {
+  string title = 1;
+  string jd_text = 2;
+}
+
+message GetJobRequest {
+  string job_id = 1;
+}
+
+message PublishJobRequest {
+  string job_id = 1;
+}
+
+message ListJobsRequest {}
+
+message JobResponse {
+  string job_id = 1;
+  string comp_id = 2;
+  string title = 3;
+  string status = 4;
+}
+
+message ListJobsResponse {
+  repeated JobResponse jobs = 1;
+}

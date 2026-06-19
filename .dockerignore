@@ -1,0 +1,14 @@
+# The Python service images only need lib/ + src/ (see docker/Dockerfile). Ignore
+# everything else so the build context stays a few MB instead of the full ~1.1 GB repo
+# (.venv, frontend/node_modules, .next, .git would otherwise be tarred + sent per build).
+*
+!lib
+!src
+
+# ...then re-exclude caches/junk that the lib/ + src/ re-includes would pull back in.
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.DS_Store
+**/*.egg-info
