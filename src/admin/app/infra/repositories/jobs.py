@@ -39,3 +39,67 @@ class JobRepository(BaseRepository[Job]):
             {"_id": oid, "comp_id": comp_id}, {"$set": {"status": status}}
         )
         return res.modified_count
+
+    async def search_published(
+        self,
+        *,
+        text: str = "",
+        location: str = "",
+        remote: str = "",
+        employment_type: str = "",
+        level: str = "",
+        skills: list | None = None,
+        sort: str = "recent",
+        skip: int = 0,
+        limit: int = 24,
+    ) -> dict:
+        """$text + $facet over published jobs: one pass = page + total + facets.
+
+        Filters narrow the $match. `text` adds a $text search; its score is $addFields'd
+        into a real field BEFORE $facet (sub-pipelines can't read textScore $meta) so
+        results can sort by relevance. Only status="published" matches. Returns the raw
+        $facet doc; resources/discovery shapes it into the DTO.
+        """
+        match: dict = {"status": "published"}
+        if text:
+            match["$text"] = {"$search": text}
+        if location:
+            match["location"] = location
+        if remote:
+            match["remote_mode"] = remote
+        if employment_type:
+            match["employment_type"] = employment_type
+        if level:
+            match["experience_level"] = level
+        if skills:
+            match["skills"] = {"$all": skills}
+
+        sort_spec: dict = {"created_at": -1}
+        stages: list = [{"$match": match}]
+        if text:
+            stages.append({"$addFields": {"_score": {"$meta": "textScore"}}})
+            if sort == "relevance":
+                sort_spec = {"_score": -1, "created_at": -1}
+        stages.append(
+            {
+                "$facet": {
+                    "results": [
+                        {"$sort": sort_spec},
+                        {"$skip": skip},
+                        {"$limit": limit},
+                    ],
+                    "total": [{"$count": "n"}],
+                    "remote_mode": [
+                        {"$group": {"_id": "$remote_mode", "count": {"$sum": 1}}}
+                    ],
+                    "employment_type": [
+                        {"$group": {"_id": "$employment_type", "count": {"$sum": 1}}}
+                    ],
+                    "experience_level": [
+                        {"$group": {"_id": "$experience_level", "count": {"$sum": 1}}}
+                    ],
+                }
+            }
+        )
+        docs = await self.col.aggregate(stages).to_list(length=1)
+        return docs[0] if docs else {}

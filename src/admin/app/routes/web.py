@@ -31,6 +31,7 @@ from app.routes.aptitude import AptitudeServicer
 from app.routes.auth import AuthServicer
 from app.routes.compliance import ComplianceServicer
 from app.routes.decision import DecisionServicer
+from app.routes.discovery import DiscoveryServicer
 from app.routes.job import JobServicer
 from app.routes.pb import (
     analytics_pb2_grpc,
@@ -39,6 +40,7 @@ from app.routes.pb import (
     auth_pb2_grpc,
     compliance_pb2_grpc,
     decision_pb2_grpc,
+    discovery_pb2_grpc,
     job_pb2_grpc,
     profile_pb2_grpc,
     recommendation_pb2_grpc,
@@ -187,6 +189,14 @@ def create_web_app(
         ComplianceServicer(
             consents=ConsentRepository(db),
             eraser=make_eraser(db, storage),
+            tokens=tokens,
+        ),
+        app,
+    )
+    discovery_pb2_grpc.add_DiscoveryServiceServicer_to_server(
+        DiscoveryServicer(
+            jobs=JobRepository(db),
+            companies=CompanyRepository(db),
             tokens=tokens,
         ),
         app,

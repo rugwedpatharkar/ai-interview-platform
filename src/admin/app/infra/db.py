@@ -54,6 +54,9 @@ INDEXES: list[IndexSpec] = [
     IndexSpec("users", [("role", 1), ("created_at", 1)]),
     # jobs: status filter used by recruiter job-list queries.
     IndexSpec("jobs", "status"),
+    # Full-text marketplace search (SearchJobs + /public/jobs). One text index per
+    # collection; covers title + jd + skills (skills lands with extend-Job).
+    IndexSpec("jobs", [("title", "text"), ("jd_text", "text"), ("skills", "text")]),
     # audit_logs: entity+entity_id is the primary lookup pattern; comp_id backs scans.
     IndexSpec("audit_logs", [("entity", 1), ("entity_id", 1)]),
     IndexSpec("audit_logs", "comp_id"),

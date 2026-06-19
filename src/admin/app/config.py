@@ -39,6 +39,9 @@ class Settings(BaseServiceSettings):
     refresh_window_seconds: int = Field(default=900, gt=0)
     resend_limit: int = Field(default=5, gt=0)
     resend_window_seconds: int = Field(default=900, gt=0)
+    # Public marketplace search (/public/jobs) is unauthenticated — rate-limit per IP.
+    public_search_limit: int = Field(default=60, gt=0)
+    public_search_window_seconds: int = Field(default=60, gt=0)
     # Serves gRPC-web over HTTP (browser reaches it directly; no proxy). See
     # lib/grpcweb.py and docs/superpowers/plans/DEPLOYMENT.md.
     http_host: str = "0.0.0.0"  # noqa: S104 — containerized server binds all interfaces
