@@ -134,6 +134,33 @@ async def test_happy_path_drives_all_turns_and_finalizes(
     assert "a1" in data.saved_interviews
 
 
+async def test_voice_session_binds_a_correlation_id(
+    fake_data, fake_sessions, fake_publisher
+):
+    """run_voice_interview binds one correlation_id for the whole interview so its logs
+    and published events share it. Phase-4 corr-IDs."""
+    from lib.logging import current_correlation_id
+
+    seen = {}
+
+    class _CapturingTransport:
+        async def ask(self, question):
+            seen["cid"] = current_correlation_id()
+            return ""  # hang up → finalize immediately
+
+    llm = _ScriptedLLM(_blueprint(), [InterviewTurnDecision(done=False, question="Q1")])
+    await run_voice_interview(
+        "a1",
+        transport=_CapturingTransport(),
+        caller_user_id="u1",
+        data=fake_data(interview_setup=_setup()),
+        sessions=fake_sessions(),
+        llm=llm,
+        publisher=fake_publisher(),
+    )
+    assert seen["cid"]  # a correlation_id was bound before the first turn
+
+
 async def test_happy_path_single_turn_interview(
     fake_data, fake_sessions, fake_publisher
 ):

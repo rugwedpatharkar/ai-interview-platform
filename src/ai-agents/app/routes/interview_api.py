@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from jose import JWTError
 from lib.logging import get_logger
-from lib.web import cors_config
+from lib.web import CorrelationIdMiddleware, cors_config
 from pydantic import BaseModel
 
 from app.errors import ConflictError, ForbiddenError, NotFoundError
@@ -241,5 +241,6 @@ def create_app(deps) -> FastAPI:
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["authorization", "content-type"],
     )
+    app.add_middleware(CorrelationIdMiddleware)
     app.include_router(router)
     return app

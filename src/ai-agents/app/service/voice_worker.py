@@ -42,6 +42,7 @@ from lib.logging import configure_logging, get_logger
 from lib.rabbitmq import Publisher
 from lib.redis import create_redis
 from lib.resilience import OperationTimeout, with_timeout
+from lib.web import CorrelationIdMiddleware
 
 from app.config import get_settings
 from app.infra.factory import get_llm
@@ -249,6 +250,7 @@ def _build_webhook_app(
     from livekit import api as livekit_api
 
     app = FastAPI(title="voice-worker-webhook")
+    app.add_middleware(CorrelationIdMiddleware)
     receiver = livekit_api.WebhookReceiver(
         settings.livekit_api_key, settings.livekit_api_secret
     )

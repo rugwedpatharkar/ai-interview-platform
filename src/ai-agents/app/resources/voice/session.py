@@ -19,7 +19,7 @@ reaper can finalize it later. The error is re-raised so the caller (voice_worker
 knows to disconnect the room.
 """
 
-from lib.logging import get_logger
+from lib.logging import get_logger, new_correlation_id, set_correlation_id
 
 from app.model.interview import TranscriptTurn
 from app.resources.interview_host import (
@@ -61,6 +61,9 @@ async def run_voice_interview(
         publisher: event publisher (same as text path).
         clock: injectable clock for time-budget checks (defaults to utcnow).
     """
+    # One correlation_id for the whole spoken interview — binds every log line and the
+    # events it publishes (interview.completed, …) to this session. Phase-4 corr-IDs.
+    set_correlation_id(new_correlation_id())
     # Step 1 — seed session + first question (ownership check lives here).
     first_question = await start_interview(
         application_id,

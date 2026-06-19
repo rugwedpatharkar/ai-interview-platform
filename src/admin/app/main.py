@@ -9,6 +9,7 @@ from lib.redis import RateLimiter, create_redis
 from lib.schemas import FunnelEvent
 from lib.security import RefreshSessionStore, SingleUseTokenStore, TokenService
 from lib.storage import ObjectStorage
+from lib.web import CorrelationIdMiddleware
 
 from app.config import get_settings
 from app.errors import InvalidTransition, NotFoundError
@@ -126,7 +127,10 @@ async def serve() -> None:
             ],
         }
     )
-    app = _oauth_dispatcher(grpc_app, oauth_app)
+    # Bind a correlation_id per HTTP request (gRPC-web RPC or OAuth) so every servicer's
+    # logs + any events it publishes are traceable; the id is visible to the handler's
+    # async context and echoed on the response. Phase-4 corr-IDs.
+    app = CorrelationIdMiddleware(_oauth_dispatcher(grpc_app, oauth_app))
 
     # Funnel consumer: advance application state on funnel events (audit-logged).
     funnel_apps = ApplicationRepository(mongo.db)
