@@ -20,7 +20,6 @@ from app.config import get_settings
 from app.errors import AuthDomainError, RateLimitedError
 from app.resources.auth import oauth_login
 from app.resources.auth import refresh as _refresh_session
-from app.resources.auth import resend_verification as _resend_verification
 
 log = get_logger(component="oauth.routes")
 
@@ -175,38 +174,11 @@ def make_oauth_routes(deps):
         _set_refresh_cookie(resp, new_refresh)
         return resp
 
-    async def resend(request):
-        # No-op success if JSON body is missing/malformed — caller can't enumerate.
-        try:
-            body = await request.json()
-        except Exception:
-            body = {}
-        email = body.get("email", "")
-        ip = _client_ip(request, deps.get("trusted_proxy", False))
-        try:
-            await _resend_verification(
-                email,
-                users=deps["users"],
-                tokens=deps["tokens"],
-                notifier=deps["notifier"],
-                nonces=deps.get("nonces"),
-                limiter=deps.get("limiter"),
-                ip=ip,
-            )
-        except RateLimitedError as exc:
-            return JSONResponse(
-                {"error": "rate limited"},
-                status_code=429,
-                headers={"Retry-After": str(exc.retry_after)},
-            )
-        return JSONResponse(None, status_code=204)
-
     return [
         Route("/auth/oauth/authorize", authorize),
         Route("/auth/oauth/callback", callback),
         Route("/auth/oauth/providers", providers),
         Route("/auth/oauth/refresh", refresh, methods=["POST"]),
-        Route("/auth/resend-verification", resend, methods=["POST"]),
     ]
 
 

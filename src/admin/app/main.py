@@ -52,16 +52,15 @@ def _token_service(s):
 
 
 def _oauth_dispatcher(grpc_app, oauth_app):
-    """Route /auth/* to the Starlette OAuth app; all else to the gRPC-web app.
+    """Route /auth/oauth/* to the Starlette OAuth app; all else to the gRPC-web app.
 
-    gRPC paths are /admin.* — /auth/* is safe to route to Starlette entirely so any
-    future /auth/ REST endpoint (e.g. /auth/resend-verification) lands here without
-    a per-path update.
+    gRPC method paths are /admin.*; OAuth routes all live under /auth/oauth/, so
+    the split is unambiguous. (Resend is now AuthService.ResendVerification.)
     """
 
     async def dispatch(scope, receive, send):
         path = scope.get("path", "")
-        if scope["type"] == "http" and path.startswith("/auth/"):
+        if scope["type"] == "http" and path.startswith("/auth/oauth/"):
             await oauth_app(scope, receive, send)
         else:
             await grpc_app(scope, receive, send)
@@ -113,6 +112,7 @@ async def serve() -> None:
         max_message_bytes=s.grpc_max_message_bytes,
         timeout_seconds=s.grpc_timeout_seconds,
         trusted_proxy=s.trusted_proxy,
+        oauth_providers=s.oauth_providers,
     )
     # SSO rides on the same ASGI app: /auth/* → Starlette OAuth, else → gRPC-web.
     oauth_app = create_oauth_app(

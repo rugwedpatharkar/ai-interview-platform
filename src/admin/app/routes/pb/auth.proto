@@ -14,7 +14,9 @@ service AuthService {
   rpc InviteRecruiter(InviteRecruiterRequest) returns (UserResponse);
   rpc ForgotPassword(ForgotPasswordRequest) returns (OkResponse);
   rpc ResetPassword(ResetPasswordRequest) returns (OkResponse);
+  rpc ResendVerification(ResendVerificationRequest) returns (OkResponse);
   rpc Me(MeRequest) returns (IdentityResponse);
+  rpc ListOAuthProviders(ListOAuthProvidersRequest) returns (OAuthProvidersResponse);
 }
 
 message RegisterCompanyRequest {
@@ -83,6 +85,16 @@ message ForgotPasswordRequest {
 message ResetPasswordRequest {
   string token = 1;
   string new_password = 2;
+}
+
+message ResendVerificationRequest {
+  string email = 1;
+}
+
+message ListOAuthProvidersRequest {}
+
+message OAuthProvidersResponse {
+  repeated string providers = 1;  // sorted, configured SSO provider names
 }
 
 message OkResponse {

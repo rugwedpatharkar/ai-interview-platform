@@ -15,6 +15,7 @@ from lib.grpcweb import GrpcWebASGI
 from lib.redis import RateLimiter
 from lib.security import RefreshSessionStore, TokenService
 
+from app.config import get_settings
 from app.infra.notifier import LoggingNotifier
 from app.routes.auth import AuthServicer
 from app.routes.pb import auth_pb2, auth_pb2_grpc
@@ -23,7 +24,7 @@ SECRET = "test-secret-" + "x" * 32
 _SVC = "/admin.auth.v1.AuthService"
 
 
-def _app(fakes, **kwargs):
+def _app(fakes, *, oauth_providers=None, **kwargs):
     app = GrpcWebASGI(**kwargs)
     auth_pb2_grpc.add_AuthServiceServicer_to_server(
         AuthServicer(
@@ -34,6 +35,7 @@ def _app(fakes, **kwargs):
             limiter=RateLimiter(fakes["redis"]),
             notifier=LoggingNotifier(),
             refresh_ttl_seconds=1209600,
+            oauth_providers=oauth_providers,
         ),
         app,
     )
@@ -335,3 +337,36 @@ async def test_server_stream_text_mode_base64_buffers_whole_stream():
     data, status = _stream_payloads(base64.b64decode(resp.content))
     assert data == [b"t0", b"t1"]
     assert status == 0
+
+
+# --- AuthService.ResendVerification / ListOAuthProviders (G4) -------------
+@pytest.mark.asyncio
+async def test_resend_verification_returns_ok(fakes):
+    app = _app(fakes)
+    resp = await _call(
+        app, "ResendVerification", auth_pb2.ResendVerificationRequest(email="x@x.com")
+    )
+    data, status = _data_and_status(resp.content)
+    assert status == 0
+    assert auth_pb2.OkResponse.FromString(data).ok  # uniform ok (no enumeration)
+
+
+@pytest.mark.asyncio
+async def test_resend_verification_rate_limited(fakes):
+    app = _app(fakes)
+    req = auth_pb2.ResendVerificationRequest(email="x@x.com")
+    for _ in range(get_settings().resend_limit):
+        await _call(app, "ResendVerification", req)
+    resp = await _call(app, "ResendVerification", req)
+    _, status = _data_and_status(resp.content)
+    assert status == 8  # RESOURCE_EXHAUSTED
+
+
+@pytest.mark.asyncio
+async def test_list_oauth_providers(fakes):
+    app = _app(fakes, oauth_providers={"google": {}, "microsoft": {}})
+    resp = await _call(app, "ListOAuthProviders", auth_pb2.ListOAuthProvidersRequest())
+    data, status = _data_and_status(resp.content)
+    assert status == 0
+    providers = auth_pb2.OAuthProvidersResponse.FromString(data).providers
+    assert list(providers) == ["google", "microsoft"]

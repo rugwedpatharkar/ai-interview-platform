@@ -1,5 +1,7 @@
+from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
+from collections.abc import Iterable as _Iterable
 from typing import ClassVar as _ClassVar, Optional as _Optional
 
 DESCRIPTOR: _descriptor.FileDescriptor
@@ -113,6 +115,22 @@ class ResetPasswordRequest(_message.Message):
     token: str
     new_password: str
     def __init__(self, token: _Optional[str] = ..., new_password: _Optional[str] = ...) -> None: ...
+
+class ResendVerificationRequest(_message.Message):
+    __slots__ = ("email",)
+    EMAIL_FIELD_NUMBER: _ClassVar[int]
+    email: str
+    def __init__(self, email: _Optional[str] = ...) -> None: ...
+
+class ListOAuthProvidersRequest(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class OAuthProvidersResponse(_message.Message):
+    __slots__ = ("providers",)
+    PROVIDERS_FIELD_NUMBER: _ClassVar[int]
+    providers: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, providers: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class OkResponse(_message.Message):
     __slots__ = ("ok",)

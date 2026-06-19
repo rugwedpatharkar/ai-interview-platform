@@ -101,6 +101,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
         trusted_proxy=False,
         nonces=None,
         audit=None,
+        oauth_providers=None,
     ):
         self._users = users
         self._companies = companies
@@ -112,6 +113,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
         self._trusted_proxy = trusted_proxy
         self._nonces = nonces
         self._audit = audit
+        self._oauth_providers = oauth_providers or {}
 
     async def _abort(self, context, exc, method="unknown"):
         code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
@@ -288,3 +290,28 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                 return auth_pb2.OkResponse(ok=out["ok"])
             except AuthDomainError as exc:
                 await self._abort(context, exc, "ResetPassword")
+
+    async def ResendVerification(self, request, context):
+        # Per-IP rate-limited (RateLimitedError -> RESOURCE_EXHAUSTED). Always returns
+        # ok so a caller can't enumerate registered/unverified addresses.
+        _grpc_total.labels(method="ResendVerification").inc()
+        async with log_context(log, "auth.ResendVerification"):
+            try:
+                out = await auth_res.resend_verification(
+                    request.email,
+                    users=self._users,
+                    tokens=self._tokens,
+                    notifier=self._notifier,
+                    nonces=self._nonces,
+                    limiter=self._limiter,
+                    ip=_client_ip(context, self._trusted_proxy),
+                )
+                return auth_pb2.OkResponse(ok=out["ok"])
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "ResendVerification")
+
+    async def ListOAuthProviders(self, request, context):
+        # Public (no auth): lets the FE render only configured SSO buttons. Replaces the
+        # REST GET /auth/oauth/providers.
+        _grpc_total.labels(method="ListOAuthProviders").inc()
+        return auth_pb2.OAuthProvidersResponse(providers=sorted(self._oauth_providers))

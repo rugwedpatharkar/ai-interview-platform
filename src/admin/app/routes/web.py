@@ -82,6 +82,7 @@ def create_web_app(
     max_message_bytes=4 * 1024 * 1024,
     timeout_seconds=30,
     trusted_proxy=False,
+    oauth_providers=None,
 ):
     """Build the gRPC-web ASGI app with all admin servicers registered onto it."""
     app = GrpcWebASGI(
@@ -101,6 +102,7 @@ def create_web_app(
             trusted_proxy=trusted_proxy,
             nonces=SingleUseTokenStore(redis),
             audit=AuditLogRepository(db),
+            oauth_providers=oauth_providers,
         ),
         app,
     )

@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from app.routes.pb import auth_pb2 as app_dot_pb_dot_auth__pb2
+from app.routes.pb import auth_pb2 as app_dot_routes_dot_pb_dot_auth__pb2
 
 GRPC_GENERATED_VERSION = '1.81.1'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in app/pb/auth_pb2_grpc.py depends on'
+        + ' but the generated code in app/routes/pb/auth_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -38,53 +38,63 @@ class AuthServiceStub:
         """
         self.RegisterCompany = channel.unary_unary(
                 '/admin.auth.v1.AuthService/RegisterCompany',
-                request_serializer=app_dot_pb_dot_auth__pb2.RegisterCompanyRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_auth__pb2.UserResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.RegisterCompanyRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.FromString,
                 _registered_method=True)
         self.RegisterCandidate = channel.unary_unary(
                 '/admin.auth.v1.AuthService/RegisterCandidate',
-                request_serializer=app_dot_pb_dot_auth__pb2.RegisterCandidateRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_auth__pb2.UserResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.RegisterCandidateRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.FromString,
                 _registered_method=True)
         self.Verify = channel.unary_unary(
                 '/admin.auth.v1.AuthService/Verify',
-                request_serializer=app_dot_pb_dot_auth__pb2.VerifyRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_auth__pb2.UserResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.VerifyRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.FromString,
                 _registered_method=True)
         self.Login = channel.unary_unary(
                 '/admin.auth.v1.AuthService/Login',
-                request_serializer=app_dot_pb_dot_auth__pb2.LoginRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_auth__pb2.TokenResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.LoginRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.FromString,
                 _registered_method=True)
         self.Refresh = channel.unary_unary(
                 '/admin.auth.v1.AuthService/Refresh',
-                request_serializer=app_dot_pb_dot_auth__pb2.RefreshRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_auth__pb2.TokenResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.RefreshRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.FromString,
                 _registered_method=True)
         self.Logout = channel.unary_unary(
                 '/admin.auth.v1.AuthService/Logout',
-                request_serializer=app_dot_pb_dot_auth__pb2.LogoutRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_auth__pb2.LogoutResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.LogoutRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.LogoutResponse.FromString,
                 _registered_method=True)
         self.InviteRecruiter = channel.unary_unary(
                 '/admin.auth.v1.AuthService/InviteRecruiter',
-                request_serializer=app_dot_pb_dot_auth__pb2.InviteRecruiterRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_auth__pb2.UserResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.InviteRecruiterRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.FromString,
                 _registered_method=True)
         self.ForgotPassword = channel.unary_unary(
                 '/admin.auth.v1.AuthService/ForgotPassword',
-                request_serializer=app_dot_pb_dot_auth__pb2.ForgotPasswordRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_auth__pb2.OkResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.ForgotPasswordRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.OkResponse.FromString,
                 _registered_method=True)
         self.ResetPassword = channel.unary_unary(
                 '/admin.auth.v1.AuthService/ResetPassword',
-                request_serializer=app_dot_pb_dot_auth__pb2.ResetPasswordRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_auth__pb2.OkResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.ResetPasswordRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.OkResponse.FromString,
+                _registered_method=True)
+        self.ResendVerification = channel.unary_unary(
+                '/admin.auth.v1.AuthService/ResendVerification',
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.ResendVerificationRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.OkResponse.FromString,
                 _registered_method=True)
         self.Me = channel.unary_unary(
                 '/admin.auth.v1.AuthService/Me',
-                request_serializer=app_dot_pb_dot_auth__pb2.MeRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_auth__pb2.IdentityResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.MeRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.IdentityResponse.FromString,
+                _registered_method=True)
+        self.ListOAuthProviders = channel.unary_unary(
+                '/admin.auth.v1.AuthService/ListOAuthProviders',
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.ListOAuthProvidersRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.OAuthProvidersResponse.FromString,
                 _registered_method=True)
 
 
@@ -147,7 +157,19 @@ class AuthServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ResendVerification(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def Me(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListOAuthProviders(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -158,53 +180,63 @@ def add_AuthServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'RegisterCompany': grpc.unary_unary_rpc_method_handler(
                     servicer.RegisterCompany,
-                    request_deserializer=app_dot_pb_dot_auth__pb2.RegisterCompanyRequest.FromString,
-                    response_serializer=app_dot_pb_dot_auth__pb2.UserResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.RegisterCompanyRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.SerializeToString,
             ),
             'RegisterCandidate': grpc.unary_unary_rpc_method_handler(
                     servicer.RegisterCandidate,
-                    request_deserializer=app_dot_pb_dot_auth__pb2.RegisterCandidateRequest.FromString,
-                    response_serializer=app_dot_pb_dot_auth__pb2.UserResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.RegisterCandidateRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.SerializeToString,
             ),
             'Verify': grpc.unary_unary_rpc_method_handler(
                     servicer.Verify,
-                    request_deserializer=app_dot_pb_dot_auth__pb2.VerifyRequest.FromString,
-                    response_serializer=app_dot_pb_dot_auth__pb2.UserResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.VerifyRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.SerializeToString,
             ),
             'Login': grpc.unary_unary_rpc_method_handler(
                     servicer.Login,
-                    request_deserializer=app_dot_pb_dot_auth__pb2.LoginRequest.FromString,
-                    response_serializer=app_dot_pb_dot_auth__pb2.TokenResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.LoginRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.SerializeToString,
             ),
             'Refresh': grpc.unary_unary_rpc_method_handler(
                     servicer.Refresh,
-                    request_deserializer=app_dot_pb_dot_auth__pb2.RefreshRequest.FromString,
-                    response_serializer=app_dot_pb_dot_auth__pb2.TokenResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.RefreshRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.SerializeToString,
             ),
             'Logout': grpc.unary_unary_rpc_method_handler(
                     servicer.Logout,
-                    request_deserializer=app_dot_pb_dot_auth__pb2.LogoutRequest.FromString,
-                    response_serializer=app_dot_pb_dot_auth__pb2.LogoutResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.LogoutRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.LogoutResponse.SerializeToString,
             ),
             'InviteRecruiter': grpc.unary_unary_rpc_method_handler(
                     servicer.InviteRecruiter,
-                    request_deserializer=app_dot_pb_dot_auth__pb2.InviteRecruiterRequest.FromString,
-                    response_serializer=app_dot_pb_dot_auth__pb2.UserResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.InviteRecruiterRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.SerializeToString,
             ),
             'ForgotPassword': grpc.unary_unary_rpc_method_handler(
                     servicer.ForgotPassword,
-                    request_deserializer=app_dot_pb_dot_auth__pb2.ForgotPasswordRequest.FromString,
-                    response_serializer=app_dot_pb_dot_auth__pb2.OkResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.ForgotPasswordRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.OkResponse.SerializeToString,
             ),
             'ResetPassword': grpc.unary_unary_rpc_method_handler(
                     servicer.ResetPassword,
-                    request_deserializer=app_dot_pb_dot_auth__pb2.ResetPasswordRequest.FromString,
-                    response_serializer=app_dot_pb_dot_auth__pb2.OkResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.ResetPasswordRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.OkResponse.SerializeToString,
+            ),
+            'ResendVerification': grpc.unary_unary_rpc_method_handler(
+                    servicer.ResendVerification,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.ResendVerificationRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.OkResponse.SerializeToString,
             ),
             'Me': grpc.unary_unary_rpc_method_handler(
                     servicer.Me,
-                    request_deserializer=app_dot_pb_dot_auth__pb2.MeRequest.FromString,
-                    response_serializer=app_dot_pb_dot_auth__pb2.IdentityResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.MeRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.IdentityResponse.SerializeToString,
+            ),
+            'ListOAuthProviders': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListOAuthProviders,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.ListOAuthProvidersRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.OAuthProvidersResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -234,8 +266,8 @@ class AuthService:
             request,
             target,
             '/admin.auth.v1.AuthService/RegisterCompany',
-            app_dot_pb_dot_auth__pb2.RegisterCompanyRequest.SerializeToString,
-            app_dot_pb_dot_auth__pb2.UserResponse.FromString,
+            app_dot_routes_dot_pb_dot_auth__pb2.RegisterCompanyRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -261,8 +293,8 @@ class AuthService:
             request,
             target,
             '/admin.auth.v1.AuthService/RegisterCandidate',
-            app_dot_pb_dot_auth__pb2.RegisterCandidateRequest.SerializeToString,
-            app_dot_pb_dot_auth__pb2.UserResponse.FromString,
+            app_dot_routes_dot_pb_dot_auth__pb2.RegisterCandidateRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -288,8 +320,8 @@ class AuthService:
             request,
             target,
             '/admin.auth.v1.AuthService/Verify',
-            app_dot_pb_dot_auth__pb2.VerifyRequest.SerializeToString,
-            app_dot_pb_dot_auth__pb2.UserResponse.FromString,
+            app_dot_routes_dot_pb_dot_auth__pb2.VerifyRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -315,8 +347,8 @@ class AuthService:
             request,
             target,
             '/admin.auth.v1.AuthService/Login',
-            app_dot_pb_dot_auth__pb2.LoginRequest.SerializeToString,
-            app_dot_pb_dot_auth__pb2.TokenResponse.FromString,
+            app_dot_routes_dot_pb_dot_auth__pb2.LoginRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -342,8 +374,8 @@ class AuthService:
             request,
             target,
             '/admin.auth.v1.AuthService/Refresh',
-            app_dot_pb_dot_auth__pb2.RefreshRequest.SerializeToString,
-            app_dot_pb_dot_auth__pb2.TokenResponse.FromString,
+            app_dot_routes_dot_pb_dot_auth__pb2.RefreshRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -369,8 +401,8 @@ class AuthService:
             request,
             target,
             '/admin.auth.v1.AuthService/Logout',
-            app_dot_pb_dot_auth__pb2.LogoutRequest.SerializeToString,
-            app_dot_pb_dot_auth__pb2.LogoutResponse.FromString,
+            app_dot_routes_dot_pb_dot_auth__pb2.LogoutRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.LogoutResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -396,8 +428,8 @@ class AuthService:
             request,
             target,
             '/admin.auth.v1.AuthService/InviteRecruiter',
-            app_dot_pb_dot_auth__pb2.InviteRecruiterRequest.SerializeToString,
-            app_dot_pb_dot_auth__pb2.UserResponse.FromString,
+            app_dot_routes_dot_pb_dot_auth__pb2.InviteRecruiterRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.UserResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -423,8 +455,8 @@ class AuthService:
             request,
             target,
             '/admin.auth.v1.AuthService/ForgotPassword',
-            app_dot_pb_dot_auth__pb2.ForgotPasswordRequest.SerializeToString,
-            app_dot_pb_dot_auth__pb2.OkResponse.FromString,
+            app_dot_routes_dot_pb_dot_auth__pb2.ForgotPasswordRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.OkResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -450,8 +482,35 @@ class AuthService:
             request,
             target,
             '/admin.auth.v1.AuthService/ResetPassword',
-            app_dot_pb_dot_auth__pb2.ResetPasswordRequest.SerializeToString,
-            app_dot_pb_dot_auth__pb2.OkResponse.FromString,
+            app_dot_routes_dot_pb_dot_auth__pb2.ResetPasswordRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.OkResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ResendVerification(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.auth.v1.AuthService/ResendVerification',
+            app_dot_routes_dot_pb_dot_auth__pb2.ResendVerificationRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.OkResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -477,8 +536,35 @@ class AuthService:
             request,
             target,
             '/admin.auth.v1.AuthService/Me',
-            app_dot_pb_dot_auth__pb2.MeRequest.SerializeToString,
-            app_dot_pb_dot_auth__pb2.IdentityResponse.FromString,
+            app_dot_routes_dot_pb_dot_auth__pb2.MeRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.IdentityResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListOAuthProviders(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.auth.v1.AuthService/ListOAuthProviders',
+            app_dot_routes_dot_pb_dot_auth__pb2.ListOAuthProvidersRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.OAuthProvidersResponse.FromString,
             options,
             channel_credentials,
             insecure,
