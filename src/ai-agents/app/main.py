@@ -126,7 +126,11 @@ async def serve() -> None:
     # wrapped in CorrelationIdMiddleware so each RPC carries a correlation_id; all
     # else is /health. lifespan="off": no FastAPI app, deps are wired here directly.
     grpc_app = CorrelationIdMiddleware(
-        create_grpc_app(deps, allow_origin=s.cors_allow_origin)
+        create_grpc_app(
+            deps,
+            allow_origin=s.cors_allow_origin,
+            timeout_seconds=s.grpc_timeout_seconds,
+        )
     )
     api = _grpc_dispatcher(grpc_app, _health_app)
     config = uvicorn.Config(

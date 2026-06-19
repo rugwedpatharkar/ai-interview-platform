@@ -117,7 +117,14 @@ export default function InterviewPage() {
               metaJson: e.meta ? JSON.stringify(e.meta) : "",
             })),
           })
-          .then(() => {}), // runtime only needs settle/throw to retry; drop the count
+          .then(() => {})
+          .catch((err) => {
+            // Drop a permanently-rejected batch (bad payload) so the runtime doesn't
+            // re-queue it forever; rethrow transient failures so it retries (parity with
+            // the old client's 4xx-drop / 5xx-retry split).
+            if (err instanceof ConnectError && err.code === Code.InvalidArgument) return;
+            throw err;
+          }),
     });
   }, [phase, proctorConsented, applicationId, api]);
 

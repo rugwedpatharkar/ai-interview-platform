@@ -23,9 +23,13 @@ class Settings(BaseServiceSettings):
     mcp_capability_url: str = "http://localhost:8101/mcp"
     http_host: str = "0.0.0.0"  # noqa: S104 — containerized server binds all interfaces
     http_port: int = 8080
-    # Browser CORS allow-list for the REST/SSE endpoints (chat, jd, interview) the SPAs
-    # call cross-origin. Comma-separated FE origins; a "*" here disables credentialed
-    # CORS (see lib.web.cors_config). Override per deployment.
+    # Per-call gRPC-web deadline. Generous because Chat is server-streaming (one long
+    # answer) and StartInterview makes two sequential LLM calls; the inner LLM timeout
+    # (llm_timeout_seconds) is the real per-call bound — this is the outer safety net.
+    grpc_timeout_seconds: int = 300
+    # Browser CORS allow-list for the gRPC-web endpoints (interview/chat/jd/proctor/rtc)
+    # the SPAs call cross-origin. Comma-separated FE origins; a "*" here disables
+    # credentialed CORS (see lib.web.cors_config). Override per deployment.
     cors_allow_origin: str = "http://localhost:3000,http://localhost:3001"
     livekit_url: str = "ws://localhost:7880"
     livekit_api_key: str = ""  # env only
