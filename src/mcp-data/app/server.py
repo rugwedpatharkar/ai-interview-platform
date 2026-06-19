@@ -6,8 +6,9 @@ tool results are JSON-serializable. Run `python -m app.server`.
 """
 
 from bson import ObjectId
-from lib.logging import configure_logging, get_logger
+from lib.logging import bind_ids, configure_logging, get_logger, log_context
 from lib.mongodb import MongoManager
+from lib.observability import init_tracing, start_metrics_server
 from mcp.server.fastmcp import FastMCP
 
 from app.config import get_settings
@@ -39,85 +40,121 @@ def _jsonable(value):
 @mcp.tool()
 async def save_profile(user_id: str, profile: dict) -> None:
     """Persist a candidate's structured profile (marks it parsed)."""
-    await _store.save_profile(user_id, profile)
+    async with log_context(log, "tool.save_profile", **bind_ids(user_id=user_id)):
+        await _store.save_profile(user_id, profile)
 
 
 @mcp.tool()
 async def get_job(job_id: str) -> dict | None:
     """Fetch a job document by id."""
-    return _jsonable(await _store.get_job(job_id))
+    async with log_context(log, "tool.get_job", **bind_ids(job_id=job_id)):
+        return _jsonable(await _store.get_job(job_id))
 
 
 @mcp.tool()
 async def get_profile(user_id: str) -> dict | None:
     """Fetch a candidate's structured profile by user id (for matching)."""
-    return _jsonable(await _store.get_profile(user_id))
+    async with log_context(log, "tool.get_profile", **bind_ids(user_id=user_id)):
+        return _jsonable(await _store.get_profile(user_id))
 
 
 @mcp.tool()
 async def save_question_plan(job_id: str, plan: dict) -> None:
     """Persist the job-level RAG-grounded question plan (built on job.published)."""
-    await _store.save_question_plan(job_id, plan)
+    async with log_context(log, "tool.save_question_plan", **bind_ids(job_id=job_id)):
+        await _store.save_question_plan(job_id, plan)
 
 
 @mcp.tool()
 async def get_question_plan(job_id: str) -> dict | None:
     """Fetch the cached job question plan (None if not built)."""
-    return _jsonable(await _store.get_question_plan(job_id))
+    async with log_context(log, "tool.get_question_plan", **bind_ids(job_id=job_id)):
+        return _jsonable(await _store.get_question_plan(job_id))
 
 
 @mcp.tool()
 async def list_applicants(scope: dict, job_id: str) -> list:
     """List a job's applicants — scope-checked (recruiter sees only own-comp jobs)."""
-    return _jsonable(await _store.list_applicants(scope, job_id))
+    async with log_context(
+        log,
+        "tool.list_applicants",
+        **bind_ids(job_id=job_id, comp_id=scope.get("comp_id", "")),
+    ):
+        return _jsonable(await _store.list_applicants(scope, job_id))
 
 
 @mcp.tool()
 async def get_application_status(scope: dict, application_id: str) -> dict | None:
     """Application status — scope-checked (candidate=own, recruiter=own-comp)."""
-    return _jsonable(await _store.get_application_status(scope, application_id))
+    async with log_context(
+        log,
+        "tool.get_application_status",
+        **bind_ids(application_id=application_id),
+    ):
+        return _jsonable(await _store.get_application_status(scope, application_id))
 
 
 @mcp.tool()
 async def save_aptitude_bank(job_id: str, bank: dict) -> None:
     """Persist the aptitude bank for a job."""
-    await _store.save_aptitude_bank(job_id, bank)
+    async with log_context(log, "tool.save_aptitude_bank", **bind_ids(job_id=job_id)):
+        await _store.save_aptitude_bank(job_id, bank)
 
 
 @mcp.tool()
 async def get_aptitude_bank(job_id: str) -> dict | None:
     """Fetch a job's aptitude bank (None if not built) — for idempotency."""
-    return _jsonable(await _store.get_aptitude_bank(job_id))
+    async with log_context(log, "tool.get_aptitude_bank", **bind_ids(job_id=job_id)):
+        return _jsonable(await _store.get_aptitude_bank(job_id))
 
 
 @mcp.tool()
 async def get_interview_context(application_id: str) -> dict | None:
     """Assemble transcript + blueprint + jd_text + profile for scoring."""
-    return _jsonable(await _store.get_interview_context(application_id))
+    async with log_context(
+        log,
+        "tool.get_interview_context",
+        **bind_ids(application_id=application_id),
+    ):
+        return _jsonable(await _store.get_interview_context(application_id))
 
 
 @mcp.tool()
 async def save_report(application_id: str, report: dict) -> None:
     """Persist the interview report for an application."""
-    await _store.save_report(application_id, report)
+    async with log_context(
+        log, "tool.save_report", **bind_ids(application_id=application_id)
+    ):
+        await _store.save_report(application_id, report)
 
 
 @mcp.tool()
 async def get_report(application_id: str) -> dict | None:
     """Fetch a stored interview report (None if not yet scored) — for idempotency."""
-    return _jsonable(await _store.get_report(application_id))
+    async with log_context(
+        log, "tool.get_report", **bind_ids(application_id=application_id)
+    ):
+        return _jsonable(await _store.get_report(application_id))
 
 
 @mcp.tool()
 async def get_interview_setup(application_id: str) -> dict | None:
     """Assemble comp_id/job_id/candidate/jd_text/profile to start an interview."""
-    return _jsonable(await _store.get_interview_setup(application_id))
+    async with log_context(
+        log,
+        "tool.get_interview_setup",
+        **bind_ids(application_id=application_id),
+    ):
+        return _jsonable(await _store.get_interview_setup(application_id))
 
 
 @mcp.tool()
 async def save_interview(application_id: str, interview: dict) -> None:
     """Persist the completed interview (transcript + blueprint)."""
-    await _store.save_interview(application_id, interview)
+    async with log_context(
+        log, "tool.save_interview", **bind_ids(application_id=application_id)
+    ):
+        await _store.save_interview(application_id, interview)
 
 
 @mcp.tool()
@@ -125,7 +162,12 @@ async def save_proctoring_events(
     application_id: str, comp_id: str, events: list
 ) -> int:
     """Append advisory proctoring signals (typed events only, no raw media)."""
-    return await _store.save_proctoring_events(application_id, comp_id, events)
+    async with log_context(
+        log,
+        "tool.save_proctoring_events",
+        **bind_ids(application_id=application_id, comp_id=comp_id),
+    ):
+        return await _store.save_proctoring_events(application_id, comp_id, events)
 
 
 @mcp.tool()
@@ -133,23 +175,39 @@ async def save_match_result(
     comp_id: str, job_id: str, candidate_user_id: str, score: float, reasons: list[str]
 ) -> bool:
     """Persist a candidate<->job match result; returns True only on the first write."""
-    return await _store.save_match_result(
-        comp_id, job_id, candidate_user_id, score, reasons
-    )
+    async with log_context(
+        log,
+        "tool.save_match_result",
+        **bind_ids(comp_id=comp_id, job_id=job_id),
+    ):
+        return await _store.save_match_result(
+            comp_id, job_id, candidate_user_id, score, reasons
+        )
 
 
 @mcp.tool()
 async def get_match_results(job_id: str = "", candidate_user_id: str = "") -> list:
     """List match results filtered by job and/or candidate (comp-scoped on read)."""
-    return _jsonable(
-        await _store.get_match_results(
-            job_id=job_id or None, candidate_user_id=candidate_user_id or None
+    async with log_context(
+        log,
+        "tool.get_match_results",
+        **bind_ids(job_id=job_id),
+    ):
+        return _jsonable(
+            await _store.get_match_results(
+                job_id=job_id or None, candidate_user_id=candidate_user_id or None
+            )
         )
-    )
 
 
 def main() -> None:
     configure_logging(_settings.service_name, _settings.log_level)
+    init_tracing(_settings.service_name, enabled=_settings.tracing_enabled)
+    import asyncio
+
+    asyncio.get_event_loop().run_until_complete(
+        start_metrics_server(_settings.metrics_port)
+    )
     mcp.run(transport="streamable-http")
 
 

@@ -2,6 +2,7 @@ import asyncio
 
 import uvicorn
 from lib.logging import configure_logging, get_logger
+from lib.observability import init_tracing, start_metrics_server
 from lib.rabbitmq import Consumer, Publisher
 from lib.redis import create_redis
 from lib.security import TokenService
@@ -32,6 +33,8 @@ def _token_service(s):
 async def serve() -> None:
     s = get_settings()
     configure_logging(s.service_name, s.log_level)
+    init_tracing(s.service_name, enabled=s.tracing_enabled)
+    await start_metrics_server(s.metrics_port)
     redis = create_redis(s.redis_url)
     publisher = Publisher(s.rabbitmq_url, s.rabbitmq_exchange)
     await publisher.connect()

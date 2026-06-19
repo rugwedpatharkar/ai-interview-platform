@@ -5,7 +5,7 @@ import, so this module imports no SDK. `FakeOAuthClient` returns a canned verifi
 so SSO is unit-tested offline; live provider exchange defers until creds exist.
 """
 
-from lib.logging import get_logger
+from lib.logging import get_logger, log_context
 
 from app.errors import InvalidTokenError
 
@@ -22,30 +22,40 @@ class HttpOAuthClient:
 
         cfg = self._providers.get(provider)
         if cfg is None:
+            log.warning("oauth.exchange: unknown provider={}", provider)
             raise InvalidTokenError(f"unknown OAuth provider: {provider}")
-        async with httpx.AsyncClient(timeout=10) as client:
-            token_resp = await client.post(
-                cfg["token_url"],
-                data={
-                    "grant_type": "authorization_code",
-                    "code": code,
-                    "client_id": cfg["client_id"],
-                    "client_secret": cfg["client_secret"],
-                    "redirect_uri": cfg["redirect_uri"],
-                },
-            )
-            token_resp.raise_for_status()
-            access = token_resp.json().get("access_token")
-            if not access:
-                raise InvalidTokenError("OAuth token response missing access_token")
-            info = await client.get(
-                cfg["userinfo_url"], headers={"Authorization": f"Bearer {access}"}
-            )
-            info.raise_for_status()
-        data = info.json()
-        email = data.get("email")
-        if not email:
-            raise InvalidTokenError("OAuth userinfo missing email")
+        async with log_context(log, "oauth.exchange", provider=provider):
+            async with httpx.AsyncClient(timeout=10) as client:
+                token_resp = await client.post(
+                    cfg["token_url"],
+                    data={
+                        "grant_type": "authorization_code",
+                        "code": code,
+                        "client_id": cfg["client_id"],
+                        "client_secret": cfg["client_secret"],
+                        "redirect_uri": cfg["redirect_uri"],
+                    },
+                )
+                token_resp.raise_for_status()
+                access = token_resp.json().get("access_token")
+                if not access:
+                    log.error(
+                        "oauth.exchange: provider={} token response missing"
+                        " access_token",
+                        provider,
+                    )
+                    raise InvalidTokenError("OAuth token response missing access_token")
+                info = await client.get(
+                    cfg["userinfo_url"], headers={"Authorization": f"Bearer {access}"}
+                )
+                info.raise_for_status()
+            data = info.json()
+            email = data.get("email")
+            if not email:
+                log.error(
+                    "oauth.exchange: provider={} userinfo missing email", provider
+                )
+                raise InvalidTokenError("OAuth userinfo missing email")
         return email, bool(data.get("email_verified"))
 
 

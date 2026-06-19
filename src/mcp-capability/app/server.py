@@ -7,7 +7,8 @@ for the server's lifetime. The ai-agents service connects as an MCP client. Run 
 
 import asyncio
 
-from lib.logging import configure_logging, get_logger
+from lib.logging import configure_logging, get_logger, log_context
+from lib.observability import init_tracing, start_metrics_server
 from lib.redis import create_redis
 from lib.storage import ObjectStorage
 from mcp.server.fastmcp import FastMCP
@@ -63,50 +64,58 @@ mcp = FastMCP(
 @mcp.tool()
 async def parse_document(object_key: str, owner: str = "") -> str:
     """Extract text from a stored resume (PDF/DOCX), scoped to the owner's keys."""
-    await _ensure_rag()  # connects _storage on first use
-    return await _parse(object_key, storage=_storage, owner=owner or None)
+    async with log_context(
+        log, "tool.parse_document", object_key=object_key, owner=owner or None
+    ):
+        await _ensure_rag()  # connects _storage on first use
+        return await _parse(object_key, storage=_storage, owner=owner or None)
 
 
 @mcp.tool()
 async def embed(texts: list[str]) -> list[list[float]]:
     """Embed texts into dense vectors."""
-    rag = await _ensure_rag()
-    return await _embed(texts, embedder=rag["embedder"])
+    async with log_context(log, "tool.embed", text_count=len(texts)):
+        rag = await _ensure_rag()
+        return await _embed(texts, embedder=rag["embedder"])
 
 
 @mcp.tool()
 async def kb_search(query: str, topic: str, owner: str = "", k: int = 5) -> dict:
     """Hybrid (dense + BM25) search over a tenant+topic KB; returns cited chunks."""
-    rag = await _ensure_rag()
-    result = await _kb_search(
-        query,
-        topic,
-        owner,
-        embedder=rag["embedder"],
-        store=rag["store"],
-        redis=rag["redis"],
-        k=k,
-    )
-    return result.model_dump()
+    async with log_context(log, "tool.kb_search", topic=topic, owner=owner, k=k):
+        rag = await _ensure_rag()
+        result = await _kb_search(
+            query,
+            topic,
+            owner,
+            embedder=rag["embedder"],
+            store=rag["store"],
+            redis=rag["redis"],
+            k=k,
+        )
+        return result.model_dump()
 
 
 @mcp.tool()
 async def ingest(owner: str, sources: list[dict]) -> dict:
     """Crawl + chunk + embed sources into a topic KB (content-hash deduped)."""
-    rag = await _ensure_rag()
-    result = await _ingest(
-        owner,
-        sources,
-        fetcher=rag["fetcher"],
-        embedder=rag["embedder"],
-        store=rag["store"],
-        redis=rag["redis"],
-    )
-    return result.model_dump()
+    async with log_context(log, "tool.ingest", owner=owner, source_count=len(sources)):
+        rag = await _ensure_rag()
+        result = await _ingest(
+            owner,
+            sources,
+            fetcher=rag["fetcher"],
+            embedder=rag["embedder"],
+            store=rag["store"],
+            redis=rag["redis"],
+        )
+        return result.model_dump()
 
 
 def main() -> None:
     configure_logging(_settings.service_name, _settings.log_level)
+    init_tracing(_settings.service_name, enabled=_settings.tracing_enabled)
+    asyncio.run(start_metrics_server(_settings.metrics_port))
     mcp.run(transport="streamable-http")
 
 

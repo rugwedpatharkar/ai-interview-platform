@@ -6,7 +6,8 @@ codes. No business logic lives here.
 """
 
 import grpc
-from lib.logging import get_logger
+from lib.logging import get_logger, log_context
+from lib.observability import counter, span
 
 from app.errors import (
     AuthDomainError,
@@ -23,6 +24,13 @@ from app.resources import auth as auth_res
 from app.routes.pb import auth_pb2, auth_pb2_grpc
 
 log = get_logger(component="auth.routes")
+
+_grpc_total = counter("admin_grpc_requests_total", "gRPC requests received", ["method"])
+_grpc_errors = counter(
+    "admin_grpc_errors_total",
+    "gRPC requests that resulted in a domain error",
+    ["method"],
+)
 
 _STATUS = {
     ConflictError: grpc.StatusCode.ALREADY_EXISTS,
@@ -105,145 +113,178 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
         self._nonces = nonces
         self._audit = audit
 
-    async def _abort(self, context, exc):
+    async def _abort(self, context, exc, method="unknown"):
         code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
+        log.warning("auth.routes.{}: {} code={}", method, exc, code.name)
+        _grpc_errors.labels(method=method).inc()
         await context.abort(code, str(exc))
 
     async def RegisterCompany(self, request, context):
-        try:
-            out = await auth_res.register_company(
-                request.company_name,
-                request.email,
-                request.password,
-                companies=self._companies,
-                users=self._users,
-                tokens=self._tokens,
-                notifier=self._notifier,
-                nonces=self._nonces,
-            )
-            return _user_response(out)
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="RegisterCompany").inc()
+        async with (
+            log_context(log, "auth.RegisterCompany"),
+            span("auth.RegisterCompany"),
+        ):
+            try:
+                out = await auth_res.register_company(
+                    request.company_name,
+                    request.email,
+                    request.password,
+                    companies=self._companies,
+                    users=self._users,
+                    tokens=self._tokens,
+                    notifier=self._notifier,
+                    nonces=self._nonces,
+                )
+                return _user_response(out)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "RegisterCompany")
 
     async def RegisterCandidate(self, request, context):
-        try:
-            out = await auth_res.register_candidate(
-                request.email,
-                request.password,
-                users=self._users,
-                tokens=self._tokens,
-                notifier=self._notifier,
-                nonces=self._nonces,
-            )
-            return _user_response(out)
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="RegisterCandidate").inc()
+        async with (
+            log_context(log, "auth.RegisterCandidate"),
+            span("auth.RegisterCandidate"),
+        ):
+            try:
+                out = await auth_res.register_candidate(
+                    request.email,
+                    request.password,
+                    users=self._users,
+                    tokens=self._tokens,
+                    notifier=self._notifier,
+                    nonces=self._nonces,
+                )
+                return _user_response(out)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "RegisterCandidate")
 
     async def Verify(self, request, context):
-        try:
-            out = await auth_res.verify_email(
-                request.token,
-                users=self._users,
-                tokens=self._tokens,
-                nonces=self._nonces,
-            )
-            return _user_response(out)
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="Verify").inc()
+        async with log_context(log, "auth.Verify"), span("auth.Verify"):
+            try:
+                out = await auth_res.verify_email(
+                    request.token,
+                    users=self._users,
+                    tokens=self._tokens,
+                    nonces=self._nonces,
+                )
+                return _user_response(out)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "Verify")
 
     async def Login(self, request, context):
-        try:
-            out = await auth_res.login(
-                request.email,
-                request.password,
-                ip=_client_ip(context, self._trusted_proxy),
-                users=self._users,
-                tokens=self._tokens,
-                sessions=self._sessions,
-                limiter=self._limiter,
-                refresh_ttl_seconds=self._refresh_ttl,
-                audit=self._audit,
-            )
-            return auth_pb2.TokenResponse(
-                access_token=out["access_token"],
-                refresh_token=out["refresh_token"],
-                token_type=out["token_type"],
-            )
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="Login").inc()
+        async with log_context(log, "auth.Login"), span("auth.Login"):
+            try:
+                out = await auth_res.login(
+                    request.email,
+                    request.password,
+                    ip=_client_ip(context, self._trusted_proxy),
+                    users=self._users,
+                    tokens=self._tokens,
+                    sessions=self._sessions,
+                    limiter=self._limiter,
+                    refresh_ttl_seconds=self._refresh_ttl,
+                    audit=self._audit,
+                )
+                return auth_pb2.TokenResponse(
+                    access_token=out["access_token"],
+                    refresh_token=out["refresh_token"],
+                    token_type=out["token_type"],
+                )
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "Login")
 
     async def Me(self, request, context):
         # Route through caller_identity so an expired/invalid access token aborts
         # UNAUTHENTICATED (not INVALID_ARGUMENT) — Me is what the FE calls to validate
         # a session, so this is what lets the transport refresh-and-retry on expiry.
-        ident = await caller_identity(context, self._tokens)
-        return auth_pb2.IdentityResponse(
-            id=ident["id"], role=ident["role"], comp_id=ident["comp_id"] or ""
-        )
+        _grpc_total.labels(method="Me").inc()
+        async with log_context(log, "auth.Me"):
+            ident = await caller_identity(context, self._tokens)
+            return auth_pb2.IdentityResponse(
+                id=ident["id"], role=ident["role"], comp_id=ident["comp_id"] or ""
+            )
 
     async def Refresh(self, request, context):
-        try:
-            out = await auth_res.refresh(
-                request.refresh_token,
-                users=self._users,
-                tokens=self._tokens,
-                sessions=self._sessions,
-                refresh_ttl_seconds=self._refresh_ttl,
-            )
-            return auth_pb2.TokenResponse(
-                access_token=out["access_token"],
-                refresh_token=out["refresh_token"],
-                token_type=out["token_type"],
-            )
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="Refresh").inc()
+        async with log_context(log, "auth.Refresh"), span("auth.Refresh"):
+            try:
+                out = await auth_res.refresh(
+                    request.refresh_token,
+                    users=self._users,
+                    tokens=self._tokens,
+                    sessions=self._sessions,
+                    refresh_ttl_seconds=self._refresh_ttl,
+                )
+                return auth_pb2.TokenResponse(
+                    access_token=out["access_token"],
+                    refresh_token=out["refresh_token"],
+                    token_type=out["token_type"],
+                )
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "Refresh")
 
     async def Logout(self, request, context):
-        out = await auth_res.logout(
-            request.refresh_token, tokens=self._tokens, sessions=self._sessions
-        )
-        return auth_pb2.LogoutResponse(ok=out["ok"])
+        _grpc_total.labels(method="Logout").inc()
+        async with log_context(log, "auth.Logout"):
+            out = await auth_res.logout(
+                request.refresh_token, tokens=self._tokens, sessions=self._sessions
+            )
+            return auth_pb2.LogoutResponse(ok=out["ok"])
 
     async def InviteRecruiter(self, request, context):
+        _grpc_total.labels(method="InviteRecruiter").inc()
         token = _bearer_from_metadata(context)
         if token is None:
+            log.warning("auth.InviteRecruiter: missing bearer token")
+            _grpc_errors.labels(method="InviteRecruiter").inc()
             await context.abort(grpc.StatusCode.UNAUTHENTICATED, "Not authenticated")
-        try:
-            out = await auth_res.invite_recruiter(
-                token,
+        async with (
+            log_context(log, "auth.InviteRecruiter"),
+            span("auth.InviteRecruiter"),
+        ):
+            try:
+                out = await auth_res.invite_recruiter(
+                    token,
+                    request.email,
+                    request.password,
+                    users=self._users,
+                    tokens=self._tokens,
+                    notifier=self._notifier,
+                    nonces=self._nonces,
+                    audit=self._audit,
+                )
+                return _user_response(out)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "InviteRecruiter")
+
+    async def ForgotPassword(self, request, context):
+        _grpc_total.labels(method="ForgotPassword").inc()
+        async with log_context(log, "auth.ForgotPassword"):
+            out = await auth_res.forgot_password(
                 request.email,
-                request.password,
                 users=self._users,
                 tokens=self._tokens,
                 notifier=self._notifier,
                 nonces=self._nonces,
-                audit=self._audit,
-            )
-            return _user_response(out)
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
-
-    async def ForgotPassword(self, request, context):
-        out = await auth_res.forgot_password(
-            request.email,
-            users=self._users,
-            tokens=self._tokens,
-            notifier=self._notifier,
-            nonces=self._nonces,
-        )
-        return auth_pb2.OkResponse(ok=out["ok"])
-
-    async def ResetPassword(self, request, context):
-        try:
-            out = await auth_res.reset_password(
-                request.token,
-                request.new_password,
-                users=self._users,
-                tokens=self._tokens,
-                sessions=self._sessions,
-                nonces=self._nonces,
-                audit=self._audit,
             )
             return auth_pb2.OkResponse(ok=out["ok"])
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+
+    async def ResetPassword(self, request, context):
+        _grpc_total.labels(method="ResetPassword").inc()
+        async with log_context(log, "auth.ResetPassword"), span("auth.ResetPassword"):
+            try:
+                out = await auth_res.reset_password(
+                    request.token,
+                    request.new_password,
+                    users=self._users,
+                    tokens=self._tokens,
+                    sessions=self._sessions,
+                    nonces=self._nonces,
+                    audit=self._audit,
+                )
+                return auth_pb2.OkResponse(ok=out["ok"])
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "ResetPassword")

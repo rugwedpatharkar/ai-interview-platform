@@ -6,10 +6,28 @@ interviews so half-finished sessions self-expire.
 """
 
 from lib.logging import get_logger
+from lib.observability import counter, histogram
 
 from app.model.interview import InterviewSession
 
 log = get_logger(component="gateway.sessions")
+
+# ---------------------------------------------------------------------------
+# Metrics
+# ---------------------------------------------------------------------------
+_session_ops_total = counter(
+    "session_store_ops_total", "Redis interview session operations", labels=["op"]
+)
+_session_ops_errors = counter(
+    "session_store_ops_errors_total",
+    "Redis interview session operation errors",
+    labels=["op"],
+)
+_session_ops_duration = histogram(
+    "session_store_ops_duration_ms",
+    "Redis interview session operation duration (ms)",
+    labels=["op"],
+)
 
 # A session must outlive its own time budget by at least one reaper interval, or
 # abandon_stale's scan would never see it (key expires first) and the interview would
@@ -28,27 +46,66 @@ class RedisInterviewStore:
         return f"{self._ns}:{application_id}"
 
     async def save(self, session):
-        ttl = max(
-            self._ttl,
-            session.blueprint.time_budget_min * 60 + _REAPER_MARGIN_SECONDS,
-        )
-        await self._redis.set(
-            self._key(session.application_id),
-            session.model_dump_json(),
-            ex=ttl,
-        )
+        import time
+
+        _session_ops_total.labels(op="save").inc()
+        t0 = time.monotonic()
+        try:
+            ttl = max(
+                self._ttl,
+                session.blueprint.time_budget_min * 60 + _REAPER_MARGIN_SECONDS,
+            )
+            await self._redis.set(
+                self._key(session.application_id),
+                session.model_dump_json(),
+                ex=ttl,
+            )
+        except Exception:
+            _session_ops_errors.labels(op="save").inc()
+            _session_ops_duration.labels(op="save").observe(
+                (time.monotonic() - t0) * 1000
+            )
+            raise
+        _session_ops_duration.labels(op="save").observe((time.monotonic() - t0) * 1000)
 
     async def get(self, application_id):
-        raw = await self._redis.get(self._key(application_id))
-        return InterviewSession.model_validate_json(raw) if raw else None
+        import time
+
+        _session_ops_total.labels(op="get").inc()
+        t0 = time.monotonic()
+        try:
+            raw = await self._redis.get(self._key(application_id))
+            result = InterviewSession.model_validate_json(raw) if raw else None
+        except Exception:
+            _session_ops_errors.labels(op="get").inc()
+            _session_ops_duration.labels(op="get").observe(
+                (time.monotonic() - t0) * 1000
+            )
+            raise
+        _session_ops_duration.labels(op="get").observe((time.monotonic() - t0) * 1000)
+        return result
 
     async def list_in_progress(self):
         """Scan all checkpointed sessions and return those still in progress."""
-        out = []
-        async for key in self._redis.scan_iter(match=f"{self._ns}:*"):
-            raw = await self._redis.get(key)
-            if raw:
-                session = InterviewSession.model_validate_json(raw)
-                if session.status == "in_progress":
-                    out.append(session)
+        import time
+
+        _session_ops_total.labels(op="list_in_progress").inc()
+        t0 = time.monotonic()
+        try:
+            out = []
+            async for key in self._redis.scan_iter(match=f"{self._ns}:*"):
+                raw = await self._redis.get(key)
+                if raw:
+                    session = InterviewSession.model_validate_json(raw)
+                    if session.status == "in_progress":
+                        out.append(session)
+        except Exception:
+            _session_ops_errors.labels(op="list_in_progress").inc()
+            _session_ops_duration.labels(op="list_in_progress").observe(
+                (time.monotonic() - t0) * 1000
+            )
+            raise
+        _session_ops_duration.labels(op="list_in_progress").observe(
+            (time.monotonic() - t0) * 1000
+        )
         return out

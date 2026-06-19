@@ -1,7 +1,8 @@
 """gRPC RecommendationService routes — thin adapter over the resource layer."""
 
 import grpc
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
+from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import recommendations as rec_res
@@ -9,6 +10,13 @@ from app.routes.auth import _STATUS, caller_identity
 from app.routes.pb import recommendation_pb2, recommendation_pb2_grpc
 
 log = get_logger(component="recommendation.routes")
+
+_grpc_total = counter("admin_grpc_requests_total", "gRPC requests received", ["method"])
+_grpc_errors = counter(
+    "admin_grpc_errors_total",
+    "gRPC requests that resulted in a domain error",
+    ["method"],
+)
 
 
 def _to_proto(m):
@@ -26,25 +34,50 @@ class RecommendationServicer(recommendation_pb2_grpc.RecommendationServiceServic
         self._matches = matches
         self._tokens = tokens
 
-    async def _abort(self, context, exc):
+    async def _abort(self, context, exc, method="unknown"):
+        log.warning(
+            "recommendation.routes.{}: {} code={}",
+            method,
+            exc,
+            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
+        )
+        _grpc_errors.labels(method=method).inc()
         await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
 
     async def GetCandidateRecommendations(self, request, context):
-        try:
-            identity = await caller_identity(context, self._tokens)
-            items = await rec_res.get_candidate_recommendations(
-                identity, matches=self._matches
-            )
-            return recommendation_pb2.MatchList(matches=[_to_proto(m) for m in items])
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="GetCandidateRecommendations").inc()
+        async with (
+            log_context(log, "recommendation.GetCandidateRecommendations"),
+            span("recommendation.GetCandidateRecommendations"),
+        ):
+            try:
+                identity = await caller_identity(context, self._tokens)
+                items = await rec_res.get_candidate_recommendations(
+                    identity, matches=self._matches
+                )
+                return recommendation_pb2.MatchList(
+                    matches=[_to_proto(m) for m in items]
+                )
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "GetCandidateRecommendations")
 
     async def GetJobRankedCandidates(self, request, context):
-        try:
-            identity = await caller_identity(context, self._tokens)
-            items = await rec_res.get_job_ranked_candidates(
-                identity, request.job_id, jobs=self._jobs, matches=self._matches
-            )
-            return recommendation_pb2.MatchList(matches=[_to_proto(m) for m in items])
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="GetJobRankedCandidates").inc()
+        async with (
+            log_context(
+                log,
+                "recommendation.GetJobRankedCandidates",
+                **bind_ids(job_id=request.job_id),
+            ),
+            span("recommendation.GetJobRankedCandidates", job_id=request.job_id),
+        ):
+            try:
+                identity = await caller_identity(context, self._tokens)
+                items = await rec_res.get_job_ranked_candidates(
+                    identity, request.job_id, jobs=self._jobs, matches=self._matches
+                )
+                return recommendation_pb2.MatchList(
+                    matches=[_to_proto(m) for m in items]
+                )
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "GetJobRankedCandidates")

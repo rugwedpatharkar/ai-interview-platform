@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 import uvicorn
 from lib.logging import configure_logging, get_logger
 from lib.mongodb import MongoManager, ensure_indexes
+from lib.observability import init_tracing, start_metrics_server
 from lib.rabbitmq import Consumer, Publisher
 from lib.redis import RateLimiter, create_redis
 from lib.schemas import FunnelEvent
@@ -66,6 +67,8 @@ def _oauth_dispatcher(grpc_app, oauth_app):
 async def serve() -> None:
     s = get_settings()
     configure_logging(s.service_name, s.log_level)
+    init_tracing(s.service_name, enabled=s.tracing_enabled)
+    await start_metrics_server(s.metrics_port)
     mongo = MongoManager(
         s.mongo_uri, s.mongo_db_name, s.mongo_max_pool_size, s.mongo_min_pool_size
     )

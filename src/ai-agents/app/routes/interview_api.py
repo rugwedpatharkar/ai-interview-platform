@@ -12,7 +12,7 @@ from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from jose import JWTError
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 from lib.web import CorrelationIdMiddleware, cors_config
 from pydantic import BaseModel
 
@@ -71,20 +71,25 @@ def _caller_identity(request: Request) -> dict:
 async def start(application_id: str, request: Request):
     deps = request.app.state.deps
     user_id = _caller_user_id(request)
-    try:
-        question = await start_interview(
-            application_id,
-            caller_user_id=user_id,
-            data=deps["data"],
-            sessions=deps["sessions"],
-            llm=deps["llm"],
-        )
-    except NotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except ForbiddenError as e:
-        raise HTTPException(status_code=403, detail=str(e)) from e
-    except ConflictError as e:
-        raise HTTPException(status_code=409, detail=str(e)) from e
+    async with log_context(
+        log,
+        "api.interview.start",
+        **bind_ids(application_id=application_id, user_id=user_id),
+    ):
+        try:
+            question = await start_interview(
+                application_id,
+                caller_user_id=user_id,
+                data=deps["data"],
+                sessions=deps["sessions"],
+                llm=deps["llm"],
+            )
+        except NotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        except ForbiddenError as e:
+            raise HTTPException(status_code=403, detail=str(e)) from e
+        except ConflictError as e:
+            raise HTTPException(status_code=409, detail=str(e)) from e
     return {"question": question}
 
 
@@ -94,20 +99,25 @@ async def turn(application_id: str, body: TurnRequest, request: Request):
     user_id = _caller_user_id(request)
     if not body.answer.strip():
         raise HTTPException(status_code=400, detail="answer cannot be empty")
-    try:
-        decision = await submit_turn(
-            application_id,
-            body.answer,
-            caller_user_id=user_id,
-            sessions=deps["sessions"],
-            data=deps["data"],
-            publisher=deps["publisher"],
-            llm=deps["llm"],
-        )
-    except NotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except ForbiddenError as e:
-        raise HTTPException(status_code=403, detail=str(e)) from e
+    async with log_context(
+        log,
+        "api.interview.turn",
+        **bind_ids(application_id=application_id, user_id=user_id),
+    ):
+        try:
+            decision = await submit_turn(
+                application_id,
+                body.answer,
+                caller_user_id=user_id,
+                sessions=deps["sessions"],
+                data=deps["data"],
+                publisher=deps["publisher"],
+                llm=deps["llm"],
+            )
+        except NotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        except ForbiddenError as e:
+            raise HTTPException(status_code=403, detail=str(e)) from e
     return {"done": decision.done, "question": decision.question}
 
 
@@ -125,18 +135,23 @@ async def proctor(application_id: str, body: ProctorBatch, request: Request):
     user_id = _caller_user_id(request)
     if len(body.events) > _MAX_PROCTOR_EVENTS:
         raise HTTPException(status_code=400, detail="too many events")
-    try:
-        accepted = await record_proctoring_events(
-            application_id,
-            body.events,
-            caller_user_id=user_id,
-            sessions=deps["sessions"],
-            data=deps["data"],
-        )
-    except NotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except ForbiddenError as e:
-        raise HTTPException(status_code=403, detail=str(e)) from e
+    async with log_context(
+        log,
+        "api.interview.proctor",
+        **bind_ids(application_id=application_id, user_id=user_id),
+    ):
+        try:
+            accepted = await record_proctoring_events(
+                application_id,
+                body.events,
+                caller_user_id=user_id,
+                sessions=deps["sessions"],
+                data=deps["data"],
+            )
+        except NotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        except ForbiddenError as e:
+            raise HTTPException(status_code=403, detail=str(e)) from e
     return {"accepted": accepted}
 
 

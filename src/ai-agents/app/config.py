@@ -37,6 +37,8 @@ class Settings(BaseServiceSettings):
     voice_worker_identity_prefix: str = (
         "agent-"  # prefix for the worker participant identity
     )
+    metrics_port: int = 0  # 0 = disabled; set to e.g. 9090 in prod
+    tracing_enabled: bool = False  # dormant by default; enables OTel spans in prod
 
 
 @lru_cache

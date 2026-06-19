@@ -11,6 +11,9 @@ class Settings(BaseServiceSettings):
     qdrant_url: str = "http://localhost:6333"
     gemini_api_key: str = ""
     gemini_embed_model: str = "models/text-embedding-004"
+    # Observability — 0 disables metrics server (safe for tests + local dev).
+    metrics_port: int = 0
+    tracing_enabled: bool = False
 
 
 @lru_cache

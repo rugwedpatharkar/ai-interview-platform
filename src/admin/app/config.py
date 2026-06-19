@@ -50,6 +50,9 @@ class Settings(BaseServiceSettings):
     # candidate :3000 and company :3001 apps each receive their own callback). The
     # default above is the fallback when the requested redirect isn't allow-listed.
     oauth_allowed_redirects: list[str] = Field(default_factory=list)
+    # Observability: 0 = metrics server disabled (default keeps tests offline).
+    metrics_port: int = 0
+    tracing_enabled: bool = False
 
     @field_validator("oauth_providers")
     @classmethod

@@ -39,6 +39,7 @@ import re
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from lib.logging import configure_logging, get_logger
+from lib.observability import init_tracing, start_metrics_server
 from lib.rabbitmq import Publisher
 from lib.redis import create_redis
 from lib.resilience import OperationTimeout, with_timeout
@@ -322,6 +323,8 @@ def _build_webhook_app(
 async def serve() -> None:
     s = get_settings()
     configure_logging(s.service_name, s.log_level)
+    init_tracing(s.service_name, enabled=s.tracing_enabled)
+    await start_metrics_server(s.metrics_port)
     log.info("voice-worker starting on port {}", s.voice_worker_http_port)
 
     redis = create_redis(s.redis_url)

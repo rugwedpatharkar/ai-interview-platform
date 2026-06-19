@@ -9,12 +9,21 @@ crashing the consume loop.
 """
 
 import asyncio
+import time
 
 from lib.logging import get_logger
+from lib.observability import counter, histogram, span
 
 from app.errors import LLMError
 
 log = get_logger(component="llm.gemini")
+
+# ---------------------------------------------------------------------------
+# Metrics
+# ---------------------------------------------------------------------------
+_llm_total = counter("llm_call_total", "LLM structured-output calls")
+_llm_errors = counter("llm_call_errors_total", "LLM structured-output failures")
+_llm_duration = histogram("llm_call_duration_ms", "LLM call duration (ms)")
 
 
 async def _with_retry(factory, *, attempts, base_delay=0.5):
@@ -58,10 +67,23 @@ class GeminiLLM:
         self._attempts = max_retries + 1
 
     async def structured(self, prompt, schema):
-        return await _with_retry(
-            lambda: self._model.with_structured_output(schema).ainvoke(prompt),
-            attempts=self._attempts,
-        )
+        _llm_total.inc()
+        t0 = time.monotonic()
+        try:
+            async with span(
+                "llm.structured",
+                schema=schema.__name__ if hasattr(schema, "__name__") else str(schema),
+            ):
+                result = await _with_retry(
+                    lambda: self._model.with_structured_output(schema).ainvoke(prompt),
+                    attempts=self._attempts,
+                )
+        except Exception:
+            _llm_errors.inc()
+            _llm_duration.observe((time.monotonic() - t0) * 1000)
+            raise
+        _llm_duration.observe((time.monotonic() - t0) * 1000)
+        return result
 
     async def stream(self, prompt):
         # Token streaming for the chat answer (plain text, no schema). No mid-flight

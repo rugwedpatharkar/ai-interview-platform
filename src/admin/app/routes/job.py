@@ -1,7 +1,8 @@
 """gRPC JobService route layer — a thin adapter over app/resources/job."""
 
 import grpc
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
+from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import job as job_res
@@ -9,6 +10,13 @@ from app.routes.auth import _STATUS, caller_identity
 from app.routes.pb import job_pb2, job_pb2_grpc
 
 log = get_logger(component="job.routes")
+
+_grpc_total = counter("admin_grpc_requests_total", "gRPC requests received", ["method"])
+_grpc_errors = counter(
+    "admin_grpc_errors_total",
+    "gRPC requests that resulted in a domain error",
+    ["method"],
+)
 
 
 def _job_response(d):
@@ -23,51 +31,80 @@ class JobServicer(job_pb2_grpc.JobServiceServicer):
         self._publisher = publisher
         self._tokens = tokens
 
-    async def _abort(self, context, exc):
+    async def _abort(self, context, exc, method="unknown"):
+        log.warning(
+            "job.routes.{}: {} code={}",
+            method,
+            exc,
+            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
+        )
+        _grpc_errors.labels(method=method).inc()
         await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
 
     async def CreateJob(self, request, context):
-        try:
-            identity = await caller_identity(context, self._tokens)
-            out = await job_res.create_job(
-                identity, request.title, request.jd_text, jobs=self._jobs
-            )
-            return _job_response(out)
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="CreateJob").inc()
+        async with log_context(log, "job.CreateJob"), span("job.CreateJob"):
+            try:
+                identity = await caller_identity(context, self._tokens)
+                out = await job_res.create_job(
+                    identity, request.title, request.jd_text, jobs=self._jobs
+                )
+                return _job_response(out)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "CreateJob")
 
     async def GetJob(self, request, context):
-        try:
-            identity = await caller_identity(context, self._tokens)
-            out = await job_res.get_job(identity, request.job_id, jobs=self._jobs)
-            return _job_response(out)
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="GetJob").inc()
+        async with (
+            log_context(log, "job.GetJob", **bind_ids(job_id=request.job_id)),
+            span("job.GetJob", job_id=request.job_id),
+        ):
+            try:
+                identity = await caller_identity(context, self._tokens)
+                out = await job_res.get_job(identity, request.job_id, jobs=self._jobs)
+                return _job_response(out)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "GetJob")
 
     async def ListJobs(self, request, context):
-        try:
-            identity = await caller_identity(context, self._tokens)
-            out = await job_res.list_jobs(identity, jobs=self._jobs)
-            return job_pb2.ListJobsResponse(jobs=[_job_response(j) for j in out])
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="ListJobs").inc()
+        async with log_context(log, "job.ListJobs"), span("job.ListJobs"):
+            try:
+                identity = await caller_identity(context, self._tokens)
+                out = await job_res.list_jobs(identity, jobs=self._jobs)
+                return job_pb2.ListJobsResponse(jobs=[_job_response(j) for j in out])
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "ListJobs")
 
     async def PublishJob(self, request, context):
-        try:
-            identity = await caller_identity(context, self._tokens)
-            out = await job_res.publish_job(
-                identity, request.job_id, jobs=self._jobs, publisher=self._publisher
-            )
-            return _job_response(out)
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="PublishJob").inc()
+        async with (
+            log_context(log, "job.PublishJob", **bind_ids(job_id=request.job_id)),
+            span("job.PublishJob", job_id=request.job_id),
+        ):
+            try:
+                identity = await caller_identity(context, self._tokens)
+                out = await job_res.publish_job(
+                    identity,
+                    request.job_id,
+                    jobs=self._jobs,
+                    publisher=self._publisher,
+                )
+                return _job_response(out)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "PublishJob")
 
     async def GetPublicJob(self, request, context):
-        try:
-            await caller_identity(context, self._tokens)  # any authenticated user
-            out = await job_res.get_public_job(request.job_id, jobs=self._jobs)
-            return job_pb2.PublicJob(
-                job_id=out["job_id"], title=out["title"], jd_text=out["jd_text"]
-            )
-        except AuthDomainError as exc:
-            await self._abort(context, exc)
+        _grpc_total.labels(method="GetPublicJob").inc()
+        async with (
+            log_context(log, "job.GetPublicJob", **bind_ids(job_id=request.job_id)),
+            span("job.GetPublicJob", job_id=request.job_id),
+        ):
+            try:
+                await caller_identity(context, self._tokens)  # any authenticated user
+                out = await job_res.get_public_job(request.job_id, jobs=self._jobs)
+                return job_pb2.PublicJob(
+                    job_id=out["job_id"], title=out["title"], jd_text=out["jd_text"]
+                )
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "GetPublicJob")
