@@ -12,7 +12,7 @@ import {
   LoadingState,
   toast,
 } from "@ip/ui";
-import { Code, ConnectError, HttpError, errorMessage, isNotFound, useAuthedQuery, useRequireAuth } from "@ip/shared";
+import { Code, ConnectError, errorMessage, isNotFound, useAuthedQuery, useRequireAuth } from "@ip/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -21,7 +21,6 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../../lib/auth";
 
 function isForbidden(err: unknown): boolean {
-  if (err instanceof HttpError) return err.status === 403;
   return err instanceof ConnectError && err.code === Code.PermissionDenied;
 }
 

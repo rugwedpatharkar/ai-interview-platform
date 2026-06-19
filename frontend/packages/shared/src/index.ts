@@ -7,7 +7,7 @@ export {
   type Identity,
 } from "./auth.js";
 export { useRequireAuth, useRequireRole } from "./guards.js";
-export { errorMessage, isCode, isNotFound, isTransient, HttpError } from "./errors.js";
+export { errorMessage, isCode, isNotFound, isTransient } from "./errors.js";
 export { Code, ConnectError } from "@connectrpc/connect";
 export { makeQueryClient, refetchUntil } from "./query.js";
 export { useAuthedQuery } from "./use-authed-query.js";
