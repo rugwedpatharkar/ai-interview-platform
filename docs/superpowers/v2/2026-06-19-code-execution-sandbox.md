@@ -77,8 +77,8 @@ src/mcp-capability/tests/
   test_seams.py                   (+FakeCodeRunner determinism/scripting cases)
 
 docker/
-  sandbox-python.Dockerfile       (NEW — python:3.12-slim + non-root user, frozen stdlib)
-  sandbox-node.Dockerfile         (NEW — node:22-slim + non-root user)
+  sandbox-python.Dockerfile       (NEW — python:3.12-slim @digest → sandbox-python:pinned; non-root user, frozen stdlib)
+  sandbox-node.Dockerfile         (NEW — node:22-slim @digest → sandbox-node:pinned; non-root user, frozen stdlib)
 
 src/ai-agents/app/infra/mcp_capability.py   (+run_code(...) client method)
 src/ai-agents/tests/test_mcp_clients.py     (+run_code client passthrough test)
@@ -196,20 +196,35 @@ async def run_code(self, language, source, test_cases):
 **Files:** Create `src/mcp-capability/app/infra/__init__.py`,
 `src/mcp-capability/app/infra/docker_code_runner.py`; Create `docker/sandbox-python.Dockerfile`,
 `docker/sandbox-node.Dockerfile`.
-- [ ] **Step 1 — images:** pinned base by digest, add a **non-root** user, no shell tools beyond
-  the interpreter, frozen stdlib (no network/package install at run time). Document the build in
-  `docker/` (`docker build -f docker/sandbox-python.Dockerfile -t sandbox-python:pinned .`).
-- [ ] **Step 2 — `DockerCodeRunner.run`** (the ONLY file importing `docker`): per test case,
-  one fresh container with **every** STOP-SHIP flag (S1–S6) set on `containers.run(... detach=True,
-  network_disabled=True, read_only=True, mem_limit="256m", memswap_limit="256m", nano_cpus=...,
-  pids_limit=64, cap_drop=["ALL"], security_opt=["no-new-privileges"], user="<nonroot>",
-  tmpfs={"/tmp": "..."}, volumes={src_dir: {"bind": "/code", "mode": "ro"}})`); feed `stdin`;
-  enforce **host-side** wall-clock via `asyncio.wait_for` around the wait/log read, killing the
-  container on timeout (S7); read **≤ output_cap_bytes** of logs (S8); classify
-  ok/wrong/timeout/oom/error; **`finally`: `container.kill()` + `container.remove(force=True)` +
-  delete the temp dir** (S9), tolerating already-gone. One container per case (S10) — never
-  reuse. Wrap daemon/SDK calls in try/except → `SandboxError` (+ structured log); transient
-  daemon errors get a bounded retry, **candidate timeouts/OOM do not** (they are `CaseResult`s).
+- [ ] **Step 1 — images:** exact bases **`python:3.12-slim`** and **`node:22-slim`**, each **pinned
+  by digest** (not a floating tag), rebuilt into `sandbox-python:pinned` / `sandbox-node:pinned`
+  with a **non-root** user (S3), no shell tools beyond the interpreter, frozen stdlib (no
+  network/package install at run time — the build is network-on, run **once at deploy**, never at
+  submit). Document the build in `docker/` (`docker build -f docker/sandbox-python.Dockerfile -t
+  sandbox-python:pinned .`; same for node). The **language→image map** (Task 6 Step 2) is the one
+  place a third language (Java/Go) attaches — one image + one row, no contract change; default
+  limits are shared with an **optional per-language override** seam (spec §3.5).
+- [ ] **Step 2 — `DockerCodeRunner.run`** (the ONLY file importing `docker`): dispatch on
+  `language` via the **language→image map** (`{"python": ("sandbox-python:pinned", ["python",
+  "/code/main.py"]), "javascript": ("sandbox-node:pinned", ["node", "/code/main.js"])}`, spec
+  §3.5). Per test case, one fresh container with **every** STOP-SHIP flag (S1–S6) set on
+  `containers.run(... detach=True, network_disabled=True, read_only=True, mem_limit="256m",
+  memswap_limit="256m", nano_cpus=..., pids_limit=64, cap_drop=["ALL"],
+  security_opt=["no-new-privileges"], user="<nonroot>", tmpfs={"/tmp": "..."}, volumes={src_dir:
+  {"bind": "/code", "mode": "ro"}})`); feed `stdin`; enforce **host-side** wall-clock via
+  `asyncio.wait_for` around the wait/log read, killing the container on timeout (S7); read **≤
+  `settings.sandbox_output_cap_bytes` (64 KB)** of stdout+stderr combined, **truncating** with a
+  `…[output truncated at 64 KB]` marker and comparing the **truncated** bytes to `expected` (so
+  over-print ≠ a spurious match) (S8, §3.3); classify ok/wrong/timeout/oom/error per the **error
+  taxonomy** (§3.6): clean exit + match → `ok`; clean exit + mismatch → `wrong`; wall-clock kill →
+  `timeout`; OOM-killed *during* the run → `oom`; non-zero exit / decode failure → `error`.
+  **`finally`: `container.kill()` + `container.remove(force=True)` + delete the temp dir** (S9),
+  tolerating already-gone. One container per case (S10) — never reuse. **Error-taxonomy boundary
+  (explicit, §3.6):** a container that **fails to create/start** (daemon down, **image missing**,
+  create error) → raise **`SandboxError`** (infra); the candidate's process crashing **after**
+  start → a `CaseResult{status="error"|"oom"}` (candidate data, NOT an exception). Wrap daemon/SDK
+  calls in try/except → `SandboxError` (+ structured log); transient daemon errors get a bounded
+  retry, **candidate timeouts/OOM/crashes do not** (they are `CaseResult`s).
 - [ ] **Step 3 — integration verification (manual, NOT the gate):**
   - Known-good Python solution → all cases `ok`; output matches.
   - `while True: pass` → `timeout` (proves S7 host-side kill, not an in-container limit).
@@ -217,8 +232,20 @@ async def run_code(self, language, source, test_cases):
   - `socket.create_connection(("1.1.1.1", 53))` / `fetch` → fails closed (proves S1).
   - Write to `/code` or `/etc` → read-only failure; write to `/tmp` → vanishes with the
     container (proves S2).
-  - `print("x" * 10**9)` → truncated at the cap, no host memory blowup (S8).
-  - After a full batch: `docker ps -a` shows **no leaked sandbox containers** (proves S9/S10).
+  - `print("x" * 10**9)` → truncated at **64 KB** with the `…[output truncated at 64 KB]` marker,
+    no host memory blowup (S8); the truncated output does **not** spuriously match a short
+    `expected`.
+  - **Error-taxonomy boundary:** point the runner at a **missing image** → raises `SandboxError`
+    (infra), NOT a `CaseResult`; a candidate program that exits non-zero / segfaults **after start**
+    → `CaseResult{status="error"}` (candidate data), NOT a `SandboxError` (§3.6).
+  - **`test_no_leftover_containers` (one-container-per-run, S9/S10):** snapshot `docker ps -aq
+    --filter name=sandbox-` before a multi-case run, run to completion (mixed ok/timeout/oom), then
+    assert the after-snapshot **equals** the before-snapshot (zero leftovers); repeat after a
+    **cancelled** `run` (cancel mid-case) to prove the `finally` reap fires under cancellation.
+  - **`test_sandbox_no_cross_tenant_leak` (cross-tenant isolation):** run A (one `comp_id`) writes
+    a `/tmp` marker + opens a socket; run B (a **different `comp_id`**, back-to-back) reads `/tmp`
+    and the network → assert run B sees **no file from run A** (fresh tmpfs scratch, S2/S10) and
+    **no network reachability** (`--network=none`, S1) ⇒ **no shared state** between tenants.
   - JS path: a known-good Node solution → `ok`.
 - [ ] **Step 4 — gate:** `bash scripts/check.sh` green — confirm the gate **did not** start a
   container (the live runner is never instantiated in unit tests; `FakeCodeRunner` is the
@@ -238,8 +265,32 @@ async def run_code(self, language, source, test_cases):
    and unwraps — the consumption point for assessments.
 5. **STOP-SHIP invariants (manual/integration):** S1–S10 each demonstrated in Task 6
    (network-off, host-FS-off, non-root, mem/cpu/pids bounded, host-side wall-clock kill, output
-   cap, always-reaped, one-container-per-run). The build is **not done** until every invariant is
-   shown.
+   cap **at 64 KB with truncation marker**, always-reaped, one-container-per-run). The build is
+   **not done** until every invariant is shown. Includes the named **`test_no_leftover_containers`**
+   (before/after `docker ps` equal — S9/S10, incl. under cancellation) and
+   **`test_sandbox_no_cross_tenant_leak`** (run B sees no `/tmp` marker + no network from run A).
+6. **Error taxonomy (Task 6):** a **missing image / container-create failure → `SandboxError`**
+   (infra), while a candidate process crashing after start → `CaseResult{status="error"|"oom"}`
+   (data) — the boundary the grader relies on to never score an outage as a failing candidate.
+
+## Resolved gaps (completeness audit 2026-06-19)
+
+Resolving `2026-06-19-v2-completeness-audit.md` (Part B → "Inc 2 — Code Execution Sandbox"). Each
+is now a concrete `- [ ]` task above:
+
+- **Output cap** → Task 3 config (`sandbox_output_cap_bytes = 64_000`) + Task 6 Step 2 (read ≤
+  **64 KB** stdout+stderr, **truncate** with the `…[output truncated at 64 KB]` marker, compare
+  truncated bytes) (S8).
+- **Language→image map** → Task 6 Step 1 (exact `python:3.12-slim` / `node:22-slim`, **digest-pinned**,
+  rebuilt non-root + frozen stdlib, built once at deploy) + Step 2 (the dispatch map
+  `language → (image, run-cmd)`; shared limits with a per-language override seam).
+- **Error taxonomy** → Task 6 Step 2 + the integration check: **missing image / create failure →
+  `SandboxError`** (infra); candidate crash after start → `CaseResult{status="error"|"oom"}`
+  (data). Container-crash boundary classified ("did the sandbox come up?").
+- **One-container-per-run assertion** → Task 6 Step 3 **`test_no_leftover_containers`**
+  (before/after `docker ps` snapshots equal, incl. under cancellation) (S9/S10).
+- **Cross-tenant isolation test** → Task 6 Step 3 **`test_sandbox_no_cross_tenant_leak`**
+  (network-off + fresh tmpfs scratch ⇒ run B sees no state from run A's different `comp_id`).
 
 ## Risks / re-verify at execution
 - **In-container vs host-side timeout (S7).** The wall-clock kill MUST be host-side

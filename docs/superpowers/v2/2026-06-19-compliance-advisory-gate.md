@@ -97,9 +97,16 @@ the gate stays offline.
   Run admin tests → FAIL.
 - [ ] **Step 2 — implement model:** add `gate_mode: Literal["auto", "advisory"] = "auto"` to
   `AptitudeConfig` (import `Literal` from `typing`). Default keeps every existing job on today's path.
-- [ ] **Step 3 — proto:** add `string gate_mode = N;` to the `aptitude_config` message so recruiters set
-  it per job; regenerate stubs per the project's proto build. The RPC handler maps it onto
-  `AptitudeConfig` (validation is the `Literal`/enum at this boundary).
+- [ ] **Step 3 — proto (additive + backward-compatible):** add `string gate_mode = N;` to the
+  `aptitude_config` message using a **fresh field number** (do not renumber/reuse an existing one), so
+  the change is wire-compatible both ways; regenerate stubs per the project's proto build. The RPC
+  handler maps it onto `AptitudeConfig`, treating proto3's missing-scalar zero value `""` as `"auto"`
+  (`gate_mode = req.gate_mode or "auto"`) — same fail-open rule as `next_state`. Validation is the
+  `Literal`/enum at this Python boundary.
+- [ ] **Step 3b — failing test (backward-compat / no-backfill):** assert that an `aptitude_config`
+  proto message with `gate_mode` **unset** maps to `AptitudeConfig.gate_mode == "auto"` (proto zero
+  value `"" → "auto"`), so a candidate of an older job whose config predates the field keeps today's
+  `auto` routing with no migration. Run → FAIL, then satisfied by the Step 3 handler mapping → PASS.
 - [ ] **Step 4 — run → PASS** + `python scripts/smoke_login.py --selftest` boots the gRPC-web app
   (confirms the regenerated proto loads). Gate green.
 
@@ -167,9 +174,25 @@ def test_next_state_advisory_illegal_exits_raise():
   - `recruiter.decision`: add `S.assessment_review` to the legal `current` set
     (today `(S.scored, S.shortlisted)`); the existing `outcome ∈ DECISIONS` check already produces
     `rejected`. (No change needed for `withdrawn`/`expired` — `assessment_review ∉ _TERMINAL`.)
-- [ ] **Step 4 — run → PASS.** Add an `advance_application` test asserting the `AuditLog` row for an
-  advisory exit (`from_state="assessment_review"`, `action`, `to_state`, `comp_id`) and a CAS no-op on
-  a redelivered advisory **entry** (reuse the `_RaceRepo` pattern). Gate green.
+- [ ] **Step 3b — transition-matrix coverage (grep-verify against the design table):** add a single
+  parametrized test enumerating the **complete** `assessment_review`-adjacent matrix from design §3.2 —
+  one **inbound** edge (`aptitude_pending --aptitude.graded[advisory]--> assessment_review`, asserted
+  for **both** `passed: True` and `passed: False`) and **four outbound** edges (`gate.override →
+  interview_pending`, `recruiter.decision(rejected) → rejected`, `application.withdrawn → withdrawn`,
+  `application.expired → expired`), plus a negative case asserting any other event from
+  `assessment_review` (`scoring.completed`, `interview.completed`) raises `InvalidTransition`. This is
+  the grep anchor: the test table must match the design matrix one-to-one.
+- [ ] **Step 4 — run → PASS, CAS + double-enter guarantees.** Add an `advance_application` test
+  asserting the `AuditLog` row for an advisory exit (`from_state="assessment_review"`, `action`,
+  `to_state`, `comp_id`). Then prove the CAS guarantees from design §3.2 ("CAS guarantee"):
+  (a) a **redelivered advisory entry** (`aptitude.graded` twice) writes the state once and is a logged
+  **no-op** the second time — no duplicate `AuditLog` row (reuse the `_RaceRepo` pattern with
+  `expected=aptitude_pending` failing on redelivery); (b) **concurrent recruiter exits** (advance vs.
+  reject on the same `assessment_review` app) — the first CAS (`expected=assessment_review`) wins, the
+  second is a logged no-op, never a conflicting double-transition. Assert `assessment_review` is a
+  valid `next_state` **target** for exactly the advisory entry and **no other** transition targets it
+  (no double-enter). CAS + audit code is **unchanged** — these tests prove the new state inherits it.
+  Gate green.
 
 ---
 
@@ -220,16 +243,29 @@ there blocks it.
 
 - [ ] **Step 1 — fakes:** add `Fake{AssessmentAttempt,CodeSubmission,Message,MessageThread,Notification,
   PracticeSession,VideoAnswer}Repo` to `conftest.py`, each mirroring `FakeAptitudeAttemptRepo` /
-  `FakeConsentRepo` (an in-memory list/dict + a `delete_by_*` that filters by key). Add them to the
-  `fakes` fixture dict.
+  `FakeConsentRepo` (an in-memory list/dict + a `delete_by_*` that filters by key). Each exposes
+  **exactly one** erase coroutine: `delete_by_candidate(user_id)` for `assessment_attempts` /
+  `code_submissions`; `delete_by_user(user_id)` for `messages` / `message_threads` / `notifications` /
+  `practice_sessions` / `video_answers` (design §3.3 table). The `delete_by_*` signature is the
+  None-skip contract target — e.g. `async def delete_by_user(self, user_id: str) -> None:` filtering
+  `self.rows` by `user_id`. Add them to the `fakes` fixture dict.
 - [ ] **Step 2 — failing test:** extend `test_erase_cascades_into_ai_artifacts` — seed each new fake with
   a row for the candidate, run `eraser.erase(uid)`, assert each store is empty afterward. Add
-  `test_erase_skips_unconfigured_artifact_repos`: build the eraser with the new repos as `None` and
-  assert `erase` completes without error (so the gate is green before pillars ship). Add
-  `test_erase_video_blob_failure_is_logged`: a `video_answers` whose blob delete raises is caught +
-  logged and does **not** block `users.anonymize`. Run → FAIL.
-- [ ] **Step 3 — implement:** add the seven repos as **keyword constructor params** (defaulting to
-  `None`) and call each `delete_by_*` inside `erase`, **guarded** so a `None` repo is skipped:
+  `test_erase_skips_unconfigured_artifact_repos`: build the eraser with **all seven** new repos as
+  `None` and assert `erase` completes without error **and still reaches `users.anonymize`** (so the gate
+  is green before any pillar ships — the absent repo is skipped, not an error, not a partial-failure
+  log). Add `test_erase_video_blob_failure_is_logged`: a `video_answers` whose **MinIO blob** delete
+  raises is caught + `log.exception`-ed and does **not** block `users.anonymize`. Add
+  `test_erase_partial_failure_continues_and_is_recoverable`: make one mid-cascade `delete_by_*` raise,
+  assert (a) the cascade **continues** to the remaining collections, (b) the failure is logged with
+  `user_id` + collection name, and (c) a **re-run** of `erase(uid)` (idempotent) — or a `sweep` pass —
+  drains the still-populated store, proving the re-runnable recovery. Run → FAIL.
+- [ ] **Step 3 — implement (fixed order + best-effort-per-collection, no transaction):** add the seven
+  repos as **keyword constructor params** typed `<Repo> | None` (defaulting to `None`) and call each
+  `delete_by_*` inside `erase`, **guarded** so a `None` repo is skipped. Follow the **deterministic
+  leaf-first order** from design §3.3 (existing reports/interviews/aptitude_attempts → new
+  assessment_attempts → code_submissions → video_answers → messages → message_threads → notifications →
+  practice_sessions → existing consent_ledger → profile/resume → `users.anonymize` **last**):
 ```python
         if self._assessment_attempts is not None:
             await self._assessment_attempts.delete_by_candidate(user_id)
@@ -238,9 +274,16 @@ there blocks it.
             await self._video_answers.delete_by_user(user_id)   # also purges MinIO objects,
             # wrapped in try/except + log.exception like the existing resume delete (best-effort)
 ```
-  Keep the call sites **before** `users.anonymize` (so artifacts are gone before the tombstone) and
-  preserve the existing ordering for reports/interviews/attempts/consents. `sweep` is unchanged — it
-  loops `erase`, so the cascade extends for free.
+  **Do NOT wrap the cascade in a single Mongo transaction** — it spans Mongo + MinIO (a txn can't
+  enroll the blob store) and would couple seven independently-shipped pillars (design §3.3 "atomicity").
+  Instead each `delete_by_*` is **idempotent + best-effort**: a step that raises is caught,
+  `log.exception`-ed with `user_id` + the collection name as a **partial failure**, and the cascade
+  **continues** to the rest — one broken artifact store must never strand the others or block the
+  tombstone. Keep all artifact + profile deletes **before** `users.anonymize` (artifacts gone before the
+  tombstone) and preserve the existing ordering for reports/interviews/attempts/consents. `sweep` is
+  unchanged — it loops `erase`, so the cascade extends for free **and doubles as the re-runnable
+  recovery**: because every delete is keyed by `user_id`/candidate and idempotent, a partially-failed
+  erasure converges on the next sweep (the tombstoned user stays resolvable by `_id` for the re-run).
 - [ ] **Step 4 — run → PASS.** Update `_eraser(fakes)` helper in the test to pass the new repos. Gate
   green.
 
@@ -279,6 +322,34 @@ there blocks it.
 7. **Erasure cascade:** `erase` empties all seven new artifact stores; a `None` repo is skipped (gate
    green pre-pillar); a raising `video_answers` blob delete is logged and does not block anonymization.
 8. **gRPC-web boot:** `python scripts/smoke_login.py --selftest` succeeds after the proto change.
+
+## Resolved gaps (completeness audit 2026-06-19)
+
+Closes the Inc 0 gaps from `docs/superpowers/v2/2026-06-19-v2-completeness-audit.md` (Part B → "Inc 0 —
+erasure cascade" + the cross-cutting erasure-atomicity rows). The work is woven into the tasks above;
+this is the verification checklist a reviewer can grep against.
+
+- [ ] **Erasure cascade order + atomicity** (Task 7, Steps 2–3). Cascade runs in the **fixed leaf-first
+  order** from design §3.3, `users.anonymize` **last**. Atomicity is **best-effort per-collection, NOT
+  a single Mongo transaction** (it spans Mongo + MinIO and decouples seven pillars); each `delete_by_*`
+  is idempotent, a failing step is `log.exception`-ed as a **partial failure** and the cascade
+  continues, and **`sweep` is the re-runnable recovery**. Covered by
+  `test_erase_partial_failure_continues_and_is_recoverable` + `test_erase_video_blob_failure_is_logged`.
+- [ ] **Cascade skips an absent/None repo gracefully** (Task 7, Steps 1–2). Each artifact repo is
+  `<Repo> | None`, guarded on `is not None`; the fake's erase coroutine is `delete_by_candidate` /
+  `delete_by_user(self, user_id: str) -> None` (the None-skip contract target). Covered by
+  `test_erase_skips_unconfigured_artifact_repos` (all seven `None` → `erase` completes + reaches
+  `users.anonymize`).
+- [ ] **Transition-validity matrix** (Task 4, Step 3b). One parametrized test mirrors the design §3.2
+  matrix one-to-one: the single advisory inbound edge (both outcomes) + four outbound edges + the
+  `InvalidTransition` negatives — a grep anchor for `next_state`.
+- [ ] **`gate_mode` proto evolution** (Task 2, Steps 3–3b). Additive field, **fresh number**, no
+  renumber; handler maps proto3's missing-scalar `"" → "auto"`, so an **older job with no `gate_mode`**
+  keeps today's behavior with **no backfill**. Covered by the Step 3b backward-compat test.
+- [ ] **`assessment_review` CAS** (Task 4, Step 4). `assessment_review` is a valid `next_state`
+  **target** only for the advisory entry and is reachable by **no other** transition (no double-enter);
+  CAS (`set_state_if`) + per-transition `AuditLog` are **unchanged**. Covered by the redelivered-entry
+  and concurrent-recruiter-exit no-op tests (`_RaceRepo` pattern).
 
 ## Risks / re-verify at execution
 - **Proto regen workflow** — adding `gate_mode` to `aptitude_config` requires regenerating stubs;

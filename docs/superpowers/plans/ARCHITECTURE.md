@@ -1,4 +1,4 @@
-# ARCHITECTURE — AI Agent-Driven Interview Platform
+# Architecture — Aptura · AI Hiring Platform
 
 > **⚠️ 2026-06-17 update:** admin-service is **gRPC** (not FastAPI/REST) and the **frontend
 > talks gRPC (gRPC-web) to admin** — the REST/WS Frontend↔Admin rows below are superseded.

@@ -1,5 +1,7 @@
 # Integrity by Design (Non-Surveillance) — Implementation Plan
 
+> **⛔ SUPERSEDED (2026-06-20).** Reversed — Aptura now runs a **strict, fully-proctored** interview. See [proctored-integrity](2026-06-20-proctored-integrity.md). Retained for history only; do not implement.
+
 > Spec: `docs/superpowers/v2/2026-06-19-integrity-by-design-design.md`. TDD, task-by-task.
 > **LOCAL-ONLY — never git/gh.** Each backend slice keeps `bash scripts/check.sh` green (baseline
 > **423 tests**). No surveillance, no biometric, no media code — ever.
@@ -33,9 +35,21 @@ frontend/apps/company/components/report-view.tsx    (MODIFY — render <Integrit
 - [ ] **Failing test** (`src/admin/tests`): two candidates for one job get a different question
       selection/order from the same bank, and each `AptitudeDelivery` carries a distinct `watermark`;
       grading still maps answers back correctly (regression).
+- [ ] **Failing test — seed immutability:** create a delivery from a bank, then **grow the bank** and
+      re-read/re-render the same `application_id`'s delivery — the served question ids and order are
+      **unchanged** (replayed from the stored snapshot, not re-derived) and the `watermark` is stable.
+      This is the guard that a growing bank never reshuffles an in-flight candidate or breaks grade-mapping.
 - [ ] Add `watermark: str` to `AptitudeDelivery` (`model/aptitude.py`); set it on delivery creation.
+      **Watermark = metadata token, NOT a visual element:** generate it as a deterministic
+      `hash(application_id + selected_question_ids + server-side secret)` truncated to a short token;
+      store it on the delivery only; never render it to the candidate. Because it's derived from the
+      exact served set, it traces a leaked set back to its delivery.
+- [ ] Add the **snapshotted selection** to `AptitudeDelivery` (the chosen subset/order of `question_ids`),
+      set once at first delivery.
 - [ ] Extend the existing order-randomization in `resources/aptitude.py` to select a per-candidate
-      subset/order (seeded by application_id) when the bank is larger than the served count.
+      subset/order (seeded by `application_id`) when the bank is larger than the served count, **then
+      snapshot the selected `question_ids` onto the delivery**. Subsequent reads replay the snapshot —
+      **never re-derive from the (possibly grown) bank**. The seed is used **once, at first delivery**.
 - [ ] Run → PASS. `bash scripts/check.sh` green.
 
 ## TIER B — adaptive probing (deter by design)
@@ -44,8 +58,16 @@ frontend/apps/company/components/report-view.tsx    (MODIFY — render <Integrit
 - [ ] **Failing test** (`src/ai-agents/tests`, fake LLM): given a scripted generic/templated answer,
       `interviewer.next_question` returns a **specific follow-up/defend probe** (not the next planned
       topic); given a substantive answer, it proceeds normally. Hard `max_questions` cap unchanged.
-- [ ] Implement the probe branch in `interviewer.py` (prompt-level; the fake LLM returns the probe
-      for the generic case). Keep it deterministic for the test.
+- [ ] **Failing test — threshold gating:** a `generic` verdict **below** the confidence threshold does
+      **not** fire a probe (proceeds to the next planned topic); a `generic` verdict **at/above** the
+      threshold does. Confirms the conservative-by-default posture.
+- [ ] Implement the **generic-answer heuristic** in `interviewer.py` as a **temp-0 LLM classification**
+      (NOT keyword-matching): one judgement pass over `(question, answer)` → `specific | generic` + a
+      confidence `0–1`. Fire the defend/follow-up probe **only when `generic` AND confidence ≥ threshold**
+      (default **0.75**); otherwise proceed to the next planned topic. The fake LLM returns the verdict +
+      confidence for the test, keeping it deterministic.
+- [ ] **Read the threshold from config, not a literal:** `generic_answer_confidence` comes from the
+      integrity settings surface (Task 4 / the config knob) so it's tunable without a deploy.
 - [ ] Run → PASS. Gate green.
 
 ### Task 3 — Reasoning/curveball seeding in the blueprint
@@ -60,8 +82,19 @@ frontend/apps/company/components/report-view.tsx    (MODIFY — render <Integrit
       interview diverge beyond a threshold; emits nothing on a consistent candidate. Severity is
       canonical (server-assigned). Pure functions over claims + transcript + aptitude score (temp-0
       LLM judgement faked in the test).
-- [ ] Implement `model/integrity.py` (`IntegritySignal`, `type` Literals, `SEVERITY` map) +
-      `resources/integrity.py`. Run → PASS.
+- [ ] **Failing test — severity scales with the gap:** a **small** claim↔evidence gap yields **low**;
+      a **wide** gap (claimed-senior skill unreasoned) yields **medium/high**. A **modest** aptitude↔
+      interview divergence yields **info/low**; a **large** divergence yields **medium/high**. Assert the
+      severity is **derived server-side from the gap size**, never taken from input.
+- [ ] Implement `model/integrity.py` (`IntegritySignal`, `type` Literals, `severity` Literal
+      `{info, low, medium, high}`, `SEVERITY` map). Implement the **severity algorithm** in
+      `resources/integrity.py`: `claim_inconsistency` severity scales with the claimed-vs-demonstrated
+      distance; `aptitude_interview_divergence` severity scales with the **normalized** score-divergence
+      magnitude; `generic_answer_flag` and `watermark` are **info**. Run → PASS.
+- [ ] **Config knob:** read the cutoffs from one integrity settings surface (e.g. admin
+      `infra/settings`) — `divergence_threshold` (minimum gap before `aptitude_interview_divergence`
+      fires) and the gap→`{low,medium,high}` bands — **read at call time**, not hardcoded, so they're
+      tunable without a deploy. (The Task-2 `generic_answer_confidence` lives in the same surface.)
 - [ ] Persist via mcp-data `save_integrity_signals(application_id, comp_id, signals)`; add the
       `integrity_signals` index in admin `infra/db.py` (the index authority): `(application_id)`,
       `(comp_id, application_id)`. Gate green.
@@ -114,6 +147,11 @@ frontend/apps/company/components/report-view.tsx    (MODIFY — render <Integrit
 ### Task F2 — `IntegrityBand` component (new, recruiter report)
 - [ ] **New file** `frontend/apps/company/components/integrity-band.tsx` (`"use client"`). Props:
       `{ signals?: IntegritySignal[] }`. Pure presentational — no fetching, no mutation, no gating.
+- [ ] **UX balance (the bar):** the band must be **visible enough to catch a real issue** yet **never
+      alarmist for a clean candidate** — a populated band reads as *advisory context*, a clean one reads
+      as *reassurance*. Concretely: positive clean state (not silence), `info` populated tone (not
+      `danger`), severity tops out at `warning`. A recruiter glancing at a clean report should feel the
+      candidate is fine, not under suspicion.
 - [ ] **States:**
   - **none / clean** (`!signals || signals.length === 0`): a **positive** empty state — an
     `Alert tone="success"` titled "No integrity concerns" with body "Nothing flagged for review."
@@ -182,7 +220,31 @@ frontend/apps/company/components/report-view.tsx    (MODIFY — render <Integrit
 6. Regression: the text interview + scoring path untouched and green.
 7. FE (TIER F): `pnpm turbo run build --filter @ip/company` + `pnpm turbo run typecheck --filter @ip/{ui,shared,api-client}` green; `IntegrityBand` renders clean empty state with no signals and an advisory (info, non-verdict) band when populated; recruiter-only (candidate app untouched); never gates `DecisionControl`.
 
+## Resolved gaps (completeness audit 2026-06-19)
+
+The v2 completeness audit (Part B → "Integrity-by-design") flagged six underspecified points; each is
+now woven into the tasks above. Traceability:
+
+- **Generic-answer heuristic + threshold** → **Task 2**: temp-0 LLM `specific`/`generic` + confidence
+  classification (not keyword-matching); probe fires only at confidence ≥ **0.75** (config-driven).
+- **Consistency-signal severity algorithm** → **Task 4**: `severity ∈ {info, low, medium, high}`,
+  **server-assigned, scaled by the claim↔evidence gap** (claimed-vs-demonstrated distance; normalized
+  aptitude↔interview divergence), with a severity-scaling test.
+- **Watermark defined** → **Task 1**: a **per-delivery metadata token** on `AptitudeDelivery`
+  (`hash(application_id + selected_question_ids + secret)`), **not a visual element**; stored, never
+  rendered.
+- **Rotation seed immutability** → **Task 1**: selected `question_ids` **snapshotted on first delivery**
+  and replayed; a dedicated "grow the bank, selection unchanged" test guards it.
+- **Tunable threshold knob** → **Tasks 2 & 4**: `generic_answer_confidence`, `divergence_threshold`, and
+  the gap→severity bands live in **one integrity settings surface**, read at call time — no deploy to tune.
+- **Advisory band UX balance** → **Task F2**: explicit positive **clean state** + advisory **`info`**
+  populated band (**no `danger` tone**), visible-but-not-alarmist; **advisory-only + recruiter-only**
+  reaffirmed (candidate app untouched, Task F5).
+
 ## Risks
-- **Probe over-firing** annoys good candidates — keep the generic-answer threshold conservative + tunable.
-- **Consistency false-positives** — advisory-only + human-reviewed by design; never auto-reject.
-- **Watermark/rotation must not break grading** — the regression test in Task 1 is the guard.
+- **Probe over-firing** annoys good candidates — the generic-answer heuristic is a temp-0 LLM verdict
+  gated at confidence ≥ **0.75** (conservative) and the threshold is config-tunable (Task 2).
+- **Consistency false-positives** — advisory-only + human-reviewed by design; never auto-reject. Severity
+  scales with the gap so a small slip can't read as a serious flag (Task 4).
+- **Watermark/rotation must not break grading** — the regression test plus the seed-immutability test
+  (growing bank, stable selection) in Task 1 are the guards.

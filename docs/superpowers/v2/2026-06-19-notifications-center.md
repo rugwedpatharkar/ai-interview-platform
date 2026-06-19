@@ -43,10 +43,11 @@ badge.
 
 ```
 src/admin/app/
-  model/notification.py                    (NEW — Notification pydantic model)
-  infra/repositories/notifications.py      (NEW — NotificationRepository + delete_by_user)
-  infra/db.py                              (+INDEXES: notifications)
-  resources/notification.py                (EXTEND — write row + email; _emit; notify_event; +_MESSAGES)
+  model/notification.py                    (NEW — Notification pydantic model + dedup_key)
+  infra/repositories/notifications.py      (NEW — NotificationRepository + delete_by_user + dup-key no-op insert)
+  infra/notifier.py                        (MODIFY — widen Notifier seam to take the full payload, §3.7)
+  infra/db.py                              (+INDEXES: notifications, incl. sparse unique (user_id, dedup_key))
+  resources/notification.py                (EXTEND — typed _MESSAGES; write row + email; _emit; notify_event; deep-link; dedup)
   resources/compliance.py                  (CandidateEraser: +notifications cascade)
   routes/pb/notification.proto             (NEW) + generated notification_pb2*.py (via pnpm gen / buf)
   routes/notification.py                   (NEW — NotificationServicer, thin adapter)
@@ -96,18 +97,24 @@ dep, like `ChatWindow`) — all data/poll/mutation wiring lives in each app's
 **Files:** Create `model/notification.py`, `infra/repositories/notifications.py`; Modify `infra/db.py`.
 
 - [ ] **Step 1 — `model/notification.py`** — `Notification` (`user_id`, `comp_id: str|None`, `kind`,
-  `subject`, `body`, `link: str|None`, `read_at: datetime|None`, `created_at` default-now). Mirror
-  `model/aptitude.py` style.
+  `subject`, `body`, `link: str|None`, `read_at: datetime|None`, **`dedup_key: str|None`** (idempotency
+  key for broker-redelivered triggers, §3.8 — `None` for funnel notifications), `created_at`
+  default-now). Mirror `model/aptitude.py` style.
 - [ ] **Step 2 — `NotificationRepository`** (extend `BaseRepository`, mirror `aptitude_attempts.py`):
-  `insert(notification)`, `list_by_user(user_id, *, unread_only, limit, skip)` (desc by `created_at`,
-  capped), `unread_count(user_id)`, `mark_read(user_id, notification_id)` (scoped `$set read_at` —
-  returns whether a row matched, for the 404), `mark_all_read(user_id)`, and `delete_by_user(user_id)`
-  (mirror `ConsentRepository.delete_by_user`).
+  `insert(notification)` (**catch the duplicate-key error from the sparse `(user_id, dedup_key)` index
+  and return a no-op signal** so `_emit` can short-circuit on redelivery — §3.8), `list_by_user(user_id,
+  *, unread_only, limit, skip)` (desc by `created_at`, capped), `unread_count(user_id)` — a **fresh
+  `count_documents({"user_id": user_id, "read_at": None})`** (the freshness contract, §3.4: **never** a
+  cached/denormalized counter), `mark_read(user_id, notification_id)` (scoped `$set read_at` — returns
+  whether a row matched, for the 404), `mark_all_read(user_id)`, and `delete_by_user(user_id)` (mirror
+  `ConsentRepository.delete_by_user`).
 - [ ] **Step 3 — indexes** in `infra/db.py` `INDEXES`:
 ```python
 # notifications — recipient feed (desc by recency) + unread filter + cascade
 IndexSpec("notifications", [("user_id", 1), ("created_at", -1)]),
-IndexSpec("notifications", [("user_id", 1), ("read_at", 1)]),   # unread filter / count
+IndexSpec("notifications", [("user_id", 1), ("read_at", 1)]),   # unread filter / fresh COUNT
+# idempotency for at-least-once (RabbitMQ-redelivered) triggers — sparse so funnel rows (dedup_key=None) are unaffected
+IndexSpec("notifications", [("user_id", 1), ("dedup_key", 1)], {"unique": True, "sparse": True}),
 ```
 - [ ] **Step 4 — gate green** (import-only).
 
@@ -116,9 +123,21 @@ IndexSpec("notifications", [("user_id", 1), ("read_at", 1)]),   # unread filter 
 **Interfaces — Changed:** `TransitionNotifier(*, users, notifier, notifications)` (add the repo).
 `notify(application, to_state, event)` signature **unchanged**.
 
-- [ ] **Step 1 — extend `_MESSAGES`** (keep existing entries verbatim) with `assessment_review`
-  (advisory-gate state, candidate-facing "under review"), `new_message`, `assessment_ready`,
-  `practice_complete`.
+- [ ] **Step 0 — widen the `Notifier` seam** (`infra/notifier.py`, design §3.7). Change the Protocol
+  method to `async def send(self, notification: NotificationPayload, *, to_email: str) -> None` where
+  `NotificationPayload` is the full row shape (`{user_id, comp_id, kind, subject, body, link,
+  created_at}`). Update `LoggingNotifier` to the new signature (log `subject`/`body`/`to_email`, ignore
+  the rest — the widening costs it nothing). Update any existing `Notifier` call sites/tests to the new
+  shape. This lands the cross-cutting "Notifier contract too narrow" audit fix once, so the SMTP swap
+  later is wiring-only.
+- [ ] **Step 1 — migrate `_MESSAGES` to the typed-dict shape + extend it** (design §3.3). Convert the
+  existing tuple map to **`_MESSAGES: dict[str, MessageSpec]`** where `MessageSpec = TypedDict` with
+  `subject: str`, `body: str`, `icon: NotRequired[str]` (semantic name → FE Lucide glyph), `link:
+  NotRequired[str]` (static link only; dynamic links resolve at write time). Keep the **existing
+  subjects/bodies verbatim** (just move them into `{"subject": ..., "body": ..., "icon": ...}`), then
+  add `assessment_review` (advisory-gate state, candidate-facing "under review"), `new_message`,
+  `assessment_ready`, `practice_complete`. (Callers read `spec["subject"]`/`spec["body"]`; the
+  `_MESSAGES.get(key) is None` skip is unchanged.)
 - [ ] **Step 2 — failing tests** (extend the existing `notification` suite, which already uses a
   `LoggingNotifier` + a fake users repo — add a fake notifications repo):
   - for each notifiable `to_state` incl. **`assessment_review`**: a row is inserted
@@ -127,25 +146,43 @@ IndexSpec("notifications", [("user_id", 1), ("read_at", 1)]),   # unread filter 
   - a **non-notifiable** state (`applied`, `scored`) → **no** row, **no** email (the
     `_MESSAGES.get is None` skip preserved).
   - missing recipient (`users.get` → None) → warn + return, **no** row, **no** email.
-  - **email-fails-row-persists:** a `Notifier` raising on `send_email` does **not** lose the row
-    (assert the row is written; the raise is swallowed/logged inside `notify`).
+  - **email-fails-row-persists (the retry policy, §3.2):** a `Notifier` raising on `send` does **not**
+    lose the row (assert the row is written; the raise is swallowed/logged inside `notify`); there is
+    **no** retry attempt (assert `send` is called exactly once).
+  - **widened Notifier payload (§3.7):** capture the payload a fake `Notifier.send` receives and assert
+    it carries `kind`/`link`/`comp_id`/`created_at` (not just `subject`/`body`) — so a future SMTP impl
+    has template/CTA/branding context.
 - [ ] **Step 3 — run → FAIL → implement.** Add a private
-  `_emit(user, comp_id, kind, subject, body, link=None)`: insert the `Notification` row, then **guard**
-  the email (`try: await self._notifier.send_email(...) except Exception: log.exception(...)`). `notify`
-  keeps its existing `_MESSAGES.get` skip + `users.get` guard, then calls `_emit` (row-then-email).
+  `_emit(user, comp_id, kind, subject, body, link=None, dedup_key=None)`: insert the `Notification`
+  row **first** (the durable write); if the insert is a **duplicate-key no-op** (the sparse
+  `(user_id, dedup_key)` index — a redelivery, §3.8), log `debug` and **return without emailing** (the
+  row + email already happened on the first delivery). Otherwise build the **widened `Notifier`
+  payload** from the row just written (`{user_id, comp_id, kind, subject, body, link, created_at}`,
+  §3.7) and **guard the email** — `try: await self._notifier.send(payload, to_email=user["email"])
+  except Exception: log.exception(...)`. **This guard IS the email-retry policy (§3.2): best-effort,
+  no inline retry; the row is never lost if email fails.** `notify` keeps its existing `_MESSAGES.get`
+  skip + `users.get` guard, resolves the `link` from the application context, then calls `_emit`
+  (row-then-email).
 - [ ] **Step 4 — run → PASS; gate green.**
 
-### Task 3 — `notify_event` for non-funnel triggers (TDD)
+### Task 3 — `notify_event` for non-funnel triggers (TDD — incl. deep-link + idempotency)
 **Files:** Modify `resources/notification.py`; extend tests.
-**Interfaces — Produces:** `async notify_event(self, *, user_id, comp_id, kind, link=None)`.
+**Interfaces — Produces:** `async notify_event(self, *, user_id, comp_id, kind, link=None,
+dedup_key=None)` — `link` is the resolved deep-link (§3.3), `dedup_key` the idempotency key (§3.8).
 
 - [ ] **Step 1 — failing tests:** a `new_message` / `assessment_ready` / `practice_complete` event to
   an explicit `user_id` writes the right row + emails (via the same `_emit`); an **unknown `kind`**
   (not in `_MESSAGES`) is a **no-op** (skip — same as the funnel path); a missing recipient → warn +
   return.
+  - **deep-link stored (§3.3):** a `new_message` event with `link="/messages/<app_id>"` writes that
+    exact string onto the row; a kind with no destination writes `link=None`.
+  - **idempotency on redelivery (§3.8):** calling `notify_event` **twice with the same `dedup_key`**
+    writes **one** row + emails **once** (the second hits the sparse unique index → no-op); two events
+    with **different** `dedup_key`s write two rows.
 - [ ] **Step 2 — implement:** `notify_event` looks up `_MESSAGES.get(kind)` (skip if None), resolves
-  `users.get(user_id)` (warn + return if None), then calls `_emit(user, comp_id, kind, subject, body,
-  link)`. Shares all internals with `notify`.
+  `users.get(user_id)` (warn + return if None), then calls `_emit(user, comp_id, kind, spec["subject"],
+  spec["body"], link, dedup_key)`. Shares all internals with `notify` (incl. the duplicate-key
+  short-circuit + the email guard).
 - [ ] **Step 3 — run → PASS; gate green.** (The messaging / advisory-grading / practice resources call
   this best-effort from their own increments; this plan provides the method + its tests.)
 
@@ -160,7 +197,9 @@ IndexSpec("notifications", [("user_id", 1), ("read_at", 1)]),   # unread filter 
 
 - [ ] **Step 1 — failing tests:** `list_for_user` returns only the caller's rows, desc by
   `created_at`, page-size **clamped**, `unread_only` filters to `read_at is None`, and `unread_count`
-  is correct; `mark_read` sets `read_at` on the caller's row and **raises NotFound for a row that
+  is correct; **`unread_count` is fresh (§3.4)** — after a `mark_read`, the next `list_for_user`
+  reports the **decremented** count with no cache to invalidate (it's a live `count_documents`, not a
+  stored counter); `mark_read` sets `read_at` on the caller's row and **raises NotFound for a row that
   isn't theirs**; `mark_all_read` zeroes all the caller's unread.
 - [ ] **Step 2 — run → FAIL → implement** (thin wrappers over the repo, all keyed by `identity["id"]`;
   page-size clamp to a configured max, mirroring the marketplace/`find_capped` pattern). → PASS.
@@ -406,10 +445,44 @@ authed `ApiClients` (via `createClients`, transport task) + wraps the tree in a 
    click (deep-links via `link`), and the badge updates from the unread poll; poll pauses on a hidden
    tab (`refetchIntervalInBackground: false`); the `aria-live` count announces increments. Company feed
    excludes detached practice (`comp_id=None`) + candidate-only kinds.
-8. **Manual / local E2E (Chrome via preview):** advance an application to `interview_pending` → the
+8. **Idempotency / deep-link / freshness / Notifier payload (the audit fixes, offline):**
+   `notify_event` twice with the same `dedup_key` → one row, one email (sparse-unique no-op);
+   `new_message`'s `link` is stored verbatim on the row; `unread_count` tracks the rows after a
+   `mark_read` (no cache); the widened `Notifier.send` payload carries `kind`/`link`/`comp_id`.
+9. **Manual / local E2E (Chrome via preview):** advance an application to `interview_pending` → the
    candidate bell badge increments within one poll + an email lands in the `LoggingNotifier` sink;
    open the feed → badge clears; a new message (messaging) and an advisory grade each also produce a
-   feed row + email.
+   feed row + email; clicking a `new_message` row deep-links to `/messages/<app_id>`.
+
+## Resolved gaps (completeness audit 2026-06-19)
+
+Folds the `2026-06-19-v2-completeness-audit.md` (Part B → "Inc 4 — Notifications Center" + the
+cross-cutting "`Notifier` contract too narrow") fixes into this build. Design rationale in
+`…-notifications-center-design.md` (§3.1–§3.4, §3.7, §3.8).
+
+- [ ] **Email retry policy** — best-effort, **no inline retry**; the email guard (`try/except +
+  log.exception`) sits in `_emit` **after** the row insert (**Task 2 Step 3**), so the **persisted row
+  is never lost if email fails** (**Task 2 Step 2** test asserts row-persists + `send` called once).
+  Outbox is a documented later upgrade, not v1.
+- [ ] **`_MESSAGES` schema** — migrate to **`dict[str, MessageSpec]`** with `{subject, body, icon?,
+  link?}` (`TypedDict`), existing entries verbatim in the new shape, then add the four new keys
+  (**Task 2 Step 1**). `icon` is a semantic name → FE Lucide glyph (with `Bell` fallback, **Task 9**).
+- [ ] **Dedup / idempotency on RabbitMQ redelivery** — `dedup_key` on the row (**Task 1 Step 1**) +
+  **sparse unique `(user_id, dedup_key)` index** (**Task 1 Step 3**); `_emit`'s insert no-ops on the
+  duplicate-key (**Task 2 Step 3**); `notify_event` takes + passes `dedup_key` (**Task 3**), tested for
+  same-key→one-row / different-key→two-rows. Funnel path supplies no key (fires once via CAS).
+- [ ] **Deep-link resolution per kind** — `Notification.link` resolved **once at write time** and
+  stored: `new_message`→`/messages/{application_id}`, `assessment_ready`→report, `practice_complete`→
+  `/feedback/{practice_id}`, funnel→app page or `None` (**Task 2 Step 3** / **Task 3 Step 1** tests).
+  FE reads `link` verbatim, never builds it from `kind` (**Task 9**).
+- [ ] **`unread_count` freshness** — a **fresh `count_documents({user_id, read_at: None})`** per
+  `ListNotifications` (backed by the `(user_id, read_at)` index), **never cached** (**Task 1 Step 2**,
+  **Task 4 Step 1** asserts it tracks rows after `mark_read`). FE optimistic badge + `invalidateQueries`
+  reconcile against the server count (**Task 9**).
+- [ ] **`Notifier` contract widened** — the seam takes the **full payload** (`{user_id, comp_id, kind,
+  subject, body, link, created_at}`) + `to_email`, not `(subject, body, recipient)` (**Task 2 Step 0**
+  widens `infra/notifier.py`; **Task 2 Step 2** asserts the payload carries `kind`/`link`/`comp_id`).
+  `LoggingNotifier` stays trivial; a future SMTP impl needs no further interface change.
 
 ## Risks / re-verify at execution
 

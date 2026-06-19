@@ -140,8 +140,13 @@ threads, messages, notifier=None, clock=_utcnow) -> dict` (the new message DTO).
     `last_message_at` stamped.
   - recruiter (manager of the `comp_id`) sends → same, but `unread_candidate` incremented,
     `sender_role="recruiter"`.
-  - a **second** send reuses the existing thread (still exactly one thread).
-  - empty/whitespace `body` → `ValidationError`; over-cap `body` → `ValidationError`.
+  - a **second** send reuses the existing thread (still exactly one thread); whichever side sends
+    **first creates** the thread (a candidate-first send creates with `recruiter_user_id` unset; a
+    manager-first send stamps it to that manager).
+  - empty/whitespace `body` → `ValidationError`; **`body` of exactly `MAX_BODY` chars passes,
+    `MAX_BODY + 1` → `ValidationError`** (boundary assertion on the 4 KB cap).
+  - **sender identity from the token:** the inserted message's `sender_user_id` equals
+    `identity["id"]` (assert a caller cannot set someone else's id — there is no client field for it).
   - a **non-owner candidate** → `ForbiddenError`; a **wrong-`comp_id` manager** → `NotFoundError`; a
     **non-manager company role** → `ForbiddenError` (these come straight from the reused helpers).
 - [ ] **Step 2 — run** `(cd src/admin && ../../.venv/bin/python -m pytest tests/test_resources_messaging.py -v)` → FAIL.
@@ -149,10 +154,14 @@ threads, messages, notifier=None, clock=_utcnow) -> dict` (the new message DTO).
   threads)` branches on role: candidate → `await aptitude._owned(identity, application_id,
   applications)`; manager → `decision._require_manager(identity)` then
   `await decision._scoped(identity, application_id, applications)`. Then
-  `get_by_application(...) or create(...)` (copy `comp_id`/`candidate_user_id` from the application;
-  set `recruiter_user_id` to the caller on first manager contact). `send_message` validates `body`
-  (trim, non-empty, `len <= MAX_BODY`), inserts the `Message`, bumps the *other* side's unread +
-  `last_message_at`, then **best-effort** notifies the other party (Task 6). Return the new-message
+  `get_by_application(...) or create(...)` — **lazy thread creation: the first sender is the creator**
+  (copy `comp_id`/`candidate_user_id` from the application; set `recruiter_user_id` to the caller on
+  first *manager* contact, leave it unset/display-only if the candidate sends first — authz never reads
+  it). Define `MAX_BODY = 4_096` as a **module constant** at the top of `resources/messaging.py`.
+  `send_message` validates `body` (trim, non-empty, `len(body) <= MAX_BODY` else `ValidationError`),
+  sets `sender_user_id` **from `identity` (the token), never from any client field** (no impersonation),
+  inserts the `Message` (`read_at=None`), bumps the **recipient's** unread + `last_message_at` in one
+  atomic thread update, then **best-effort** notifies the other party (Task 6). Return the new-message
   DTO. **Reuse** the helpers — do not duplicate authz.
 - [ ] **Step 4 — run → PASS.** Add the validation + authz negative cases.
 - [ ] **Step 5 — gate green.**
@@ -168,12 +177,17 @@ threads, messages, notifier=None, clock=_utcnow) -> dict` (the new message DTO).
     `list_threads` returns only their **`comp_id`**'s threads; page-size **clamped**.
   - `list_messages` for an application returns its messages in order, page-size clamped, **authz
     reused** (non-owner candidate → Forbidden; wrong-tenant manager → NotFound).
-  - `mark_read` by the candidate zeroes `unread_candidate` + sets `read_at` on the recruiter's unread
-    messages; symmetric for the manager. (The opposite side's counter is untouched.)
+  - **read state (design §3.8 — the counter is the badge truth, `read_at` is advisory):** `mark_read`
+    by the candidate `$set`s `unread_candidate` to **0** (the badge source) **and** stamps `read_at=now`
+    on the **recruiter's** previously-unread messages (the advisory per-row stamp); symmetric for the
+    manager. The **opposite** side's counter is untouched. Assert the badge value derives **only** from
+    the counter — no test computes a badge from `read_at` — and that an unread recruiter row stamped by
+    the candidate's `mark_read` now carries `read_at != None`.
   - the DTO is a **strict subset** (no leaking of unrelated application fields / internal handles).
 - [ ] **Step 2 — run → FAIL → implement → PASS.** `list_threads` chooses the repo query by role
   (`candidate_user_id` vs `comp_id`); both reads authorize per the reused helpers; `mark_read` calls
-  `threads.mark_read(side)` + `messages.mark_read_through(...)`.
+  `threads.mark_read(side)` (counter → 0) + `messages.mark_read_through(thread_id, reader_role, now)`
+  (`read_at` on the other side's unread rows) — both under the one `mark_read` call so they can't drift.
 - [ ] **Step 3 — gate green.**
 
 ---
@@ -480,6 +494,40 @@ convention, do **not** promote to `@ip/ui`/`@ip/shared` in this increment). Modi
    in the candidate's `app/messages/<id>` within one poll interval; candidate badge increments;
    candidate replies → recruiter tab updates, unread clears on open; a "new message" email lands in
    the `LoggingNotifier` sink + an in-app notification row appears.
+
+## Resolved gaps (completeness audit 2026-06-19)
+
+Folds the `2026-06-19-v2-completeness-audit.md` (Part B → "Inc 4 — Messaging") fixes into this build.
+Each maps to concrete tasks above; the design rationale is in `…-messaging-design.md` (§3.1/§3.3/§3.6/
+§3.7/§3.8).
+
+- [ ] **🔴 Read state (counters vs `read_at`)** — the **thread-level `unread_candidate`/
+  `unread_recruiter` counters are the badge source of truth**; **`read_at` is an advisory per-message
+  stamp**. Build per **Task 2 Step 3** (send: `$inc` recipient counter, insert row `read_at=None`) +
+  **Task 3** (`mark_read`: `$set` reader's own counter to 0 **and** `mark_read_through` stamps the
+  other side's unread rows — one call, can't drift). Tests assert the badge derives only from the
+  counter (Task 3 Step 1).
+- [ ] **🔴 Messages index** — `IndexSpec("messages", [("thread_id", 1), ("created_at", 1)])` in
+  `infra/db.py` `INDEXES` (already specified in **Tier-A Task 1 Step 3**); confirm it ships with the
+  `application_id` cascade index and the four `message_threads` indexes.
+- [ ] **Thread creation (who + when)** — lazy on first message via `get_by_application(...) or
+  create(...)`; **the first sender is the creator** (Task 2 Step 3). A pre-message application is
+  absent from `list_threads` and its surface shows the empty state — verify in the candidate inbox
+  (Task 9 Step 3) and the company tab (Task 10 Step 1).
+- [ ] **Body length cap** — `MAX_BODY = 4_096` (4 KB) module constant; **server validates** in
+  `send_message` (Task 2 Step 3, boundary test in Task 2 Step 1) **and** the **composer guards
+  client-side** before the round-trip (Task 9 Step 2) — the server stays the authority.
+- [ ] **Erasure (recruiter loses the thread) — confirm acceptable** — `CandidateEraser.erase` deletes
+  threads + messages by `application_id` (Task 7); the recruiter loses the chat with the candidate's
+  PII **by design** (the application tombstone + funnel/audit record survive). Note this as intended in
+  the Task 7 test comment so a reviewer doesn't read it as data loss.
+- [ ] **Poll cost** — each open-thread poll is a single capped `find` by `thread_id`; polling **pauses
+  on a hidden tab** (`refetchIntervalInBackground: false`, Task 9 Step 1 / Task 10). SSE (design §3.4)
+  is the documented upgrade — leave `subscribe()` as the only swap point (do not build SSE here).
+- [ ] **Sender identity (no impersonation)** — `sender_user_id` is set from `identity` (the token) in
+  the resource, never a client field (Task 2 Step 3 + its test); the FE bubbles show the per-message
+  sender ("Hiring team" on the candidate side, the recruiter handle on the company side — Task 9/10
+  Step 2).
 
 ## Risks / re-verify at execution
 

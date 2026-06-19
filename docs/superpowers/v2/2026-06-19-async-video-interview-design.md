@@ -124,6 +124,35 @@ stream → resample to PCM16/16k → hand to the **unchanged** `GroqStt`. Expose
 > Rationale: do not re-implement Whisper calling, retries, or WAV framing — only the container→PCM
 > front-end is new, and PyAV already does this for edge-tts MP3 decode in the voice path.
 
+**Codec enforcement (the decode boundary is the validator).** `MediaRecorder` codecs vary by
+browser — Chrome emits **WebM/Opus**, Safari (which historically refused WebM) emits **MP4/AAC**.
+PyAV demuxes both, so the contract is: *whatever container the browser produced, `clip_decode` must
+yield a decodable PCM16/16k stream or raise `SttError` — STT never sees an undecodable blob.* The
+decode helper validates at the boundary: (a) the container has **at least one audio stream** (no
+audio → `SttError("clip has no audio")`, e.g. a video-only or corrupt upload); (b) the audio codec
+is one PyAV can decode (Opus/AAC/Vorbis are in the vendored ffmpeg build — a codec PyAV can't open
+raises `SttError("unsupported audio codec: <name>")` rather than crashing). The **frontend** also
+feature-probes `MediaRecorder.isTypeSupported(...)` and falls back to text if a browser offers **no**
+supported recorder mime (§3.6), so the unsupported-codec server path is a defense-in-depth backstop,
+not the primary guard.
+
+**STT error vs empty transcript — two distinct outcomes, never conflated.** `transcribe_clip` can end
+two ways and the turn logic treats them differently:
+- **`SttError`** (network/API failure, rate-limit, decode failure, no-audio) → the clip *might* contain
+  a real answer we failed to read. `GroqStt`'s bounded retry/backoff runs first; if it still fails, the
+  turn is **resumable** — we do **not** record an empty answer that would silently discard a real one.
+  The endpoint surfaces this as a retryable error (the FE keeps the take and offers Retry, §3.6);
+  `submit_video_turn` does **not** advance the transcript on `SttError`.
+- **Empty transcript** (`transcribe_clip` returns `""`/whitespace — Whisper heard **no speech**) → a
+  genuine no-speech answer. We **record an empty `TranscriptTurn`** (the existing empty-answer guard)
+  and **advance** to the next question. This is the candidate's choice to say nothing, not a failure.
+
+So: `SttError` ⇒ retry/resumable, never advance on a swallowed answer; `"" ` ⇒ valid empty answer,
+advance. Conflating them would either lose a real answer (treat error as empty) or dead-end a silent
+candidate (treat empty as error). `VideoAnswerTransport.ask()` (the offline-harness seam) maps both to
+`""` because the harness's empty-answer guard is the finalize trigger; the **live `submit_video_turn`
+path keeps them distinct** so the candidate can retry a network blip without re-recording.
+
 ### 3.4 REST endpoints (ai-agents `interview_api.py`, owner-checked like `/turn`)
 Both reuse `_caller_user_id` + the session-ownership check (`session.candidate_user_id == user_id`),
 returning the same `404 / 403 / 503` shape as `/interview/{id}/rtc-token`:
@@ -139,8 +168,50 @@ returning the same `404 / 403 / 503` shape as `/interview/{id}/rtc-token`:
   (`f"{comp_id}/video-answers/{application_id}/"`) so a caller can't point a turn at someone else's
   object. Calls a new `submit_video_turn` resource that: transcribes the clip (via `GroqStt`),
   records the `video_answers` row, then runs the **existing** `submit_turn` body (append, budget,
-  `next_question`, finalize). Empty/garbled transcript → records an empty answer (existing guard),
-  advances — no dead end.
+  `next_question`, finalize). Empty transcript → records an empty answer (existing guard), advances;
+  `SttError` → retryable, the turn does **not** advance (§3.3) — no dead end either way.
+
+#### Airtight `object_key` ownership validation
+The `object_key` is the **one piece of attacker-controlled input** on the turn endpoint — a malicious
+candidate could try to point a turn at another application's (or another tenant's) clip to inject its
+transcript into *their* interview, or to probe whether an object exists. The defense is: **the
+expected prefix is server-derived from the authenticated session, never from the request**, and the
+client's `object_key` must start with it. `comp_id` and `application_id` come from the loaded
+`session` (which was already owner-checked), so the prefix cannot be spoofed:
+
+```python
+# inside submit_video_turn, AFTER owner-check loads `session`:
+expected_prefix = f"{session.comp_id}/video-answers/{application_id}/"
+if not object_key.startswith(expected_prefix):
+    log.warning(
+        "video: object_key {} outside application prefix {} (caller={})",
+        object_key, expected_prefix, caller_user_id,
+    )
+    raise ForbiddenError("object_key does not belong to this application")
+```
+
+Why this is airtight (each property closes a bypass):
+- **Server-derived prefix.** `session.comp_id` / `application_id` come from the owner-checked session,
+  not the body — a forged `comp_id` in the key can't widen what's accepted.
+- **Tenant + application bound.** The prefix pins **both** `{comp_id}` *and* `{application_id}`, so a
+  key valid for application A under the same tenant is still rejected for application B (and any
+  cross-tenant key is rejected outright).
+- **Prefix check precedes I/O.** The `startswith` gate runs **before** `storage.get_raw(object_key)`,
+  so a forged key never triggers a fetch — no existence oracle, no cross-tenant read attempt.
+- **Defense in depth, not the only layer.** The upload-url endpoint *mints* keys under this same
+  prefix with a random `uuid4().hex`, so a legitimate client never needs to construct a key; the turn
+  check exists precisely for the case where the client ignores the minted key and forges one.
+- **No path-traversal escape.** Keys are flat `…/<uuid4>.webm` (hex + a fixed suffix); the
+  `startswith` is on the server-built prefix, and the minted segment is hex-only, so `..`/`/` injection
+  can't climb out of the prefix.
+
+> **Failing test (forged key from another application).** `test_video_turn_rejects_cross_application_object_key`:
+> owner-authenticated for application `a1` under `comp_id="c1"`, POST `/interview/a1/video/turn` with
+> `{"object_key": "c1/video-answers/a2/stolen.webm"}` (same tenant, **different application**) →
+> assert **403** and assert `storage.get_raw` was **never called** (spy/fake records zero reads), so the
+> forged key produced neither a transcript nor a fetch. A second case uses
+> `"c2/video-answers/a1/x.webm"` (**different tenant**) → also 403. The owner-only and 404/401 cases stay
+> as in §5.
 
 `"settings"` and `"storage"` are threaded onto `app.state.deps` in `main.py` (settings already added
 for `rtc-token`; add the `ObjectStorage` instance the same way).
@@ -159,6 +230,47 @@ for `rtc-token`; add the `ObjectStorage` instance the same way).
   text. `video_answers` is an **additive audit/asset trail**; the scored artifact is the transcript,
   unchanged.
 
+#### Presigned PUT size limit (the upload can't fill storage)
+The presigned PUT must be **bounded** so a candidate (or a leaked URL) can't stream an unbounded body
+and exhaust the bucket. We cap clip size **at the policy layer, not by buffering through the API** (the
+whole point of the presigned PUT is that bytes skip ai-agents). Two enforcement points, both
+server-controlled:
+- **Signed condition on the URL.** `presigned_put_url` signs a `content-length-range` condition
+  (`0 .. video_max_clip_bytes`, e.g. **25 MB** from config) into the presigned request, so S3/MinIO
+  **rejects an oversized PUT at the storage layer** — the bytes never land. (For the `put_object`
+  presign this is the `content-length-range` policy / `ContentLengthRange` param; MinIO honors it.)
+- **Bucket-policy backstop.** A bucket/lifecycle policy also caps object size for the
+  `video-answers/*` prefix, so even a mis-minted URL can't exceed the cap. `video_max_clip_bytes` lives
+  in `config.py` next to `video_max_clip_seconds` (the two together bound a clip: short *and* small).
+- **Client-side fast-fail.** The FE validates `blob.size > 0` and `<= maxClipBytes` before the PUT
+  (mirror of the `video_max_clip_bytes` mirror env) so the common case fails instantly with a clear
+  message rather than a 4xx from storage — but the **server cap is the real boundary**; the client cap
+  is UX.
+
+> **Test:** extend `test_storage.py` to assert the presign carries the size condition
+> (`content-length-range` / clamped `video_max_clip_bytes`); an endpoint test asserts the
+> `upload-url` response embeds it. The oversized-PUT *rejection* itself is a storage-layer behavior
+> (exercised in the manual E2E against MinIO, not the offline gate).
+
+#### Clip retention + erasure (storage doesn't grow unbounded)
+Raw video is the heaviest asset on the platform, so its lifecycle is **defined, not implicit**:
+- **Erasure cascade (mandatory, primary path).** On candidate right-to-erasure, `CandidateEraser`
+  lists the candidate's `video_answers` (by their applications), `delete_raw`s **each `object_key`**
+  (best-effort: a storage failure is logged, not fatal — mirrors the résumé-delete behavior), then
+  deletes the rows. This is the **Inc 0 cascade extension** (TIER D, Task 7) and is the guaranteed way
+  clips leave storage. Erasure-driven deletion is **independent of any TTL** — it fires on request
+  regardless of age or decision state.
+- **Optional post-decision TTL (lifecycle, bounded by default).** Independently, raw clips can carry a
+  storage **lifecycle rule** (`video-answers/*` prefix) that auto-expires the **raw video** N days
+  after the application reaches a terminal decision (config `video_clip_retention_days`, e.g. 30) —
+  the **transcript is the scored artifact and is retained**, so expiring the clip never affects scoring
+  or the recruiter report. This caps storage growth even absent erasure (most clips are never erased
+  individually). Default-on with a sane N keeps the bucket bounded; set N=0/disabled to retain
+  indefinitely.
+- **Why both.** Erasure is *correctness* (a legal obligation, fires on demand); TTL is *hygiene* (keeps
+  steady-state storage flat). Neither touches the transcript. This resolves the audit's "unbounded
+  growth" + "retention/TTL for video" cross-cutting item for this pillar.
+
 ### 3.6 Frontend (candidate)
 - **Mode selector** on `app/interview/[applicationId]/page.tsx`: today text (+ planned voice). Add a
   **video** option. Default remains text; modality is the candidate's choice.
@@ -170,6 +282,32 @@ for `rtc-token`; add the `ObjectStorage` instance the same way).
   unsupported `MediaRecorder`, or a `503` from `upload-url`, **fall back to the existing text
   interview** (no dead end) — the same fallback principle the voice mode uses.
 - Reuse `authedFetch` (401-refresh) and the existing `HttpError` handling for both calls.
+
+**Empty-answer UX (no-clip / empty STT — re-prompt once, then advance).** The candidate must never be
+stuck, but also shouldn't accidentally skip a question:
+- **No clip recorded (tried to submit nothing):** the **Submit** button is disabled until a take
+  exists (`clipRef != null`), so this can't be submitted in the first place — the candidate either
+  records or, if they truly want to skip, uses an explicit **"Skip this question"** affordance.
+- **Empty STT result (recorded, but Whisper heard no speech — server returns the turn with an empty
+  answer):** the FE shows a **gentle one-time re-prompt** — `Alert tone="info"`: *"We couldn't hear an
+  answer in that clip. Re-record, or continue to the next question."* — with **Re-record** and
+  **Continue**. If the candidate continues (or the *next* attempt is also empty), the empty answer is
+  recorded and the interview **advances** (the question is not re-asked again — re-prompt is **once**,
+  then move on, so a silent candidate is never trapped in a loop). This is the FE surface of the §3.3
+  "empty transcript ⇒ valid empty answer, advance" rule.
+- **`SttError` (network/decode failure, *not* empty):** distinct from the above — the take is
+  **preserved** and an inline **Retry** re-runs upload→turn **without re-recording** (the §3.3
+  retryable path); no answer is recorded until STT succeeds or the candidate explicitly skips.
+- **Explicit skip:** a "Skip this question" control submits an intentional empty answer once (recorded,
+  advance) — the same terminal as a second empty STT, surfaced as a deliberate choice.
+
+**No frame processing — the non-surveillance thesis, asserted in code.** The FE captures
+`getUserMedia({video, audio})` only to (a) show the candidate their own live preview and (b) package
+the clip for upload; it runs **no** per-frame analysis, no face/landmark detection, no attention or
+affect inference — and the **backend transcribes audio only** (`clip_decode` demuxes the **audio**
+stream; the video track is stored opaquely and never decoded for analysis). This is the EU-prohibited
+biometric/affect zone the v2 overview permanently excludes (§1 Out of scope, §4), and it is guarded by
+an explicit test (see Resolved gaps → "No-frame-processing guard").
 
 ### 3.7 Auth / tenancy
 Per-application, **owner-checked exactly like `/turn`**: `_caller_user_id` from the access token →
@@ -221,17 +359,30 @@ URL nor a turn can cross a tenant or an application boundary.
   (baseline **423** tests; this only grows it). All new heavy deps (PyAV, Groq, S3) sit behind
   injected seams with fakes.
 
+## Resolved gaps (completeness audit 2026-06-19)
+Closes the **Inc 6 — Async Video Interview** row of `2026-06-19-v2-completeness-audit.md` (Part B 🟠).
+Each gap is resolved in the section noted; tasks land in the plan doc's Resolved-gaps tier.
+
+| # | Gap (audit) | Resolution | Where |
+|---|---|---|---|
+| 1 | **Airtight `object_key` ownership** (+ test) | Server-derived `{comp_id}/video-answers/{application_id}/` prefix from the owner-checked session; `startswith` gate **before** any `get_raw`; tenant **and** application bound; `test_video_turn_rejects_cross_application_object_key` (forged same-tenant **and** cross-tenant key → 403, zero `get_raw`) | §3.4 |
+| 2 | **Codec enforcement** (Safari AAC vs Chrome Opus) | `clip_decode` is the validator: PyAV demuxes WebM/Opus **and** MP4/AAC; no audio stream → `SttError`, unsupported codec → `SttError` (never an undecodable blob to STT); FE `isTypeSupported` probe + text fallback is the front guard | §3.3 |
+| 3 | **STT error vs empty** differentiation | `SttError` ⇒ retry/**resumable**, do **not** advance (no swallowed answer); empty `""` ⇒ **valid empty answer**, advance. Never conflated; live path keeps them distinct (the harness seam maps both to `""` only for finalize) | §3.3, §3.6 |
+| 4 | **Presigned size limit** | `presigned_put_url` signs a `content-length-range` (`0..video_max_clip_bytes`, e.g. 25 MB) so storage rejects oversized PUTs; bucket-policy backstop; client fast-fails on `blob.size` — server cap is the boundary | §3.5 |
+| 5 | **Clip retention / erasure** | Erasure cascade `delete_raw`s each clip on right-to-erasure (Inc 0, mandatory, age-independent); optional `video_clip_retention_days` lifecycle auto-expires **raw video** post-decision (transcript retained). Caps unbounded growth | §3.5 |
+| 6 | **`test_no_frame_processing`** guard | `test_video_answer_no_frame_processing` asserts only the **audio** stream is decoded and **no** frame/identity/affect/attention analysis runs — protects the non-surveillance thesis | §3.6, §5 |
+| 7 | **Empty-answer UX** | No-clip ⇒ Submit disabled (or explicit Skip); empty STT ⇒ **one** gentle re-prompt (*"couldn't hear an answer"*) → Re-record or Continue, then advance (re-prompt **once**, never loop); `SttError` ⇒ preserve take + Retry | §3.6 |
+
 ## 6. Open questions
 1. **Live driver shape.** Lock the per-turn REST endpoints (§3.4) as primary, with
    `VideoAnswerTransport` + `conduct_interview` as the offline harness — vs. driving the live path
    through the adapter too. (Leaning: REST per-turn primary; adapter for tests + the §11 seam proof.)
-2. **Retake / clip-length caps.** Max clip seconds + max retakes per question (config) — bound STT
-   latency and storage; pick defaults during planning.
-3. **Container/codec from `MediaRecorder`.** Pin the recorded mime (`video/webm;codecs=vp8,opus` vs
-   mp4/h264 across browsers) and confirm the PyAV decode path covers it; fall back to text if the
-   browser offers no supported recorder mime.
-4. **Recruiter clip access.** A presigned-GET "watch clip" link on the report (read-only, owner-comp,
+2. **Retake / clip-length caps — defaults only.** Resolved in principle: caps are
+   `video_max_clip_seconds` + `video_max_retakes` + `video_max_clip_bytes` (§3.5). Open: the exact
+   default values (leaning 60 s / 2 retakes / 25 MB) — pick during planning.
+3. **Recruiter clip access.** A presigned-GET "watch clip" link on the report (read-only, owner-comp,
    short-TTL) — thin follow-up, or out of scope for the demo? Transcript-only scoring needs neither.
-5. **Clip retention/TTL.** Whether clips get a storage lifecycle/TTL independent of erasure (e.g.
-   auto-expire raw video after scoring) — the erasure cascade (§Inc 0) already deletes them on
-   right-to-erasure regardless.
+
+> Resolved & moved to **Resolved gaps**: airtight `object_key` validation, codec enforcement, STT
+> error-vs-empty, presigned size limit, clip retention/erasure (these were the former Q3/Q5 + the
+> audit's 🟠 row).

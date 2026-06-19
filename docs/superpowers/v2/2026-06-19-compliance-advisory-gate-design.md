@@ -92,6 +92,16 @@ field so recruiters set it per job. Validation lives at that boundary (the enum/
 contract); `next_state` trusts the stored value and treats anything not `advisory` as `auto` (fail
 open to the *safe, behavior-preserving* mode, never silently into `advisory`).
 
+> **Proto evolution is additive + backward-compatible.** `gate_mode` is a **new field on the existing
+> `aptitude_config` message** (a fresh field number, no renumber/reuse), so it is wire-compatible both
+> ways: an old client that never sets it serializes nothing for that field, and proto3 deserializes a
+> missing scalar `string` to its zero value (`""`). The RPC handler maps `"" → "auto"` (same
+> fail-open rule as `next_state`), so **a candidate of an older job whose stored config predates the
+> field keeps exactly today's behavior** — `auto` routing, no advisory hold. There is no migration to
+> backfill: the default *is* the legacy behavior. (This mirrors the model default in §3.1 above —
+> `Literal[...] = "auto"` — so the proto boundary and the Python model agree on the absent-value
+> meaning.)
+
 > **Why a per-job field, not a global flag.** Different roles carry different legal exposure (a
 > high-volume role in NYC vs. an internal transfer). Per-job `gate_mode` lets one tenant run `auto`
 > for a demo job and `advisory` for a regulated one — the field rides on the config the recruiter
@@ -135,6 +145,26 @@ if event == E.aptitude_graded and current == S.aptitude_pending:
   is **not** in `_TERMINAL`, so the existing "any non-terminal" guards already cover it. It is **not**
   in `DECISIONS` and **not** in `_TERMINAL`.
 
+**Transition-validity matrix (grep-verifiable).** The complete set of legal moves *into* and *out of*
+`assessment_review` — a builder can diff this against `next_state` to confirm nothing is missing or
+extra. (Only the `assessment_review`-adjacent rows are shown; all other `next_state` rows are
+unchanged.)
+
+| From | Event | To | Mode / guard | Notes |
+|---|---|---|---|---|
+| `aptitude_pending` | `aptitude.graded` | `assessment_review` | `gate_mode == "advisory"` | **both** `passed: True` and `passed: False` land here — the only entry edge |
+| `aptitude_pending` | `aptitude.graded` | `interview_pending` | `auto` + `passed: True` | unchanged (today's path) |
+| `aptitude_pending` | `aptitude.graded` | `gated_out` | `auto` + `passed: False` | unchanged (today's path) |
+| `assessment_review` | `gate.override` | `interview_pending` | recruiter advance (`_require_manager`) | widens `gate.override` legal-from to `{gated_out, assessment_review}` |
+| `assessment_review` | `recruiter.decision` (`outcome=rejected`) | `rejected` | recruiter reject (`_require_manager`) | adds `assessment_review` to `recruiter.decision` legal-from |
+| `assessment_review` | `application.withdrawn` | `withdrawn` | candidate edge exit | free — `assessment_review ∉ _TERMINAL` |
+| `assessment_review` | `application.expired` | `expired` | system edge exit | free — `assessment_review ∉ _TERMINAL` |
+| `assessment_review` | *any other event* | — | — | `InvalidTransition` (e.g. `scoring.completed`, `interview.completed`) |
+
+The matrix has exactly **one inbound edge** (`aptitude.graded` under `advisory`) and **four outbound
+edges** (two recruiter-driven, two edge exits). No transition *targets* `assessment_review` except that
+single advisory entry, so a candidate cannot double-enter it (see §3.5).
+
 Everything flows through `advance_application`, so each move keeps the **CAS** (`set_state_if` — a
 redelivered event or concurrent writer that already produced the target is a logged no-op, not a
 duplicate audit row) and writes one `AuditLog` (`entity="application"`, `action=<event>`, `from_state`,
@@ -144,6 +174,25 @@ duplicate audit row) and writes one `AuditLog` (`entity="application"`, `action=
 > logic (that frozenset is about the `interview.completed`/`scoring.completed` ordering race between
 > two ai-agents events; advisory entry/exit are not part of that race). An illegal move into/out of
 > it is a genuine `InvalidTransition`, surfaced — not requeued.
+
+#### CAS guarantee for `assessment_review`
+
+`assessment_review` is **added as a valid `next_state` target** for exactly one input
+(`aptitude.graded` under `advisory`) and is reachable by **no other transition** — the matrix above is
+the whole story, so there is no path that double-enters it. Every move through it still goes through
+`advance_application`, which applies `set_state_if(app_id, expected=current, new=target)` (compare-and-
+set) before writing the `AuditLog`. The CAS and audit behavior are therefore **unchanged** from every
+other state; advisory adds a state, not a new concurrency rule. Two concrete races are covered:
+
+- **Redelivered `aptitude.graded` (duplicate advisory entry).** The first delivery moves
+  `aptitude_pending → assessment_review`. A redelivery re-computes the same target, but the CAS
+  `expected=aptitude_pending` now fails (state already moved) → a **logged no-op**, no second
+  `AuditLog` row. This is the existing redelivery guarantee, exercised on the new state.
+- **Concurrent recruiter exits (advance vs. reject).** If two recruiters act on the same
+  `assessment_review` application, the first CAS (`expected=assessment_review`) wins and writes its
+  audit row; the second finds `current ≠ assessment_review`, its CAS fails, and it is a logged no-op —
+  never a conflicting double-transition. The `_RaceRepo` test pattern that proves this for existing
+  states is reused verbatim for the advisory entry.
 
 ### 3.3 Erasure-cascade extension (the most important follow-through)
 
@@ -167,6 +216,56 @@ The extension keeps the existing shape: each artifact repo is an **injected depe
 | `practice_sessions` (Pillar D) | `delete_by_user(user_id)` | candidate | self-serve interview transcripts |
 | `video_answers` (Pillar C) | `delete_by_user(user_id)` | candidate | recorded clips (+ MinIO objects) |
 
+**Delete order (deterministic, leaf-first, ending at the tombstone).** The cascade runs in a fixed
+sequence so the user row is anonymized **last** — every artifact that references the user is gone (or
+logged as a partial failure) before the tombstone is written. The existing collections keep their
+current relative order; the seven new ones slot in **before** `users.anonymize`:
+
+1. `reports` (by application) — existing
+2. `interviews` / `transcripts` (by user) — existing
+3. `aptitude_attempts` (by candidate) — existing
+4. `assessment_attempts` (by candidate) — **new** (Pillar B)
+5. `code_submissions` (by candidate) — **new** (Pillar B)
+6. `video_answers` (by user, + MinIO objects) — **new** (Pillar C); blob delete is best-effort
+7. `messages` (by user) — **new** (Pillar D)
+8. `message_threads` (by user) — **new** (Pillar D)
+9. `notifications` (by user) — **new** (Pillar D)
+10. `practice_sessions` (by user) — **new** (Pillar D)
+11. `consent_ledger` (by user) — existing
+12. profile + resume delete (resume blob best-effort) — existing
+13. `users.anonymize` (keep `_id`; applications + audit stay intact) — existing, **always last**
+
+The order is deterministic but **not semantically load-bearing** between sibling artifact collections
+(an `assessment_attempts` purge does not depend on `messages` being gone first); the constraint that
+*matters* is only that **all artifact + profile deletes precede `users.anonymize`**. Listing the order
+explicitly lets a builder grep-verify the call sequence and lets the partial-failure recovery (below)
+re-run any subset.
+
+**Atomicity / failure model — best-effort per-collection + re-runnable sweep (NOT a single Mongo
+transaction).** We deliberately do **not** wrap the cascade in one multi-collection transaction:
+
+- *Why not a transaction.* The cascade spans Mongo **and** an external blob store (MinIO video
+  objects), which a Mongo transaction cannot enroll — so a transaction would give false atomicity
+  (the blob delete still escapes it). It would also require all targeted collections to live on a
+  replica-set/sharded deployment with the documents touched in one session, coupling seven
+  independently-shipped pillars to one transactional boundary and to each other's availability. For a
+  right-to-erasure job that is **idempotent and re-runnable**, the transaction buys little and costs
+  coupling.
+- *What we do instead.* Each `delete_by_*` is an **independent, idempotent** delete (re-running it on
+  already-erased data is a no-op). The eraser attempts every step; a step that raises is **caught,
+  `log.exception`-ed with `user_id` + the collection name, and recorded as a partial failure**, and the
+  cascade **continues** to the remaining collections (one slow/broken artifact store must not strand the
+  others or block the tombstone). Because each delete is keyed by `user_id`/candidate and idempotent,
+  the existing **`sweep`** (which loops `erase` over the retention cutoff) **doubles as the recovery
+  mechanism**: a partially-failed erasure is simply re-attempted on the next sweep and converges.
+  Anonymization (`users.anonymize`) is the final step; if an *artifact* delete partially failed,
+  re-running `erase(user_id)` (or the next `sweep`) re-purges the residue — the tombstoned user is
+  still resolvable by `_id` for the re-run.
+- *The blob carve-out.* `video_answers` deletes both Mongo rows and MinIO objects; its storage call is
+  wrapped in `try/except` + `log.exception` (best-effort, exactly like today's `storage.delete_raw` for
+  resumes), so a blob-store hiccup is logged and retried by the next sweep, never aborting the rest of
+  the cascade.
+
 **Design now, slot in later.** Inc 0 adds the **constructor parameters** and the **`erase()` call
 sites** for all seven, each guarded so an unconfigured/None repo is skipped (the artifact's pillar
 hasn't shipped yet). The pattern mirrors the existing best-effort resume delete: the cascade is a
@@ -174,6 +273,24 @@ sequence of awaited deletes; a `video_answers` purge that also removes MinIO obj
 storage call in try/except + `log.exception` (best-effort, like `storage.delete_raw` today) so a
 blob-store hiccup never blocks anonymizing the user. This is the single most important compliance
 follow-through called out in the architecture overview §6 — it is why Inc 0 ships first.
+
+**The None-skip contract (so the gate stays green before pillars ship).** Each artifact repo is an
+optional injected dependency typed as `<Repo> | None`, defaulting to `None`. Its erase method is the
+single coroutine `delete_by_<key>` (e.g. `async def delete_by_candidate(self, user_id: str) -> None`
+for `assessment_attempts` / `code_submissions`; `async def delete_by_user(self, user_id: str) -> None`
+for the five user-keyed collections). The call site guards on `is not None` so an absent pillar is
+**skipped silently** — not an error, not a partial-failure log — and the cascade proceeds. A dedicated
+test (see §5 and the plan's Task 7) constructs the eraser with **all seven repos as `None`** and
+asserts `erase` completes cleanly and still reaches `users.anonymize`. The fake repo used by the
+populated-path test exposes exactly that signature, e.g.:
+
+```python
+class FakeVideoAnswerRepo:
+    def __init__(self) -> None:
+        self.rows: list[dict] = [...]
+    async def delete_by_user(self, user_id: str) -> None:    # None-skip target when this is absent
+        self.rows = [r for r in self.rows if r["user_id"] != user_id]
+```
 
 > **Open seam vs. premature collections.** We do **not** create the seven collections or their
 > repositories in Inc 0 — that is each pillar's job. We add the **eraser extension points** (params +
@@ -263,6 +380,40 @@ increment grows it.
   deserializes to `auto`.
 - **Gate + smoke:** `bash scripts/check.sh` green (ruff format+lint S-rules line-88, pip-audit, pytest
   ×5); `python scripts/smoke_login.py --selftest` still boots admin's gRPC-web app (proto change loads).
+
+## Resolved gaps (completeness audit 2026-06-19)
+
+These four items close the Inc 0 gaps flagged in
+`docs/superpowers/v2/2026-06-19-v2-completeness-audit.md` (Part B → "Inc 0 — erasure cascade" + the
+cross-cutting erasure-atomicity rows). Each is folded into the section noted; this list is the index.
+
+1. **Erasure cascade order + atomicity** (folded into §3.3). The delete runs in a fixed **leaf-first
+   order** (the 13-step list), ending at `users.anonymize`. The atomicity model is **best-effort
+   per-collection, not a single Mongo transaction** — because the cascade spans Mongo + MinIO (a txn
+   can't enroll the blob store) and couples seven independently-shipped pillars. Each `delete_by_*` is
+   idempotent; a failing step is `log.exception`-ed as a **partial failure** and the cascade continues;
+   the existing **`sweep` is the re-runnable recovery** (idempotent re-attempt converges). The
+   **None-skip contract** (`<Repo> | None`, guarded on `is not None`) plus the `delete_by_*` fake
+   signature (shown in §3.3) lets the cascade skip an absent pillar's repo cleanly — covered by
+   `test_erase_skips_unconfigured_artifact_repos`.
+
+2. **Transition-validity matrix** (folded into §3.2). A small grep-verifiable table enumerates the
+   **one inbound** edge into `assessment_review` (`aptitude.graded` under `advisory`, both outcomes)
+   and the **four outbound** edges (`gate.override → interview_pending`,
+   `recruiter.decision(rejected) → rejected`, `application.withdrawn → withdrawn`,
+   `application.expired → expired`), with everything else raising `InvalidTransition`.
+
+3. **`gate_mode` proto evolution** (folded into §3.1). The proto field is **additive + defaults to
+   `auto` on missing**: proto3 deserializes an absent scalar `string` to `""`, the handler maps
+   `"" → "auto"`, so a candidate of an **older job with no `gate_mode`** keeps today's `auto` behavior
+   with **no backfill migration**. The proto boundary and the Python model (`Literal[...] = "auto"`)
+   agree on the absent-value meaning.
+
+4. **`assessment_review` CAS** (folded into §3.2, "CAS guarantee"). `assessment_review` is **added as a
+   valid `next_state` target** for exactly the advisory `aptitude.graded` input and is reachable by no
+   other transition, so **no path double-enters it**. CAS (`set_state_if`) + per-transition `AuditLog`
+   are **unchanged**; a redelivered advisory entry and concurrent recruiter exits both resolve to a
+   logged CAS no-op (verified via the `_RaceRepo` pattern).
 
 ## 6. Open questions
 

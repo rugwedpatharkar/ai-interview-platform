@@ -25,8 +25,8 @@ It sits behind an injected **`CodeRunner` Protocol** in `app/seams/` (mirroring 
 The real runner (`DockerCodeRunner`) is the **only** module that imports the Docker SDK.
 
 **Languages (v2.0):** Python and JavaScript (one prebuilt image each). The runner dispatches
-on `language` → image + run command; adding Java/Go/C++ later is one image + one table row,
-no contract change.
+on `language` → image + run command (the **language→image map**, §3.5); adding Java/Go/C++ later
+is one image + one table row, no contract change.
 
 **Out of scope (deferred / YAGNI).**
 - Interactive/stdin-streaming programs, multi-file projects, package installation at submit
@@ -129,8 +129,15 @@ Per submission, **per test case**, the runner:
    the case's `stdin`, and enforces a **hard wall-clock kill** (asyncio timeout that
    `container.kill()`s + `remove()`s on expiry — independent of any in-container limit, which
    untrusted code could try to evade).
-3. Reads back **at most N bytes** of stdout/stderr (output cap — a program printing forever
-   can't exhaust host memory or the MCP response).
+3. Reads back **at most N = 64 KB** of stdout+stderr **combined** per case
+   (`Settings.sandbox_output_cap_bytes = 64_000`, tunable; the same default as the source cap).
+   The read is **bounded at the source** — the runner reads up to the cap and stops, so a program
+   printing forever can't exhaust host memory or the MCP response. **Truncation behavior:** when a
+   case's output exceeds the cap, the captured `stdout_truncated` holds the **first 64 KB** with a
+   trailing marker `\n…[output truncated at 64 KB]` appended, and comparison against `expected`
+   uses the truncated bytes (so an over-printing program does **not** spuriously match a short
+   `expected`; truncated ≠ a clean pass). The cap is on the **captured** bytes — it does not affect
+   the wall-clock or memory kills, which fire independently (S7/S4).
 4. Classifies the case: clean exit + matching stdout → `ok`; clean exit + mismatch → `wrong`;
    killed by wall clock → `timeout`; OOM-killed → `oom`; non-zero exit / decode failure →
    `error`.
@@ -153,7 +160,60 @@ across calls, writes nothing durable, and shares nothing between runs, so there 
 cross-tenant surface *inside* it. Tenancy (`comp_id` scoping, which submission belongs to
 whom) is enforced entirely upstream in admin/assessments before `run_code` is ever called.
 This is the strongest possible isolation story: the component that runs untrusted code simply
-has no tenant data to leak.
+has no tenant data to leak. The **cross-tenant isolation test** (`test_sandbox_no_cross_tenant_leak`,
+§5) proves run B (different `comp_id`) sees no state from run A: with `--network=none` (S1) and a
+fresh **tmpfs** scratch per container (S2/S10), there is no shared FS, socket, or env between
+runs — two back-to-back runs are byte-for-byte independent.
+
+### 3.5 Language → image map
+
+The runner holds a small table mapping `language` → (image, run command). v2.0:
+
+| `language`   | Image (pinned by digest)   | Run command (in container)        | Compile step |
+|--------------|----------------------------|-----------------------------------|--------------|
+| `python`     | `python:3.12-slim`         | `python /code/main.py`            | none (interpreted) |
+| `javascript` | `node:22-slim`             | `node /code/main.js`              | none (interpreted) |
+
+- **Exact image URIs:** `python:3.12-slim` and `node:22-slim`, each **rebuilt locally** into a
+  pinned sandbox image (`sandbox-python:pinned`, `sandbox-node:pinned`) that adds a **non-root
+  user** (S3), drops shell tooling beyond the interpreter, and ships a **frozen offline stdlib**
+  (no package install at run time). The base is **pinned by digest** (not a floating tag) so a
+  rebuild is reproducible.
+- **Built/cached:** images are built **once at deploy** (`docker build -f
+  docker/sandbox-python.Dockerfile -t sandbox-python:pinned .`) from a network-on build step that
+  is **never** re-run at submit time; per-run cost is container create/start only (the image is
+  already cached on the host). A **missing image** at run time is an **infra failure** →
+  `SandboxError` (§3.6), never a candidate failure.
+- **Per-language limits.** The default resource caps (S4–S6: mem 256m, cpus 0.5, pids 64) and the
+  wall-clock ceiling are **shared** across languages in v2.0. They are `Settings` fields with
+  **optional per-language overrides** (e.g. a future JVM language may need more memory) — the map
+  is the seam where a per-language limit profile would attach, with **no contract change**.
+
+### 3.6 Error taxonomy (the infra-vs-candidate boundary)
+
+The single most important classification: **infrastructure failure** (raise `SandboxError`) vs
+**candidate failure** (return a structured `CaseResult` / `compile_ok=False`). The grader catches
+the former as "could not run" and the latter as a score.
+
+| Class | Examples | Surfaced as | Who handles |
+|-------|----------|-------------|-------------|
+| **Infra (`SandboxError`)** | Docker daemon unreachable; **image missing**; container fails to **start/create** (create error, not the candidate's exit); the runner itself raised unexpectedly | **raise `SandboxError`** (typed; structured-logged) | grader → ungraded/retryable, **never score 0** |
+| **Candidate (data, not exception)** | compile/syntax error; wall-clock **timeout**; **OOM** kill; non-zero exit / runtime crash; wrong stdout; output over cap | structured **`RunResult`**: `compile_ok=False` **or** `CaseResult.status ∈ {wrong,timeout,oom,error}` | grader → scores it (0.0 on compile fail; per-case miss lowers the weighted pass-rate) |
+
+- **Container-crash boundary (explicit).** A container that **fails to create/start** (the daemon
+  couldn't bring it up — e.g. image missing, daemon hiccup, OOM at *create* time) is **infra** →
+  `SandboxError`. A container that **starts and then the candidate's process crashes** (non-zero
+  exit, segfault, unhandled exception, OOM-killed *during* the run) is **candidate** → a
+  `CaseResult` with `status="error"` (or `"oom"`). The line is **"did the sandbox come up?"**: a
+  sandbox that ran and reported the candidate's failure is a *result*; a sandbox that could not run
+  is an *outage*.
+- **Compile vs run.** A compile failure (future Java/Go; JS/Python have none) short-circuits to
+  `RunResult{compile_ok=False, compile_error=...}` and **skips the cases** — it is a **candidate**
+  outcome (`points=0.0` in the grader), never a `SandboxError`.
+- **Never silently catch-and-zero.** The runner does **not** convert a `SandboxError` into a
+  failing `CaseResult` — that would make an outage look like a failing candidate. Infra failures
+  propagate up as `SandboxError` so the grader can hold the funnel (the fairness invariant in the
+  assessments spec §3.2/§3.3).
 
 ---
 
@@ -173,7 +233,7 @@ out as a manual/integration check for the live runner) or enforced by a containe
 | S5 | **Bounded CPU** | `--cpus=0.5` | A busy loop can't starve the host or other runs. |
 | S6 | **Bounded processes** | `--pids-limit=64` | Defuses fork bombs before they exhaust host PIDs. |
 | S7 | **Hard wall-clock kill** | host-side asyncio timeout → `container.kill()` (NOT an in-container `ulimit`/`timeout`) | The timeout must be enforced by something the sandboxed code **cannot disable**; in-container limits are untrusted. |
-| S8 | **Output cap** | read ≤ N bytes of stdout/stderr | Infinite-print can't exhaust host memory or the MCP message. |
+| S8 | **Output cap** | read ≤ **N = 64 KB** (`sandbox_output_cap_bytes`) of stdout+stderr combined; truncate with a marker (§3.3) | Infinite-print can't exhaust host memory or the MCP message. |
 | S9 | **Always reaped** | kill + `remove()` + temp-dir delete in `finally` | A leaked/lingering container is a resource leak *and* a persistence foothold. |
 | S10 | **One container per run** | no container/process reuse across cases or candidates | No state, timing, or data leakage between submissions. |
 
@@ -225,9 +285,41 @@ rewrite.
 - **Live runner = manual/integration only** (not in the gate): a known-good Python solution →
   all cases `ok`; an infinite loop → `timeout` (proves S7 host-side kill); a fork bomb →
   bounded by S6 then reaped; a network call → fails closed (proves S1); a host-FS write →
-  fails / vanishes (proves S2); a never-ending print → truncated (S8); assert **no leaked
-  containers** after a batch (`docker ps -a`) (proves S9/S10). These exercise the invariants
-  the fake can't.
+  fails / vanishes (proves S2); a never-ending print → truncated at 64 KB (S8). These exercise the
+  invariants the fake can't.
+- **`test_no_leftover_containers` (one-container-per-run assertion, integration).** Snapshot
+  `docker ps -aq --filter name=sandbox-` **before** a multi-case run, run it to completion (mix of
+  ok/timeout/oom outcomes), then assert the **after** snapshot equals the before snapshot — **zero
+  leftover sandbox containers**, proving S9 (always reaped) + S10 (one container per run, none
+  reused or lingering). Run the same assertion after a **cancelled** `run` (cancel mid-case) to
+  prove the `finally` reap fires under cancellation.
+- **`test_sandbox_no_cross_tenant_leak` (cross-tenant isolation, integration).** Run A writes a
+  marker to `/tmp` and opens (fails) a socket; run B (a **different `comp_id`**'s submission,
+  back-to-back) reads `/tmp` and the network — assert run B sees **no file** from run A (fresh
+  **tmpfs** scratch ⇒ no shared FS, S2/S10) and **no network reachability** (`--network=none`,
+  S1), i.e. **no shared state** between tenants' runs. Pairs with §3.4: tenant isolation is *by
+  construction* (network-off + per-run tmpfs), and this test asserts it end-to-end.
+
+## Resolved gaps (completeness audit 2026-06-19)
+
+Resolving `2026-06-19-v2-completeness-audit.md` (Part B → "Inc 2 — Code Execution Sandbox"):
+
+- **Output cap.** Named **N = 64 KB** (`sandbox_output_cap_bytes`, stdout+stderr combined,
+  per case), with explicit **truncation behavior** (first 64 KB + `…[output truncated at 64 KB]`
+  marker; truncated output does not spuriously match a short `expected`) (§3.3, S8).
+- **Language→image map.** Exact image URIs `python:3.12-slim` / `node:22-slim`, rebuilt locally
+  into `sandbox-python:pinned` / `sandbox-node:pinned` (non-root, frozen stdlib, **digest-pinned**),
+  built once at deploy and cached; shared default limits with **optional per-language overrides**;
+  a missing image = infra failure (§3.5).
+- **Error taxonomy.** A crisp **infra (`SandboxError`)** vs **candidate-failure (`CaseResult` /
+  `compile_ok=False`)** table, with the **container-crash boundary** classified explicitly
+  ("did the sandbox come up?": create/start failure or missing image = infra; the candidate's
+  process crashing after start = `status="error"`/`"oom"`) (§3.6).
+- **One-container-per-run assertion.** `test_no_leftover_containers` — before/after `docker ps`
+  snapshot equal ⇒ zero leftover containers (S9/S10), also under cancellation (§5).
+- **Cross-tenant isolation test.** `test_sandbox_no_cross_tenant_leak` — run B (different
+  `comp_id`) sees no `/tmp` marker from run A (fresh tmpfs) and no network (`--network=none`) ⇒ no
+  shared state (§5, pairs with §3.4).
 
 ## 6. Open questions
 

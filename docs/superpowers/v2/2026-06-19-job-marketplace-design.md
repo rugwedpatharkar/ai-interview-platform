@@ -108,6 +108,14 @@ funnel state machine, CAS, audit, consent, or the apply contract. ID/background/
   city/region, salary band) are exact-match `$match` stages backed by **compound facet indexes**;
   the default sorts are `relevance` (the `$text` `textScore`) and `recent` (`posted_at` desc). When
   the query has no text term, it degrades to a pure filtered+sorted `find` (no `$text` stage).
+  - **`relevance` tie-break (textScore ties).** `$text` `textScore` is coarse — many jobs share an
+    identical score, so a sort on score alone is **non-deterministic** (Mongo returns ties in
+    arbitrary, page-unstable order; the same job can appear on two pages or none). The `relevance`
+    sort is therefore a **compound** sort: `{ score: {$meta:"textScore"}, posted_at: -1, _id: 1 }` —
+    score first, then **`posted_at` desc** (fresher wins a tie, matching the freshness posture), then
+    **`_id`** as the final, total-order stabiliser so pagination is deterministic across requests.
+    The `recent` sort is `{ posted_at: -1, _id: 1 }` for the same stability reason. (Both feed the
+    `$facet` `page` pipeline's `$sort` stage; `_id` is always present so no document can collide.)
 - **v2.1 — Qdrant `best_match` semantic rerank:** add a `jobs:catalog` Qdrant collection keyed by
   `job_id`, storing the **JD embedding the matcher already computes** (the matcher in
   `src/ai-agents/app/resources/matcher.py` embeds `jd_text` via the mcp-capability embedder and
@@ -117,6 +125,24 @@ funnel state machine, CAS, audit, consent, or the apply contract. ID/background/
   embedding), retrieves a candidate set from Qdrant, and **re-ranks the `$text`/filter result** by
   semantic score. `$text` remains the candidate-set generator and the anonymous default; Qdrant is a
   re-rank layer, never the sole index.
+  - **Upsert freshness + debounce (edit storms).** A recruiter who saves a JD five times in a minute
+    emits five `job.edited` events; re-embedding on every one wastes the embedder and races. The
+    matcher therefore **debounces** the `jobs:catalog` upsert per `job_id`: it coalesces a burst into
+    a single embed after a short quiet window (e.g. collapse events for the same `job_id` within
+    ~10 s, embedding the **latest** `jd_text`). A delete (`job.unpublished`/closed) is **not**
+    debounced — removals are immediate so a closed job can't linger in the candidate set. Order is
+    last-writer-wins keyed by event time, so an out-of-order edit can't resurrect stale text.
+  - **Consistency model if an upsert fails — never block publish.** The Qdrant write is **strictly
+    best-effort and off the publish path**: `publish_job`/`edit` commit to Mongo and return *before*
+    (and independent of) the vector upsert, so a Qdrant outage **never blocks or fails a publish**.
+    On upsert failure the matcher **logs a structured warning** (job_id + error, for the
+    observability surface) and the catalog is simply, temporarily stale for that one job — which only
+    affects the *optional* `best_match` sort; `relevance`/`recent` over `$text` are unaffected and
+    remain the default, so search degrades gracefully, never breaks. A periodic **reconcile sweep**
+    (joins the existing `run_schedulers` loop) heals drift: it diffs published `jobs` against
+    `jobs:catalog` and re-upserts any missing/stale vector + deletes any orphan (a vector for a job no
+    longer published), making the catalog **eventually consistent** with the source of truth without
+    ever coupling it to the publish transaction.
 
 **Honest tradeoff.** `$text` is a **single-index, stem-based, no-typo-tolerance** matcher: it handles
 "python backend engineer" well, fumbles "pythonn" or "k8s ⇄ kubernetes". For a demo catalog this is
@@ -151,19 +177,50 @@ else           → grpc_app       (gRPC-web)
 - **Published-only is enforced in the resource, never the client.** The resource filters
   `status == "published"` (extending the existing `get_public_job` contract); a draft / paused /
   closed / unknown id is `NotFound`. An adapter cannot opt out — there is no "include drafts" param.
-- **Public DTO is a strict subset.** `PublicJobCard` / `PublicJobDetail` / `PublicCompanyProfile`
-  expose only display fields (title, JD, location, remote_mode, employment_type, salary band, skills,
-  posted_at, company display name/logo/about). They **never** carry `comp_id` as an internal handle
-  for mutation, applicant data, rubric/aptitude config, or any candidate PII. Internal docs are
-  mapped to the public DTO in the resource, so a field added to a Mongo doc is **not** auto-exposed.
+- **Public DTO is a strict subset (whitelist, enumerated).** The DTO is built by an **explicit
+  field allowlist** in the resource mapper — never `dict(doc)` minus a denylist — so a field added to
+  a Mongo doc is **not** auto-exposed. Exact shapes:
+  - **`PublicJobCard`** — `job_id`, `title`, `company_name`, `company_id` (public profile slug for the
+    `/companies/{id}` link **only**, never an auth/mutation handle), `city`, `region`, `country`,
+    `location_label`, `remote_mode`, `employment_type`, `salary_min`, `salary_max`, `salary_currency`,
+    `skills`, `posted_at`.
+  - **`PublicJobDetail`** = `PublicJobCard` + `jd_text`, `company_logo_url`, `company_about`.
+  - **`PublicCompanyProfile`** — `company_id`, `display_name`, `logo_url`, `about`, `website`,
+    `locations`, `industry`, `size` (+ derived trust signals from §5.5: `responds_in_days`,
+    `actively_reviewing` — both computed, carrying no raw funnel rows).
+  - **MUST be ABSENT from all three** (the denylist the grep-test asserts): the funnel/recruiter
+    internals **`aptitude_config`** (and any rubric / question bank / weighting), **`gate_mode`**,
+    **applicant/application data** (`applications`, `match_results`, applicant ids, candidate PII,
+    resume keys, transcripts, scores), the **auth `companies` doc** fields (billing, `plan`, owner
+    email, seats, identity), any **internal/mutation `comp_id` handle** beyond the public `company_id`
+    slug above, internal lifecycle fields (`status`, `created_at`, `updated_at`, `created_by`,
+    soft-delete/audit columns), and the raw Mongo **`_id`** (only the curated public `job_id`/
+    `company_id` cross the boundary).
+  - A **grep-style absence test** locks this: serialise each DTO and assert the denylisted keys never
+    appear in the JSON (`assert "aptitude_config" not in body`, `"gate_mode"`, `"applications"`,
+    `"plan"`, `"_id"`, …) — a single test that fails loudly the moment a mapper starts leaking, so a
+    future field addition can't silently widen the surface (see §5 Testing).
 - **Page-size cap.** `page_size` is clamped to a configured max (mirrors `BaseRepository.find_capped`
   / `presigned_get_url`'s TTL clamp); an attacker cannot request an unbounded page.
 - **Rate-limit via `lib.redis.RateLimiter`** keyed by client IP — exactly as `routes/oauth.py` gates
   `/refresh` (per-IP `hit(key, limit, window)` → 429 + `Retry-After` on `not allowed`). Trusted-proxy
-  handling reuses oauth's `_client_ip` (X-Forwarded-For only when `trusted_proxy`).
+  handling reuses oauth's `_client_ip` (X-Forwarded-For only when `trusted_proxy`). The 429 is
+  **opaque**: a fixed `{"error":"rate_limited"}` body + the `Retry-After` seconds header and nothing
+  else — **no remaining-quota count, no limit value, no per-IP/per-endpoint detail** (those would hand
+  a scraper its own budget). The body is identical for every caller; only `Retry-After` varies.
 - **`Cache-Control: public, max-age=60`** on every public response — short TTL so SSR/CDN/browser can
   cache the catalog (it changes on the order of minutes, gated by publish/edit) while the API absorbs
   crawler/scrape bursts. Errors carry `no-store`.
+  - **The `max-age=60` staleness tradeoff is explicit and accepted for v2:** a recruiter edit/publish
+    becomes visible to anonymous traffic after **≤ 60 s** (the cached page lives until its TTL
+    lapses). For a marketplace whose catalog turns on the order of minutes this is imperceptible, and
+    it is the lever that lets the public surface shed scrape/crawler load without hitting Mongo. The
+    cost is bounded and one-directional (a *freshly* published job can't be applied to for up to 60 s;
+    an *edit* shows old copy briefly) — never a correctness or security issue, since published-only
+    and the DTO subset are enforced server-side on every cache *miss*. A later, optional upgrade is
+    **active CDN invalidation on `job.published`/`job.edited`** (purge the affected `/public/jobs/{id}`
+    + listing keys so edits are instant) — deferred for v2 as not worth the CDN-integration complexity
+    at demo scale; the 60 s TTL is the documented v2 answer.
 - **CORS** allows the FE origins for the (rare) client-side hit; the primary consumer is **server-side
   SSR**, which is same-origin-agnostic and sends no credentials.
 
@@ -187,6 +244,19 @@ derived from the **authenticated token, never client input** (PRODUCTION_STANDAR
 > Why `posted_at` ≠ `created_at`: a job can be drafted weeks before going live, re-published after a
 > pause, etc. Discovery ranks/labels by *when it became visible*, so `publish_job` (the existing
 > resource) sets `posted_at = now` at the moment it flips `status → published`.
+
+> **`posted_at` backfill is BLOCKING (legacy data).** Every job that was published *before* this
+> pillar shipped has `posted_at = null`. Without a backfill the `recent` sort silently drops them
+> (Mongo sorts nulls first on a descending sort, so every legacy job would float to the bottom in
+> arbitrary order, or — if the pipeline filters nulls — vanish from `recent` entirely). The
+> migration is a **one-shot idempotent backfill** run on deploy, in the same startup path as
+> `ensure_indexes`: `jobs.update_many({status:"published", posted_at: {$in:[null, undefined]}}, [{$set:
+> {posted_at: "$created_at"}}])` — legacy published jobs inherit `created_at` as their visibility
+> time (the best available proxy). It is idempotent (re-running matches nothing once filled) and
+> additive (drafts stay null). **New jobs** get `posted_at` from `publish_job` as above; **every
+> `recent`/`best_match` aggregation** still defends against nulls (`$match {posted_at: {$ne: null}}`
+> on the published set, or sorts with `_id` as the tie-break so a stray null can't destabilise the
+> page) so a job published during the migration window can never produce a non-deterministic page.
 
 **New collections:**
 
@@ -247,6 +317,16 @@ Each new service is a `.proto` in `src/admin/app/routes/pb/`, a thin servicer in
   `PresignLogoUpload` RPC returns a presigned PUT URL via `ObjectStorage.presigned_*` — the same
   pattern the resume/storage path uses (`lib/lib/storage/client.py` `presigned_get_url`, TTL-clamped);
   the browser uploads the logo directly to S3/MinIO, then `Upsert` records the `logo_key`.
+  - **Upload validation (mirrors the résumé gate in `resources/profile.py`).** A presigned PUT is a
+    write capability, so the request is validated **server-side before a URL is minted** — the
+    presign is refused for anything off-spec, so the FE check is a courtesy, not the guard. Allowed
+    **content-types: `image/png`, `image/jpeg`, `image/webp`** (a fixed allowlist — request
+    `content_type` ∉ set → reject; reused as the binding on the presigned PUT so a swapped body fails
+    the signature). **Max size: a configured byte cap** (`logo_max_bytes`, ~2 MB — a logo, not a
+    résumé), enforced as a presign condition (`content-length-range`) so an over-cap PUT is rejected
+    by S3/MinIO itself. The **TTL is clamped** exactly like `presigned_get_url`, and the object key is
+    namespaced under the caller's `comp_id` (from the token) so a presign can't target another
+    tenant's prefix. (SVG is **excluded** — it can carry script; raster only.)
 
 **Extend `JobService`** — add the new fields (location split, `remote_mode`, `employment_type`,
 salary, `skills`) to `CreateJobRequest` / a new `UpdateJob` + `JobResponse` (additive proto fields;
@@ -259,6 +339,21 @@ keyword search over the **company's OWN applicants' skills/experience only** (th
 **human-in-the-loop** (surfaces candidates for a recruiter to review, makes no automated decision)
 and returns **no ID/background/biometric data** — staying clear of the excluded regimes and of
 cross-tenant candidate harvesting.
+
+- **The `SearchCandidates` universe, defined precisely.** The searchable set = **every candidate who
+  has an application to *any* job owned by THIS `comp_id`** (the company id from the token), and
+  nothing else. Implementation reuses the existing repos rather than a new index: the **application
+  repo** yields the candidate ids that applied to this company's jobs (the same join `resources/
+  talent.py` already does for the talent pool), and the **talent/profile repo** supplies the
+  skills/experience text the keyword match runs over. There is **no global candidate index** and no
+  path to a candidate who never applied here — a member of another company's pool is structurally
+  unreachable (the seed set is comp-scoped from the token).
+- **Closed-job / rejected applicants remain searchable** (they are part of the company's own history —
+  a recruiter legitimately revisits a strong past applicant for a new role), **scoped by application
+  existence, not current funnel state**: an application to a now-`closed`/`paused` job, or an applicant
+  in a `rejected` state, still counts toward the universe. The only thing that removes a candidate is
+  **erasure** (the Inc 0 cascade deletes their application rows, so they drop out naturally) — sourcing
+  reads live application data, so an erased candidate is gone with no extra bookkeeping.
 
 **New transport-agnostic resources** (`src/admin/app/resources/`): `discovery.py`, `saved_jobs.py`,
 `job_alerts.py`, `company_profile.py`, `sourcing.py`. **New repositories**
@@ -356,14 +451,26 @@ build` while `pnpm dev` is live).
   This is where most coverage lands; the resource is the contract.
 - **Public REST surface:** Starlette `TestClient` over `create_public_app` — 200 shape for each
   endpoint, **404 for an unpublished/unknown id**, page-size clamp, **429 when the IP rate-limit
-  trips** (mirror `routes/oauth.py` refresh tests), `Cache-Control` header present, and the **public
-  DTO is a strict subset** (assert no `comp_id`-as-handle / applicant / config field leaks).
+  trips** (mirror `routes/oauth.py` refresh tests) with an **opaque body** (assert `Retry-After`
+  present and that the body leaks no quota/limit/detail), `Cache-Control: public, max-age=60` on 200
+  / `no-store` on error, and the **grep-style DTO absence test** — serialise each public response and
+  assert the denylist keys are **absent** from the JSON string (`aptitude_config`, `gate_mode`,
+  `applications`/`match_results`/applicant ids, `plan`/billing, internal `_id`/`status`/`created_by`,
+  any `comp_id`-as-mutation-handle), the single test that fails the moment a mapper widens the surface.
 - **Authed services:** gRPC servicer tests (mirror `test`s for job/recommendation servicers) — role
   scoping (candidate-only saved/alerts; manager-only branding/sourcing), tenant scoping,
   `GetRecommendedFeed` returns full cards and **batches** the join, `SearchCandidates` returns only
   own-company applicants.
 - **Apply regression (critical):** the existing apply + consent + funnel tests stay untouched and
   green — discovery must not alter the apply path.
+- **`posted_at` migration:** a unit test over the backfill — seed legacy published jobs with no
+  `posted_at` + a draft; run the migration; assert published legacy jobs now carry
+  `posted_at == created_at`, the draft stays `None`, and a **second run is a no-op** (idempotent).
+  Plus a `recent`-sort test asserting a null-`posted_at` job never destabilises the page (the `_id`
+  tie-break / null-guard holds).
+- **`SearchCandidates` universe:** assert the result set = applicants to this company's jobs only (a
+  candidate of another company never appears), and that a **rejected applicant** and an applicant to a
+  **closed** job **still surface** (universe is application-existence, not funnel state).
 - **v2.1 rerank:** unit-test the rerank ordering with a fake Qdrant client (injected seam) + assert
   the `job.published`/`job.edited` handler upserts/deletes the JD vector; no network in tests.
 - **Manual / local E2E (Chrome via preview):** the **anonymous-browse → public-page → sign-in →
@@ -398,6 +505,23 @@ surface on the public company/job DTOs.
 
 ---
 
+## 5.6 Resolved gaps (completeness audit 2026-06-19)
+
+The v2 completeness audit (`2026-06-19-v2-completeness-audit.md`, Part B → Inc 1) flagged the
+following blocking/high gaps. Each is now specified above; this table is the index (with the section
+that holds the detail) so a reviewer can confirm closure at a glance.
+
+| # | Gap (audit) | Severity | Resolution | Detail in |
+|---|---|---|---|---|
+| 1 | `$text` secondary sort / tie-break undefined | 🟠 | `relevance` = `{score, posted_at desc, _id}`; `recent` = `{posted_at desc, _id}` — `_id` gives a total order so pagination is deterministic on ties | §3.1 |
+| 2 | `posted_at` migration missing (legacy jobs break `recent`) | 🔴 | One-shot idempotent backfill on deploy (`posted_at = created_at` where null, published only); new jobs stamped on publish; every `recent`/`best_match` agg null-guards | §3.3 |
+| 3 | Public DTO whitelist not enumerated | 🟠 | Explicit per-field allowlist for all three DTOs + the exact denylist (`aptitude_config`, `gate_mode`, applicant data, billing, internal `_id`/handles) + a grep-style absence test | §3.2, §5 |
+| 4 | Qdrant rerank freshness/consistency (edit storms, upsert-fail desync) | 🟠 | Per-`job_id` debounce (~10 s, embed latest; deletes immediate); upsert is best-effort off the publish path (log on fail, never block); reconcile sweep heals drift → eventual consistency | §3.1 |
+| 5 | Logo upload type/size validation unspecified | 🟠 | `PresignLogoUpload` allowlists `image/{png,jpeg,webp}` + `logo_max_bytes` cap (presign condition) + clamped TTL + comp-scoped key; SVG excluded (script risk) | §3.4 |
+| 6 | `SearchCandidates` universe undefined | 🟠 | = applicants to any of THIS comp's jobs (reuse application + talent repos); rejected/closed-job applicants stay searchable; erasure removes them naturally; no global index | §3.4 |
+| 7 | `/public/*` CDN staleness (60 s) tradeoff undocumented | 🟠 | `max-age=60` ⇒ recruiter edits visible in ≤ 60 s — accepted for v2 (catalog turns in minutes; sheds scrape load); never a correctness/security issue (server-side enforced on miss); CDN-invalidate-on-publish noted as a later option | §3.2 |
+| 8 | Public-endpoint rate-limit leak | 🟠 | 429 is opaque — fixed `{"error":"rate_limited"}` body + `Retry-After` only, no quota/limit/detail | §3.2 |
+
 ## 6. Open questions / risks
 
 - **Two read surfaces drifting.** Public REST + authed gRPC must never diverge in what they expose or
@@ -407,18 +531,24 @@ surface on the public company/job DTOs.
 - **`$text` quality (no typos / no synonyms).** Single index, stem-based. *Mitigation:* documented as
   acceptable for demo; v2.1 semantic rerank covers fuzzy intent; the resource is the clean swap point
   if a real engine is ever justified.
-- **Public surface = scrape surface.** Anonymous + crawlable invites scraping. *Mitigation:*
-  published-only enforced in the resource, page-size cap, per-IP `RateLimiter` (+ `Retry-After`),
-  `Cache-Control: public, max-age=60`, and a **public DTO that is a strict subset** of the internal
-  docs (no internal handles, no applicant/PII, no config).
-- **Rerank embedding freshness.** A stale `jobs:catalog` vector could outrank a fresh JD.
-  *Mitigation:* tie the Qdrant upsert/delete to `job.published` / `job.edited` / unpublish events (the
-  matcher already consumes job events), so the vector tracks the live JD.
+- **Public surface = scrape surface.** Anonymous + crawlable invites scraping. *Mitigation
+  (resolved — §3.2, §5.6):* published-only enforced in the resource, page-size cap, per-IP
+  `RateLimiter` with an **opaque 429 + `Retry-After`** (no quota/detail leak), `Cache-Control: public,
+  max-age=60` (≤ 60 s edit-visibility tradeoff, accepted for v2), and a **public DTO that is an
+  enumerated strict subset** of the internal docs (no internal handles, no applicant/PII, no config)
+  with a grep-style absence test.
+- **Rerank embedding freshness + upsert failure.** A stale or missing `jobs:catalog` vector could
+  outrank a fresh JD, and a Qdrant outage must not block publish. *Mitigation (resolved — §3.1,
+  §5.6):* tie the upsert/delete to `job.published`/`job.edited`/unpublish, **debounced per `job_id`**
+  to collapse edit storms; the upsert is **best-effort off the publish path** (log on fail, never
+  block), with a **reconcile sweep** for eventual consistency.
 - **N+1 on list joins.** Feed / saved / company-jobs all join jobs (and companies) to ids.
   *Mitigation:* batch every join with a single `$in` over the id set; never per-row reads.
-- **Logo upload abuse (presigned PUT).** A presigned upload URL is a write capability. *Mitigation:*
-  manager-scoped RPC, short TTL (clamped, like `presigned_get_url`), content-type/size constraints on
-  the object key path (mirror the resume validation in `resources/profile.py`).
+- **Logo upload abuse (presigned PUT).** A presigned upload URL is a write capability. *Mitigation
+  (resolved — §3.4, §5.6):* manager-scoped RPC, short clamped TTL, a fixed **`image/{png,jpeg,webp}`
+  content-type allowlist** + a **`logo_max_bytes` size cap** enforced as presign conditions, the key
+  namespaced under the caller's `comp_id` (SVG excluded for script-injection safety) — mirroring the
+  résumé validation in `resources/profile.py`.
 - **`job_alerts` execution.** Inc 1 ships the data + CRUD; the scheduled "run alerts + notify" pass
   (a new branch in `main.py`'s `run_schedulers`, fanning into the Pillar-D notifications) is an
   explicit **follow-up** — flagged so a reviewer doesn't expect delivery in Inc 1.

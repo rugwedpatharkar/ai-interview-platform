@@ -49,6 +49,9 @@ src/admin/app/
   infra/
     db.py                         (MODIFY — add jobs text + facet indexes, company_profiles unique,
                                     saved_jobs unique, job_alerts index — the single index authority)
+    migrations/
+      backfill_posted_at.py       (NEW — BLOCKING one-shot idempotent backfill: published jobs with
+                                    posted_at=null inherit created_at; run on deploy after ensure_indexes)
     repositories/
       jobs.py                     (MODIFY — search aggregation lives in job_search.py; jobs stays
                                     CRUD; add posted_at to set_status-on-publish path if needed)
@@ -71,12 +74,16 @@ src/admin/app/
       discovery.proto company_profile.proto saved_jobs.proto job_alerts.proto sourcing.proto (NEW)
       job.proto                   (MODIFY — additive fields + UpdateJob)
   main.py                         (MODIFY — extend _oauth_dispatcher to route /public/* → public_app;
-                                    build public_app via create_public_app; thread RateLimiter)
-  config.py                       (MODIFY — public_page_size_max, public_rate_limit_*, public cache TTL)
+                                    build public_app via create_public_app; thread RateLimiter; run the
+                                    posted_at backfill after ensure_indexes; (v2.1) jobs:catalog
+                                    reconcile pass in run_schedulers)
+  config.py                       (MODIFY — public_page_size_max, public_rate_limit_*, public cache TTL;
+                                    logo_max_bytes, logo_allowed_content_types)
 
 src/admin/tests/
   test_discovery_resource.py test_job_search_repo.py test_public_api.py
   test_saved_jobs.py test_job_alerts.py test_company_profile.py test_sourcing.py
+  test_posted_at_migration.py (NEW — backfill idempotency + draft exclusion + null-sort guard)
   test_job_resource.py (MODIFY — new fields + posted_at)   conftest.py (+fake repos/limiter)
 
 src/ai-agents/app/                (v2.1 ONLY)
@@ -135,7 +142,7 @@ frontend/
                                     fields (city/region/country, remote_mode/employment_type Selects,
                                     salary_min/max/currency, skills CSV→list); used by new + [id])
       logo-upload.tsx             (NEW — `"use client"` logo picker → uploadViaPresign → preview;
-                                    PNG/JPG/SVG + size gate; reused by /branding)
+                                    PNG/JPG/WEBP + size gate (no SVG); reused by /branding)
     app/
       branding/page.tsx           (NEW — companyProfile.get/upsert editor + LogoUpload; CompanyShell)
       jobs/new/page.tsx           (MODIFY — render JobForm; createJob with the new fields)
@@ -182,6 +189,31 @@ adapters only. This keeps the contract single-sourced and the adapters dumb.
   `INDEXES`, extend it; otherwise assert the list parses + has the unique flags.
 - [ ] **Step 3 — gate green.**
 
+### Task 2.5 — `posted_at` backfill migration (BLOCKING, TDD)
+**Files:** Create `infra/migrations/backfill_posted_at.py` (or extend the startup path in `main.py`
+next to `ensure_indexes`). Test `tests/test_posted_at_migration.py`. **Spec §3.3.**
+
+> **Why blocking:** every job published *before* this pillar has `posted_at = null`; without the
+> backfill the `recent` sort silently sinks/loses them (Mongo sorts nulls first on a desc sort). The
+> migration runs on deploy, in the same startup path as `ensure_indexes`.
+
+- [ ] **Step 1 — failing test:** seed `jobs` with (a) a legacy **published** job with no `posted_at`
+  (has `created_at`), (b) a **draft** with no `posted_at`, (c) a published job that already has
+  `posted_at`. Run the migration. Assert (a) now has `posted_at == created_at`, (b) stays `None`
+  (drafts excluded), (c) is **unchanged** (not overwritten), and a **second run mutates nothing**
+  (idempotent — re-running matches zero docs). Run → FAIL.
+- [ ] **Step 2 — implement** an idempotent one-shot: `jobs.update_many({"status":"published",
+  "posted_at": {"$in":[None]}}, [{"$set":{"posted_at":"$created_at"}}])` (pipeline update so
+  `posted_at` inherits each doc's own `created_at`). Wire it into the **startup path** (`main.py`,
+  right after `ensure_indexes`) so a deploy backfills before any `recent` query serves traffic. Add
+  the bounded-retry/timeout the other startup Mongo calls use. Run → PASS.
+- [ ] **Step 3 — null-guard the sorts:** confirm `job_search.search` (Task 3) excludes/handles
+  null `posted_at` on `recent`/`best_match` (a job published during the migration window can't make a
+  non-deterministic page) — the `_id` tie-break from Task 3 Step 2 covers the residual. Add an
+  assertion to `test_job_search_repo.py` that a null-`posted_at` published job never destabilises the
+  `recent` page order.
+- [ ] **Step 4 — gate green.**
+
 ---
 
 ## TIER 1 — search repo + resource (failing test → impl; the core of the pillar)
@@ -193,12 +225,19 @@ adapters only. This keeps the contract single-sourced and the adapters dumb.
   tests: seed published + draft jobs; assert (a) a text query returns published matches ranked by
   text score, (b) a `remote_mode` filter narrows results, (c) `sort=recent` orders by `posted_at`
   desc, (d) **a draft never appears**, (e) the facet block returns counts per `remote_mode` /
-  `employment_type`, (f) pagination returns `{page, page_size, total}`. Run → FAIL.
+  `employment_type`, (f) pagination returns `{page, page_size, total}`, (g) **tie-break determinism:
+  two jobs with an identical `textScore` (and two with an identical `posted_at`) come back in a
+  **stable, repeatable** order across calls** (the `_id` final key), and pagination doesn't drop or
+  duplicate a tied row across page boundaries. Run → FAIL.
 - [ ] **Step 2 — implement** `search(query, *, filters, sort, page, page_size)` building ONE
   aggregation: `$match {status:"published", ...exact filters}` (+ `$text` stage only when `query` is
   non-empty) → `$facet { page: [$sort, $skip, $limit, $project], counts: [$group per facet],
-  total: [$count] }`. No-text path drops the `$text`/`textScore` stages and sorts by `posted_at`.
-  Trust the index; cap `page_size` at the caller (resource), not here. Run → PASS.
+  total: [$count] }`. **Sort keys (spec §3.1) are compound, with `_id` as the final total-order
+  stabiliser** so ties don't yield page-unstable results: `relevance` →
+  `{ score: {$meta:"textScore"}, posted_at: -1, _id: 1 }`; `recent` →
+  `{ posted_at: -1, _id: 1 }`. The no-text path drops the `$text`/`textScore` stages and sorts by
+  `{ posted_at: -1, _id: 1 }`. Trust the index; cap `page_size` at the caller (resource), not here.
+  Run → PASS.
 - [ ] **Step 3 — gate green.**
 
 ### Task 4 — `discovery` resource (TDD — published-only + DTO + batched joins)
@@ -206,15 +245,20 @@ adapters only. This keeps the contract single-sourced and the adapters dumb.
 `job_search`, existing `jobs`, `match_results`, `company_profiles`.)
 
 - [ ] **Step 1 — failing tests:** `search_jobs(...)` clamps `page_size` to the configured max,
-  returns the public-card DTO (assert it carries title/location/remote_mode/salary/skills/posted_at
-  and **does NOT carry** internal-only fields), and is **published-only**. `get_public_job_detail`
-  raises `NotFoundError` for a draft/unknown id (extends today's `get_public_job` contract).
-  `list_company_published_jobs(comp_id)` returns only that company's published jobs.
-  `get_recommended_feed(identity)` joins `match_results.list_by_candidate` to jobs and returns full
-  cards via **one `$in` batch** (assert no per-row job read). Run → FAIL.
+  returns the public-card DTO (assert it carries title/location/remote_mode/salary/skills/posted_at),
+  and is **published-only**. A **grep-style absence test** (spec §3.2): seed a job/company doc whose
+  Mongo record *also* holds `aptitude_config`, `gate_mode`, `status`, `_id`, applicant/`match_results`
+  data, and auth-`companies` fields (`plan`, owner email); serialise the mapped DTO and assert **none
+  of those keys appear** (`assert "aptitude_config" not in dto`, `"gate_mode"`, `"applications"`,
+  `"plan"`, `"_id"`, `"status"`, …) — proving the mapper is an **allowlist**, not a denylist, so a new
+  Mongo field can't auto-leak. `get_public_job_detail` raises `NotFoundError` for a draft/unknown id
+  (extends today's `get_public_job` contract). `list_company_published_jobs(comp_id)` returns only
+  that company's published jobs. `get_recommended_feed(identity)` joins `match_results.list_by_candidate`
+  to jobs and returns full cards via **one `$in` batch** (assert no per-row job read). Run → FAIL.
 - [ ] **Step 2 — implement** the four functions; centralize the `_to_public_card` /
-  `_to_public_detail` mappers here (strict subset — the security boundary). `search_jobs` delegates
-  the pipeline to `job_search`, applies the page-size clamp + DTO map. Run → PASS.
+  `_to_public_detail` mappers here as **explicit per-field allowlists** (the enumerated subset in spec
+  §3.2 — never `dict(doc)` minus a denylist; the security boundary). `search_jobs` delegates the
+  pipeline to `job_search`, applies the page-size clamp + DTO map. Run → PASS.
 - [ ] **Step 3 — gate green.**
 
 ---
@@ -232,15 +276,19 @@ adapters only. This keeps the contract single-sourced and the adapters dumb.
   repos + a fake `RateLimiter`): `GET /public/jobs` → 200 with `{jobs, facets, page, page_size,
   total}`; `GET /public/jobs/{draft_id}` → **404**; `GET /public/companies/{id}` → 200 /
   `GET /public/companies/{unknown}` → 404; `GET /public/companies/{id}/jobs` → 200; **`page_size`
-  above max is clamped**; **429 + `Retry-After` when the limiter returns `not allowed`** (mirror
-  `routes/oauth.py` refresh tests); `Cache-Control: public, max-age=60` present on 200, `no-store` on
-  error; **the JSON is a strict subset** (assert no internal handle/applicant/config field). Run →
-  FAIL.
+  above max is clamped**; **429 with `Retry-After` AND an opaque body when the limiter returns `not
+  allowed`** — assert the body is the fixed `{"error":"rate_limited"}` and **leaks no quota/limit/
+  remaining/per-endpoint detail** (mirror `routes/oauth.py` refresh tests); `Cache-Control: public,
+  max-age=60` present on 200, `no-store` on error; **the grep-style absence test** — assert the
+  response JSON string contains **none** of `aptitude_config`/`gate_mode`/`applications`/
+  `match_results`/`plan`/`_id`/`status`/any internal-`comp_id` handle. Run → FAIL.
 - [ ] **Step 3 — implement** `make_public_routes(deps)` + `create_public_app(deps)` mirroring
   `create_oauth_app`: each handler is thin — `_client_ip` + `RateLimiter.hit` gate (reuse oauth's
-  trusted-proxy logic), parse/clamp query params, call the `discovery` / `company_profile` resource,
-  return `JSONResponse` with the cache header. Map `NotFoundError` → 404. **No query logic here.**
-  Run → PASS.
+  trusted-proxy logic) returning an **opaque 429** (fixed `{"error":"rate_limited"}` + `Retry-After`,
+  nothing else), parse/clamp query params, call the `discovery` / `company_profile` resource, return
+  `JSONResponse` with `Cache-Control: public, max-age={public_cache_max_age_seconds}` (the **≤ 60 s
+  edit-visibility tradeoff is intended** — spec §3.2). Map `NotFoundError` → 404 with `no-store`.
+  **No query logic here.** Run → PASS.
 - [ ] **Step 4 — wire `main.py`:** extend `_oauth_dispatcher` to also route `path.startswith("/public/")`
   → `public_app` (else unchanged); build `public_app = create_public_app({... "limiter":
   RateLimiter(redis), "jobs": JobRepository(...), "job_search": JobSearchRepository(...),
@@ -477,25 +525,37 @@ Test `tests/test_company_profile.py`. Then `pnpm gen` + the `/branding` page.
 - [ ] **Step 1 — failing tests:** `company_profile.upsert` is manager-scoped + comp-scoped (1:1 unique
   `comp_id`); `get` returns the brand doc; `get_public(comp_id)` returns the public subset (no auth
   `companies` fields); `presign_logo_upload` returns a presigned PUT URL via `ObjectStorage`
-  presign (TTL-clamped, like `presigned_get_url`) with a content-type/size-constrained key (mirror
-  the resume validation in `resources/profile.py`). Run → FAIL.
+  presign (TTL-clamped, like `presigned_get_url`) with a **content-type allowlist + size cap** (spec
+  §3.4, mirror the résumé validation in `resources/profile.py`): assert a request with a
+  **disallowed content-type is rejected** (only `image/png`, `image/jpeg`, `image/webp` mint a URL —
+  **SVG is rejected**, script-injection risk), a request **over `logo_max_bytes` is rejected** (the
+  cap rides as a presign `content-length-range` condition), and the object key is **namespaced under
+  the caller's `comp_id`** (from the token, never client input) so a presign can't target another
+  tenant's prefix. Run → FAIL.
 - [ ] **Step 2 — implement** resource + repo (writing `company_profiles`, **never** the auth
-  `companies` doc) + thin servicer; register in `routes/web.py`. Run → PASS.
+  `companies` doc) + thin servicer; register in `routes/web.py`. Add `logo_max_bytes` (~2 MB) +
+  `logo_allowed_content_types` (`{"image/png","image/jpeg","image/webp"}`) to `config.py`; the
+  resource rejects an off-allowlist content-type or an over-cap size **before** minting the URL, binds
+  the content-type + a `content-length-range` on the presign, and builds the key under the caller's
+  `comp_id`. Run → PASS.
 - [ ] **Step 3 — `pnpm gen` + wire `companyProfile` + build `/branding`.** `npx pnpm@9.15.0 --filter
   @ip/api-client gen`; add the `companyProfile` quad to `ApiClients`/`clientsFromTransport` in
   `frontend/packages/api-client/src/index.ts`. Then:
   - **`apps/company/lib/upload.ts` — `uploadViaPresign(presignFn, file)`** (the new logo-upload
     helper; resume upload is gRPC-bytes, so presign is genuinely new). Steps: validate MIME + size
     client-side (mirror `profile/page.tsx`'s `ACCEPTED_MIME` set + `MAX_*_BYTES` gate, but for images
-    — PNG/JPG/SVG, ~5 MB); call `presignFn({ contentType, size })` →
+    — **`image/png` / `image/jpeg` / `image/webp` only (no SVG — script risk), ~2 MB** to match the
+    server `logo_max_bytes` from Task 10 Step 2; this client check is a courtesy, the server presign
+    is the real guard); call `presignFn({ contentType, size })` →
     `api.companyProfile.presignLogoUpload(...)` returning `{ url, logoKey }`; `await fetch(url, {
     method: "PUT", body: file, headers: { "content-type": file.type } })` direct to S3/MinIO (plain
     `fetch`, **not** `authedFetch` — the presigned URL carries its own auth); throw on non-2xx; return
     `logoKey`. Keep the chosen file on failure so the user can retry (mirror `profile/page.tsx`).
   - **`components/logo-upload.tsx` (`"use client"`)** — a file picker (`sr-only input` + styled
-    `label` via `buttonVariants`, exactly like the resume picker) that runs `uploadViaPresign`, shows
-    a `Spinner` while uploading, then previews the logo (`Avatar`/`img` from the uploaded key) and
-    calls back with `logoKey`.
+    `label` via `buttonVariants`, exactly like the resume picker; `accept="image/png,image/jpeg,
+    image/webp"`) that runs `uploadViaPresign`, shows a `Spinner` while uploading, then previews the
+    logo (`Avatar`/`img` from the uploaded key) and calls back with `logoKey`. Surface a clear
+    validation `Alert` when the file is the wrong type or over the size cap (mirror the résumé picker).
   - **`apps/company/app/branding/page.tsx`** — under `CompanyShell`; `useQuery(["company-profile"],
     () => api.companyProfile.get({}))` to seed the form (`displayName`, `about`, `website`,
     `locations`, `industry`, `size` via `@ip/ui` `Field`/`Input`/`Textarea`/`Select`); a `LogoUpload`
@@ -549,12 +609,19 @@ Test `tests/test_company_profile.py`. Then `pnpm gen` + the `/branding` page.
 Then `pnpm gen` + extend `/talent`.
 
 - [ ] **Step 1 — failing tests:** `sourcing.search_candidates(identity, query)` is **manager-scoped**,
-  searches **only the company's own applicants** (the talent-pool universe from `resources/talent.py`
-  — candidates who applied to this comp's jobs) over their skills/experience, and returns **no
-  ID/background/biometric data** (human-in-the-loop result set only). A candidate of another company
-  never appears. Run → FAIL.
+  searches **only the company's own applicants** (spec §3.4 — the universe = **every candidate with an
+  application to ANY job owned by this `comp_id`**, the seed set reused from the application repo as
+  `resources/talent.py` already does, joined to the talent/profile repo for the skill/experience text
+  the keyword match runs over) and returns **no ID/background/biometric data** (human-in-the-loop
+  result set only). Assert: (a) a candidate of **another company never appears** (seed an applicant to
+  a different `comp_id` → absent); (b) an applicant in a **`rejected`** state **still surfaces**;
+  (c) an applicant to a **`closed`/`paused`** job **still surfaces** — the universe is
+  application-existence, **not** current funnel state; (d) there is **no global candidate index** path
+  (a candidate who never applied here is unreachable). Run → FAIL.
 - [ ] **Step 2 — implement** the resource (comp-scoped keyword match over own applicants' profile
-  text) + thin servicer; register in `routes/web.py`. Run → PASS.
+  text — seed candidate ids from the application repo scoped to the token's `comp_id`, never client
+  input; **don't** filter by funnel state, so rejected/closed-job applicants remain searchable) + thin
+  servicer; register in `routes/web.py`. Run → PASS.
 - [ ] **Step 3 — `pnpm gen` + add the `SearchCandidates` box to `/talent`.** `npx pnpm@9.15.0
   --filter @ip/api-client gen`; if `SearchCandidates` rides on `DiscoveryService`, the `discovery`
   client already exists — else add the `sourcing` quad. In `apps/company/app/talent/page.tsx`
@@ -580,7 +647,18 @@ client).
 - [ ] **Step 1 — failing test (ai-agents):** on a `job.published` / `job.edited` event, the handler
   embeds `jd_text` (the matcher already does this) and **upserts** the JD vector into `jobs:catalog`
   keyed by `job_id`; on unpublish/close it **deletes**. Use a fake/injected vector client — no
-  network. Run → FAIL → implement → PASS.
+  network. Add (spec §3.1): (a) a **debounce test** — N rapid `job.edited` events for the **same**
+  `job_id` within the quiet window collapse into a **single** upsert of the **latest** `jd_text` (not
+  N embeds), while a **delete is immediate** (not debounced); (b) an **upsert-failure test** — when
+  the vector client raises, the handler **logs a structured warning and does NOT propagate** (publish
+  is never blocked; it runs off the publish path), and the next reconcile pass repairs it. Run → FAIL
+  → implement → PASS.
+- [ ] **Step 1b — reconcile sweep (TDD).** Add a `jobs:catalog` reconcile pass to `main.py`'s
+  `run_schedulers` (alongside the existing retention/aptitude-expiry passes): diff published `jobs`
+  against `jobs:catalog`, **re-upsert** any missing/stale vector and **delete** any orphan (vector for
+  a job no longer published), so the catalog is **eventually consistent** with Mongo after any dropped
+  upsert. Test against the fake vector client: seed a published job with no vector + an orphan vector;
+  assert the sweep upserts the former and deletes the latter. Run → FAIL → implement → PASS.
 - [ ] **Step 2 — failing test (admin):** `job_search.search(..., sort="best_match")` retrieves a
   candidate set from `jobs:catalog` (query embedding, or the logged-in candidate's profile embedding)
   and **re-ranks** the `$text`/filter result by semantic score; `$text` remains the candidate-set
@@ -592,17 +670,37 @@ client).
 
 ---
 
+## Resolved gaps (completeness audit 2026-06-19)
+
+The completeness audit (`2026-06-19-v2-completeness-audit.md`, Part B → Inc 1) flagged these
+blocking/high gaps; each is now woven into the tasks above. This is the closure index for a reviewer.
+
+| # | Gap | Sev | Task(s) | What landed |
+|---|---|---|---|---|
+| 1 | `$text` tie-break undefined | 🟠 | Task 3 | Compound sorts with `_id` final key (`relevance`=`{score,posted_at desc,_id}`, `recent`=`{posted_at desc,_id}`) + a determinism/pagination-stability test |
+| 2 | `posted_at` migration missing | 🔴 | **Task 2.5** (new) | One-shot idempotent backfill on deploy (published null → `created_at`, drafts stay null) + null-sort guard in Task 3 + idempotency test |
+| 3 | Public DTO whitelist not enumerated | 🟠 | Task 4, Task 5 | Allowlist mappers (not denylist) + a grep-style absence test at both the resource and `/public/*` layers (asserts `aptitude_config`/`gate_mode`/applicant/`plan`/`_id` absent) |
+| 4 | Qdrant rerank freshness/consistency | 🟠 | Task 13 (+ Step 1b) | Per-`job_id` debounce (latest JD, deletes immediate); best-effort off the publish path (log on fail, never block); reconcile sweep in `run_schedulers` for eventual consistency |
+| 5 | Logo upload type/size validation | 🟠 | Task 10 | `image/{png,jpeg,webp}` allowlist + `logo_max_bytes` cap as presign conditions + comp-scoped key; SVG dropped (was erroneously listed); FE MIME/size gate aligned |
+| 6 | `SearchCandidates` universe undefined | 🟠 | Task 12 | Universe = applicants to any of this comp's jobs (reuse application+talent repos); rejected/closed-job applicants stay searchable; no global index; tests for each |
+| 7 | `/public/*` CDN staleness (60s) | 🟠 | Task 5 | `max-age=60` documented as the intended ≤60 s edit-visibility tradeoff for v2 (CDN-invalidate-on-publish a later option) |
+| 8 | Public rate-limit leak | 🟠 | Task 5 | Opaque 429 — fixed `{"error":"rate_limited"}` body + `Retry-After` only; test asserts no quota/limit/detail leak |
+
 ## Verification (end to end)
 
 1. **Per task:** `bash scripts/check.sh` GREEN (grows from **423**); new vector/infra code sits behind
    injected seams (fake Qdrant client) so the gate stays offline.
 2. **Search correctness (offline):** `test_job_search_repo.py` + `test_discovery_resource.py` prove
-   text/facet/sort/pagination, **published-only**, page-size clamp, and the **strict-subset public
-   DTO**.
+   text/facet/sort/pagination, **published-only**, page-size clamp, the **enumerated strict-subset
+   public DTO** (grep-style absence test), the **compound-sort tie-break determinism** (ties are
+   page-stable via `_id`), and the **null-`posted_at` sort guard**. `test_posted_at_migration.py`
+   proves the backfill is idempotent and excludes drafts.
 3. **Public surface:** `test_public_api.py` proves 200 shapes, **404 for unpublished/unknown**,
-   page-size clamp, **429 + `Retry-After`** on the IP limit, `Cache-Control`, and no field leak.
+   page-size clamp, **opaque 429 + `Retry-After`** on the IP limit (no quota/detail leak),
+   `Cache-Control: public, max-age=60`, and the **grep-style no-field-leak** assertion.
 4. **Authed services:** servicer tests prove role/tenant scoping, the **batched** feed/saved joins,
-   and `SearchCandidates` = own-company applicants only.
+   and `SearchCandidates` = own-company applicants only (rejected/closed-job applicants still
+   searchable; another company's never appears).
 5. **Apply regression:** the existing apply + consent + funnel tests stay untouched + green.
 6. **Frontend:** `--filter @ip/candidate build` + `--filter @ip/company build` +
    `--filter @ip/{ui,shared,api-client} typecheck` all green. Concretely, the build proves:
@@ -633,16 +731,24 @@ client).
 - **Two surfaces drifting** — enforce in review: no query/filter logic in `public_api.py` or any
   servicer; both go through `resources/discovery.*`.
 - **Scrape surface** — confirm published-only is in the *resource*, the page-size cap + per-IP
-  `RateLimiter` fire, and the public DTO carries no internal handle / applicant / config.
+  `RateLimiter` fire with an **opaque 429** (no quota/detail leak), and the public DTO (an enumerated
+  allowlist) carries no internal handle / applicant / config — locked by the grep-style absence test.
 - **`$text` is single-index/no-typo** — acceptable for demo; the v2.1 rerank covers fuzzy intent;
   resource is the swap point.
 - **Rerank freshness** — the `jobs:catalog` upsert/delete must be driven by `job.published`/`edited`/
-  unpublish, never a one-shot backfill.
+  unpublish, **debounced per `job_id`** (collapse edit storms, embed the latest JD; deletes
+  immediate), **best-effort off the publish path** (log on fail, never block publish), with the
+  **reconcile sweep** as the eventual-consistency backstop — never a one-shot backfill.
 - **N+1 on joins** — every list join (feed/saved/company-jobs) uses one `$in` batch.
 - **`posted_at`** — set on publish only; double-check re-publish-after-pause stamps a fresh value.
-- **Logo presign** — manager-scoped, short clamped TTL, content-type/size constrained (mirror resume
-  validation). FE: the browser PUTs to the presigned URL with **plain `fetch`, not `authedFetch`**
-  (the URL is self-authorizing; a stray bearer header can break the S3 signature).
+  **Legacy backfill (Task 2.5) is BLOCKING** — it must run on deploy *before* any `recent` query, and
+  every `recent`/`best_match` sort null-guards (with the `_id` tie-break) so a job published during
+  the migration window can't produce a non-deterministic page.
+- **Logo presign** — manager-scoped, short clamped TTL, **`image/{png,jpeg,webp}` allowlist + a
+  `logo_max_bytes` cap enforced as presign conditions, key namespaced under the token `comp_id`**
+  (SVG excluded — script risk), mirroring résumé validation. FE: the browser PUTs to the presigned
+  URL with **plain `fetch`, not `authedFetch`** (the URL is self-authorizing; a stray bearer header
+  can break the S3 signature).
 - **SSR fetch origin** — `NEXT_PUBLIC_ADMIN_URL` is inlined for the **browser**; the SSR server
   component runs on Node and needs a server-reachable origin. Route SSR fetches through
   `publicApiBase()` (`ADMIN_INTERNAL_URL ?? NEXT_PUBLIC_ADMIN_URL`); a public page that hard-codes

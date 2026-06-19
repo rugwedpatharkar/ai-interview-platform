@@ -98,7 +98,16 @@ Two new collections, both **scoped by `comp_id` + `application_id`**, `comp_id` 
 the **authenticated token / the application doc, never client input** (PRODUCTION_STANDARDS §2). New
 Pydantic models in `src/admin/app/model/message.py`, mirroring `model/aptitude.py`:
 
-**`MessageThread`** — one per application (the index makes this an invariant, §3.5):
+**`MessageThread`** — one per application, **created lazily on the first message** (the index makes
+the 1:1 an invariant, §3.5). **Who creates it + visibility before any message:** no thread row exists
+until someone sends — `send_message` does `get_by_application(...) or create(...)`, so **the first
+sender (candidate or recruiter, whoever speaks first) is the creator**. Before the first message,
+`list_threads` simply doesn't return the application (there is no row), and opening the thread surface
+for an application with no thread shows the **empty state** ("Start the conversation below.") rather
+than erroring — the application is still authorized (the candidate owns it / the manager is in-tenant),
+there is just nothing to list yet. The `recruiter_user_id` field is stamped to whoever the first
+*manager* contact is (it stays unset/display-only if the candidate opens first); authz never depends
+on it (§3.2):
 
 | Field | Type | Notes |
 |---|---|---|
@@ -125,6 +134,8 @@ Pydantic models in `src/admin/app/model/message.py`, mirroring `model/aptitude.p
 | `body` | `str` | **Free text.** Length-capped at the boundary (see §3.6); this is candidate-authored input, so it is validated, never trusted. |
 | `created_at` | `datetime` | `default_factory` now; the thread order key. |
 | `read_at` | `datetime \| None` | Set when the *other* side reads past this message (advisory; the per-thread unread counters are the source of truth for badges). |
+
+> **Read state — two layers, one source of truth (resolves the audit's 🔴 Inc-4 read-state gap; §3.8 specifies the full reconciliation).** The **thread-level `unread_candidate`/`unread_recruiter` counters are the badge source of truth**; the **message-level `read_at` is an advisory per-row stamp** for a future "read receipt" affordance. They update on different events and must never be read interchangeably — see §3.8.
 
 > **Why denormalize `comp_id` + `application_id` onto every `Message`.** Both the erasure cascade and
 > any tenant-scoped read can act on `messages` directly (a single `delete_many` / `find` by
@@ -239,10 +250,16 @@ A message body is **candidate-authored free text** and may contain PII. The hand
   cascade can purge by `comp_id`/`application_id`. A candidate's message is never readable
   cross-tenant.
 - **Validated at the boundary, not trusted.** `body` is required, non-empty after trim, and
-  **length-capped** (a configured max, mirroring the page-size / TTL clamps elsewhere) in
-  `resources/messaging.send_message` before insert — candidate input is a contract surface
-  (PRODUCTION_STANDARDS). No HTML is rendered: `ChatWindow` renders `body` as plain text
-  (`whitespace-pre-wrap`), so a pasted `<script>` is inert text, not markup.
+  **length-capped at `MAX_BODY = 4_096` characters (4 KB)** — a named module constant in
+  `resources/messaging.py`, mirroring the page-size / TTL clamps elsewhere — enforced in
+  `resources/messaging.send_message` before insert, because candidate input is a contract surface
+  (PRODUCTION_STANDARDS). The cap is enforced in **two places**: a **client-side guard** in the
+  composer (trim + the same `MAX_BODY` length check) catches the over-long paste before the round-trip
+  for a fast UX, and the **server is the authority** — it re-validates and raises `ValidationError`
+  regardless of what the client did (the client guard is convenience, never trust). 4 KB comfortably
+  fits any legitimate chat turn while bounding row size and a paste-bomb. No HTML is rendered:
+  `ChatWindow` renders `body` as plain text (`whitespace-pre-wrap`), so a pasted `<script>` is inert
+  text, not markup.
 - **Joins the erasure cascade (Inc 0).** See §3.7 — this is the compliance follow-through that makes
   free-text PII safe to store.
 
@@ -265,6 +282,38 @@ Messaging artifacts **must** join the `CandidateEraser` cascade (overview §6 ca
 The Inc-0 stub registers these collections in the cascade from day one (overview §8: "makes new
 artifacts erasable from day one"); Inc 4 fills in the repositories.
 
+### 3.8 Read state — counters vs `read_at` (resolves the 🔴 audit gap)
+
+The audit flags read state as **blocking**: message-level `read_at` and the thread-level
+`unread_candidate`/`unread_recruiter` counters are two representations of "what has the other side
+seen", and the spec must say **which is authoritative and exactly when each is written**. The rule:
+
+- **The per-thread counters are the source of truth for the badge.** `ListThreads` returns the
+  caller's-side count and the nav/inbox/tab badge renders *only* that integer. Nothing reads `read_at`
+  to compute a badge.
+- **`read_at` is an advisory per-message stamp** — it exists so a later "seen ✓✓" affordance can mark
+  the exact last message the other party read, without re-deriving from counters. v1 stores it but the
+  UI does not yet render receipts (the badge is the only consumer of read state).
+
+**When each is written — the three events:**
+
+| Event | Counter (`unread_*`) | `read_at` |
+|---|---|---|
+| **Send** (`send_message`) | `$inc` the **recipient's** counter by 1, `$set last_message_at` — one atomic update on the thread | the new message is inserted with `read_at = None` (it has not been read by the other side) |
+| **MarkRead** (`mark_read`, the reader opens / scrolls the thread) | `$set` the **reader's own** counter to `0` — one atomic update on the thread | `mark_read_through(thread_id, reader_role, now)` stamps `read_at = now` on the **other** side's rows that were still `read_at = None` (the messages this read just consumed) |
+| **List / poll** (`list_messages`, `list_threads`) | read-only — never mutates either | read-only |
+
+So a send moves the **recipient's** counter up and leaves `read_at` null; a `MarkRead` moves the
+**reader's own** counter to zero and stamps the *senders'* messages as read. The counter and `read_at`
+are written **under the same `mark_read` call** (counter `$set` on the thread + `read_at` `$set` on the
+messages), so they cannot drift apart by more than the window between those two updates — and because
+the counter is the only badge source, an interrupted `read_at` write never shows a wrong badge.
+
+**Why this can't desync the badge:** the counter is a single integer the writer owns; `read_at` is a
+per-row convenience. Even if `mark_read_through` partially failed, the badge (counter) would still be
+correct; the worst case is a stale receipt, which v1 does not surface. The counters being advisory
+(not a funnel invariant) is what lets a transient off-by-one self-heal on the next `MarkRead` (§6).
+
 ---
 
 ## 4. Key decisions & tradeoffs
@@ -279,7 +328,7 @@ artifacts erasable from day one"); Inc 4 fills in the repositories.
 | **Denormalize `comp_id` + `application_id` onto `Message`** | Tenant-scoped reads + the erasure cascade act on `messages` directly, no thread join (mirrors `AptitudeAttempt`) | One extra field per row; trivially worth it |
 | **`unread_*` counters on the thread** | Cheap badge reads (`ListThreads` already returns them) + a clean "new message" notify trigger | Two counters to keep correct; incremented on send for the *other* side, zeroed on that side's `MarkRead` (both in the resource, under the same write) |
 | **Append-only; no per-message edit/delete UI** | Audit-friendly; erasure is the candidate-rights path, not an edit affordance | Candidates can't unsend; acceptable, and consistent with the audit posture |
-| **`body` validated + length-capped, rendered as plain text** | Candidate input is a contract surface; plain-text render makes pasted markup inert | A hard cap may truncate a very long paste (configurable) |
+| **`body` validated + length-capped (`MAX_BODY = 4 KB`), rendered as plain text** | Candidate input is a contract surface; plain-text render makes pasted markup inert; client + server both enforce the cap (server is authority) | The 4 KB cap rejects an over-long paste (the composer warns before the round-trip) |
 
 ---
 
@@ -317,10 +366,57 @@ typecheck` (never `next build` while `pnpm dev` is live).
 - **Frontend:** `@ip/shared/messages.ts` client typechecks + the poll `subscribe` seam is exercised
   (a fake transport returns scripted messages; assert `ChatWindow` renders both sides and pauses the
   poll when hidden). No network in unit tests.
+- **Read state (§3.8) — counters are the badge truth, `read_at` is advisory:** a `MarkRead` zeroes the
+  reader's **own** counter **and** stamps `read_at=now` on the *other* side's previously-unread rows;
+  the opposite counter is untouched; nothing reads `read_at` to compute the badge (assert the badge
+  count derives only from the counter, and that a send leaves the new row `read_at=None`).
 - **Manual / local E2E (Chrome via preview):** recruiter opens an applicant, sends a message → it
   appears in the candidate's `app/messages/` thread within one poll interval, the candidate's badge
   increments, the candidate replies → the recruiter's tab updates and unread clears on open; a "new
   message" email lands in the `LoggingNotifier` sink + an in-app notification row appears.
+
+---
+
+## Resolved gaps (completeness audit 2026-06-19)
+
+These close the messaging items from the v2 completeness audit
+(`2026-06-19-v2-completeness-audit.md`, Part B → "Inc 4 — Messaging"). Each was either underspecified
+or missing; the resolution is folded into the sections above and made buildable here.
+
+- **🔴 Read state (counters vs `read_at`) — RESOLVED (§3.8).** The **thread-level
+  `unread_candidate`/`unread_recruiter` counters are the single badge source of truth**; the
+  message-level `read_at` is an advisory per-row stamp (v1 stores it, no receipt UI yet). They update
+  on distinct events: **send** `$inc`s the recipient's counter and inserts the row `read_at=None`;
+  **MarkRead** `$set`s the reader's own counter to 0 *and* stamps `read_at=now` on the other side's
+  consumed rows — both under one `mark_read` call. Nothing reads `read_at` to compute a badge, so a
+  partial `read_at` write can never show a wrong count.
+- **🔴 Messages index — RESOLVED.** `IndexSpec("messages", [("thread_id", 1), ("created_at", 1)])` is
+  the thread read-path index, declared in `infra/db.py` `INDEXES` (the single index authority)
+  alongside the `application_id` cascade index and the four `message_threads` indexes — see §3.5 and
+  the build plan's Tier-A Task 1 Step 3.
+- **Thread creation (who + when + pre-message visibility) — RESOLVED (§3.1).** Lazy on first message;
+  the **first sender is the creator** (`get_by_application(...) or create(...)`). Before any message
+  the application simply doesn't appear in `list_threads`, and its thread surface shows the empty
+  state — never an error.
+- **Body length cap — RESOLVED (§3.6).** Named **`MAX_BODY = 4_096` chars (4 KB)**, a module constant;
+  validated **client-side** (composer guard, fast UX) **and server-side** (the authority — re-validates
+  and raises `ValidationError` regardless of the client).
+- **Erasure (recruiter loses the thread) — CONFIRMED ACCEPTABLE (§3.7).** On candidate erasure, threads
+  **and** messages are deleted by `application_id`/`user_id`, so the recruiter loses the conversation
+  along with the candidate's PII. This is **intended**: message bodies are candidate-authored PII, the
+  application tombstone the funnel relies on stays intact, and an audit-grade record of the *decision*
+  (not the chat) lives in the funnel/audit log. Losing the thread is the correct privacy outcome, not a
+  regression.
+- **Poll cost — DOCUMENTED (§3.3).** Each open-thread poll is a **single capped `find` by `thread_id`**
+  (the index above) — a few requests/minute; the thread-list badge poll is slower still. Polling
+  **pauses on a hidden tab / blurred window** (`refetchIntervalInBackground: false`), so an idle/
+  backgrounded tab costs nothing. **SSE (§3.4) is the documented upgrade** if poll latency ever bites —
+  it swaps only the `subscribe()` seam.
+- **Sender identity — DOCUMENTED (§3.1 / §3.2).** Each FE bubble attributes via the message's
+  `sender_user_id` (and the resolved display name) — team recruiting means any manager of the `comp_id`
+  may post, and the per-message author is shown on the company side ("Hiring team" on the candidate
+  side, §6). **No impersonation is possible**: `sender_user_id` is taken from the authenticated token in
+  the resource, never from client input, so a sender can only ever be themselves.
 
 ---
 

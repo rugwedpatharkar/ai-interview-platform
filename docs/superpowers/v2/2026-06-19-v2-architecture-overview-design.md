@@ -1,4 +1,4 @@
-# v2 Architecture Overview — Unified AI Hiring Platform
+# Aptura v2 — Architecture Overview (Unified AI Hiring Platform)
 
 > **Canonical v2 design.** Read this first; then the per-pillar specs it links in §9. This
 > supersedes `ARCHITECTURE.md` for v2 scope (which it points at). The approved planning artifact
@@ -22,13 +22,21 @@ shared link). There is **no search, browse, or discovery** — a candidate with 
 cannot find a job. v2 adds the marketplace half and rounds the product into a feature-rich whole,
 while keeping the AI screening engine (the differentiator) intact.
 
-**Why it wins — the problem-driven thesis: _the job platform that doesn't ghost you and doesn't
-surveil you._** v2 is built to fix the two best-documented failures of the categories it unifies —
-application silence/ghosting (55% never hear back) and trust-destroying interview surveillance — and
-the unification is what makes the fixes possible. Full analysis:
+**Why it wins — the problem-driven thesis: _the job platform that doesn't ghost you — and gives a
+result employers can trust._** v2 is built to fix the two best-documented failures of the categories
+it unifies — application silence/ghosting (55% never hear back) and AI-interview results that can be
+gamed (cheating doubled to 35%, 48% in tech) — and the unification is what makes the fixes possible.
+A pass means something because the interview is **rigorously proctored** and no one can game it. Full
+analysis:
 [`2026-06-19-problems-and-differentiators-design.md`](2026-06-19-problems-and-differentiators-design.md);
-integrity is handled by design, not surveillance:
-[`2026-06-19-integrity-by-design-design.md`](2026-06-19-integrity-by-design-design.md).
+integrity is enforced by strict, fully-proctored interviews:
+[`2026-06-20-proctored-integrity.md`](2026-06-20-proctored-integrity.md) (supersedes the old
+integrity-by-design pillar).
+
+> **Pivot (2026-06-20):** repositioned from "no surveillance" to **rigorous proctored integrity** —
+> the AI interview is camera+mic-required, no-mute, fullscreen-locked, all 40 proctoring signals
+> live, hard auto-gate on HIGH-severity cheating, with the full integrity timeline + score surfaced
+> to recruiters. Canonical: `2026-06-20-proctored-integrity.md`.
 
 ---
 
@@ -41,9 +49,10 @@ integrity is handled by design, not surveillance:
   scoring, ranking) for the demo/dev phase. Keep the human-override, audit, and consent hooks (all
   already present) so commercializing later is a config flip, not a rebuild. See §6.
 - **Excluded entirely** (create standalone legal regimes + need paid third-party vendors for ~zero
-  demo value): **ID/identity verification, background/reference checks, biometric (face/voice
-  identity) proctoring.** Behavioral proctoring stays **wired-but-dormant**.
-- **v2 core scope = four pillars:** A) Job Marketplace, B) Richer Assessments, C) Video/Voice
+  demo value): **ID/identity verification, background/reference checks, biometric *identity* matching
+  (face/voice → a named person).** Behavioral/AV **proctoring is in scope and live** (2026-06-20
+  pivot — all 40 signals, hard auto-gate; `2026-06-20-proctored-integrity.md`), no longer dormant.
+- **v2 core scope = four pillars:** A) Job Marketplace, B) Richer Assessments, C) Live Video + Voice
   Interview, D) Comms & Candidate Growth.
 - **Working name: Aptura** — a working title used while building. Collision-noted (an *Aptura AI*
   software company already exists), so trademark clearance + the final brand happen at launch; the
@@ -66,8 +75,8 @@ integrity is handled by design, not surveillance:
                                                        ▼             ▼
                                             ┌───────────────────────────────┐
                                             │          AI-AGENTS             │  LangGraph + Gemini
-                                            │  agents · interview (text/     │  (stateless compute)
-                                            │  voice✓/video) · evaluator ·   │
+                                            │  agents · interview (live      │  (stateless compute)
+                                            │  video+voice✓) · evaluator ·   │
                                             │  matcher · assistant · NEW:    │
                                             │  practice · run_code grader    │
                                             └───────┬───────────────┬───────┘
@@ -105,9 +114,7 @@ Tags: **[built]** exists + works · **[evolve]** exists, extend · **[new]** doe
 | 3 | **Job Marketplace / Discovery** | **[new]** | Public search/browse/facets, job + company pages, saved jobs, alerts, recs feed — **Pillar A** |
 | 4 | Applications & Funnel | [evolve] | CAS machine; add `assessment_review` + advisory gate |
 | 5 | **Assessments** | [evolve] | MCQ today; add coding + skills kinds + grader registry — **Pillar B** |
-| 6 | AI Interview — text | [built] | Adaptive interviewer + blueprint + per-turn host |
-| 6v | AI Interview — voice | [evolve] | Backend built; build candidate UI + finish E2E — **Pillar C** |
-| 6V | AI Interview — async video | [new] | Recorded one-way answers → STT → same brain — **Pillar C** |
+| 6 | **AI Interview — live video + voice** | [evolve] | One live real-time room (camera + mic) reusing the built voice pipeline + the interviewer/evaluator brain; text interview + async video removed — **Pillar C** |
 | 7 | Scoring & Reports | [built] | Evaluator (temp-0, evidence) → report-writer → xlsx |
 | 8 | Matching & Recommendations | [built] | Embedding matcher; powers the discovery feed |
 | 9 | Recruiter Workspace | [evolve] | Jobs/applicants/rubrics/talent/decisions; + sourcing + inbox |
@@ -119,8 +126,18 @@ Tags: **[built]** exists + works · **[evolve]** exists, extend · **[new]** doe
 | 15 | Trust / Operational | [evolve] | Audit, consent, erasure, override — kept as mitigations |
 | 16 | Platform / Admin | [built] | Config, index authority, schedulers, MCP topology |
 | 17 | Design System | [built] | `@ip/ui` + `@ip/shared` + `@ip/api-client` |
+| 18 | **Settings & Security** | **[new]** | Notification prefs, 2FA, password/email change, sessions — `settings-and-security` |
+| 19 | **Team & Permissions** | **[new]** | Seats, RBAC matrix, member mgmt — `team-and-permissions` |
+| 20 | **Interview Scheduling** | **[new]** | Book the live interview after the AI screen passes — `interview-scheduling` |
+| 21 | **Onboarding** | **[new]** | Candidate + employer first-run + empty states — `onboarding` |
+| 22 | **Platform Hardening** | [evolve] | Rate-limits · observability/health · retention · index-migration · tests — `platform-hardening` |
 
 ---
+
+> **v2 complete (2026-06-19):** modules 18–22 + the Part-A "should-have" additions close the
+> completeness audit (`2026-06-19-v2-completeness-audit.md`). v2 scope = the original 4 pillars +
+> these modules + the per-pillar Part-B fixes; the *later* tier (billing, i18n, a11y audit,
+> API/webhooks, data export) is a tracked backlog, not in the launch cut.
 
 ## 5. The four pillars (summaries — each has its own spec, §9)
 
@@ -141,13 +158,25 @@ untouched). The one new infra piece is a **`run_code` sandbox** in mcp-capabilit
 `CodeRunner` Protocol — ephemeral per-submission Docker container, network-off, resource-capped,
 non-root, always `finally`-killed. → `…-rich-assessments-design.md`, `…-code-execution-sandbox-design.md`
 
-### Pillar C — Video / Voice Interview
-The interviewer/evaluator **brain is reused unchanged** (identical transcript shape). **Voice
-backend is already built** (`resources/voice/*`, `infra/voice/*`, `voice_worker.py`, `rtc_token`,
-`silero_vad.onnx`); v2 builds the **candidate UI** (`voice-room.tsx`, `@ip/shared/voice.ts`) + finish
-E2E (execute the existing `../plans/2026-06-19-voice-interview.md` TIER D — don't rewrite). **Async video** is
-new: a `VideoAnswerTransport.ask()` returns the STT transcript of an uploaded one-way clip (reuse
-`GroqStt`), clips in MinIO. → `…-async-video-interview-design.md` (+ existing voice plan)
+### Pillar C — Live Video + Voice Interview
+> **Modality decision (2026-06-20, locked):** the AI interview is **one live, real-time video +
+> voice session** — the candidate joins a LiveKit room with **camera + mic** and converses with the
+> adaptive interviewer aloud and on camera; real-time STT yields the transcript the brain scores
+> **unchanged**. The typed **text interview** (legacy core) and the **async recorded-video** increment
+> are **removed**; there is exactly one interview modality.
+
+The interviewer/evaluator **brain is reused unchanged** (identical transcript shape → funnel/scoring
+untouched). **Voice backend is already built** (`resources/voice/*`, `infra/voice/*`,
+`voice_worker.py`, `rtc_token`, `silero_vad.onnx`); the live room **adds a video track** to that
+existing voice pipeline — mostly frontend + LiveKit config. v2 builds the **candidate UI**
+(`voice-room.tsx`, `@ip/shared/voice.ts`) + finishes E2E (execute the existing
+`../plans/2026-06-19-voice-interview.md` TIER D — don't rewrite). **Strict proctoring:** camera + mic
+are **required** (no mute), the room is **fullscreen-locked**, and **all 40 proctoring signals** run
+live (face/gaze/head-move/second-face/phone/second-voice/tab/copy-paste/devtools/screen-share/
+virtual-cam…), server-scored by severity. Enforcement = mandatory capture + a **hard auto-gate on
+HIGH-severity cheating** (second face, phone, screen-share, virtual cam, synthetic audio →
+auto-terminate/flag) + the **full integrity timeline + score surfaced to recruiters**, who judge the
+rest — so a pass is a result employers can trust. → `2026-06-20-proctored-integrity.md`
 
 ### Pillar D — Comms & Candidate Growth
 - **Messaging:** candidate↔recruiter threads (one per application, `comp_id`-scoped). **gRPC-web
@@ -155,8 +184,9 @@ new: a `VideoAnswerTransport.ask()` returns the STT transcript of an uploaded on
 - **Notifications Center:** persist a `notifications` store for an in-app feed; `TransitionNotifier`
   writes a row **and** emails. Bell/feed in both apps; email via the injected `Notifier` seam.
 - **Practice Mode:** candidate-initiated self-serve interview reusing `interview_host` +
-  `interviewer` + `evaluator`, **detached from any application** (no `comp_id`, no funnel event, no
-  recruiter visibility) — sidesteps the AI-screening risk surface.
+  `interviewer` + `evaluator` over the **same live video+voice modality**, **detached from any
+  application** (no `comp_id`, no funnel event, no recruiter visibility) — sidesteps the AI-screening
+  risk surface.
 - **Skill-Gap Feedback:** render the evaluator's per-competency output as candidate growth feedback;
   shown only for practice or post-decision. → `…-messaging-design.md`, `…-notifications-center-design.md`,
   `…-candidate-growth-design.md`
@@ -174,15 +204,22 @@ The hooks already exist; v2 mostly **flips defaults to human-first** and wires t
   the funnel. `gate.override` already exists; every transition already writes an `AuditLog`.
 - **Keep as mitigations:** audit log, consent ledger (`automated_evaluation`), erasure cascade.
   **Extend `CandidateEraser`** to every new artifact (assessment attempts, code submissions,
-  messages, practice sessions, video answers) — the single most important compliance follow-through.
-- **Cut permanently:** ID verification, background checks, biometric (face/voice identity) proctoring.
-- **Dormant:** behavioral proctoring (gaze/audio/device) stays built, consent-gated, flag-off.
+  messages, practice sessions) — the single most important compliance follow-through.
+- **Cut permanently:** ID verification, background checks, biometric **identity** matching (face/voice
+  → a named person).
+- **Now in scope (2026-06-20 pivot):** behavioral/AV **proctoring** (gaze/audio/device/screen + all 40
+  signals) is **live and enforced**, not dormant — see `2026-06-20-proctored-integrity.md`. Treated as
+  biometric/sensitive data; consent + retention + jurisdiction review required before commercial launch.
 - **Recommended production default:** `advisory` (even though `auto` is the demo default).
 
 > Why this matters: AI scoring/ranking/interview tools are exactly what NYC Local Law 144 / EU AI
-> Act regulate (Automated Employment Decision Tools). Keeping a human as the decider (advisory) +
-> dropping the surveillance/identity add-ons engineers the regulatory risk *out* while preserving
-> the full feature set for demos.
+> Act regulate (Automated Employment Decision Tools). Keeping a human as the decider (advisory) keeps
+> the regulatory risk on the *decision* low while preserving the full feature set for demos.
+>
+> **Pivot note (2026-06-20):** v2 now **does proctor** — strict camera/mic-required interviews with
+> all 40 signals (`2026-06-20-proctored-integrity.md`). Face/gaze/recording = **biometric/sensitive
+> data**: a knowing demo-time trade. Launch needs consent/retention/jurisdiction review (BIPA, GDPR
+> Art. 9, EU AI Act) before this ships commercially.
 
 ---
 
@@ -191,7 +228,7 @@ The hooks already exist; v2 mostly **flips defaults to human-first** and wires t
 - **admin owns MongoDB** (single source of truth); **ai-agents is stateless**, reaching data only
   via `mcp-data` and capabilities via `mcp-capability`. Unchanged in v2.
 - **New collections:** `company_profiles`, `saved_jobs`, `job_alerts`, `message_threads` +
-  `messages`, `notifications`, `practice_sessions`, `video_answers`, `code_submissions`; Qdrant
+  `messages`, `notifications`, `practice_sessions`, `code_submissions`; Qdrant
   `jobs:catalog` (v2.1 semantic rerank). All tenant docs carry `comp_id` where applicable; all
   indexes declared in `admin/infra/db.py` (the single index authority).
 - **Extended:** `jobs` (filter fields + `posted_at`), `AptitudeConfig.gate_mode`, `AptitudeAttempt`
@@ -211,13 +248,13 @@ The hooks already exist; v2 mostly **flips defaults to human-first** and wires t
 | **0** | Compliance-ready toggle (gate modes + `assessment_review` + erasure-cascade stubs) | Tiny; touches the funnel seam everything extends; makes new artifacts erasable from day one |
 | **1** | Marketplace / discovery (Pillar A) | The front door; read-side, no AI risk; gives the demo its two-sided shape |
 | **2** | Richer assessments + code sandbox (Pillar B) | Biggest differentiator + only new infra; reuses `aptitude.graded` |
-| **3** | Voice interview — frontend + E2E (Pillar C) | Backend already built; execute the existing voice plan |
+| **3** | Live video + voice interview — frontend + E2E (Pillar C) | Backend already built (add a video track to the voice pipeline); the sole interview modality; execute the existing voice plan |
 | **4** | Messaging + notifications center (Pillar D) | Closes the loop both sides; reuses SSE/chat-window/notifier |
 | **5** | Candidate growth: practice + skill-gap (Pillar D) | Lowest-risk AI surface; retention; reuses interview+eval |
-| **6** | Async video answers (Pillar C) | One transport adapter + recorder UI; after live voice |
 | **7** | Analytics + recruiter compare polish | Add assessment/messaging dimensions once data exists |
 
-Behavioral proctoring is intentionally absent — wired-but-dormant.
+Proctoring is **live and enforced** in Inc 3 (2026-06-20 pivot — all 40 signals + hard auto-gate on
+HIGH-severity cheating; `2026-06-20-proctored-integrity.md`), no longer wired-but-dormant.
 
 ---
 
@@ -230,13 +267,13 @@ Each pillar gets a **design spec** (`docs/superpowers/specs/`) + a **TDD impleme
 |---|---|---|---|
 | Architecture overview | `2026-06-19-v2-architecture-overview-design.md` | — | ✅ this doc |
 | Problems & differentiators | `2026-06-19-problems-and-differentiators-design.md` | — | ✅ authored |
-| Integrity by design (non-surveillance) | `2026-06-19-integrity-by-design-design.md` | `2026-06-19-integrity-by-design.md` | ✅ authored |
+| ~~Integrity by design (non-surveillance)~~ | `2026-06-19-integrity-by-design-design.md` | `2026-06-19-integrity-by-design.md` | ⚠️ **SUPERSEDED** by proctored integrity (2026-06-20) |
+| **Proctored integrity (strict, cheat-proof)** | `2026-06-20-proctored-integrity.md` | — | ✅ canonical (supersedes integrity-by-design) |
 | Inc 0 — Compliance-ready gate | `…-compliance-advisory-gate-design.md` | `…-compliance-advisory-gate.md` | ✅ authored |
 | Inc 1 — Job marketplace | `…-job-marketplace-design.md` | `…-job-marketplace.md` | ✅ authored |
 | Inc 2 — Rich assessments | `…-rich-assessments-design.md` | `…-rich-assessments.md` | ✅ authored |
 | Inc 2 — Code sandbox | `…-code-execution-sandbox-design.md` | `…-code-execution-sandbox.md` | ✅ authored |
-| Inc 3 — Voice frontend/E2E | (reuse) | `../plans/2026-06-19-voice-interview.md` (execute) | ✅ plan exists |
-| Inc 6 — Async video | `…-async-video-interview-design.md` | `…-async-video-interview.md` | ✅ authored |
+| Inc 3 — Live video + voice frontend/E2E | (reuse) | `../plans/2026-06-19-voice-interview.md` (execute) | ✅ plan exists |
 | Inc 4 — Messaging | `…-messaging-design.md` | `…-messaging.md` | ✅ authored |
 | Inc 4 — Notifications center | `…-notifications-center-design.md` | `…-notifications-center.md` | ✅ authored |
 | Inc 5 — Candidate growth | `…-candidate-growth-design.md` | `…-candidate-growth.md` | ✅ authored |

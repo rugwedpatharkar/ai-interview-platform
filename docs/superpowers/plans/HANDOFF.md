@@ -1,4 +1,4 @@
-# PROJECT HANDOFF — AI Agent-Driven Interview Platform
+# Project Handoff — Aptura · AI Hiring Platform
 
 > Paste/continue from this in a fresh Claude session (e.g. desktop app after importing
 > the project). This file is self-contained context; the master plan

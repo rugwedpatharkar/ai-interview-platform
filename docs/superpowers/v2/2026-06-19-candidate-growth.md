@@ -59,6 +59,7 @@ src/ai-agents/app/
   infra/practice_sessions.py               (NEW — RedisPracticeStore; copy of RedisInterviewStore, ns="practice")
   infra/mcp_data.py                        (+save_practice_summary/get_practice_summary/list_practice_summaries)
   routes/interview_api.py                  (+POST /practice/start, /practice/{id}/turn, GET /practice/{id}/feedback,
+                                            +GET /practice/sessions (owner-scoped history list, R5),
                                             +GET /application/{id}/feedback with terminal-state guard)
   main.py                                  (+practice_sessions store in create_app deps)
 
@@ -84,11 +85,13 @@ frontend/packages/shared/src/
   index.ts                                 (+export makePracticeClient + types)
 frontend/apps/candidate/
   lib/auth.tsx                             (+export practice = makePracticeClient(AIAGENTS_URL, store))
-  app/practice/page.tsx                    (NEW — route shell: start form ↔ runner; never-mid-funnel gate)
+  app/practice/page.tsx                    (NEW — route shell: start form ↔ runner + history list; never-mid-funnel gate)
+  app/feedback/[applicationId]/page.tsx    (NEW — post-decision application feedback page, terminal-state-gated, R4)
   components/practice-start-form.tsx       (NEW — topic/JD picker, exactly-one-required, start mutation)
   components/practice-runner.tsx           (NEW — interview chat turn-loop clone + finalizing/feedback)
   components/growth-feedback-panel.tsx     (NEW — summary / strengths / gaps / suggested topics; NO verdict)
-  components/candidate-shell.tsx           (+"Practice" NAV entry) ; components/dashboard.tsx (+practice entry card)
+  components/candidate-shell.tsx           (+"Practice" NAV entry) ; components/dashboard.tsx (+practice entry card,
+                                            +"View feedback" link gated on TERMINAL.has(app.state) → /feedback/[id])
 ```
 
 **Responsibilities (one job each):** `practice.py` = the detached host loop (imports the brain, holds
@@ -97,6 +100,51 @@ no LLM/Mongo/Redis deps directly). `feedback_writer.py` = `Evaluation`→`Growth
 funnel-critical real path completely untouched.
 
 ---
+
+## Resolved gaps (completeness audit 2026-06-19)
+
+Resolves the **Inc 5** row of `docs/superpowers/v2/2026-06-19-v2-completeness-audit.md` (Part B →
+🟠 High). Full design rationale lives in the design doc **§7a** (`2026-06-19-candidate-growth-design.md`);
+this block lists the concrete, pinned facts each task below must honor (numbers are ground-truth
+from `src/ai-agents`, not invented):
+
+- **R1 — feedback calc thresholds.** `feedback_writer.py` defines `_STRENGTH_BAND = 0.70` and
+  `_GAP_BAND = 0.50` over `CompetencyScore.score` (a float `0.0..1.0`; ground truth
+  `app/model/scoring.py`). A pure `_classify(evaluation)` buckets each competency: `score >= 0.70`
+  → strength, `score < 0.50` → gap (+ a suggested study topic), `[0.50, 0.70)` → neither. The LLM
+  phrases the **pre-computed** sets; it never decides membership. `suggested_topics` derive from the
+  gap set (model-only grounding for Inc 5). Worked `Evaluation`→`GrowthFeedback` example: design §7a R1.
+- **R2 — topic→JD synthesis.** When `start_practice` gets `topic` (not `jd_text`), a tiny
+  `_topic_to_jd_prompt` + `_SynthJD` schema call synthesizes a 4–6 sentence JD, fenced with
+  `fence('topic', topic)` + `UNTRUSTED_NOTICE` (`app/resources/_prompt_safety.py`). Pasted `jd_text`
+  skips it. Exact prompt: design §7a R2.
+- **R3 — practice time budget.** **Reuse `_MAX_BUDGET_MIN = 180`** from `app/resources/blueprint.py`
+  — practice adds **no new budget constant**: `build_blueprint._validate` already clamps
+  `time_budget_min` to that cap before the session persists, and `RedisPracticeStore` derives its TTL
+  from the clamped budget (`time_budget_min*60 + reaper margin`, mirror `app/infra/sessions.py`).
+- **R4 — feedback UX surface.** Two surfaces: (a) the **practice** `GrowthFeedbackPanel` inside
+  `practice-runner.tsx` (always reachable, detached); (b) a **NEW** post-decision page
+  `app/feedback/[applicationId]/page.tsx`, **terminal-state-gated**, reached only from terminal
+  application cards. Server `GET /application/{id}/feedback` is default-deny over `ApplicationState`
+  (§4.4). Reaffirm never-mid-funnel across both.
+- **R5 — practice history.** Scope a minimal list **in**: add route `GET /practice/sessions`
+  (owner-scoped, compact `{practice_id, role_label, created_at}`) over the existing
+  `list_practice_summaries`; a "past runs" list on `/practice` links each row to its read-only
+  `GrowthFeedbackPanel` (reuse `GET /practice/{id}/feedback` — no new detail endpoint).
+- **R6 — status-transition order.** In `_finalize`, set `session.status = "completed"` **LAST**
+  (after `save_practice_summary`, then `sessions.save`) — exactly like the real
+  `interview_host._finalize`. A failed summary-write leaves the session `in_progress` so the next
+  `/turn` re-finalizes idempotently (upsert keyed by `(user_id, practice_id)`).
+- **R7 — practice indexes.** `practice_sessions` (keyed by `user_id`, never `comp_id`) declares
+  `(user_id)` — powers **both** history `find({user_id}).sort(created_at)` and the erasure
+  `delete_by_user(user_id)` — and `(user_id, practice_id)` for single-run reads. Both in the single
+  index authority `src/mcp-data/app/infra/db.py`. The `(user_id)` index joins the Inc 0 erasure
+  cascade (Task 9).
+- **Terminal-state allowlist (canonical, ground truth `src/admin/app/model/application.py`):**
+  **terminal/allowed** = `hired, rejected, shortlisted, gated_out, expired, withdrawn, abandoned`;
+  **non-terminal/denied** = `applied, aptitude_pending, interview_pending, interviewed, scored`
+  (note: **`scored` is denied** — a score exists but no decision yet). Default-deny for any
+  unlisted/new state.
 
 ## TIER A — practice brain loop (reuse the interview brain, detached)
 
@@ -176,6 +224,13 @@ async def test_finalize_evaluates_for_candidate_and_emits_no_event(
     `question_plan`** — practice never crawls); `decision = await next_question(blueprint,
     Transcript(), llm=llm)`; persist a `PracticeSession` (new uuid `practice_id`, `started_at`);
     return `{practice_id, question}`.
+    - [ ] **R2 — topic→JD synthesis:** when only `topic` is given, call a tiny
+      `_synthesize_jd(topic, llm=llm)` (local `_topic_to_jd_prompt` + `_SynthJD(BaseModel){jd_text}`,
+      4–6 sentence JD) and fence the raw `topic` with `fence('topic', topic)` + `UNTRUSTED_NOTICE`.
+      Pasted `jd_text` is used verbatim (skips synthesis). Exact prompt: design §7a R2.
+    - [ ] **R3 — budget reuse:** do **not** define a practice budget constant — `build_blueprint`'s
+      `_validate` already clamps `time_budget_min` to `_MAX_BUDGET_MIN = 180` (`blueprint.py`). Confirm
+      no new cap is introduced; the session's budget is the already-clamped blueprint value.
   - `submit_practice_turn`: load session; `404` if missing, `ForbiddenError` if `session.user_id !=
     user_id`, reject if `status != "in_progress"`; append turn; `_budget_exhausted` hard stop →
     finalize; else `next_question` → if `done` finalize, else save + return.
@@ -184,11 +239,24 @@ async def test_finalize_evaluates_for_candidate_and_emits_no_event(
     build `PracticeSummary` → `data.save_practice_summary(user_id, summary.model_dump())` → flip
     `status="completed"` **LAST** → save. **No publish.** Reuse `interview_host`'s `_budget_exhausted`
     (import it or copy the 3-line helper).
+    - [ ] **R6 — status order (explicit, mirror real path):** the order is **(1)**
+      `save_practice_summary` (durable write FIRST), **(2)** `session.status = "completed"` +
+      `current_question = ""`, **(3)** `sessions.save(session)` (persist the flip LAST). Same as
+      `interview_host._finalize` minus publish. A failed step (1) must leave the session
+      `in_progress` so the next `/turn` re-finalizes; the upsert keyed by `(user_id, practice_id)`
+      makes the retry idempotent (never double-persist, never strand completed-but-unsaved).
+    - [ ] **R6 test:** inject a `save_practice_summary` that raises once → assert session stays
+      `in_progress` → a second `turn` finalizes cleanly and the summary lands exactly once.
   - Use `get_logger(component="resource.practice")`; log finalize with the turn count (aggregate
     metric).
 - [ ] **Step 4 — run → PASS**; add tests: ownership `403`; double-submit after `completed` rejected;
   budget exhaustion finalizes; `max_questions` terminator finalizes; **neither topic-nor-jd →
   ValidationError**.
+  - [ ] **R2 synthesis test:** `start_practice(topic="backend engineer")` with
+    `fake_llm_by_schema({_SynthJD: _SynthJD(jd_text="...backend role..."), InterviewBlueprint: ...,
+    InterviewTurnDecision: ...})` → the persisted session's `jd_text` is the synthesized text; a
+    `topic` containing the sentinel chars `«`/`»` (or an injection string) is stripped/neutralized
+    by `fence` before reaching the model.
 - [ ] **Step 5 — gate green.**
 
 ---
@@ -206,12 +274,24 @@ async def test_finalize_evaluates_for_candidate_and_emits_no_event(
   `build_feedback` returns a `GrowthFeedback` whose **output carries no hire/reject verdict** (no
   `recommendation` text echoed) and surfaces gaps. (The LLM is faked; the test pins the *contract* —
   shape + no-verdict — not the model's words.)
+  - [ ] **R1 classifier test (deterministic, no LLM):** use the §7a R1 worked `Evaluation`
+    (`Python fundamentals`=0.82, `Concurrency`=0.41, `System design`=0.63). Assert `_classify`
+    returns `Concurrency` in **gaps** (`< 0.50`), `Python fundamentals` in **strengths** (`>= 0.70`),
+    and `System design` in **neither** (middle band). This is a pure-function test — no fake LLM
+    needed for `_classify` itself.
 - [ ] **Step 2 — run → FAIL.**
-- [ ] **Step 3 — implement** `feedback_writer.py` mirroring `report_writer.py` shape: a `_prompt` that
-  feeds the competency scores + strengths/concerns (fenced via `_prompt_safety.fence`) and asks for an
-  **encouraging, second-person growth** summary — strengths to keep, gaps to improve, concrete topics
-  to study. `build_feedback` calls `llm.structured(_prompt(evaluation), GrowthFeedback)` and returns
-  it. **No scoring; no `recommendation` in the output.** `get_logger(component="resource.feedback_writer")`.
+- [ ] **Step 3 — implement** `feedback_writer.py` mirroring `report_writer.py` shape:
+  - [ ] **R1 bands + classifier:** module constants `_STRENGTH_BAND = 0.70`, `_GAP_BAND = 0.50`;
+    a pure `_classify(evaluation) -> (strengths, gaps)` over `competency_scores` (`>= 0.70` strength,
+    `< 0.50` gap, middle band neither). `build_feedback` calls `_classify` **first**, then passes
+    only those competency sets (name + rationale) into the writer prompt so the LLM phrases
+    pre-computed buckets. `suggested_topics` derive from the gap set (one+ topic per gap competency).
+  - a `_prompt` that feeds the **classified** competency sets + strengths/concerns (fenced via
+    `_prompt_safety.fence`, format like `report_writer`'s `f"- {cs.competency}: {cs.score:.2f}
+    ({cs.rationale})"`) and asks for an **encouraging, second-person growth** summary — strengths to
+    keep, gaps to improve, concrete topics to study. `build_feedback` calls
+    `llm.structured(_prompt(evaluation), GrowthFeedback)` and returns it. **No scoring; no
+    `recommendation` in the output.** `get_logger(component="resource.feedback_writer")`.
 - [ ] **Step 4 — run → PASS.**
 - [ ] **Step 5 — gate green.** (If Task 3 used a passthrough stub, replace it with this `build_feedback`.)
 
@@ -237,6 +317,12 @@ async def test_finalize_evaluates_for_candidate_and_emits_no_event(
   practice calls. `GET feedback` loads the completed `PracticeSummary` via
   `data.get_practice_summary(user_id, practice_id)` and returns the `GrowthFeedback` (+ a brief
   evaluation summary), `409` if the session is still in progress.
+  - [ ] **R5 — history route:** add `GET /practice/sessions` →
+    `{sessions: [{practice_id, role_label, created_at}]}` over `data.list_practice_summaries(user_id)`,
+    **owner-scoped** (the `user_id` is `_caller_user_id`, never a client param; no `comp_id`). Compact
+    projection only — list rows do not ship the transcript/evaluation; detail comes from the per-id
+    `GET /practice/{id}/feedback`. Endpoint test: `200` returns only the caller's runs; a second
+    user sees none.
 - [ ] **Step 4 — wire deps** in `main.py`'s `create_app({...})`: add
   `"practice_sessions": RedisPracticeStore(redis)` (build it next to `sessions_store`).
 - [ ] **Step 5 — run → PASS; gate green.**
@@ -255,6 +341,12 @@ the same names over a `practice_sessions` collection **keyed by `user_id`** (NO 
 - [ ] **Step 2 — implement** the three tools + collection write/read; declare indexes `(user_id)` and
   `(user_id, practice_id)` in `mcp-data` `infra/db.py` (the single index authority). Add the three
   methods to `McpDataGateway` (mirror `save_interview`/`get_report` exactly).
+  - [ ] **R7 — index intent:** `(user_id)` is load-bearing for **both** history
+    (`list_practice_summaries` → `find({user_id}).sort(created_at)`) **and** the erasure cascade
+    (`delete_by_user(user_id)`, Task 9); `(user_id, practice_id)` powers `get_practice_summary`
+    single-run reads and enforces per-user isolation at the query layer. Collection keyed by
+    `user_id`, **never `comp_id`**. (Optional `(user_id, created_at)` only if history sorts
+    server-side at scale — omit for Inc 5 volumes.)
 - [ ] **Step 3 — extend `fake_data`** in ai-agents `conftest.py` with `save_practice_summary` /
   `get_practice_summary` / `list_practice_summaries` over an in-memory dict (`saved_practice_summaries`).
 - [ ] **Step 4 — run → PASS; gate green.**
@@ -267,9 +359,15 @@ default-deny) + the gated endpoint that renders the **already-persisted** recrui
 through `build_feedback` only when terminal.
 
 - [ ] **Step 1 — failing parametrized test** over `ApplicationState`: `_feedback_allowed` is `True`
-  **only** for terminal decision states (e.g. `hired`, `rejected`/`gated_out`, post-`assessment_review`
-  decision) and `False` for every in-progress state; an unknown/new state defaults to `False`. Endpoint
-  test: terminal state → `200` with `GrowthFeedback`; non-terminal → `403 feedback not available yet`.
+  **only** for terminal states and `False` for every in-progress state; an unknown/new state defaults
+  to `False`. Endpoint test: terminal state → `200` with `GrowthFeedback`; non-terminal → `403
+  feedback not available yet`.
+  - [ ] **R4 — canonical allowlist (ground truth `src/admin/app/model/application.py`):**
+    **terminal/`True`** = `{hired, rejected, shortlisted, gated_out, expired, withdrawn, abandoned}`;
+    **non-terminal/`False`** = `{applied, aptitude_pending, interview_pending, interviewed, scored}`.
+    **`scored` is explicitly denied** — a score exists but no decision has been made, so feedback
+    there would coach the candidate between scoring and the recruiter's call. The state is read via
+    the existing `data.get_application_status(scope, application_id)` (returns `{"state": ...}`).
 - [ ] **Step 2 — run → FAIL.**
 - [ ] **Step 3 — implement** the guard + endpoint: load the application's current funnel state
   (comp-scoped read via `data.get_application_status`), `_feedback_allowed(state)` else `403`; on
@@ -322,11 +420,14 @@ through `build_feedback` only when terminal.
 **Interfaces — Produces:** `makePracticeClient(aiagentsUrl, store)` with
 `start({ topic?, jd_text? })` → `{ practice_id, question }`, `turn(practiceId, answer)` →
 `PracticeTurn { done, question }`, `feedback(practiceId)` → `PracticeFeedbackResult
-{ evaluation_summary: string; feedback: GrowthFeedbackView }`, and (optional history)
-`list()` → `PracticeSummaryRow[]`. Types `GrowthFeedbackView`
+{ evaluation_summary: string; feedback: GrowthFeedbackView }`, and `list()` →
+`{ sessions: PracticeSummaryRow[] }` (the in-scope history list, R5). Types `GrowthFeedbackView`
 (`{ summary; strengths: string[]; gaps: string[]; suggested_topics: string[] }`) and
-`PracticeTurn` exported from `index.ts`. **No `comp_id`/`applicationId` in any signature** — the
-detached invariant reaches the client surface too.
+`PracticeTurn` exported from `index.ts`. **The practice client takes no `comp_id`/`applicationId`
+in any signature** — the detached invariant reaches the client surface too. (The post-decision
+`GET /application/{applicationId}/feedback` read used by the R4 `/feedback/[applicationId]` page is
+a **separate** real-application surface — keep it off `makePracticeClient`; reuse the existing
+application/interview client that is already comp-scoped, so practice stays detached by type.)
 
 #### Step 1 — `@ip/shared/practice.ts` (the REST client)
 - [ ] Mirror `interview.ts` exactly: `restAuthFor(store)` → a `post<T>(path, body?)` /
@@ -338,9 +439,9 @@ detached invariant reaches the client surface too.
   - `feedback(practiceId)` → `get<PracticeFeedbackResult>(\`/practice/${practiceId}/feedback\`)`
     (a `409` while still in progress surfaces as `HttpError(409)` — the UI treats it as
     "still finalizing", see Step 4).
-  - *(optional, behind the history sub-task)* `list()` →
-    `get<{ sessions: PracticeSummaryRow[] }>("/practice/sessions")` **only if** Task 6 exposes a list
-    route; otherwise omit `list()` (don't invent an endpoint the backend tier didn't define).
+  - `list()` → `get<{ sessions: PracticeSummaryRow[] }>("/practice/sessions")` — the owner-scoped
+    history list (R5; the route is scoped into Inc 5 via Task 5/6, so this method is **in**, not
+    optional). Paths must match the Task 5 routes.
 - [ ] Export `makePracticeClient`, `type PracticeTurn`, `type GrowthFeedbackView`,
   `type PracticeFeedbackResult`, `type PracticeSummaryRow` from `index.ts` next to the
   `makeInterviewClient` export.
@@ -444,13 +545,32 @@ detached invariant reaches the client surface too.
   `NAV`; add a small "Practice for an interview" `Card` (with a `Sparkles`/`Dumbbell` icon and a
   `Link` to `/practice`) to `dashboard.tsx`, framed as private/no-pressure.
 
-#### Step 7 — (optional) practice history list
-- [ ] **Only if** Task 6 exposes `list_practice_summaries` over a route: a `usePracticeHistory`
+#### Step 6b — `app/feedback/[applicationId]/page.tsx` (NEW — post-decision feedback page, R4)
+- [ ] `"use client"`. The **second** feedback surface (the practice panel is the first): a page keyed
+  by `applicationId` that renders the **real-application** `GrowthFeedbackPanel`. `useRequireAuth` +
+  `useRequireRole(["candidate"])`, wrapped in `<CandidateShell>`, `PageHeader`/`h1` "Interview feedback".
+- [ ] **Terminal-state gate (the UI half of never-mid-funnel):** read the application's current state
+  (reuse the dashboard application query); if `!TERMINAL.has(app.state)` render an `EmptyState`
+  ("Feedback unlocks once a final decision is made") and **do not** call the feedback endpoint. Only
+  when terminal, `useQuery` → `GET /application/{applicationId}/feedback` and render
+  `<GrowthFeedbackPanel result={data} />`. The server is `403` default-deny anyway (Task 7) — this is
+  the UI matching the contract, never the only guard. Add a code comment citing the never-mid-funnel rule.
+- [ ] **Entry point (gated):** in `dashboard.tsx`, the per-application card shows a "View feedback"
+  `Link` to `/feedback/{app.application_id}` **only** when `TERMINAL.has(app.state)` (reuse the
+  existing `TERMINAL` set: `withdrawn, hired, rejected, expired, abandoned`); absent on every
+  non-terminal card so a candidate cannot navigate to mid-funnel feedback. (Note: the server allowlist
+  R4 additionally treats `shortlisted`/`gated_out` as terminal; the FE `TERMINAL` set governs only
+  whether the *candidate-visible* link appears — the server stays authoritative for the read.)
+- [ ] a11y/dark/responsive parity with the practice panel; lucide icons imported in-file.
+
+#### Step 7 — practice history list (scoped in, R5)
+- [ ] **In scope** (Task 6 exposes `GET /practice/sessions` per R5): a `usePracticeHistory`
   `useQuery({ queryKey: ["practice-history"], queryFn: () => practice.list() })` rendering a compact
   list of past runs (`role_label` + `created_at`) on `/practice` with `EmptyState` ("No practice runs
-  yet"), `LoadingState`, `ErrorState`. Each row links to its `GrowthFeedbackPanel` (read-only). If the
-  backend tier did **not** add a list route, **skip this step** rather than inventing an endpoint —
-  the spec lists history UX as an open question (§8), so persist-now/surface-later is acceptable.
+  yet"), `LoadingState`, `ErrorState`. Each row links to its read-only `GrowthFeedbackPanel` (reuse
+  `GET /practice/{id}/feedback` — no new detail endpoint). `makePracticeClient` gains `list()` →
+  `get<{ sessions: PracticeSummaryRow[] }>("/practice/sessions")`. (Rich history — filters, search,
+  re-take — stays a follow-up.)
 
 #### Step 8 — verify (FE gate)
 - [ ] `npx pnpm@9.15.0 --filter @ip/candidate build` green; `npx pnpm@9.15.0 --filter
@@ -463,6 +583,11 @@ detached invariant reaches the client surface too.
   interview to `done` → see the `finalizing` state resolve into `GrowthFeedbackPanel` with
   strengths/gaps/suggested-topics and **no verdict**. Exercise: empty-form disabled state, a forced
   error→Retry, and the 409-while-finalizing poll. No console errors.
+- [ ] **History (R5):** after a run, the "past practice runs" list on `/practice` shows the new row
+  (`role_label` + `created_at`); clicking it opens the read-only `GrowthFeedbackPanel`.
+- [ ] **Post-decision feedback (R4):** a terminal application card shows "View feedback" → opens
+  `/feedback/[applicationId]` with the panel; a **non-terminal** application card shows **no** link
+  and the page renders the locked `EmptyState` (and the server `403`s if hit directly).
 
 ### Task 9 — erasure cascade entry (TDD — Inc 0 follow-through)
 **Files:** Create `src/admin/app/infra/repositories/practice.py`; Modify
