@@ -57,6 +57,38 @@ async def _seed(redis, *, url="http://py", topic="python", text=_PAGE):
     return store, result
 
 
+class _FlakyFetcher:
+    """Raises for every URL except ``good_url`` (per-source isolation test)."""
+
+    def __init__(self, good_url, text):
+        self._good = good_url
+        self._text = text
+
+    async def fetch(self, url):
+        if url != self._good:
+            raise RuntimeError(f"fetch failed for {url}")
+        return {"text": self._text, "url": url}
+
+
+async def test_ingest_isolates_a_failing_source():
+    """A failing source is counted in `failed` and does NOT abort the batch."""
+    redis = _FakeRedis()
+    store = FakeVectorStore()
+    result = await ingest(
+        "tenant1",
+        [
+            {"topic": "python", "url": "http://bad"},  # fetch raises
+            {"topic": "python", "url": "http://good"},  # still ingested
+        ],
+        fetcher=_FlakyFetcher("http://good", _PAGE),
+        embedder=FakeEmbedder(),
+        store=store,
+        redis=redis,
+    )
+    assert result.failed == 1
+    assert result.ingested > 0  # the good source after the failure still ingested
+
+
 async def test_embed_returns_one_vector_per_text():
     out = await embed(["a", "b"], embedder=FakeEmbedder())
     assert len(out) == 2

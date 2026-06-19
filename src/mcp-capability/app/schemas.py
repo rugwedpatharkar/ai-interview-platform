@@ -16,3 +16,4 @@ class KbSearchResult(BaseModel):
 class IngestResult(BaseModel):
     ingested: int
     skipped: int
+    failed: int = 0

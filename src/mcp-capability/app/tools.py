@@ -110,47 +110,77 @@ async def kb_search(query, topic, owner, *, embedder, store, redis, k=5):
     return result
 
 
+async def _ingest_one(owner, source, *, fetcher, embedder, store, redis):
+    """Ingest one source; returns (ingested, skipped).
+
+    Raises on a fetch/embed/store failure — the caller isolates that per source.
+    """
+    topic, url = source["topic"], source["url"]
+    collection = _collection(owner, topic)
+    seen_key = f"kb:seen:{collection}"
+    page = await fetcher.fetch(url)
+    ids, texts, payloads = [], [], []
+    seen_this_batch = set()
+    skipped = 0
+    for piece in _chunk(page["text"]):
+        digest = content_hash(piece)
+        # Dedup within the page too: the seen-set is only written after the loop, so
+        # a chunk repeated in one page would otherwise be embedded + upserted twice.
+        if digest in seen_this_batch or await redis.sismember(seen_key, digest):
+            skipped += 1
+            continue
+        seen_this_batch.add(digest)
+        ids.append(str(uuid.uuid5(uuid.NAMESPACE_URL, digest)))
+        texts.append(piece)
+        payloads.append(
+            {
+                "chunk": piece,
+                "source": {"url": url, "topic": topic},
+                "content_hash": digest,
+                "owner": owner,
+                "fetched_at": datetime.now(UTC).isoformat(),
+            }
+        )
+    if not texts:
+        return 0, skipped
+    vectors = await embedder.embed(texts)
+    await store.upsert(collection, ids, vectors, payloads)
+    for payload in payloads:
+        await redis.sadd(seen_key, payload["content_hash"])
+    await redis.expire(seen_key, _SEEN_TTL_SECONDS)
+    # Bump the version so a cached kb_search for this (owner, topic) misses and
+    # re-reads the now-larger collection (closes the stale-after-ingest window).
+    await redis.incr(_version_key(owner, topic))
+    return len(texts), skipped
+
+
 async def ingest(owner, sources, *, fetcher, embedder, store, redis):
-    """Fetch -> chunk -> content-hash dedup -> embed -> upsert + provenance.
+    """Fetch -> chunk -> content-hash dedup -> embed -> upsert + provenance, per source.
 
     Idempotent: a chunk whose content_hash is already in the per-collection seen-set is
-    skipped, so re-crawling a source upserts nothing new.
+    skipped, so re-crawling a source upserts nothing new. Each source is isolated — a
+    single failing source (bad URL, fetch/embed/store error) is logged and counted in
+    ``failed`` without aborting the rest of the batch (BE-#11).
     """
-    ingested = skipped = 0
+    ingested = skipped = failed = 0
     for source in sources:
-        topic, url = source["topic"], source["url"]
-        collection = _collection(owner, topic)
-        seen_key = f"kb:seen:{collection}"
-        page = await fetcher.fetch(url)
-        ids, texts, payloads = [], [], []
-        seen_this_batch = set()
-        for piece in _chunk(page["text"]):
-            digest = content_hash(piece)
-            # Dedup within the page too: the seen-set is only written after the loop, so
-            # a chunk repeated in one page would otherwise be embedded + upserted twice.
-            if digest in seen_this_batch or await redis.sismember(seen_key, digest):
-                skipped += 1
-                continue
-            seen_this_batch.add(digest)
-            ids.append(str(uuid.uuid5(uuid.NAMESPACE_URL, digest)))
-            texts.append(piece)
-            payloads.append(
-                {
-                    "chunk": piece,
-                    "source": {"url": url, "topic": topic},
-                    "content_hash": digest,
-                    "owner": owner,
-                    "fetched_at": datetime.now(UTC).isoformat(),
-                }
+        try:
+            one_ingested, one_skipped = await _ingest_one(
+                owner,
+                source,
+                fetcher=fetcher,
+                embedder=embedder,
+                store=store,
+                redis=redis,
             )
-        if texts:
-            vectors = await embedder.embed(texts)
-            await store.upsert(collection, ids, vectors, payloads)
-            for payload in payloads:
-                await redis.sadd(seen_key, payload["content_hash"])
-            await redis.expire(seen_key, _SEEN_TTL_SECONDS)
-            # Bump the version so a cached kb_search for this (owner, topic) misses and
-            # re-reads the now-larger collection (closes the stale-after-ingest window).
-            await redis.incr(_version_key(owner, topic))
-            ingested += len(texts)
-    return IngestResult(ingested=ingested, skipped=skipped)
+            ingested += one_ingested
+            skipped += one_skipped
+        except Exception as exc:
+            failed += 1
+            log.warning(
+                "ingest: source failed topic={} url={}: {}",
+                source.get("topic"),
+                source.get("url"),
+                exc,
+            )
+    return IngestResult(ingested=ingested, skipped=skipped, failed=failed)
