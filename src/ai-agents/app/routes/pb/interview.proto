@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package aiagents.interview.v1;
+
+// InterviewService — candidate-facing live interview turns + proctoring + RTC token.
+// Routes are thin: each RPC authenticates the caller from access-token metadata and
+// calls an app/resources function (ownership/state checks live in the resource).
+service InterviewService {
+  rpc StartInterview(StartInterviewRequest) returns (QuestionResponse);
+  rpc SubmitTurn(SubmitTurnRequest) returns (TurnResponse);
+  rpc RecordProctorEvents(ProctorEventsRequest) returns (ProctorAccepted);
+  rpc RtcToken(RtcTokenRequest) returns (RtcTokenResponse);
+}
+
+message StartInterviewRequest {
+  string application_id = 1;
+}
+
+message QuestionResponse {
+  string question = 1;
+}
+
+message SubmitTurnRequest {
+  string application_id = 1;
+  string answer = 2;
+}
+
+message TurnResponse {
+  bool done = 1;
+  string question = 2;  // empty when done
+}
+
+message ProctorEvent {
+  string type = 1;       // ProctoringEventType; server assigns severity
+  string at = 2;         // client ISO timestamp (advisory)
+  string meta_json = 3;  // optional JSON object, "" when absent
+}
+
+message ProctorEventsRequest {
+  string application_id = 1;
+  repeated ProctorEvent events = 2;
+}
+
+message ProctorAccepted {
+  int32 accepted = 1;
+}
+
+message RtcTokenRequest {
+  string application_id = 1;
+}
+
+message RtcTokenResponse {
+  string url = 1;
+  string token = 2;
+  string room = 3;
+}

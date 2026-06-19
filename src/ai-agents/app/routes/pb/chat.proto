@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package aiagents.chat.v1;
+
+// ChatService — recruiting-assistant chat. Server-streaming preserves the live
+// token UX the SSE endpoint had: token deltas stream as `text`, then `citation`s,
+// then `done`. A mid-stream LLM failure arrives as an `error` event (the stream
+// still ends cleanly); auth/validation failures abort before the stream starts.
+service ChatService {
+  rpc Chat(ChatRequest) returns (stream ChatEvent);
+}
+
+message ChatMessage {
+  string role = 1;
+  string content = 2;
+}
+
+message ChatRequest {
+  repeated ChatMessage messages = 1;
+}
+
+message Citation {
+  string url = 1;
+  string topic = 2;
+  string snippet = 3;
+}
+
+message Done {}
+
+message ChatEvent {
+  oneof event {
+    string text = 1;        // a token delta
+    Citation citation = 2;  // a source citation
+    Done done = 3;          // stream completed OK
+    string error = 4;       // mid-stream failure detail
+  }
+}

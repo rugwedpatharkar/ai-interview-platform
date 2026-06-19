@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package aiagents.jd.v1;
+
+// JdService — recruiter-only JD drafting from an untrusted brief.
+service JdService {
+  rpc ImproveJd(ImproveJdRequest) returns (JdResponse);
+}
+
+message ImproveJdRequest {
+  string brief = 1;
+}
+
+message JdResponse {
+  string jd_text = 1;
+  repeated string suggestions = 2;
+}

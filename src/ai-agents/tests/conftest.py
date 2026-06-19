@@ -112,6 +112,7 @@ def fake_data():
             self.saved_interviews = {}
             self.saved_match_results = []
             self.saved_question_plans = {}
+            self.saved_proctoring = []
             self.status_calls = []
             self.applicant_calls = []
 
@@ -141,6 +142,9 @@ def fake_data():
 
         async def save_interview(self, application_id, doc):
             self.saved_interviews[application_id] = doc
+
+        async def save_proctoring_events(self, application_id, comp_id, docs):
+            self.saved_proctoring.append((application_id, comp_id, docs))
 
         async def get_profile(self, user_id):
             return self._profile
