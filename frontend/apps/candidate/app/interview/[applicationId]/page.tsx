@@ -94,7 +94,7 @@ export default function InterviewPage() {
   useEffect(() => {
     if (phase !== "active" || !proctorConsented) return;
     return startProctoring({
-      send: (events) => proctor.send(applicationId, events),
+      send: (events, keepalive) => proctor.send(applicationId, events, keepalive),
     });
   }, [phase, proctorConsented, applicationId]);
 

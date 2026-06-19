@@ -27,7 +27,10 @@ export function createJdClient(baseUrl: string, store: TokenStore) {
       const body = (await res.json().catch(() => null)) as { detail?: string } | null;
       throw new HttpError(res.status, body?.detail ?? `Request failed (${res.status})`, body?.detail);
     }
-    return (await res.json()) as JdDraft;
+    const data = await res.json().catch(() => {
+      throw new HttpError(502, "Malformed response from server");
+    });
+    return data as JdDraft;
   }
 
   return { improve };

@@ -2,6 +2,7 @@
 
 import { type ReactNode, useState } from "react";
 
+import { Alert } from "./alert.js";
 import { Button } from "./button.js";
 import {
   Dialog,
@@ -27,28 +28,54 @@ export function ConfirmDialog({
   confirmLabel?: string;
   destructive?: boolean;
   busy?: boolean;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }) {
-  // Controlled so the dialog closes the moment the action fires — a settled mutation
-  // can't be re-confirmed (no accidental double-submit of decisions / overrides / erase).
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleConfirm() {
+    setError(null);
+    setPending(true);
+    try {
+      await onConfirm();
+      // Only close on success — keeps the dialog open if onConfirm rejects.
+      setOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  function handleOpenChange(next: boolean) {
+    // Prevent closing while the action is in flight.
+    if (pending) return;
+    if (!next) setError(null);
+    setOpen(next);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogTitle>{title}</DialogTitle>
         {description && <DialogDescription>{description}</DialogDescription>}
+        {error && (
+          <Alert tone="danger" className="mt-4">
+            {error}
+          </Alert>
+        )}
         <div className="mt-6 flex justify-end gap-3">
           <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" disabled={pending}>
+              Cancel
+            </Button>
           </DialogClose>
           <Button
             variant={destructive ? "destructive" : "default"}
-            onClick={() => {
-              setOpen(false);
-              onConfirm();
-            }}
-            loading={busy}
+            onClick={() => void handleConfirm()}
+            loading={busy || pending}
           >
             {confirmLabel}
           </Button>

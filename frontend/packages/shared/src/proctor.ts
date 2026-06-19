@@ -2,6 +2,8 @@
 // interview. Mirrors the backend catalog (ai-agents app/model/proctoring.py). SIGNALS
 // ONLY — no camera/mic frames or audio ever leave the device. Advisory: the backend
 // records flags for human review and never blocks the interview.
+import { authedFetch, restAuthFor } from "./authed-fetch.js";
+import { HttpError } from "./errors.js";
 import type { TokenStore } from "./tokens.js";
 
 // D (device/behavior) signal types shipped in this slice. B (visual) + C (audio) types
@@ -22,33 +24,58 @@ export interface ProctorEvent {
   meta?: Record<string, unknown>;
 }
 
+// Max body size for a single batch (64 KiB). keepalive fetches are capped at 64 KB by
+// the browser; chunking ensures we never silently lose events at the unload flush.
+const KEEPALIVE_LIMIT = 64 * 1024;
+
 export function createProctorClient(baseUrl: string, store: TokenStore) {
-  async function send(applicationId: string, events: ProctorEvent[]): Promise<void> {
+  const auth = restAuthFor(store);
+  const url = `${baseUrl}/interview/`;
+
+  // Best-effort + non-blocking: a proctoring failure must NEVER interrupt the interview.
+  // On a transient failure (network / 5xx) the runtime re-queues the batch for retry.
+  // On a permanent failure (4xx) the batch is dropped — re-queuing a definitely-broken
+  // payload would loop forever and confuse the retry budget.
+  async function send(
+    applicationId: string,
+    events: ProctorEvent[],
+    keepalive = false,
+  ): Promise<void> {
     if (events.length === 0) return;
-    const access = store.get()?.access;
-    // Best-effort + non-blocking: a proctoring failure must NEVER interrupt the interview
-    // (the runtime sends detached), but it must be OBSERVABLE and must NOT lose signals.
-    // So on a network error or a non-OK response we warn and throw — the runtime catches the
-    // rejection and re-queues the batch for the next flush. `keepalive` lets the final flush
-    // survive a page unload.
+    const body = JSON.stringify({ events });
+
+    // Chunk oversized batches so each fetch stays within the keepalive 64 KiB limit.
+    if (keepalive && new Blob([body]).size > KEEPALIVE_LIMIT) {
+      const mid = Math.ceil(events.length / 2);
+      await send(applicationId, events.slice(0, mid), keepalive);
+      await send(applicationId, events.slice(mid), keepalive);
+      return;
+    }
+
     let res: Response;
     try {
-      res = await fetch(`${baseUrl}/interview/${applicationId}/proctor`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          ...(access ? { authorization: `Bearer ${access}` } : {}),
+      res = await authedFetch(
+        `${url}${applicationId}/proctor`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body,
+          ...(keepalive ? { keepalive: true } : {}),
         },
-        body: JSON.stringify({ events }),
-        keepalive: true,
-      });
+        auth,
+      );
     } catch (err) {
       console.warn("proctor: signal batch send failed (network), will retry", err);
       throw err;
     }
     if (!res.ok) {
+      // Permanent 4xx: the payload is definitely broken — drop it rather than retrying.
+      if (res.status >= 400 && res.status < 500) {
+        console.warn(`proctor: signal batch permanently rejected (${res.status}), dropping`);
+        return;
+      }
       console.warn(`proctor: signal batch send failed (${res.status}), will retry`);
-      throw new Error(`proctor send failed (${res.status})`);
+      throw new HttpError(res.status, `proctor send failed (${res.status})`);
     }
   }
 

@@ -62,6 +62,10 @@ export function restAuthFor(store: TokenStore): RestAuthContext {
   };
 }
 
+// Sentinel: a transient (5xx / network / malformed-body) refresh failure must NOT clear
+// the store or call onAuthLost — only a genuine auth rejection should.
+class TransientRefreshError extends Error {}
+
 async function refresh(ctx: RestAuthContext): Promise<boolean> {
   let pending = inflightByStore.get(ctx.store);
   if (pending) return pending;
@@ -82,12 +86,29 @@ async function refresh(ctx: RestAuthContext): Promise<boolean> {
           method: "POST",
           credentials: "include",
         });
-        if (!res.ok) throw new Error("cookie refresh failed");
-        const data = (await res.json()) as { access_token: string };
+        // 5xx / network blip: leave the store intact, let the 401 surface to the caller.
+        if (!res.ok) {
+          if (res.status >= 500) throw new TransientRefreshError(`cookie refresh transient (${res.status})`);
+          // 4xx = genuine auth rejection — fall through to clear + redirect.
+          throw new Error(`cookie refresh rejected (${res.status})`);
+        }
+        // A non-JSON body on a 200 is a proxy/CDN error, treat as transient.
+        const data = await res.json().catch(() => {
+          throw new TransientRefreshError("cookie refresh: malformed response body");
+        }) as { access_token?: unknown };
+        // A well-formed response without a valid token is a genuine auth failure.
+        if (typeof data.access_token !== "string" || !data.access_token) {
+          throw new Error("cookie refresh: missing access_token");
+        }
         ctx.store.set({ access: data.access_token, refresh: "" });
       }
       return true;
-    } catch {
+    } catch (err) {
+      if (err instanceof TransientRefreshError) {
+        // Transient failure: keep the store, signal the caller (returns false, 401 surfaces).
+        console.warn("proctor/authedFetch: transient refresh failure, store preserved", err.message);
+        return false;
+      }
       ctx.store.clear();
       ctx.onAuthLost();
       return false;

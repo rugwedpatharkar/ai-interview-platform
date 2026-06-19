@@ -12,7 +12,7 @@ import {
   LoadingState,
   toast,
 } from "@ip/ui";
-import { HttpError, errorMessage, isNotFound, useAuthedQuery, useRequireAuth } from "@ip/shared";
+import { Code, ConnectError, HttpError, errorMessage, isNotFound, useAuthedQuery, useRequireAuth } from "@ip/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -20,16 +20,9 @@ import { useEffect, useState } from "react";
 
 import { useAuth } from "../../../lib/auth";
 
-// gRPC PermissionDenied is Code 7; the REST path would surface a 403. `@connectrpc`'s
-// Code enum isn't a direct dep here, so classify structurally at this error boundary.
 function isForbidden(err: unknown): boolean {
   if (err instanceof HttpError) return err.status === 403;
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    (err as { name?: string }).name === "ConnectError" &&
-    (err as { code?: number }).code === 7
-  );
+  return err instanceof ConnectError && err.code === Code.PermissionDenied;
 }
 
 export default function PublicJobPage() {

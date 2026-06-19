@@ -16,6 +16,9 @@ export function createAuthedTransport(
 ) {
   let inflight: Promise<boolean> | null = null;
 
+  // Sentinel for transient refresh errors that must not clear the store.
+  class TransientRefreshError extends Error {}
+
   async function refresh(): Promise<boolean> {
     inflight ??= (async () => {
       try {
@@ -35,12 +38,27 @@ export function createAuthedTransport(
             method: "POST",
             credentials: "include",
           });
-          if (!res.ok) throw new Error("cookie refresh failed");
-          const data = (await res.json()) as { access_token: string };
+          // 5xx / network blip: keep the store; let the RPC failure surface.
+          if (!res.ok) {
+            if (res.status >= 500) throw new TransientRefreshError(`cookie refresh transient (${res.status})`);
+            throw new Error(`cookie refresh rejected (${res.status})`);
+          }
+          // A non-JSON body on a 200 is a proxy/CDN error, treat as transient.
+          const data = await res.json().catch(() => {
+            throw new TransientRefreshError("cookie refresh: malformed response body");
+          }) as { access_token?: unknown };
+          // A valid response missing the token is a genuine auth failure.
+          if (typeof data.access_token !== "string" || !data.access_token) {
+            throw new Error("cookie refresh: missing access_token");
+          }
           store.set({ access: data.access_token, refresh: "" });
         }
         return true;
-      } catch {
+      } catch (err) {
+        if (err instanceof TransientRefreshError) {
+          console.warn("transport: transient refresh failure, store preserved", (err as Error).message);
+          return false;
+        }
         store.clear();
         onAuthLost();
         return false;

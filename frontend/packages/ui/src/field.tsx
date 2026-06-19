@@ -1,4 +1,10 @@
-import type { ReactNode } from "react";
+import {
+  type ReactElement,
+  type ReactNode,
+  cloneElement,
+  isValidElement,
+  useId,
+} from "react";
 
 import { Label } from "./label.js";
 
@@ -15,12 +21,28 @@ export function Field({
   hint?: string;
   children: ReactNode;
 }) {
+  const uid = useId();
+  const errorId = error ? `${uid}-error` : undefined;
+
+  // Wire aria-describedby onto the direct child input when there's an error, so screen
+  // readers announce the error without consumers needing manual wiring.
+  const input =
+    errorId && isValidElement(children)
+      ? cloneElement(children as ReactElement<{ "aria-describedby"?: string }>, {
+          "aria-describedby": errorId,
+        })
+      : children;
+
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={htmlFor}>{label}</Label>
-      {children}
+      {input}
       {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && (
+        <p id={errorId} className="text-sm text-danger" role="alert" aria-live="polite">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

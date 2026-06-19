@@ -6,7 +6,9 @@
 import type { ProctorEvent, ProctorEventType } from "./proctor.js";
 
 export interface ProctorRuntimeOptions {
-  send: (events: ProctorEvent[]) => void | Promise<void>;
+  // `keepalive` is true only on the final unload flush so the request survives page
+  // teardown. Interval flushes omit it (defaults false) to stay within the 64 KB limit.
+  send: (events: ProctorEvent[], keepalive?: boolean) => void | Promise<void>;
   flushMs?: number; // batch flush cadence (default 5000ms)
   pasteThreshold?: number; // chars that make a paste "large" (default 200)
 }
@@ -20,14 +22,14 @@ export function startProctoring(opts: ProctorRuntimeOptions): () => void {
     queue.push({ type, at: new Date().toISOString(), meta });
   };
 
-  const flush = () => {
+  const flush = (keepalive = false) => {
     if (queue.length === 0) return;
     const batch = queue;
     queue = [];
-    // Detached so a slow/failing send never blocks the interview. On failure re-queue the
-    // batch (ahead of anything emitted meanwhile, preserving rough order) so the next flush
-    // retries — proctor signals are advisory but we don't silently drop them.
-    void Promise.resolve(opts.send(batch)).catch(() => {
+    // Detached so a slow/failing send never blocks the interview. On a transient failure
+    // re-queue the batch (ahead of anything emitted meanwhile, preserving rough order) so
+    // the next flush retries. Permanent 4xx drops are handled inside `send` itself.
+    void Promise.resolve(opts.send(batch, keepalive)).catch(() => {
       queue = [...batch, ...queue];
     });
   };
@@ -106,6 +108,6 @@ export function startProctoring(opts: ProctorRuntimeOptions): () => void {
     document.removeEventListener("keydown", onKeydown);
     window.clearInterval(pollTimer);
     window.clearInterval(flushTimer);
-    flush(); // send the tail
+    flush(true); // final unload flush — keepalive so it survives page teardown
   };
 }

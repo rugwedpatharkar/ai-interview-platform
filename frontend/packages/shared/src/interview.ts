@@ -27,7 +27,10 @@ export function makeInterviewClient(baseUrl: string, store: TokenStore) {
       const errBody = (await res.json().catch(() => null)) as { detail?: string } | null;
       throw new HttpError(res.status, errBody?.detail ?? `Request failed (${res.status})`, errBody?.detail);
     }
-    return (await res.json()) as T;
+    const data = await res.json().catch(() => {
+      throw new HttpError(502, "Malformed response from server");
+    });
+    return data as T;
   }
 
   return {
