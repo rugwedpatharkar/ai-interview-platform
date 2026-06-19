@@ -271,6 +271,32 @@ async def invite_recruiter(
     }
 
 
+async def resend_verification(
+    email, *, users, tokens, notifier, nonces=None, limiter=None, ip=None
+):
+    """Re-send the email-verification link.
+
+    Rate-limited by IP when `limiter` and `ip` are provided. Always returns success
+    so callers cannot enumerate registered addresses or verification status.
+    """
+    if limiter is not None and ip is not None:
+        s = get_settings()
+        hit = await limiter.hit(
+            f"resend:ip:{ip}", s.resend_limit, s.resend_window_seconds
+        )
+        if not hit.allowed:
+            log.warning("resend_verification throttled: ip={}", ip)
+            raise RateLimitedError(hit.retry_after)
+    email = email.strip().lower()
+    user = await users.get_by_email(email)
+    if user and not user.get("email_verified"):
+        await _send_verification(notifier, tokens, str(user["_id"]), email, nonces)
+        log.info("resend_verification: sent to existing unverified account")
+    else:
+        log.info("resend_verification: no-op (unknown or already-verified)")
+    return {"ok": True}
+
+
 async def forgot_password(email, *, users, tokens, notifier, nonces=None):
     email = email.strip().lower()  # normalize so a case/space variant still resolves
     user = await users.get_by_email(email)

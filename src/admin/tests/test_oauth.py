@@ -8,6 +8,7 @@ from starlette.testclient import TestClient
 
 from app.config import get_settings
 from app.errors import InvalidTokenError, RateLimitedError
+from app.infra.notifier import LoggingNotifier
 from app.infra.oauth import FakeOAuthClient, HttpOAuthClient
 from app.model.auth import User
 from app.resources.auth import oauth_login
@@ -145,6 +146,7 @@ def _oauth_app(
             "states": _FakeStates([valid_state]),
             "redis": fakes["redis"],
             "limiter": RateLimiter(fakes["redis"]),
+            "notifier": LoggingNotifier(),
             "audit": fakes["audit"],
             "trusted_proxy": False,
             "refresh_ttl_seconds": 60,
@@ -303,3 +305,25 @@ def test_callback_keeps_refresh_in_cookie_not_url(fakes):
     assert "samesite=lax" in cookie.lower()
     assert resp.headers["cache-control"] == "no-store"
     assert resp.headers["referrer-policy"] == "no-referrer"
+
+
+# ---------------------------------------------------------------------------
+# POST /auth/resend-verification
+# ---------------------------------------------------------------------------
+
+
+def test_resend_verification_returns_204(fakes):
+    client = TestClient(_oauth_app(fakes))
+    resp = client.post("/auth/resend-verification", json={"email": "anyone@x.com"})
+    assert resp.status_code == 204
+
+
+def test_resend_verification_rate_limited(fakes):
+    # Fill the per-IP bucket then assert 429.
+    client = TestClient(_oauth_app(fakes))
+    limit = get_settings().resend_limit
+    for _ in range(limit):
+        client.post("/auth/resend-verification", json={"email": "x@x.com"})
+    resp = client.post("/auth/resend-verification", json={"email": "x@x.com"})
+    assert resp.status_code == 429
+    assert "Retry-After" in resp.headers

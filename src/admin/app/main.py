@@ -52,11 +52,16 @@ def _token_service(s):
 
 
 def _oauth_dispatcher(grpc_app, oauth_app):
-    """Route /auth/oauth/* to the Starlette OAuth app; all else to the gRPC-web app."""
+    """Route /auth/* to the Starlette OAuth app; all else to the gRPC-web app.
+
+    gRPC paths are /admin.* — /auth/* is safe to route to Starlette entirely so any
+    future /auth/ REST endpoint (e.g. /auth/resend-verification) lands here without
+    a per-path update.
+    """
 
     async def dispatch(scope, receive, send):
         path = scope.get("path", "")
-        if scope["type"] == "http" and path.startswith("/auth/oauth/"):
+        if scope["type"] == "http" and path.startswith("/auth/"):
             await oauth_app(scope, receive, send)
         else:
             await grpc_app(scope, receive, send)
@@ -109,7 +114,7 @@ async def serve() -> None:
         timeout_seconds=s.grpc_timeout_seconds,
         trusted_proxy=s.trusted_proxy,
     )
-    # SSO rides on the same ASGI app: /auth/oauth/* → Starlette OAuth, else → gRPC-web.
+    # SSO rides on the same ASGI app: /auth/* → Starlette OAuth, else → gRPC-web.
     oauth_app = create_oauth_app(
         {
             "oauth_client": HttpOAuthClient(s.oauth_providers),
@@ -117,8 +122,10 @@ async def serve() -> None:
             "tokens": _token_service(s),
             "sessions": RefreshSessionStore(redis),
             "states": SingleUseTokenStore(redis, namespace="oauth_state"),
+            "nonces": SingleUseTokenStore(redis, namespace="email_nonce"),
             "redis": redis,
             "limiter": RateLimiter(redis),
+            "notifier": notifier,
             "audit": AuditLogRepository(mongo.db),
             "trusted_proxy": s.trusted_proxy,
             "refresh_ttl_seconds": s.refresh_token_minutes * 60,

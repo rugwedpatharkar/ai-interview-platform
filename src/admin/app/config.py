@@ -37,6 +37,8 @@ class Settings(BaseServiceSettings):
     oauth_window_seconds: int = Field(default=900, gt=0)
     refresh_limit: int = Field(default=30, gt=0)
     refresh_window_seconds: int = Field(default=900, gt=0)
+    resend_limit: int = Field(default=5, gt=0)
+    resend_window_seconds: int = Field(default=900, gt=0)
     # Serves gRPC-web over HTTP (browser reaches it directly; no proxy). See
     # app/routes/grpcweb.py and docs/superpowers/plans/DEPLOYMENT.md.
     http_host: str = "0.0.0.0"  # noqa: S104 — containerized server binds all interfaces

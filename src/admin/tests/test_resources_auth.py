@@ -576,3 +576,92 @@ async def test_reset_password_changes_pw_and_revokes_sessions(fakes):
         refresh_ttl_seconds=100,
     )
     assert relogin["access_token"]
+
+
+# ---------------------------------------------------------------------------
+# resend_verification
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_resend_verification_sends_to_unverified_user(fakes):
+    s = _services(fakes)
+    await auth.register_candidate(
+        "unverified@x.com",
+        "pw123456",
+        users=s["users"],
+        tokens=s["tokens"],
+        notifier=s["notifier"],
+    )
+    before = len(s["notifier"].sent)
+    result = await auth.resend_verification(
+        "unverified@x.com",
+        users=s["users"],
+        tokens=s["tokens"],
+        notifier=s["notifier"],
+    )
+    assert result["ok"] is True
+    assert len(s["notifier"].sent) == before + 1
+    assert s["notifier"].sent[-1][0] == "unverified@x.com"
+
+
+@pytest.mark.asyncio
+async def test_resend_verification_no_send_for_verified_user(fakes):
+    s = _services(fakes)
+    await auth.register_candidate(
+        "verified@x.com",
+        "pw123456",
+        users=s["users"],
+        tokens=s["tokens"],
+        notifier=s["notifier"],
+    )
+    # Manually mark as verified.
+    user = await fakes["users"].get_by_email("verified@x.com")
+    await fakes["users"].set_email_verified(user["_id"])
+    before = len(s["notifier"].sent)
+    result = await auth.resend_verification(
+        "verified@x.com",
+        users=s["users"],
+        tokens=s["tokens"],
+        notifier=s["notifier"],
+    )
+    assert result["ok"] is True
+    assert len(s["notifier"].sent) == before  # no additional email
+
+
+@pytest.mark.asyncio
+async def test_resend_verification_no_send_for_unknown_email(fakes):
+    s = _services(fakes)
+    before = len(s["notifier"].sent)
+    result = await auth.resend_verification(
+        "ghost@x.com",
+        users=s["users"],
+        tokens=s["tokens"],
+        notifier=s["notifier"],
+    )
+    assert result["ok"] is True
+    assert len(s["notifier"].sent) == before  # no email sent
+
+
+@pytest.mark.asyncio
+async def test_resend_verification_rate_limited(fakes):
+    s = _services(fakes)
+    await auth.register_candidate(
+        "rl@x.com",
+        "pw123456",
+        users=s["users"],
+        tokens=s["tokens"],
+        notifier=s["notifier"],
+    )
+    kw = {
+        "users": s["users"],
+        "tokens": s["tokens"],
+        "notifier": s["notifier"],
+        "limiter": s["limiter"],
+        "ip": "7.7.7.7",
+    }
+    s_cfg = get_settings()
+    for _ in range(s_cfg.resend_limit):
+        await auth.resend_verification("rl@x.com", **kw)
+    with pytest.raises(RateLimitedError):
+        await auth.resend_verification("rl@x.com", **kw)
