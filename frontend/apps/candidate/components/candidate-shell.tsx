@@ -23,6 +23,8 @@ import { useAuth } from "../lib/auth";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
+  { href: "/saved", label: "Saved" },
+  { href: "/alerts", label: "Alerts" },
   { href: "/profile", label: "Profile" },
   { href: "/account", label: "Account" },
 ] as const;
