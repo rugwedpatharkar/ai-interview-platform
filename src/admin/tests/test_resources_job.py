@@ -1,6 +1,6 @@
 import pytest
 
-from app.errors import ForbiddenError, NotFoundError, ValidationError
+from app.errors import ForbiddenError, NotFoundError
 from app.resources import job
 
 ADMIN = {"id": "u1", "role": "company_admin", "comp_id": "c1"}
@@ -50,14 +50,19 @@ async def test_get_public_job_draft_is_not_found(fakes):
 
 
 @pytest.mark.asyncio
-async def test_publish_emits_event_and_blocks_double(fakes):
+async def test_publish_emits_event_and_is_idempotent(fakes):
     created = await job.create_job(ADMIN, "Eng", "x", jobs=fakes["jobs"])
     out = await job.publish_job(
         ADMIN, created["job_id"], jobs=fakes["jobs"], publisher=fakes["publisher"]
     )
     assert out["status"] == "published"
     assert fakes["publisher"].published[0][0] == "job.published"
-    with pytest.raises(ValidationError):
-        await job.publish_job(
-            ADMIN, created["job_id"], jobs=fakes["jobs"], publisher=fakes["publisher"]
-        )
+    # Re-publishing a published job is idempotent recovery — it re-emits job.published
+    # (the handler rebuilds anything a prior publish-after-flip failure left missing)
+    # instead of erroring, so a bankless published job is never stranded. BE-#8.
+    out2 = await job.publish_job(
+        ADMIN, created["job_id"], jobs=fakes["jobs"], publisher=fakes["publisher"]
+    )
+    assert out2["status"] == "published"
+    keys = [e[0] for e in fakes["publisher"].published]
+    assert keys == ["job.published", "job.published"]

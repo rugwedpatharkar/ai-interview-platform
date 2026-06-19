@@ -72,9 +72,13 @@ async def publish_job(identity, job_id, *, jobs, publisher):
     job = await jobs.get_scoped(job_id, identity["comp_id"])
     if job is None:
         raise NotFoundError("Job not found")
-    if job["status"] != "draft":
-        raise ValidationError("Only a draft job can be published")
-    await jobs.set_status(job_id, identity["comp_id"], "published")
+    if job["status"] not in ("draft", "published"):
+        raise ValidationError("Only a draft or published job can be published")
+    if job["status"] == "draft":
+        await jobs.set_status(job_id, identity["comp_id"], "published")
+    # Emit (or re-emit) job.published. The handler is idempotent — split bank/plan
+    # guards — so re-publishing an already-published job rebuilds anything a prior
+    # publish-after-flip failure left missing, closing the bankless-job strand. BE-#8.
     await publisher.publish(
         "job.published", {"job_id": job_id, "comp_id": identity["comp_id"]}
     )
