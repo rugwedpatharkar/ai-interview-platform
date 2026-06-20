@@ -13,8 +13,10 @@ from app.infra.factory import get_llm, get_scoring_llm
 from app.infra.mcp_capability import McpCapability
 from app.infra.mcp_data import McpDataGateway
 from app.infra.mcp_session import McpSessionManager
+from app.infra.practice_sessions import RedisPracticeStore
 from app.infra.sessions import RedisInterviewStore
 from app.resources.interview_host import abandon_stale
+from app.routes.practice_api import create_practice_app
 from app.routes.web import create_grpc_app
 from app.routes.worker import EVENTS, make_dispatch
 
@@ -31,19 +33,23 @@ def _token_service(s):
     )
 
 
-def _grpc_dispatcher(grpc_app, fallback):
-    """Route /aiagents.* (gRPC paths) to the gRPC-web app; all else to `fallback`.
+def _dispatcher(grpc_app, practice_app, health):
+    """Route by path prefix: gRPC-web (/aiagents.*), practice REST (/practice...),
+    else the liveness probe.
 
-    gRPC-web RPC paths are /<pkg>.<Service>/<Method> and our packages are all
-    `aiagents.*`, so the prefix is unambiguous; the gRPC app serves its own CORS
-    preflight. Everything else (just /health) goes to the fallback.
+    gRPC-web RPC paths are /<pkg>.<Service>/<Method> with package `aiagents.*`, so the
+    prefix is unambiguous; the gRPC app serves its own CORS preflight. Practice is the
+    one REST surface left after G6 (the rest of ai-agents is gRPC).
     """
 
     async def dispatch(scope, receive, send):
-        if scope["type"] == "http" and scope.get("path", "").startswith("/aiagents."):
+        path = scope.get("path", "") if scope["type"] == "http" else ""
+        if path.startswith("/aiagents."):
             await grpc_app(scope, receive, send)
+        elif path.startswith("/practice"):
+            await practice_app(scope, receive, send)
         else:
-            await fallback(scope, receive, send)
+            await health(scope, receive, send)
 
     return dispatch
 
@@ -100,6 +106,7 @@ async def serve() -> None:
     log.info("ai-agents workers subscribed to {}", EVENTS)
 
     sessions_store = RedisInterviewStore(redis)
+    practice_store = RedisPracticeStore(redis)
 
     async def run_scheduler():
         while True:
@@ -118,13 +125,16 @@ async def serve() -> None:
         "data": data,
         "capability": capability,
         "sessions": sessions_store,
+        "practice_sessions": practice_store,
         "publisher": publisher,
         "llm": llm,
         "settings": s,
+        "cors_origins": s.cors_allow_origin.split(","),
     }
     # Application traffic is gRPC-web (interview/chat/jd/proctor/rtc) on /aiagents.*,
-    # wrapped in CorrelationIdMiddleware so each RPC carries a correlation_id; all
-    # else is /health. lifespan="off": no FastAPI app, deps are wired here directly.
+    # wrapped in CorrelationIdMiddleware so each RPC carries a correlation_id. Practice
+    # is the one REST surface (/practice...; its own CORS + correlation middleware).
+    # Everything else is /health. lifespan="off": deps are wired here directly.
     grpc_app = CorrelationIdMiddleware(
         create_grpc_app(
             deps,
@@ -132,7 +142,8 @@ async def serve() -> None:
             timeout_seconds=s.grpc_timeout_seconds,
         )
     )
-    api = _grpc_dispatcher(grpc_app, _health_app)
+    practice_app = create_practice_app(deps)
+    api = _dispatcher(grpc_app, practice_app, _health_app)
     config = uvicorn.Config(
         api,
         host=s.http_host,
