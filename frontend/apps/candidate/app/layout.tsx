@@ -20,8 +20,21 @@ const display = Fraunces({
 });
 
 export const metadata = {
-  title: "Candidate · Interview Platform",
-  description: "Apply to roles, take the aptitude test, and interview.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  ),
+  title: "Aptura — Get seen. Get interviewed. Get hired.",
+  description: "Apply to roles, take the proctored interview, and always hear back.",
+  applicationName: "Aptura",
+};
+
+// Next 15: theme-color + colorScheme live in the viewport export, not metadata.
+export const viewport = {
+  colorScheme: "light dark" as const,
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#15161e" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f7f9" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

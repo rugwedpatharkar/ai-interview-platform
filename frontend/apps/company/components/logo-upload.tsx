@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, Avatar, Spinner, buttonVariants, cn } from "@ip/ui";
+import { Alert, Spinner, buttonVariants, cn } from "@ip/ui";
 import { type ChangeEvent, useState } from "react";
 
 import type { PresignLogoResult } from "../app/branding/branding-types";
@@ -44,7 +44,18 @@ export function LogoUpload({
 
   return (
     <div className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-surface-muted/40 p-4">
-      <Avatar name="Logo" src={preview || undefined} size="lg" />
+      {/* Square preview (object-contain) so a logo isn't cropped into a circle. */}
+      {preview ? (
+        <img
+          src={preview}
+          alt="Company logo preview"
+          className="size-12 shrink-0 rounded-md border border-border bg-surface object-contain"
+        />
+      ) : (
+        <div className="grid size-12 shrink-0 place-items-center rounded-md border border-dashed border-border bg-surface text-xs text-muted-foreground">
+          Logo
+        </div>
+      )}
       <div className="flex min-w-0 flex-col gap-1.5">
         <label
           className={cn(

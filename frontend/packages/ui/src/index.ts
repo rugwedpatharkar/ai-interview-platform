@@ -26,7 +26,6 @@ export { Alert, type AlertProps } from "./alert.js";
 export { Skeleton } from "./skeleton.js";
 export { Spinner } from "./spinner.js";
 export { Field } from "./field.js";
-export { Icon, type IconProps } from "./icon.js";
 export { Logo, LogoMark } from "./logo.js";
 export { Avatar, type AvatarProps } from "./avatar.js";
 export { AuthSplitPanel } from "./auth-split-panel.js";

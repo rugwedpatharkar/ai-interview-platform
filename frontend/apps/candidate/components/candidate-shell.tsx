@@ -9,6 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Logo,
   type SidebarNavEntry,
   SidebarShell,
   ThemeToggle,
@@ -126,25 +127,13 @@ export function CandidateShell({ children }: { children: ReactNode }) {
       renderNavItem={renderNavItem}
       renderMobileLink={renderMobileLink}
       brand={
-        <Link
-          href="/"
-          className="mb-4 flex items-center gap-2 px-2 font-display text-lg font-semibold tracking-tight text-foreground"
-        >
-          <span className="text-primary" aria-hidden>
-            ◐
-          </span>
-          Aptura
+        <Link href="/" aria-label="Aptura home" className="mb-4 flex px-2">
+          <Logo size="md" />
         </Link>
       }
       mobileBrand={
-        <Link
-          href="/"
-          className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-foreground lg:hidden"
-        >
-          <span className="text-primary" aria-hidden>
-            ◐
-          </span>
-          Aptura
+        <Link href="/" aria-label="Aptura home" className="flex lg:hidden">
+          <Logo size="sm" />
         </Link>
       }
       sidebarFooter={

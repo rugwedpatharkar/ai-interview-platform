@@ -4,8 +4,8 @@ const markSizes = { sm: "size-6", md: "size-7", lg: "size-9" } as const;
 const textSizes = { sm: "text-sm", md: "text-base", lg: "text-lg" } as const;
 
 /**
- * Brand mark — a rounded Midnight tile with a stylised spark glyph. Standalone,
- * or paired with the wordmark via <Logo>. Pure inline SVG (CSP-safe).
+ * Brand mark — a rounded Midnight tile with the Aptura **aperture/lens** glyph.
+ * Standalone, or paired with the wordmark via <Logo>. Pure inline SVG (CSP-safe).
  */
 export function LogoMark({
   size = "md",
@@ -26,13 +26,21 @@ export function LogoMark({
       <svg
         viewBox="0 0 24 24"
         fill="none"
-        className="size-[62%]"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="size-[64%]"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path
-          d="M12 2.5l1.9 5.2a4 4 0 0 0 2.4 2.4L21.5 12l-5.2 1.9a4 4 0 0 0-2.4 2.4L12 21.5l-1.9-5.2a4 4 0 0 0-2.4-2.4L2.5 12l5.2-1.9a4 4 0 0 0 2.4-2.4L12 2.5z"
-          fill="currentColor"
-        />
+        {/* Aperture/lens — outer ring + six iris blades. */}
+        <circle cx="12" cy="12" r="10" />
+        <path d="M14.31 8l5.74 9.94" />
+        <path d="M9.69 8h11.48" />
+        <path d="M7.38 12l5.74-9.94" />
+        <path d="M9.69 16L3.95 6.06" />
+        <path d="M14.31 16H2.83" />
+        <path d="M16.62 12l-5.74 9.94" />
       </svg>
     </span>
   );

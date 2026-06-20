@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogoMark } from "@ip/ui";
+import { Logo } from "@ip/ui";
 import { COMPANY_HIRE_HREF, FOOTER_TAGLINE } from "../../app/(marketing)/content";
 
 function Column({ title, children }: { title: string; children: React.ReactNode }) {
@@ -19,10 +19,7 @@ export function MarketingFooter() {
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <div className="flex items-center gap-2">
-              <LogoMark />
-              <span className="font-display text-lg font-semibold text-foreground">Aptura</span>
-            </div>
+            <Logo size="lg" />
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">{FOOTER_TAGLINE}</p>
           </div>
           <Column title="Candidates">

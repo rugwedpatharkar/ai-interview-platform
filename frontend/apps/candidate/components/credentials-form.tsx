@@ -61,7 +61,7 @@ export function CredentialsForm({
 
   return (
     <AuthLayout>
-      <Link href="/" className="mb-6 inline-flex" aria-label="Interview Platform home">
+      <Link href="/" className="mb-6 inline-flex" aria-label="Aptura home">
         <Logo size="lg" />
       </Link>
       <Card>
