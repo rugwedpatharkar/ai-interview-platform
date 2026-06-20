@@ -1,6 +1,16 @@
 "use client";
 
-import { Alert, ErrorState, LoadingState, Spinner, buttonVariants } from "@ip/ui";
+import {
+  Alert,
+  ErrorState,
+  LoadingState,
+  Spinner,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  buttonVariants,
+} from "@ip/ui";
 import { errorMessage, isNotFound, isTransient, useAuthedQuery } from "@ip/shared";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -8,6 +18,7 @@ import { useParams } from "next/navigation";
 
 import { CompanyShell } from "../../../../../components/company-shell";
 import { ReportView } from "../../../../../components/report-view";
+import { SchedulePanel } from "../../../../../components/schedule-panel";
 import { useAuth } from "../../../../../lib/auth";
 import { USE_MOCK, makeMockIntegrityClient } from "./integrity-client";
 import type { ReportDTO } from "./types";
@@ -83,29 +94,40 @@ export default function ReportPage() {
           Back to job
         </Link>
       </div>
-      {report.isLoading && <LoadingState />}
-      {notReady && (
-        <Alert tone="info">
-          <span className="flex items-center gap-2">
-            <Spinner /> The report is being generated — this updates automatically.
-          </span>
-        </Alert>
-      )}
-      {report.isError && !notReady && (
-        <ErrorState
-          message={errorMessage(report.error)}
-          retry={() => report.refetch()}
-        />
-      )}
-      {report.data && (
-        <ReportView
-          report={toReportDTO(report.data as Record<string, unknown>)}
-          jobId={id}
-          timeline={integrity.data}
-          timelineLoading={integrity.isLoading}
-          timelineError={integrity.isError ? errorMessage(integrity.error) : null}
-        />
-      )}
+      <Tabs defaultValue="report">
+        <TabsList>
+          <TabsTrigger value="report">Report</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
+        </TabsList>
+        <TabsContent value="report">
+          {report.isLoading && <LoadingState />}
+          {notReady && (
+            <Alert tone="info">
+              <span className="flex items-center gap-2">
+                <Spinner /> The report is being generated — this updates automatically.
+              </span>
+            </Alert>
+          )}
+          {report.isError && !notReady && (
+            <ErrorState
+              message={errorMessage(report.error)}
+              retry={() => report.refetch()}
+            />
+          )}
+          {report.data && (
+            <ReportView
+              report={toReportDTO(report.data as Record<string, unknown>)}
+              jobId={id}
+              timeline={integrity.data}
+              timelineLoading={integrity.isLoading}
+              timelineError={integrity.isError ? errorMessage(integrity.error) : null}
+            />
+          )}
+        </TabsContent>
+        <TabsContent value="schedule">
+          <SchedulePanel applicationId={appId} />
+        </TabsContent>
+      </Tabs>
     </CompanyShell>
   );
 }
