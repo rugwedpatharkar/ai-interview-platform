@@ -55,3 +55,16 @@ async def test_output_is_truncated():
 async def test_unsupported_language_raises():
     with pytest.raises(ValueError):
         await run_code("rust", "fn main(){}")
+
+
+@posix_only
+async def test_flooding_output_is_bounded_not_oom():
+    # A child that prints forever returns truncated output and the call completes
+    # promptly (bounded read — the parent never buffers the whole flood).
+    r = await run_code(
+        "python",
+        "import sys\nwhile True: sys.stdout.write('x' * 4096)\n",
+        limits=ExecLimits(output_bytes=1000, cpu_seconds=1, wall_seconds=3.0),
+    )
+    assert len(r.stdout) <= 1000
+    assert r.exit_code != 0  # killed once it blew the output cap

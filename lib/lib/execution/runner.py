@@ -82,6 +82,25 @@ def _truncate(b: bytes, n: int) -> str:
     return b[:n].decode("utf-8", "replace")
 
 
+async def _feed_and_read(proc, stdin: str, cap: int):
+    """Write stdin, then read stdout/stderr BOUNDED to cap+1 bytes each. Bounding the
+    read (vs communicate(), which buffers everything) means a child that floods output
+    can never exhaust the parent's memory."""
+    if proc.stdin is not None:
+        with contextlib.suppress(Exception):
+            proc.stdin.write(stdin.encode())
+            await proc.stdin.drain()
+            proc.stdin.close()
+    out = await proc.stdout.read(cap + 1)
+    if len(out) > cap:
+        # Output exceeded the cap — kill the group now so a flooding child can't keep
+        # producing and can't block the stderr read (its pipe then EOFs immediately).
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(proc.pid, signal.SIGKILL)
+    err = await proc.stderr.read(cap + 1)
+    return out, err
+
+
 async def run_code(
     language: str, source: str, stdin: str = "", *, limits: ExecLimits | None = None
 ) -> ExecResult:
@@ -111,16 +130,19 @@ async def run_code(
         timed_out = False
         try:
             out, err = await asyncio.wait_for(
-                proc.communicate(input=stdin.encode()), timeout=limits.wall_seconds
+                _feed_and_read(proc, stdin, limits.output_bytes),
+                timeout=limits.wall_seconds,
             )
         except TimeoutError:
             timed_out = True
-            with contextlib.suppress(ProcessLookupError):
-                os.killpg(proc.pid, signal.SIGKILL)
-            try:
-                out, err = await proc.communicate()
-            except Exception:
-                out, err = b"", b""
+            out, err = b"", b""
+        # Always SIGKILL the group + reap: the child may still be alive (it timed out,
+        # or it flooded output and is blocked writing to a full pipe after our bounded
+        # read). A bounded read means a runaway printer can never OOM the parent.
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(proc.pid, signal.SIGKILL)
+        with contextlib.suppress(Exception):
+            await asyncio.wait_for(proc.wait(), timeout=1.0)
         time_ms = int((time.monotonic() - t0) * 1000)
         code = proc.returncode if proc.returncode is not None else -1
         return ExecResult(
