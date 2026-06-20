@@ -17,11 +17,13 @@ Running candidate code is the most hostile input on the platform. The isolation 
 | **Code** | CPU (`RLIMIT_CPU`), memory (`RLIMIT_AS`), output/file size (`RLIMIT_FSIZE`), no core dumps (`RLIMIT_CORE=0`), fork-bomb backstop (`RLIMIT_NPROC`) | Task 1 |
 | **Code** | **Scrubbed env** — child gets only `PATH`/`HOME`/`LANG`, never a secret | Task 1 |
 | **Code** | Isolated temp cwd, own session, wall-clock `SIGKILL` of the whole group | Task 1 |
-| **Deploy** | Deny-all-egress `NetworkPolicy` (blocks network — stdlib alone cannot) | Task 9 (yaml + docs) |
+| **Deploy** | Deny-all-egress `NetworkPolicy` (L3/L4 — stdlib alone cannot) | Task 9 (yaml + docs) |
+| **Deploy** | **seccomp profile denying the `socket` syscall family** (syscall-level network denial, **no privilege**) | Task 9 (profile + docs) |
+| **Deploy** | **Unprivileged, non-root** executor (`runAsNonRoot`, `allowPrivilegeEscalation: false`, drop ALL caps) | Task 9 (docs) |
 | **Deploy** | Secrets provided as **env only**, never file mounts the child can read | Task 9 (docs) |
 | **Deploy (optional)** | Run the executor in a dedicated Deployment of the **same image** (no new code), secret-free, deny-egress | Task 9 (note) |
 
-**Open decision (flag at execution):** the baseline above relies on a deploy-time deny-egress `NetworkPolicy` for network isolation. If the operator instead wants **code-level** network denial, that requires Linux network namespaces (`unshare(CLONE_NEWNET)`), which needs the worker to run privileged — a different design. This plan implements the **deploy-layer** posture (recommended); switch to namespaces only if ops rejects the NetworkPolicy approach.
+**Decided (2026-06-20):** network isolation is the **deploy-layer** posture — a deny-egress `NetworkPolicy` **plus a pod seccomp profile that denies the `socket` syscall family**, both on an **unprivileged, non-root** executor. Rejected: code-level Linux network namespaces (`unshare(CLONE_NEWNET)`), because they need a privileged worker — running attacker-controlled code in a privileged process expands the blast radius of any escape far more than the egress it blocks. Seccomp deny-socket gives syscall-level network denial with **no privilege**, strictly better than namespaces. Caveat: `NetworkPolicy` is only enforced by a CNI that supports it (Calico/Cilium, not flannel alone) — verify + assert at deploy (Task 9). Off-k8s, use host egress-firewall rules, never privileged namespaces.
 
 ## Global Constraints
 
@@ -1198,25 +1200,37 @@ Run: `git push origin HEAD:<current-branch>`
 
 ---
 
-## Task 8: Coding-task authoring (seed path) — minimal, optional
+## Task 8: Coding-task authoring — static seed (decided)
 
-> Only needed so `GetCodingTask` returns a real task in a running environment. Authoring a rich task editor is a separate FE+BE effort; this is the minimal seed.
+> Only needed so `GetCodingTask` returns a real task in a running environment. A rich task editor is a separate effort; this ships the deterministic seed.
 
-**Files:** Modify `src/mcp-data` or add an admin seed — **flag at execution which fits.** Two options:
-- **(a) Reuse the ai-agents Aptitude-Setter pattern:** have it also emit a `coding_tasks` doc when a job is published (a `build_coding_task` agent). Larger, LLM-authored.
-- **(b) Static seed:** a one-row `coding_tasks` document inserted by an admin script/migration per job. Smallest; unblocks the FE immediately.
+**Decided (2026-06-20): static seed now; LLM-authoring is a later, gated follow-up (option c below).** Rationale: test cases are correctness-critical — an LLM-written `expected_stdout` silently mis-grades every *correct* solution. Ship the executor + grading against human-verified cases first; the seed also gives the gRPC/FE path a real task to exercise end-to-end.
 
-- [ ] Decide (a) vs (b) with the user. Implement the chosen path with its own TDD + commit. **Default recommendation: (b)** now, (a) as a later enhancement.
+**Files:**
+- Create: `src/admin/scripts/seed_coding_task.py` (a small idempotent script/migration).
+
+- [ ] **Step 1: Write the seed** — idempotent upsert keyed by `job_id`: `coding_tasks.update_one({"job_id": jid}, {"$set": doc}, upsert=True)`, where `doc` is a `CodingTask` with a known problem, **human-verified** `sample_cases` + `hidden_cases`, and any `typed_questions`. Validate the shape through the model first: `CodingTask(**doc)`.
+
+- [ ] **Step 2: Verify end-to-end** — run the seed against a dev DB, then `GetCodingTask` → confirm the DTO returns **sample cases only** (no hidden, no typed `accepted`); `SubmitCoding` with a correct solution → `passed=True`; with a wrong one → `passed=False`.
+
+- [ ] **Step 3: Commit** — `git add src/admin/scripts/seed_coding_task.py && git commit -m "feat(coding): static coding-task seed (A6.8)"`.
+
+### Follow-up (option c) — LLM authoring, gated on a reference solution
+
+> NOT in this plan's critical path — capture as a follow-up issue.
+
+When scaling authoring, extend the ai-agents Aptitude-Setter with a `build_coding_task` agent that emits a `coding_tasks` doc on job publish — **but gate every generated task on verification**: run a known-good reference solution through `lib.execution.run_code` against the task's own `hidden_cases` and **auto-reject the task if the reference solution does not pass all of them**. This reuses the Task 1 executor, so it is cheap only *after* A6 ships. Until that gate exists, LLM-generated tasks must never grade candidates.
 
 ---
 
-## Task 9: Deploy-layer isolation (the network/secret half) — docs + manifest
+## Task 9: Deploy-layer isolation — NetworkPolicy + seccomp + non-root (decided)
 
 **Files:**
 - Create: `deploy/coding-executor-networkpolicy.yaml`
+- Create: `deploy/coding-executor-seccomp.json`
 - Create: `docs/superpowers/plans/A6-EXECUTION-SECURITY.md`
 
-- [ ] **Step 1: Write the NetworkPolicy** — a deny-all-egress policy for the pod(s) that run code execution (block all egress except DNS if strictly needed; the executor needs no network). Example (adjust to the cluster's labels):
+- [ ] **Step 1: Write the NetworkPolicy** — deny-all-egress for the pod(s) that execute code (the executor needs no network). Adjust to the cluster's labels:
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -1230,13 +1244,45 @@ spec:
   egress: []                              # deny all egress — candidate code has no network
 ```
 
-- [ ] **Step 2: Write the security doc** — `A6-EXECUTION-SECURITY.md` capturing: the code-level controls (Task 1), the **hard deploy requirements** ((a) secrets via env only — never file mounts the child can read; (b) deny-egress NetworkPolicy; (c) cgroup mem/PID limits as the authoritative cap over the coarse rlimits), and the **optional hardening**: run the executor in a dedicated Deployment of the **same image** (no new code/dependency), secret-free, deny-egress — the "belt and suspenders" placement. Note the residual risk if these are skipped (filesystem reads, SSRF) and the namespace alternative for code-level network denial.
+- [ ] **Step 2: Write the seccomp profile** (`deploy/coding-executor-seccomp.json`) — deny the socket syscall family so candidate code cannot open any connection, **without privilege**. Targeted denylist over the runtime default (a full default-deny allowlist for a Python interpreter is large/fragile — note it as the stronger long-term option):
 
-- [ ] **Step 3: Commit**
+```json
+{
+  "defaultAction": "SCMP_ACT_ALLOW",
+  "syscalls": [
+    {
+      "names": [
+        "socket", "socketcall", "connect", "bind", "listen",
+        "accept", "accept4", "sendto", "recvfrom", "sendmsg", "recvmsg"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    }
+  ]
+}
+```
+
+- [ ] **Step 3: Pin the Pod securityContext** — document the required executor pod spec: unprivileged, non-root, no caps, seccomp referencing the profile (loaded on nodes via `localhostProfile`):
+
+```yaml
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities: { drop: ["ALL"] }
+  seccompProfile:
+    type: Localhost
+    localhostProfile: coding-executor-seccomp.json
+# + cgroup mem/PID caps via resources.limits — the authoritative limits over the
+#   coarse rlimits the executor sets in code.
+```
+
+- [ ] **Step 4: Write the security doc** — `A6-EXECUTION-SECURITY.md` capturing: the **code-level** controls (Task 1: rlimits + scrubbed env + wall-timeout + process-group kill); the **hard deploy requirements** — (a) deny-egress NetworkPolicy **and** seccomp deny-socket, (b) `runAsNonRoot` + drop-ALL-caps + `allowPrivilegeEscalation: false`, (c) secrets via env only (never file mounts the child can read), (d) cgroup mem/PID limits as the authoritative caps; the **CNI assertion** — NetworkPolicy only bites on Calico/Cilium-class CNIs, so add a deploy/CI check that the policy is applied (off-k8s: host egress-firewall rules); and the **optional hardening** — run the executor in a dedicated Deployment of the same image (no new code), secret-free. Record the rejected alternative (privileged network namespaces) and why.
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git add deploy/coding-executor-networkpolicy.yaml docs/superpowers/plans/A6-EXECUTION-SECURITY.md
-git commit -m "docs(coding): deploy-layer isolation (NetworkPolicy + security model) (A6.9)"
+git add deploy/coding-executor-networkpolicy.yaml deploy/coding-executor-seccomp.json docs/superpowers/plans/A6-EXECUTION-SECURITY.md
+git commit -m "docs(coding): deploy isolation — NetworkPolicy + seccomp + non-root (A6.9)"
 ```
 
 ---
@@ -1264,13 +1310,13 @@ Per `coding-assessment.md`: wire `coding` into `api-client` (the quad), then fli
 - **Contract wired + codegen** → Task 5 (proto/servicer/web/`pnpm gen`). ✅
 - **No new dependency** → executor is stdlib; verified by imports. ✅
 - **Type consistency** → `ExecResult`/`ExecLimits` (Task 1) consumed unchanged in Tasks 3/4; DTO keys (`cases_passed`, `cases_total`, `typed_correct`, `typed_total`, `passed`) identical across resource → servicer → proto. ✅
-- **Open items flagged** → security posture (deploy NetworkPolicy vs namespaces), task authoring (a vs b), funnel gating (out of scope). ✅
+- **Decisions resolved** → network isolation = deny-egress NetworkPolicy + seccomp deny-socket on an unprivileged/non-root executor (Task 9); authoring = static seed now, LLM-authoring deferred + reference-solution-gated (Task 8). Still out of scope: funnel gating on coding results. ✅
 
 ## Execution Handoff
 
-Plan saved to `docs/superpowers/plans/2026-06-20-a6-internal-code-execution.md`. Two execution options:
+Plan saved to `docs/superpowers/plans/2026-06-20-a6-internal-code-execution.md`. **Both open decisions are resolved:** network isolation = deploy-layer NetworkPolicy + seccomp deny-socket on an unprivileged executor (Task 9); authoring = static seed now, LLM-authoring deferred + reference-solution-gated (Task 8). Two execution options:
 
 1. **Subagent-Driven (recommended)** — a fresh subagent per task, review between tasks.
 2. **Inline Execution** — execute tasks in this session with checkpoints.
 
-**Two things to confirm before Task 1:** (a) the security posture — deploy-layer deny-egress NetworkPolicy (this plan) vs code-level namespaces (privileged); (b) task-authoring path (Task 8 — recommend static seed now). Which execution approach, and your call on (a)/(b)?
+Which execution approach?
