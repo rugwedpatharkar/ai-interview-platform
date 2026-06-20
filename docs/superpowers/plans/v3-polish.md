@@ -14,7 +14,7 @@
 - [ ] A1. **Register fix — pull serif off product data.** Keep Fraunces (`font-display`) on the marketing
   landing + page-level titles/greetings ONLY. Revert `font-display` on KPI numbers, table data, badges,
   small labels, section sub-headings → Geist (sans) + `tabular-nums` for figures. (~80 usages audited.)
-- [ ] A2. **Fixed rem type scale for product UI** (no fluid `clamp()` in app screens; clamp stays on the
+- [x] A2. **Fixed rem type scale for product UI** _(verified: app uses fixed Tailwind text-* scale; no clamp() in app components)_ (no fluid `clamp()` in app screens; clamp stays on the
   landing only). Verify/normalize heading sizes to a fixed Tailwind scale.
 - [ ] A3. **Skeletons, not spinners/blank** — add skeleton loaders to: candidate dashboard, recruiter
   dashboard, applicants table, talent, marketplace results, applicant report, messages, notifications.
@@ -32,7 +32,7 @@
 - [ ] B5. **KPI count-up** on dashboard stats (rAF hook + `matchMedia` reduced-motion guard + `tabular-nums`).
 - [x] B6. **Fix existing motion** — `competency-card` linear → `ease-out`; trim `score-ring` 500ms→350ms.
 - [x] B7. **Origin-aware dropdown zoom** (`scale-in` keyframe + Radix transform-origin).
-- [ ] B8. **Route cross-fade** via `template.tsx` (CSS opacity, not framer).
+- [x] B8. **Route cross-fade** via `template.tsx` (CSS opacity, not framer).
 - [x] B9. **Checkbox/radio check-pop** (short scale+fade on the indicator).
 - [x] B10. **Skeleton shimmer** upgrade (directional sweep; pulse as reduced-motion fallback).
 
