@@ -31,6 +31,10 @@ class FakeUserRepo:
         if user_id in self._docs:
             self._docs[user_id]["email_verified"] = True
 
+    async def set_status(self, user_id, status):
+        if user_id in self._docs:
+            self._docs[user_id]["status"] = status
+
     async def update(self, user_id, fields):
         if user_id in self._docs:
             self._docs[user_id].update(fields)

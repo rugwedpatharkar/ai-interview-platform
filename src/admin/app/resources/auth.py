@@ -55,6 +55,7 @@ async def register_company(
                 password_hash=hash_password(password),
                 role=Role.company_admin,
                 comp_id=comp_id,
+                status="active",  # the founding admin is active from creation
             )
         )
     except DuplicateKeyError as exc:
@@ -115,6 +116,10 @@ async def verify_email(token, *, users, tokens, nonces=None):
         log.warning("verify: user not found")
         raise NotFoundError("User not found")
     await users.set_email_verified(claims["sub"])
+    # A pending company member (recruiter / hiring_manager invited via TeamService)
+    # becomes active once they verify; candidates have no comp_id and stay as-is.
+    if user.get("comp_id"):
+        await users.set_status(claims["sub"], "active")
     log.info("email verified: user_id={}", claims["sub"])
     return {
         "id": claims["sub"],
@@ -230,13 +235,22 @@ async def logout(refresh_token, *, tokens, sessions):
     return {"ok": True}
 
 
-async def invite_recruiter(
-    token, email, password, *, users, tokens, notifier, nonces=None, audit=None
+async def _invite_company_user(
+    email,
+    password,
+    role,
+    *,
+    comp_id,
+    invited_by,
+    audit_action,
+    users,
+    tokens,
+    notifier,
+    nonces=None,
+    audit=None,
 ):
-    caller = identity_from_token(token, tokens=tokens)
-    if caller["role"] != Role.company_admin.value:
-        log.warning("invite_recruiter denied: caller role={}", caller["role"])
-        raise ForbiddenError("Only a company admin can invite recruiters")
+    """Shared company-seat invite: create a `pending` member + send the verify email +
+    audit. Used by `invite_recruiter` (legacy) and `TeamService.InviteMember`."""
     email = email.strip().lower()  # normalize so case/space can't mint a duplicate
     if await users.get_by_email(email):
         raise ConflictError("Email already registered")
@@ -245,8 +259,10 @@ async def invite_recruiter(
             User(
                 email=email,
                 password_hash=hash_password(password),
-                role=Role.recruiter,
-                comp_id=caller["comp_id"],
+                role=role,
+                comp_id=comp_id,
+                status="pending",
+                invited_by=invited_by,
             )
         )
     except DuplicateKeyError as exc:
@@ -257,18 +273,41 @@ async def invite_recruiter(
             AuditLog(
                 entity="user",
                 entity_id=user_id,
-                action="recruiter_invited",
-                comp_id=caller["comp_id"],
+                action=audit_action,
+                comp_id=comp_id,
             )
         )
-    log.info("recruiter invited: comp_id={} user_id={}", caller["comp_id"], user_id)
     return {
         "id": user_id,
         "email": email,
-        "role": Role.recruiter.value,
-        "comp_id": caller["comp_id"],
+        "role": role.value,
+        "comp_id": comp_id,
         "email_verified": False,
     }
+
+
+async def invite_recruiter(
+    token, email, password, *, users, tokens, notifier, nonces=None, audit=None
+):
+    caller = identity_from_token(token, tokens=tokens)
+    if caller["role"] != Role.company_admin.value:
+        log.warning("invite_recruiter denied: caller role={}", caller["role"])
+        raise ForbiddenError("Only a company admin can invite recruiters")
+    out = await _invite_company_user(
+        email,
+        password,
+        Role.recruiter,
+        comp_id=caller["comp_id"],
+        invited_by=caller["id"],
+        audit_action="recruiter_invited",
+        users=users,
+        tokens=tokens,
+        notifier=notifier,
+        nonces=nonces,
+        audit=audit,
+    )
+    log.info("recruiter invited: comp_id={} user_id={}", caller["comp_id"], out["id"])
+    return out
 
 
 async def resend_verification(
