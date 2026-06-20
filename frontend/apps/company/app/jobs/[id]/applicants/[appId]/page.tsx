@@ -9,6 +9,30 @@ import { useParams } from "next/navigation";
 import { CompanyShell } from "../../../../../components/company-shell";
 import { ReportView } from "../../../../../components/report-view";
 import { useAuth } from "../../../../../lib/auth";
+import { USE_MOCK, makeMockIntegrityClient } from "./integrity-client";
+import type { ReportDTO } from "./types";
+
+const mockIntegrity = makeMockIntegrityClient();
+
+// Adapt the wire report to the FE DTO. Until A2 lands, the generated report lacks
+// `competencies`/integrity scalars; protobuf-es fills repeated/scalar defaults at runtime
+// but the static type doesn't carry them yet, so default here (the cast is the seam that
+// disappears after `pnpm gen` widens the type — the components already read the DTO shape).
+function toReportDTO(r: Record<string, unknown>): ReportDTO {
+  return {
+    applicationId: (r.applicationId as string) ?? "",
+    state: (r.state as string) ?? "",
+    executiveSummary: (r.executiveSummary as string) ?? "",
+    highlights: (r.highlights as string[]) ?? [],
+    risks: (r.risks as string[]) ?? [],
+    overallScore: (r.overallScore as number) ?? 0,
+    recommendation: (r.recommendation as string) ?? "",
+    competencies: (r.competencies as ReportDTO["competencies"]) ?? [],
+    integrityScore: (r.integrityScore as number) ?? 0,
+    integrityFlagCount: (r.integrityFlagCount as number) ?? 0,
+    autoTerminated: (r.autoTerminated as boolean) ?? false,
+  };
+}
 
 export default function ReportPage() {
   const { api, token } = useAuth();
@@ -26,6 +50,24 @@ export default function ReportPage() {
       const err = query.state.error;
       return isNotFound(err) || isTransient(err) ? 3000 : false;
     },
+  });
+
+  // Integrity timeline — sibling, non-blocking. Mockable until A1 lands. Returns 200/empty
+  // when no events, so no 404-poll; one transient retry is enough.
+  const integrity = useAuthedQuery(token, {
+    queryKey: ["integrity", appId],
+    retry: 1,
+    queryFn: () =>
+      USE_MOCK
+        ? mockIntegrity(appId)
+        : // Real call once A1 lands; cast keeps this compiling before `pnpm gen`.
+          (
+            api.reports as unknown as {
+              getIntegrityTimeline(req: {
+                applicationId: string;
+              }): Promise<Awaited<ReturnType<typeof mockIntegrity>>>;
+            }
+          ).getIntegrityTimeline({ applicationId: appId }),
   });
 
   const notReady = report.isError && isNotFound(report.error);
@@ -55,7 +97,15 @@ export default function ReportPage() {
           retry={() => report.refetch()}
         />
       )}
-      {report.data && <ReportView report={report.data} jobId={id} />}
+      {report.data && (
+        <ReportView
+          report={toReportDTO(report.data as Record<string, unknown>)}
+          jobId={id}
+          timeline={integrity.data}
+          timelineLoading={integrity.isLoading}
+          timelineError={integrity.isError ? errorMessage(integrity.error) : null}
+        />
+      )}
     </CompanyShell>
   );
 }

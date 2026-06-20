@@ -9,65 +9,96 @@ import {
   CardTitle,
 } from "@ip/ui";
 
+import type {
+  IntegrityTimeline,
+  ReportDTO,
+} from "../app/jobs/[id]/applicants/[appId]/types";
+import { CompetencyCard } from "./competency-card";
 import { DecisionControl } from "./decision-control";
+import { IntegrityBand } from "./integrity-band";
+import { ScoreRing } from "./score-ring";
 
 const REC_TONE: Record<string, BadgeTone> = {
   advance: "success",
   hold: "warning",
   reject: "danger",
 };
+const recTone = (s: number) => (s >= 0.75 ? "success" : s >= 0.5 ? "warning" : "danger");
 
-interface Report {
-  applicationId: string;
-  state: string;
-  executiveSummary: string;
-  highlights: string[];
-  risks: string[];
-  overallScore: number;
-  recommendation: string;
-}
-
-export function ReportView({ report, jobId }: { report: Report; jobId: string }) {
+export function ReportView({
+  report,
+  jobId,
+  timeline,
+  timelineLoading,
+  timelineError,
+}: {
+  report: ReportDTO;
+  jobId: string;
+  timeline: IntegrityTimeline | undefined;
+  timelineLoading: boolean;
+  timelineError: string | null;
+}) {
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between gap-3">
-        <CardTitle>Interview report</CardTitle>
-        <Badge tone={REC_TONE[report.recommendation] ?? "neutral"}>
-          {report.recommendation}
-        </Badge>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-5">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Stat
-            label="Overall score"
-            value={`${Math.round(report.overallScore * 100)}%`}
+    <div className="flex flex-col gap-5">
+      <Card>
+        <CardHeader className="flex-row items-center justify-between gap-3">
+          <CardTitle>Interview report</CardTitle>
+          <Badge tone={REC_TONE[report.recommendation] ?? "neutral"}>
+            {report.recommendation}
+          </Badge>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-5">
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-6">
+            <ScoreRing
+              value={report.overallScore}
+              size={112}
+              tone={recTone(report.overallScore)}
+              label="Overall"
+            />
+            <p className="text-sm text-foreground">{report.executiveSummary}</p>
+          </div>
+
+          <ReportSection
+            title="Highlights"
+            items={report.highlights}
+            tone="text-success-foreground"
           />
-          <Stat label="Recommendation" value={report.recommendation} />
-        </div>
-        <p className="text-sm text-foreground">{report.executiveSummary}</p>
-        <ReportSection
-          title="Highlights"
-          items={report.highlights}
-          tone="text-success-foreground"
-        />
-        <ReportSection
-          title="Risks"
-          items={report.risks}
-          tone="text-warning-foreground"
-        />
-        {["scored", "shortlisted"].includes(report.state) && (
-          <DecisionControl applicationId={report.applicationId} jobId={jobId} />
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+          <ReportSection
+            title="Risks"
+            items={report.risks}
+            tone="text-warning-foreground"
+          />
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface-muted p-4">
-      <p className="text-2xl font-semibold capitalize text-foreground">{value}</p>
-      <p className="mt-0.5 text-sm text-muted-foreground">{label}</p>
+          {report.competencies.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm font-medium text-foreground">Competencies</p>
+              {report.competencies.map((c) => (
+                <CompetencyCard key={c.competency} c={c} />
+              ))}
+            </div>
+          )}
+
+          {/* advance/shortlist/decline — records an audited decision that notifies the candidate */}
+          {["scored", "shortlisted"].includes(report.state) && (
+            <DecisionControl applicationId={report.applicationId} jobId={jobId} />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* The integrity band is its own card so it reads as a distinct trust surface. Render
+          it whenever there's a timeline, it's loading, there's an error, OR the report
+          itself flags a termination (so the banner shows even if the timeline query lags). */}
+      {(timeline ||
+        timelineLoading ||
+        timelineError ||
+        report.autoTerminated ||
+        report.integrityFlagCount > 0) && (
+        <IntegrityBand
+          timeline={timeline}
+          loading={timelineLoading}
+          error={timelineError}
+        />
+      )}
     </div>
   );
 }
