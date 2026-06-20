@@ -26,14 +26,9 @@ def _snippet(jd_text: str, limit: int = 160) -> str:
     return (jd_text or "")[:limit]
 
 
-def job_card(doc: dict, company_names: dict[str, str]) -> dict:
-    """Map a raw job doc to the public JobCard DTO (internals intentionally dropped)."""
-    comp_id = doc.get("comp_id", "")
+def _public_fields(doc: dict) -> dict:
+    """The scrubbed marketplace scalar fields shared by the JobCard + the detail DTO."""
     return {
-        "job_id": str(doc["_id"]),
-        "title": doc.get("title", ""),
-        "company_id": comp_id,  # linkable public id; raw comp scoping stays internal
-        "company_name": company_names.get(comp_id, ""),
         "location": doc.get("location") or "",
         "remote_mode": doc.get("remote_mode") or "",
         "employment_type": doc.get("employment_type") or "",
@@ -42,7 +37,41 @@ def job_card(doc: dict, company_names: dict[str, str]) -> dict:
         "salary_currency": doc.get("salary_currency") or "",
         "skills": doc.get("skills") or [],
         "posted_at": iso(doc.get("posted_at") or doc.get("created_at")),
+    }
+
+
+def job_card(doc: dict, company_names: dict[str, str]) -> dict:
+    """Map a raw job doc to the public JobCard DTO (internals intentionally dropped)."""
+    comp_id = doc.get("comp_id", "")
+    return {
+        "job_id": str(doc["_id"]),
+        "title": doc.get("title", ""),
+        "company_id": comp_id,  # linkable public id; raw comp scoping stays internal
+        "company_name": company_names.get(comp_id, ""),
+        **_public_fields(doc),
         "snippet": _snippet(doc.get("jd_text", "")),
+    }
+
+
+async def get_public_job_detail(job_id, *, jobs, companies) -> dict | None:
+    """The full public job-detail DTO for a PUBLISHED job, or None (404).
+
+    Single source of truth with search_jobs for the published-only gate + field scrub:
+    full jd_text (not a snippet) + a {id,name,logo} company object. Internals
+    (comp_id/aptitude_config/required_topics/gate_mode) never ship. logo stays "" until
+    company branding (company_profiles) lands.
+    """
+    doc = await jobs.get_by_id(job_id)
+    if doc is None or doc.get("status") != "published":
+        return None
+    comp_id = doc.get("comp_id", "")
+    names = await companies.names_by_ids([comp_id]) if comp_id else {}
+    return {
+        "job_id": str(doc["_id"]),
+        "title": doc.get("title", ""),
+        "jd_text": doc.get("jd_text", ""),
+        **_public_fields(doc),
+        "company": {"id": comp_id, "name": names.get(comp_id, ""), "logo": ""},
     }
 
 

@@ -135,3 +135,73 @@ async def test_skips_company_lookup_when_no_results():
     companies = _FakeCompanies()
     await discovery.search_jobs({}, jobs=_FakeJobs(), companies=companies)
     assert companies.calls == []  # no comp_ids -> no batch lookup
+
+
+class _DetailJobs:
+    def __init__(self, doc=None):
+        self._doc = doc
+
+    async def get_by_id(self, job_id):
+        return self._doc
+
+
+def _published_doc():
+    return {
+        "_id": "job1",
+        "comp_id": "c1",
+        "title": "Senior Python Engineer",
+        "jd_text": "x" * 300,
+        "status": "published",
+        "location": "Remote",
+        "remote_mode": "remote",
+        "employment_type": "full_time",
+        "salary_min": 100000,
+        "salary_max": 140000,
+        "salary_currency": "USD",
+        "skills": ["python"],
+        "created_at": datetime(2026, 6, 1, tzinfo=UTC),
+        # internals that must NEVER leak into the public DTO:
+        "aptitude_config": {"gate_mode": "auto"},
+        "required_topics": ["asyncio"],
+    }
+
+
+@pytest.mark.asyncio
+async def test_get_public_job_detail_full_dto():
+    out = await discovery.get_public_job_detail(
+        "job1",
+        jobs=_DetailJobs(_published_doc()),
+        companies=_FakeCompanies(names={"c1": "Acme"}),
+    )
+    assert out["job_id"] == "job1"
+    assert out["title"] == "Senior Python Engineer"
+    assert out["jd_text"] == "x" * 300  # FULL JD, not the search snippet
+    assert out["location"] == "Remote" and out["remote_mode"] == "remote"
+    assert out["employment_type"] == "full_time"
+    assert out["salary_min"] == 100000 and out["salary_max"] == 140000
+    assert out["salary_currency"] == "USD" and out["skills"] == ["python"]
+    assert out["posted_at"] == "2026-06-01T00:00:00+00:00"  # from created_at
+    assert out["company"] == {"id": "c1", "name": "Acme", "logo": ""}
+    # grep-test: internals are scrubbed (comp_id surfaces only as company.id).
+    assert "comp_id" not in out
+    assert "aptitude_config" not in out
+    assert "required_topics" not in out
+    assert "snippet" not in out
+
+
+@pytest.mark.asyncio
+async def test_get_public_job_detail_unpublished_is_none():
+    doc = _published_doc()
+    doc["status"] = "draft"
+    out = await discovery.get_public_job_detail(
+        "job1", jobs=_DetailJobs(doc), companies=_FakeCompanies()
+    )
+    assert out is None  # drafts are never publicly discoverable
+
+
+@pytest.mark.asyncio
+async def test_get_public_job_detail_missing_is_none():
+    out = await discovery.get_public_job_detail(
+        "nope", jobs=_DetailJobs(None), companies=_FakeCompanies()
+    )
+    assert out is None
