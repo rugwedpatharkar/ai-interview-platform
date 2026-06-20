@@ -217,6 +217,35 @@ async def test_handle_interview_completed(
     ) in pub.events
 
 
+async def test_handle_interview_completed_folds_integrity(
+    fake_llm_by_schema, fake_data, fake_publisher
+):
+    ctx = {
+        "transcript": {"turns": [{"question": "q", "answer": "a"}]},
+        "blueprint": {"competencies": [{"name": "python"}]},
+        "profile": {"headline": "Engineer"},
+        "jd_text": "Backend role",
+    }
+    # Stored proctoring events (severity already server-stamped at ingest).
+    events = [
+        {"type": "tab_hidden", "severity": "low", "at": "t0"},
+        {"type": "paste_large", "severity": "medium", "at": "t1"},
+        {"type": "second_face", "severity": "high", "at": "t2"},
+    ]
+    data = fake_data(interview_context=ctx, proctoring_events=events)
+    pub = fake_publisher()
+    evaluation = Evaluation(overall_score=0.8, recommendation="advance")
+    report = InterviewReport(executive_summary="Strong")
+    llm = fake_llm_by_schema({Evaluation: evaluation, InterviewReport: report})
+    await handlers.handle_interview_completed(
+        {"application_id": "a1", "comp_id": "c1"}, llm=llm, data=data, publisher=pub
+    )
+    integ = data.saved_reports["a1"]["integrity"]
+    assert integ["score"] == 1 + 3 + 8  # low + medium + high weights
+    assert integ["flags"] == ["paste_large", "second_face"]  # medium+ types, sorted
+    assert integ["auto_terminated"] is True  # a HIGH event is present
+
+
 class _RecordingLLM:
     def __init__(self, response):
         self._response = response

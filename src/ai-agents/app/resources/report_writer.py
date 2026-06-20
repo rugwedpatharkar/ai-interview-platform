@@ -36,5 +36,8 @@ async def write_report(evaluation, profile, *, llm) -> InterviewReport:
     report = await llm.structured(_prompt(evaluation, profile), InterviewReport)
     report.overall_score = evaluation.overall_score
     report.recommendation = evaluation.recommendation
+    # Carry the per-competency breakdown + evidence through verbatim — the narrative is
+    # the LLM's, but the scored competencies are authoritative from the Evaluation.
+    report.competency_scores = evaluation.competency_scores
     log.info("report written: recommendation={}", report.recommendation)
     return report

@@ -14,11 +14,16 @@ log = get_logger(component="agent.evaluator")
 
 
 def _prompt(transcript, competencies, jd_text):
-    turns = "\n\n".join(f"Q: {t.question}\nA: {t.answer}" for t in transcript.turns)
+    turns = "\n\n".join(
+        f"[turn {i}] Q: {t.question}\nA: {t.answer}"
+        for i, t in enumerate(transcript.turns)
+    )
     return (
         "You are evaluating a candidate interview for a software/IT role. Score each "
         "competency from 0.0 to 1.0 with a one-line rationale grounded in the "
-        "transcript, then give an overall score, key strengths, concerns, and a "
+        "transcript. For each competency, also cite 1-2 short evidence snippets quoted "
+        "from the transcript, each with the turn_index it came from (the [turn N] "
+        "marker). Then give an overall score, key strengths, concerns, and a "
         "recommendation (advance / hold / reject). Judge only what the transcript "
         "supports.\n\n"
         f"{UNTRUSTED_NOTICE}\n\n"
@@ -36,6 +41,13 @@ def _validate(evaluation):
             raise ValueError(f"competency score out of range: {cs.competency}")
 
 
+def _prune_evidence(evaluation, n_turns):
+    """Drop evidence whose turn_index is out of range — the LLM can hallucinate a turn
+    that does not exist, and the report must never cite one."""
+    for cs in evaluation.competency_scores:
+        cs.evidence = [e for e in cs.evidence if 0 <= e.turn_index < n_turns]
+
+
 async def evaluate_interview(transcript, competencies, jd_text, *, llm) -> Evaluation:
     if not transcript.turns:
         raise ValueError("transcript is empty — nothing to evaluate")
@@ -43,5 +55,6 @@ async def evaluate_interview(transcript, competencies, jd_text, *, llm) -> Evalu
         _prompt(transcript, competencies, jd_text), Evaluation
     )
     _validate(evaluation)
+    _prune_evidence(evaluation, len(transcript.turns))
     log.info("interview evaluated: overall={:.2f}", evaluation.overall_score)
     return evaluation

@@ -74,3 +74,22 @@ def severity_of(event_type: str) -> Severity:
 def integrity_score(events: list[ProctoringEvent]) -> int:
     """Weighted sum of severities — higher = more concerning. Advisory only."""
     return sum(_WEIGHT[severity_of(e.type)] for e in events)
+
+
+def integrity_snapshot(events: list[dict]) -> dict:
+    """Compact integrity summary from STORED events (severity stamped at ingest).
+
+    `score` is the weighted sum over all events (matches admin's GetIntegrityTimeline so
+    the report can't contradict the timeline); `flags` are the distinct medium+ event
+    types (the genuine concerns); `auto_terminated` is true iff a HIGH event is present.
+    """
+    score = sum(_WEIGHT.get(e.get("severity", "low"), 1) for e in events)
+    flags = sorted(
+        {e.get("type", "") for e in events if e.get("severity") in ("medium", "high")}
+        - {""}
+    )
+    return {
+        "score": float(score),
+        "flags": flags,
+        "auto_terminated": any(e.get("severity") == "high" for e in events),
+    }

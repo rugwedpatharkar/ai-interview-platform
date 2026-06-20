@@ -98,6 +98,7 @@ def fake_data():
             match_results=None,
             application_status=None,
             applicants=None,
+            proctoring_events=None,
         ):
             self._job = job  # None mirrors a missing job (find_one returns None)
             self._interview_context = interview_context
@@ -106,6 +107,7 @@ def fake_data():
             self._match_results = list(match_results or [])
             self._application_status = application_status
             self._applicants = list(applicants or [])
+            self._proctoring_events = list(proctoring_events or [])
             self.saved_profiles = {}
             self.saved_banks = {}
             self.saved_reports = {}
@@ -145,6 +147,9 @@ def fake_data():
 
         async def save_proctoring_events(self, application_id, comp_id, docs):
             self.saved_proctoring.append((application_id, comp_id, docs))
+
+        async def get_proctoring_events(self, application_id):
+            return list(self._proctoring_events)
 
         async def get_profile(self, user_id):
             return self._profile

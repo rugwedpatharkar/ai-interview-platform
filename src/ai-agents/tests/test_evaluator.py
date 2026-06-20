@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.model.interview import Transcript, TranscriptTurn
-from app.model.scoring import CompetencyScore, Evaluation
+from app.model.scoring import CompetencyScore, Evaluation, Evidence
 from app.resources.evaluator import evaluate_interview
 
 
@@ -40,6 +40,48 @@ async def test_rejects_out_of_range_score(fake_llm):
     bad = Evaluation(overall_score=1.5)
     with pytest.raises(ValueError):
         await evaluate_interview(_transcript(), ["python"], "JD", llm=fake_llm(bad))
+
+
+async def test_keeps_in_range_evidence(fake_llm):
+    canned = Evaluation(
+        competency_scores=[
+            CompetencyScore(
+                competency="python",
+                score=0.8,
+                evidence=[Evidence(quote="it yields control", turn_index=0)],
+            )
+        ],
+        recommendation="advance",
+    )
+    result = await evaluate_interview(
+        _transcript(), ["python"], "JD", llm=fake_llm(canned)
+    )
+    assert result.competency_scores[0].evidence[0].turn_index == 0
+    assert result.competency_scores[0].evidence[0].quote == "it yields control"
+
+
+async def test_drops_out_of_range_evidence(fake_llm):
+    # The transcript has 2 turns (0, 1); turn_index 5 and -1 are hallucinated refs and
+    # must be dropped so the report never cites a turn that does not exist.
+    canned = Evaluation(
+        competency_scores=[
+            CompetencyScore(
+                competency="python",
+                score=0.8,
+                evidence=[
+                    Evidence(quote="real", turn_index=1),
+                    Evidence(quote="hallucinated", turn_index=5),
+                    Evidence(quote="negative", turn_index=-1),
+                ],
+            )
+        ],
+        recommendation="advance",
+    )
+    result = await evaluate_interview(
+        _transcript(), ["python"], "JD", llm=fake_llm(canned)
+    )
+    kept = result.competency_scores[0].evidence
+    assert [e.quote for e in kept] == ["real"]
 
 
 def test_evaluation_rejects_invalid_recommendation():

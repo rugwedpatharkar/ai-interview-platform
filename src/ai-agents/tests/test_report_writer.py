@@ -1,5 +1,5 @@
 from app.model.profile import CandidateProfile
-from app.model.scoring import Evaluation, InterviewReport
+from app.model.scoring import CompetencyScore, Evaluation, Evidence, InterviewReport
 from app.resources.report_writer import write_report
 
 
@@ -20,3 +20,23 @@ async def test_score_and_recommendation_come_from_evaluation(fake_llm):
     report = await write_report(evaluation, profile, llm=fake_llm(llm_report))
     assert report.overall_score == 0.82
     assert report.recommendation == "advance"
+
+
+async def test_competency_scores_carry_through_with_evidence(fake_llm):
+    # The recruiter-facing report must carry the per-competency breakdown + evidence
+    # verbatim from the Evaluation — the LLM narrative cannot invent or omit it.
+    evaluation = Evaluation(
+        overall_score=0.8,
+        recommendation="advance",
+        competency_scores=[
+            CompetencyScore(
+                competency="python",
+                score=0.9,
+                evidence=[Evidence(quote="it yields control", turn_index=0)],
+            )
+        ],
+    )
+    profile = CandidateProfile()
+    report = await write_report(evaluation, profile, llm=fake_llm(InterviewReport()))
+    assert report.competency_scores[0].competency == "python"
+    assert report.competency_scores[0].evidence[0].quote == "it yields control"

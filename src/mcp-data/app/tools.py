@@ -281,6 +281,31 @@ class DataStore:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
             return len(docs)
 
+    async def get_proctoring_events(self, application_id):
+        # Chronological (insertion order, append-only); _id excluded — the report only
+        # needs {type, severity} to fold the integrity snapshot.
+        async with log_context(
+            log,
+            "data.get_proctoring_events",
+            **bind_ids(application_id=application_id),
+        ):
+            t0 = time.monotonic()
+            op = "get_proctoring_events"
+            _mongo_total.labels(op=op).inc()
+            try:
+                async with span(
+                    "mongo.get_proctoring_events", application_id=application_id
+                ):
+                    cursor = self._proctoring.find(
+                        {"application_id": application_id}, {"_id": 0}
+                    )
+                    return await cursor.to_list(length=None)
+            except Exception:
+                _mongo_errors.labels(op=op).inc()
+                raise
+            finally:
+                _mongo_duration.labels(op=op).observe(_ms(t0))
+
     async def save_match_result(
         self, comp_id, job_id, candidate_user_id, score, reasons
     ):

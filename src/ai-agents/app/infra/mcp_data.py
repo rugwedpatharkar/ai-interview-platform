@@ -112,6 +112,13 @@ class McpDataGateway:
             await self._call("get_interview_setup", {"application_id": application_id})
         )
 
+    async def get_proctoring_events(self, application_id):
+        return unwrap(
+            await self._call(
+                "get_proctoring_events", {"application_id": application_id}
+            )
+        )
+
     async def save_interview(self, application_id, doc):
         await self._call(
             "save_interview", {"application_id": application_id, "interview": doc}

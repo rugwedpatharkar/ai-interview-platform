@@ -84,6 +84,17 @@ async def test_save_proctoring_events_empty_is_noop():
     assert cols["proctoring_events"].inserted == []
 
 
+async def test_get_proctoring_events_reads_by_application_excluding_id():
+    rows = [
+        {"type": "tab_hidden", "severity": "low", "at": "t0"},
+        {"type": "second_face", "severity": "high", "at": "t1"},
+    ]
+    store, cols = _store(proctoring_events=_FakeCollection(find_list=rows))
+    result = await store.get_proctoring_events("a1")
+    assert [e["type"] for e in result] == ["tab_hidden", "second_face"]
+    assert cols["proctoring_events"].find_queries[0] == {"application_id": "a1"}
+
+
 async def test_save_profile_upserts_and_marks_parsed():
     store, cols = _store()
     await store.save_profile("u1", {"headline": "Eng"})

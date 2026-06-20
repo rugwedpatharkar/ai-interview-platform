@@ -12,7 +12,9 @@ from lib.observability import counter, span
 
 from app.config import get_settings
 from app.model.interview import InterviewBlueprint, Transcript
+from app.model.proctoring import integrity_snapshot
 from app.model.profile import CandidateProfile
+from app.model.scoring import IntegritySummary
 from app.resources.aptitude_setter import build_aptitude_bank
 from app.resources.blueprint import build_job_question_plan
 from app.resources.evaluator import evaluate_interview
@@ -198,6 +200,10 @@ async def handle_interview_completed(
                 transcript, competencies, ctx["jd_text"], llm=scoring_llm or llm
             )
             report = await write_report(evaluation, profile, llm=llm)
+            # Fold the proctoring outcome into the report so it is self-contained — the
+            # recruiter sees the integrity snapshot inline, not only via the timeline.
+            events = await data.get_proctoring_events(application_id)
+            report.integrity = IntegritySummary(**integrity_snapshot(events))
             await data.save_report(application_id, report.model_dump())
             await publisher.publish(
                 "scoring.completed",

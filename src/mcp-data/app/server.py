@@ -212,6 +212,15 @@ async def save_proctoring_events(
 
 
 @mcp.tool()
+async def get_proctoring_events(application_id: str) -> list:
+    """Read an application's proctoring events (chronological; no raw media)."""
+    async with log_context(
+        log, "tool.get_proctoring_events", **bind_ids(application_id=application_id)
+    ):
+        return _jsonable(await _store.get_proctoring_events(application_id))
+
+
+@mcp.tool()
 async def save_match_result(
     comp_id: str, job_id: str, candidate_user_id: str, score: float, reasons: list[str]
 ) -> bool:
