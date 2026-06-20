@@ -17,5 +17,9 @@ class ConflictError(InterviewError):
     """The resource exists but is not in a valid state for the requested action."""
 
 
+class ValidationError(InterviewError):
+    """Input failed a boundary check (e.g. the exactly-one-of-topic/jd constraint)."""
+
+
 class LLMError(Exception):
     """An LLM call failed after exhausting retries (transient or malformed output)."""

@@ -140,3 +140,19 @@ class McpDataGateway:
                 {"job_id": job_id or "", "candidate_user_id": candidate_user_id or ""},
             )
         )
+
+    async def save_practice_summary(self, user_id, summary):
+        await self._call(
+            "save_practice_summary", {"user_id": user_id, "summary": summary}
+        )
+
+    async def get_practice_summary(self, user_id, practice_id):
+        return unwrap(
+            await self._call(
+                "get_practice_summary",
+                {"user_id": user_id, "practice_id": practice_id},
+            )
+        )
+
+    async def list_practice_summaries(self, user_id):
+        return unwrap(await self._call("list_practice_summaries", {"user_id": user_id}))
