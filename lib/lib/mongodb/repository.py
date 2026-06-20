@@ -1,6 +1,7 @@
 from typing import Any
 
 from bson import ObjectId
+from bson.errors import InvalidId
 from pydantic import BaseModel
 
 from lib.logging import get_logger, log_context
@@ -11,6 +12,15 @@ log = get_logger(component="mongodb.repository")
 _LIST_CAP = 200
 # Default per-operation timeout — generous enough to cover slow Atlas queries.
 _DEFAULT_TIMEOUT_S = 10.0
+
+
+def _oid(doc_id: str) -> ObjectId | None:
+    """Parse a 24-hex id; None when malformed so a bad client id is a clean miss
+    (NOT_FOUND / no-op) instead of an unhandled bson.InvalidId that surfaces as 500."""
+    try:
+        return ObjectId(doc_id)
+    except (InvalidId, TypeError):
+        return None
 
 
 class BaseRepository[M: BaseModel]:
@@ -40,9 +50,12 @@ class BaseRepository[M: BaseModel]:
         return str(res.inserted_id)
 
     async def get(self, doc_id: str) -> dict | None:
+        oid = _oid(doc_id)
+        if oid is None:
+            return None
         async with log_context(log, f"{self.collection}.get", doc_id=doc_id):
             return await with_timeout(
-                self.col.find_one({"_id": ObjectId(doc_id)}),
+                self.col.find_one({"_id": oid}),
                 self._timeout_s,
                 op=f"{self.collection}.get",
             )
@@ -67,17 +80,23 @@ class BaseRepository[M: BaseModel]:
             )
 
     async def update(self, doc_id: str, fields: dict) -> None:
+        oid = _oid(doc_id)
+        if oid is None:
+            return
         async with log_context(log, f"{self.collection}.update", doc_id=doc_id):
             await with_timeout(
-                self.col.update_one({"_id": ObjectId(doc_id)}, {"$set": fields}),
+                self.col.update_one({"_id": oid}, {"$set": fields}),
                 self._timeout_s,
                 op=f"{self.collection}.update",
             )
 
     async def delete(self, doc_id: str) -> None:
+        oid = _oid(doc_id)
+        if oid is None:
+            return
         async with log_context(log, f"{self.collection}.delete", doc_id=doc_id):
             await with_timeout(
-                self.col.delete_one({"_id": ObjectId(doc_id)}),
+                self.col.delete_one({"_id": oid}),
                 self._timeout_s,
                 op=f"{self.collection}.delete",
             )
