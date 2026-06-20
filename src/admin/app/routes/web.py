@@ -38,6 +38,7 @@ from app.infra.repositories.profiles import CandidateProfileRepository
 from app.infra.repositories.reports import ReportRepository
 from app.infra.repositories.rubrics import RubricRepository
 from app.infra.repositories.saved_jobs import SavedJobsRepository
+from app.infra.repositories.user_preferences import UserPreferencesRepository
 from app.infra.repositories.users import UserRepository
 from app.infra.totp import FernetSecretBox, PyotpProvider
 from app.resources.compliance import CandidateEraser
@@ -68,6 +69,7 @@ from app.routes.pb import (
     job_pb2_grpc,
     messaging_pb2_grpc,
     notification_pb2_grpc,
+    preferences_pb2_grpc,
     profile_pb2_grpc,
     recommendation_pb2_grpc,
     report_pb2_grpc,
@@ -79,6 +81,7 @@ from app.routes.pb import (
     talent_pb2_grpc,
     team_pb2_grpc,
 )
+from app.routes.preferences import PreferencesServicer
 from app.routes.profile import ProfileServicer
 from app.routes.recommendation import RecommendationServicer
 from app.routes.report import ReportServicer
@@ -315,6 +318,10 @@ def create_web_app(
             notifier=notifier,
             audit=AuditLogRepository(db),
         ),
+        app,
+    )
+    preferences_pb2_grpc.add_PreferencesServiceServicer_to_server(
+        PreferencesServicer(preferences=UserPreferencesRepository(db), tokens=tokens),
         app,
     )
     messaging_pb2_grpc.add_MessagingServiceServicer_to_server(

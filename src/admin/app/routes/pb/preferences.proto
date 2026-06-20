@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package admin.preferences.v1;
+
+// PreferencesService — per-user Appearance personalization (v3). Self-scoped to the
+// caller's token; one service serves candidate + company users. No request carries a
+// target user_id.
+service PreferencesService {
+  rpc GetAppearance(GetAppearanceRequest) returns (Appearance);
+  rpc UpdateAppearance(Appearance) returns (Appearance);
+}
+
+message GetAppearanceRequest {}
+
+message Appearance {
+  string mode = 1;        // system | light | dark
+  string base = 2;        // midnight | azure | mint | slate
+  string accent = 3;      // cyan | lime | emerald | amber | coral | azure | custom
+  uint32 accent_hue = 4;  // 0..359; meaningful only when accent == "custom" (0 otherwise)
+}
