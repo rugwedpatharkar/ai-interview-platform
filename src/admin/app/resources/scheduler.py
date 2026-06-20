@@ -9,6 +9,8 @@ from datetime import timedelta
 
 from lib.logging import get_logger
 
+from app.resources.notification import notify_event
+
 log = get_logger(component="scheduler.resources")
 
 
@@ -40,3 +42,38 @@ async def aptitude_expiry_pass(
     if expired:
         log.info("aptitude expiry pass expired {} deliveries", expired)
     return expired
+
+
+async def reminder_sweep(*, bookings, notifications, now):
+    """Complete past interview bookings + send T-24h / T-1h reminders (each once).
+
+    A booking gets at most one 24h and one 1h reminder; the per-flag CAS stamp
+    (`stamp_reminder_if_unset`) makes the sweep idempotent across ticks/replicas.
+    Notifications are best-effort. System job — no authz, not user-triggered.
+    """
+    completed = await bookings.complete_past(before=now)
+    sent = 0
+    window_end = now + timedelta(hours=24)
+    for booking in await bookings.due_reminders(
+        window_start=now, window_end=window_end
+    ):
+        start = booking.get("chosen_start_at")
+        if start is None:
+            continue
+        field = "reminded_1h" if (start - now) <= timedelta(hours=1) else "reminded_24h"
+        if booking.get(field):
+            continue
+        if await bookings.stamp_reminder_if_unset(booking["application_id"], field):
+            try:
+                await notify_event(
+                    booking.get("candidate_user_id", ""),
+                    booking.get("comp_id", ""),
+                    "interview_reminder",
+                    notifications=notifications,
+                )
+            except Exception:
+                log.exception("reminder notify failed")
+            sent += 1
+    if completed or sent:
+        log.info("reminder sweep: completed {}, sent {} reminders", completed, sent)
+    return sent
