@@ -2,6 +2,7 @@
 
 import { Alert, Badge, Button, Card, CardContent, Spinner } from "@ip/ui";
 import { Check, X } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import type { AssessmentSection, RunResult } from "../lib/assessment";
 import { CodeEditor } from "./code-editor";
@@ -35,12 +36,19 @@ export function CodingSection({
   error,
   timeLeft,
 }: CodingSectionProps) {
+  // Move focus to this section's heading when the question changes (keyed on the section id),
+  // so advancing through coding tasks lands keyboard + screen-reader users on the new prompt.
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, [section.id]);
+
   return (
     <Card>
       <CardContent className="flex flex-col gap-4 p-4 lg:grid lg:grid-cols-2 lg:gap-6">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="font-semibold text-foreground">
+            <h3 ref={headingRef} tabIndex={-1} className="font-semibold text-foreground focus:outline-none">
               <span className="text-muted-foreground">
                 Question {index + 1} of {total}
               </span>

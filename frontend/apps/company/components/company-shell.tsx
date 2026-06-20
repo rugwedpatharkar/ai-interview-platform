@@ -32,9 +32,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { useAuth } from "../lib/auth";
+import { CommandPalette } from "./command-palette";
 import { NotificationBell } from "./notification-bell";
 import { OfflineBanner } from "./offline-banner";
 
@@ -72,6 +73,20 @@ export function CompanyShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // Global ⌘K / Ctrl-K opens the command palette. ⌘K wins even from inside an input;
+  // bare keys are ignored while typing so the palette never hijacks normal entry.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   if (!token) return null;
 
@@ -204,6 +219,11 @@ export function CompanyShell({ children }: { children: ReactNode }) {
         </>
       }
     >
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        nav={[...NAV_HIRING, ...workspace].map(({ href, label, icon }) => ({ href, label, icon }))}
+      />
       {children}
     </SidebarShell>
   );

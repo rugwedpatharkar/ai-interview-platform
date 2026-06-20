@@ -32,12 +32,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { decodeJwtPayload } from "@ip/shared";
 
 import { useAuth } from "../lib/auth";
+import { CommandPalette } from "./command-palette";
 import { NotificationBell } from "./notification-bell";
 import { OfflineBanner } from "./offline-banner";
 import {
@@ -69,6 +70,7 @@ export function CandidateShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const email = token ? (decodeJwtPayload(token)?.email as string | undefined) ?? null : null;
   const label = email ?? identity?.id ?? "Account";
 
@@ -86,6 +88,19 @@ export function CandidateShell({ children }: { children: ReactNode }) {
     enabled: Boolean(token),
   });
   const totalUnread = (unread.data ?? []).reduce((s, t) => s + t.unread, 0);
+
+  // Global ⌘K / Ctrl-K opens the command palette. ⌘K wins even from inside an input;
+  // bare keys are ignored while typing so the palette never hijacks normal entry.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -218,6 +233,11 @@ export function CandidateShell({ children }: { children: ReactNode }) {
         </>
       }
     >
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        nav={[...NAV_FOR_YOU, ...NAV_PREPARE]}
+      />
       {children}
     </SidebarShell>
   );

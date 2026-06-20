@@ -110,3 +110,26 @@ export {
   type StatusToken,
 } from "./status.js";
 export { StatusPill, type StatusPillProps } from "./status-pill.js";
+
+// De-duplicated app components (lifted from candidate + company)
+export { AuthLayout } from "./auth-layout.js";
+export {
+  NotificationItem,
+  type NotificationItemProps,
+  type NotificationItemData,
+} from "./notification-item.js";
+export { SsoButtons, type SsoButtonsProps, type OAuthProvidersApi } from "./sso-buttons.js";
+export { AssistantChat, type AssistantChatProps } from "./assistant-chat.js";
+export {
+  MessageThreadView,
+  type MessageThreadViewProps,
+  type ThreadMessage,
+  type ThreadOptimisticMessage,
+} from "./message-thread-view.js";
+export {
+  NotificationBell,
+  type NotificationBellProps,
+  type BellNotification,
+  type BellClient,
+  type BellKeys,
+} from "./notification-bell.js";

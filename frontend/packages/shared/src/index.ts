@@ -26,3 +26,30 @@ export {
 export { downloadBytes, XLSX_MIME } from "./download.js";
 export { TERMINAL_STATES, TERMS_VERSION } from "./constants.js";
 export { decodeJwtPayload } from "./jwt.js";
+
+// De-duplicated app logic (lifted from candidate + company)
+export {
+  useThreadMessages,
+  type ThreadMessage,
+  type ThreadMessagesClient,
+  type OptimisticMessage,
+} from "./use-thread-messages.js";
+export {
+  formatLocal,
+  dayLabel,
+  timeLabel,
+  localInputToUtcIso,
+  viewerTimeZone,
+} from "./datetime.js";
+export {
+  createSchedulingClient,
+  makeMockSchedulingClient,
+  schedulingClient,
+  scheduleQueryKey,
+  SCHEDULING_USE_MOCK,
+  type BookingStatus,
+  type ProposedSlot,
+  type ScheduleDTO,
+  type IcsResponse,
+  type SchedulingClient,
+} from "./scheduling.js";

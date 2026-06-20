@@ -11,6 +11,7 @@ import {
   toast,
 } from "@ip/ui";
 import { errorMessage } from "@ip/shared";
+import type { ApplicationList } from "@ip/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -41,6 +42,23 @@ export function BatchDecisionBar({
       const failed = results.filter((r) => r.status === "rejected").length;
       if (failed) throw new Error(`${failed} of ${selected.length} decisions failed`);
     },
+    // Optimistic: flip every selected row's state in the applicants cache so the queue
+    // reflects the decision immediately; snapshot for rollback. `outcome`/`selected` are
+    // captured at mutate time before the success handler clears the selection.
+    onMutate: async () => {
+      const next = outcome;
+      const ids = new Set(selected);
+      await queryClient.cancelQueries({ queryKey: ["applicants", jobId] });
+      const prev = queryClient.getQueryData<ApplicationList>(["applicants", jobId]);
+      if (prev)
+        queryClient.setQueryData<ApplicationList>(["applicants", jobId], {
+          ...prev,
+          applications: prev.applications.map((a) =>
+            ids.has(a.applicationId) ? { ...a, state: next } : a,
+          ),
+        });
+      return { prev };
+    },
     onSuccess: () => {
       toast.success(
         `Decision applied to ${selected.length} candidate${selected.length > 1 ? "s" : ""}`,
@@ -48,7 +66,6 @@ export function BatchDecisionBar({
       setOutcome("");
       onDone();
       for (const key of [
-        ["applicants", jobId],
         ["ranked", jobId],
         ["reports", jobId],
         ["score-dist", jobId],
@@ -56,7 +73,15 @@ export function BatchDecisionBar({
       ])
         queryClient.invalidateQueries({ queryKey: key });
     },
-    onError: (err) => toast.error(errorMessage(err)),
+    onError: (err, _v, ctx) => {
+      if (ctx?.prev)
+        queryClient.setQueryData(["applicants", jobId], ctx.prev); // roll back
+      toast.error(errorMessage(err));
+    },
+    // Reconcile the optimistic rows against the server once the batch settles.
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["applicants", jobId] });
+    },
   });
 
   return (

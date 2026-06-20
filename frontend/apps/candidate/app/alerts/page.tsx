@@ -3,6 +3,7 @@
 import { EmptyState, ErrorState, PageHeader, Skeleton, toast } from "@ip/ui";
 import { errorMessage, useRequireAuth } from "@ip/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BellRing } from "lucide-react";
 
 import { CandidateShell } from "../../components/candidate-shell";
 import { AlertForm } from "../../components/alert-form";
@@ -65,7 +66,11 @@ export default function JobAlertsPage() {
           <ErrorState message={errorMessage(q.error)} retry={() => q.refetch()} />
         )}
         {!q.isLoading && !q.isError && alerts.length === 0 && (
-          <EmptyState title="No alerts yet" description="Create your first saved search above." />
+          <EmptyState
+            icon={BellRing}
+            title="No alerts yet"
+            description="Save a search above and we'll ping you the moment a matching role goes live."
+          />
         )}
         {alerts.map((a) => (
           <AlertRow

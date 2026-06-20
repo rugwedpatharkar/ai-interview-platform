@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -27,7 +26,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "../../../lib/auth";
 import { CodingSection } from "../../../components/coding-section";
@@ -130,6 +129,10 @@ export default function AptitudePage() {
     if (test.isSuccess) window.scrollTo(0, 0);
   }, [test.isSuccess]);
 
+  // On completion, move focus to the results heading so keyboard + screen-reader users land
+  // on the score instead of being stranded mid-form. (Effect lives below `submit`.)
+  const resultHeadingRef = useRef<HTMLHeadingElement>(null);
+
   const sections = test.data?.sections ?? [];
   const hasCoding = sections.some((s) => s.kind === "coding");
 
@@ -166,6 +169,10 @@ export default function AptitudePage() {
     onError: (err) => toast.error(errorMessage(err)),
   });
 
+  useEffect(() => {
+    if (submit.isSuccess) resultHeadingRef.current?.focus();
+  }, [submit.isSuccess]);
+
   if (!token) return null;
 
   if (submit.isSuccess) {
@@ -173,7 +180,13 @@ export default function AptitudePage() {
       <main className="mx-auto max-w-xl p-6">
         <Card>
           <CardHeader>
-            <CardTitle>Result</CardTitle>
+            <h2
+              ref={resultHeadingRef}
+              tabIndex={-1}
+              className="text-lg font-semibold tracking-tight text-foreground focus:outline-none"
+            >
+              Result
+            </h2>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <p className="text-3xl font-semibold tabular-nums text-foreground">

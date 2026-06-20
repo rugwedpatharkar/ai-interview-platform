@@ -10,7 +10,7 @@ import {
   PageHeader,
 } from "@ip/ui";
 import { errorMessage, useAuthedQuery, useRequireAuth, useRequireRole } from "@ip/shared";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, History } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -77,8 +77,9 @@ export default function PracticePage() {
         )}
         {!history.isLoading && !history.isError && sessions.length === 0 && (
           <EmptyState
+            icon={History}
             title="No practice runs yet"
-            description="Start one above to build your skill profile."
+            description="Finished runs land here so you can revisit your feedback and track progress."
           />
         )}
         <div className="flex flex-col gap-2">

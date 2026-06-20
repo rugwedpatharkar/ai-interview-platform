@@ -11,6 +11,7 @@ import {
   toast,
 } from "@ip/ui";
 import { errorMessage } from "@ip/shared";
+import type { ApplicationList } from "@ip/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -29,10 +30,25 @@ export function DecisionControl({
 
   const decide = useMutation({
     mutationFn: () => api.decisions.decideApplication({ applicationId, outcome }),
+    // Optimistic: flip this row's state in the applicants cache so the pill + action
+    // cluster update on confirm; snapshot for rollback. `outcome` is captured at mutate
+    // time so a settled-then-cleared select doesn't strand the optimistic write.
+    onMutate: async () => {
+      const next = outcome;
+      await queryClient.cancelQueries({ queryKey: ["applicants", jobId] });
+      const prev = queryClient.getQueryData<ApplicationList>(["applicants", jobId]);
+      if (prev)
+        queryClient.setQueryData<ApplicationList>(["applicants", jobId], {
+          ...prev,
+          applications: prev.applications.map((a) =>
+            a.applicationId === applicationId ? { ...a, state: next } : a,
+          ),
+        });
+      return { prev };
+    },
     onSuccess: () => {
       toast.success("Decision recorded");
       setOutcome("");
-      queryClient.invalidateQueries({ queryKey: ["applicants", jobId] });
       queryClient.invalidateQueries({ queryKey: ["report", applicationId] });
       // A decision shifts the funnel — refresh the sibling per-job tabs too.
       queryClient.invalidateQueries({ queryKey: ["ranked", jobId] });
@@ -41,7 +57,15 @@ export function DecisionControl({
       // The company-wide funnel dashboard counts shift too (prefix-matches ["analytics", *]).
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
     },
-    onError: (err) => toast.error(errorMessage(err)),
+    onError: (err, _v, ctx) => {
+      if (ctx?.prev)
+        queryClient.setQueryData(["applicants", jobId], ctx.prev); // roll back
+      toast.error(errorMessage(err));
+    },
+    // Reconcile the optimistic row against the server once the call settles.
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["applicants", jobId] });
+    },
   });
 
   return (

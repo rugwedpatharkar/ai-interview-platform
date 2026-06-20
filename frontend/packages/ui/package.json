@@ -25,9 +25,11 @@
     "tailwind-merge": "^2.6.0"
   },
   "peerDependencies": {
+    "@tanstack/react-query": "^5",
     "react": "^19"
   },
   "devDependencies": {
+    "@tanstack/react-query": "^5.62.7",
     "@types/react": "^19.0.0",
     "typescript": "^5.7.0"
   }

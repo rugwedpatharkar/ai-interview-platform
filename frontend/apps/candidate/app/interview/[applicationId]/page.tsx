@@ -192,6 +192,13 @@ export default function InterviewPage() {
     };
   }, []);
 
+  // Move focus to the new phase's heading on each transition so screen-reader + keyboard
+  // users land on the live/ended state instead of being stranded at the top of the page.
+  const phaseHeadingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    phaseHeadingRef.current?.focus();
+  }, [phase]);
+
   if (!token) return null;
 
   return (
@@ -238,6 +245,13 @@ export default function InterviewPage() {
           {phase === "live" && (
             <Card>
               <CardContent className="p-0">
+                <h2
+                  ref={phaseHeadingRef}
+                  tabIndex={-1}
+                  className="px-3 pt-3 text-sm font-medium text-foreground focus:outline-none"
+                >
+                  Interview in progress
+                </h2>
                 {/* Interviewer video + self-view tile render here; the room exposes the local
                     stream + captions. Controls are captions · end only — NO mute / NO
                     camera-off control exists in this tree. */}
@@ -261,6 +275,9 @@ export default function InterviewPage() {
           {phase === "ended" && (
             <Card>
               <CardContent className="flex flex-col gap-3 p-6">
+                <h2 ref={phaseHeadingRef} tabIndex={-1} className="sr-only">
+                  Interview ended
+                </h2>
                 <Alert
                   tone={endReason === "ended_by_candidate" ? "success" : "danger"}
                 >

@@ -42,17 +42,17 @@
 - [x] E1. Delete unused: Tooltip primitive, `useTheme` export, `DropdownMenuGroup`/`DropdownMenuCheckboxItem`, `SEVERITY_ORDER`, old `AppShell` (after C1), stray helper `export`s, `createAuthedTransport` from barrel
 
 ## F. Dedup (~700 lines)
-- [ ] F1. Lift byte-identical to `@ip/ui`: `auth-layout`, `notification-item`, `sso-buttons`
-- [ ] F2. Parameterize + lift: `use-thread-messages`, `message-thread-view`, `notification-bell`, `assistant-chat`
-- [ ] F3. Reconcile + lift `credentials-form` (company superset); lift `datetime.ts` superset + `scheduling.ts` core
+- [x] F1. Lift byte-identical to `@ip/ui`: `auth-layout`, `notification-item`, `sso-buttons`
+- [x] F2. Parameterize + lift: `use-thread-messages`, `message-thread-view`, `notification-bell`, `assistant-chat`
+- [x] F3. Reconcile + lift `credentials-form` (company superset); lift `datetime.ts` superset + `scheduling.ts` core
 
 ## G. Enhancements
-- [ ] G1. Toast-on-copy affordances
-- [ ] G2. Optimistic UI on decision actions
-- [ ] G3. Empty-state per-context illustrations/icons
-- [ ] G4. ⌘K command palette over the (now-wired) search
-- [ ] G5. Idle back-off on the 5s message poll
-- [ ] G6. Focus-move on interview/aptitude step transitions
+- [x] G1. Toast-on-copy affordances
+- [x] G2. Optimistic UI on decision actions
+- [x] G3. Empty-state per-context illustrations/icons
+- [x] G4. ⌘K command palette over the (now-wired) search
+- [x] G5. Idle back-off on the 5s message poll
+- [x] G6. Focus-move on interview/aptitude step transitions
 
 ## Verification gate
 `tsc --noEmit` (all packages) clean per wave; final production `build` both apps green; behavior preserved; commit per wave (explicit paths).
