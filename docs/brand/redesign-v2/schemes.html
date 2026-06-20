@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aptura — full color schemes (tech · AI · trust)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,540;9..144,600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Geist", system-ui, sans-serif; background: #07080c; }
+  .label { font-family: "Geist Mono", monospace; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-strong); }
+
+  /* ---- Shared slice components (read scoped palette vars) ---------------- */
+  .schema { background: var(--bg); color: var(--ink); padding: clamp(2.5rem, 5vw, 4.5rem) 0; position: relative; overflow: hidden; }
+  .glow { position: absolute; inset: 0; pointer-events: none; }
+  .glow::after { content: ""; position: absolute; top: -30%; right: -10%; width: 700px; height: 700px; border-radius: 50%; background: radial-gradient(circle, var(--accent-soft), transparent 60%); opacity: var(--glow-o, .35); filter: blur(70px); }
+  .wrap { max-width: 1120px; margin-inline: auto; padding-inline: 2rem; position: relative; z-index: 2; }
+  .topnav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: "Fraunces", serif; font-weight: 600; font-size: 1.3rem; letter-spacing: -0.03em; color: var(--ink); }
+  .brand .mark { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-size: 1rem; }
+  .nav { display: flex; align-items: center; gap: 1.4rem; color: var(--ink-2); font-size: .9rem; }
+  .nav .tag { font-family: "Geist Mono", monospace; font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-strong); border: 1px solid var(--line-2); padding: 4px 9px; border-radius: 999px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding-inline: 18px; border-radius: 10px; font-weight: 540; font-size: .92rem; border: 0; cursor: pointer; text-decoration: none; }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line-2); }
+
+  .hero { display: grid; grid-template-columns: 1.3fr 1fr; gap: 2rem; align-items: center; margin-bottom: 2.5rem; }
+  .hero h1 { font-family: "Fraunces", serif; font-weight: 540; font-size: clamp(2.2rem, 4vw, 3.4rem); line-height: 1.03; letter-spacing: -0.025em; margin: .6rem 0 0; max-width: 16ch; }
+  .hero p { color: var(--ink-2); margin: 1rem 0 1.6rem; max-width: 42ch; line-height: 1.6; }
+  .cta { display: flex; gap: 12px; align-items: center; }
+  .pill-accent { display: inline-flex; align-items: center; gap: 8px; padding: 6px 13px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font-size: .76rem; font-weight: 540; }
+  .pill-accent::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* glass-ish preview card on the right */
+  .preview { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1.2rem; box-shadow: 0 24px 60px rgba(0,0,0,.35); }
+  .ring { --p: 87; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--accent) calc(var(--p)*1%), var(--surface-2) 0); position: relative; }
+  .ring::before { content:""; position:absolute; inset:7px; border-radius:50%; background: var(--surface); }
+  .ring b { position: relative; font-family: "Fraunces", serif; font-size: 1.1rem; }
+
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.2rem; }
+  .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.2rem; }
+  .kpi .l { color: var(--ink-2); font-size: .78rem; }
+  .kpi .v { font-family: "Fraunces", serif; font-weight: 600; font-size: 1.7rem; letter-spacing: -0.03em; margin-top: 6px; }
+  .kpi .d { font-size: .74rem; margin-top: 4px; color: var(--good); font-variant-numeric: tabular-nums; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: .88rem; }
+  th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: .74rem; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  .who { display: flex; align-items: center; gap: 10px; }
+  .av { width: 28px; height: 28px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; font-size: .72rem; font-weight: 600; color: var(--ink); }
+  .mono { font-family: "Geist Mono", monospace; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: .74rem; font-weight: 540; }
+  .pill::before { content:""; width:6px; height:6px; border-radius:50%; background: currentColor; }
+  .p-good { background: var(--good-bg); color: var(--good); }
+  .p-warn { background: var(--warn-bg); color: var(--warn); }
+  .p-acc  { background: var(--accent-soft); color: var(--accent-ink); }
+
+  .schemecap { display: flex; align-items: baseline; gap: 14px; margin-bottom: 1.4rem; flex-wrap: wrap; }
+  .schemecap h2 { font-family: "Fraunces", serif; font-weight: 600; font-size: 1.25rem; letter-spacing: -.02em; color: var(--ink); margin: 0; }
+  .schemecap .desc { color: var(--ink-2); font-size: .88rem; }
+  .swat { display: inline-flex; gap: 6px; margin-left: auto; }
+  .swat span { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--line-2); }
+
+  @media (max-width: 860px){ .hero{ grid-template-columns:1fr; } .kpis{ grid-template-columns:1fr; } .preview{ display:none; } }
+
+  /* ===== SCHEME 1 — Midnight Intelligence (deep indigo + electric cyan) === */
+  .s1 {
+    --bg: oklch(0.17 0.028 264); --surface: oklch(0.215 0.03 264); --surface-2: oklch(0.27 0.035 264);
+    --ink: oklch(0.97 0.012 250); --ink-2: oklch(0.74 0.025 255); --ink-3: oklch(0.6 0.025 255);
+    --line: oklch(0.31 0.03 264); --line-2: oklch(0.4 0.035 264);
+    --accent: oklch(0.82 0.135 205); --accent-strong: oklch(0.86 0.13 200); --accent-soft: oklch(0.33 0.07 220); --accent-ink: oklch(0.18 0.04 240);
+    --good: oklch(0.82 0.13 165); --good-bg: oklch(0.32 0.06 165); --warn: oklch(0.85 0.11 85); --warn-bg: oklch(0.33 0.06 80);
+    --glow-o: .5;
+  }
+  /* ===== SCHEME 2 — Enterprise Azure (slate + confident trust-blue) ======= */
+  .s2 {
+    --bg: oklch(0.205 0.018 258); --surface: oklch(0.25 0.02 258); --surface-2: oklch(0.3 0.022 258);
+    --ink: oklch(0.97 0.008 255); --ink-2: oklch(0.76 0.018 255); --ink-3: oklch(0.62 0.018 255);
+    --line: oklch(0.34 0.02 258); --line-2: oklch(0.43 0.022 258);
+    --accent: oklch(0.62 0.16 252); --accent-strong: oklch(0.7 0.15 252); --accent-soft: oklch(0.34 0.08 252); --accent-ink: oklch(0.98 0.01 252);
+    --good: oklch(0.8 0.12 160); --good-bg: oklch(0.33 0.06 160); --warn: oklch(0.83 0.1 80); --warn-bg: oklch(0.34 0.06 78);
+    --glow-o: .28;
+  }
+  /* ===== SCHEME 3 — Verified Mint (deep teal-carbon + aqua-mint) ========== */
+  .s3 {
+    --bg: oklch(0.18 0.02 195); --surface: oklch(0.225 0.022 195); --surface-2: oklch(0.275 0.025 195);
+    --ink: oklch(0.97 0.01 190); --ink-2: oklch(0.75 0.02 190); --ink-3: oklch(0.61 0.02 190);
+    --line: oklch(0.31 0.022 195); --line-2: oklch(0.4 0.025 195);
+    --accent: oklch(0.85 0.12 175); --accent-strong: oklch(0.88 0.12 172); --accent-soft: oklch(0.32 0.06 178); --accent-ink: oklch(0.2 0.04 190);
+    --good: oklch(0.84 0.12 165); --good-bg: oklch(0.32 0.06 168); --warn: oklch(0.85 0.11 85); --warn-bg: oklch(0.33 0.06 82);
+    --glow-o: .42;
+  }
+</style>
+</head>
+<body>
+
+<!-- Repeated slice macro, three palettes -->
+<section class="schema s1"><div class="glow"></div><div class="wrap">
+  <div class="schemecap"><span class="label">Scheme 01</span><h2>Midnight Intelligence</h2><span class="desc">Deep indigo base · electric-cyan signal · luminous glow — reads "AI lab, precise, advanced."</span>
+    <span class="swat"><span style="background:var(--bg)"></span><span style="background:var(--surface-2)"></span><span style="background:var(--accent)"></span><span style="background:var(--good)"></span></span></div>
+  <div class="topnav"><div class="brand"><span class="mark">◐</span> Aptura</div><div class="nav"><span class="tag">AI interview platform</span><span>Product</span><span>Companies</span><a class="btn btn-primary">Get started</a></div></div>
+  <div class="hero">
+    <div><span class="pill-accent">Proctored · AI-scored</span>
+      <h1>Hire on proven merit.</h1>
+      <p>A live, AI-conducted interview — rigorously proctored, scored on evidence, and answered every time. Intelligence you can audit.</p>
+      <div class="cta"><a class="btn btn-primary">Start hiring →</a><a class="btn btn-ghost">See a sample report</a></div>
+    </div>
+    <div class="preview">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px"><div class="ring"><b>87</b></div><div><div style="font-weight:600">Aisha Rahman</div><div style="color:var(--ink-2);font-size:.82rem">Senior Backend · scored by Aptura AI</div></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill p-good">Integrity clean</span><span class="pill p-acc">Pass gate</span><span class="pill p-warn">1 flag</span></div>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Interviews AI-scored</div><div class="v mono">12,480</div><div class="d">+18% this quarter</div></div>
+    <div class="kpi"><div class="l">Integrity clean rate</div><div class="v mono">99.2%</div><div class="d">server-authoritative</div></div>
+    <div class="kpi"><div class="l">Median response</div><div class="v mono">2.4d</div><div class="d">100% answered</div></div>
+  </div>
+  <table><thead><tr><th>Candidate</th><th>AI score</th><th>Integrity</th><th>Gate</th></tr></thead><tbody>
+    <tr><td><div class="who"><span class="av">AR</span> Aisha Rahman</div></td><td class="mono">91</td><td><span class="pill p-good">Clean</span></td><td><span class="pill p-acc">Pass</span></td></tr>
+    <tr><td><div class="who"><span class="av">MO</span> Marcus Olsen</div></td><td class="mono">88</td><td><span class="pill p-good">Clean</span></td><td><span class="pill p-acc">Pass</span></td></tr>
+    <tr><td><div class="who"><span class="av">JL</span> Jia Li</div></td><td class="mono">84</td><td><span class="pill p-warn">2 flags</span></td><td><span class="pill p-acc">Pass</span></td></tr>
+  </tbody></table>
+</div></section>
+
+<section class="schema s2"><div class="glow"></div><div class="wrap">
+  <div class="schemecap"><span class="label">Scheme 02</span><h2>Enterprise Azure</h2><span class="desc">Cool slate · confident trust-blue · structured — reads "credible, professional, established."</span>
+    <span class="swat"><span style="background:var(--bg)"></span><span style="background:var(--surface-2)"></span><span style="background:var(--accent)"></span><span style="background:var(--good)"></span></span></div>
+  <div class="topnav"><div class="brand"><span class="mark">◐</span> Aptura</div><div class="nav"><span class="tag">AI interview platform</span><span>Product</span><span>Companies</span><a class="btn btn-primary">Get started</a></div></div>
+  <div class="hero">
+    <div><span class="pill-accent">Proctored · AI-scored</span>
+      <h1>Hire on proven merit.</h1>
+      <p>A live, AI-conducted interview — rigorously proctored, scored on evidence, and answered every time. Enterprise-grade and auditable.</p>
+      <div class="cta"><a class="btn btn-primary">Start hiring →</a><a class="btn btn-ghost">See a sample report</a></div>
+    </div>
+    <div class="preview">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px"><div class="ring"><b>87</b></div><div><div style="font-weight:600">Aisha Rahman</div><div style="color:var(--ink-2);font-size:.82rem">Senior Backend · scored by Aptura AI</div></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill p-good">Integrity clean</span><span class="pill p-acc">Pass gate</span><span class="pill p-warn">1 flag</span></div>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Interviews AI-scored</div><div class="v mono">12,480</div><div class="d">+18% this quarter</div></div>
+    <div class="kpi"><div class="l">Integrity clean rate</div><div class="v mono">99.2%</div><div class="d">server-authoritative</div></div>
+    <div class="kpi"><div class="l">Median response</div><div class="v mono">2.4d</div><div class="d">100% answered</div></div>
+  </div>
+  <table><thead><tr><th>Candidate</th><th>AI score</th><th>Integrity</th><th>Gate</th></tr></thead><tbody>
+    <tr><td><div class="who"><span class="av">AR</span> Aisha Rahman</div></td><td class="mono">91</td><td><span class="pill p-good">Clean</span></td><td><span class="pill p-acc">Pass</span></td></tr>
+    <tr><td><div class="who"><span class="av">MO</span> Marcus Olsen</div></td><td class="mono">88</td><td><span class="pill p-good">Clean</span></td><td><span class="pill p-acc">Pass</span></td></tr>
+    <tr><td><div class="who"><span class="av">JL</span> Jia Li</div></td><td class="mono">84</td><td><span class="pill p-warn">2 flags</span></td><td><span class="pill p-acc">Pass</span></td></tr>
+  </tbody></table>
+</div></section>
+
+<section class="schema s3"><div class="glow"></div><div class="wrap">
+  <div class="schemecap"><span class="label">Scheme 03</span><h2>Verified Mint</h2><span class="desc">Deep teal-carbon · aqua-mint signal — reads "verified, intelligent, trustworthy" (blue-green = trust + pass).</span>
+    <span class="swat"><span style="background:var(--bg)"></span><span style="background:var(--surface-2)"></span><span style="background:var(--accent)"></span><span style="background:var(--good)"></span></span></div>
+  <div class="topnav"><div class="brand"><span class="mark">◐</span> Aptura</div><div class="nav"><span class="tag">AI interview platform</span><span>Product</span><span>Companies</span><a class="btn btn-primary">Get started</a></div></div>
+  <div class="hero">
+    <div><span class="pill-accent">Proctored · AI-scored</span>
+      <h1>Hire on proven merit.</h1>
+      <p>A live, AI-conducted interview — rigorously proctored, scored on evidence, and answered every time. Every pass is verified.</p>
+      <div class="cta"><a class="btn btn-primary">Start hiring →</a><a class="btn btn-ghost">See a sample report</a></div>
+    </div>
+    <div class="preview">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px"><div class="ring"><b>87</b></div><div><div style="font-weight:600">Aisha Rahman</div><div style="color:var(--ink-2);font-size:.82rem">Senior Backend · scored by Aptura AI</div></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill p-good">Integrity clean</span><span class="pill p-acc">Pass gate</span><span class="pill p-warn">1 flag</span></div>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Interviews AI-scored</div><div class="v mono">12,480</div><div class="d">+18% this quarter</div></div>
+    <div class="kpi"><div class="l">Integrity clean rate</div><div class="v mono">99.2%</div><div class="d">server-authoritative</div></div>
+    <div class="kpi"><div class="l">Median response</div><div class="v mono">2.4d</div><div class="d">100% answered</div></div>
+  </div>
+  <table><thead><tr><th>Candidate</th><th>AI score</th><th>Integrity</th><th>Gate</th></tr></thead><tbody>
+    <tr><td><div class="who"><span class="av">AR</span> Aisha Rahman</div></td><td class="mono">91</td><td><span class="pill p-good">Clean</span></td><td><span class="pill p-acc">Pass</span></td></tr>
+    <tr><td><div class="who"><span class="av">MO</span> Marcus Olsen</div></td><td class="mono">88</td><td><span class="pill p-good">Clean</span></td><td><span class="pill p-acc">Pass</span></td></tr>
+    <tr><td><div class="who"><span class="av">JL</span> Jia Li</div></td><td class="mono">84</td><td><span class="pill p-warn">2 flags</span></td><td><span class="pill p-acc">Pass</span></td></tr>
+  </tbody></table>
+</div></section>
+
+</body>
+</html>
