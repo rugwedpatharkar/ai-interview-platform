@@ -27,6 +27,10 @@ INDEXES: list[IndexSpec] = [
     IndexSpec("aptitude_attempts", "comp_id"),
     # One delivery (served order + clock-start) per application; stable on re-fetch.
     IndexSpec("aptitude_deliveries", "application_id", {"unique": True}),
+    # Coding assessment: one task per job; one attempt per application; candidate erase.
+    IndexSpec("coding_tasks", "job_id", {"unique": True}),
+    IndexSpec("coding_attempts", "application_id", {"unique": True}),
+    IndexSpec("coding_attempts", "candidate_user_id"),
     # reports written by ai-agents (one per application); admin reads + owns the index.
     IndexSpec("reports", "application_id", {"unique": True}),
     # match_results written by ai-agents (one per job+candidate); admin reads these.
