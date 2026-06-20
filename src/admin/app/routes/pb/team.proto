@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package admin.team.v1;
+
+// TeamService — company seat management. Every mutation is team:manage-gated
+// (company_admin only), comp_id-scoped, audited, and last-admin-protected.
+service TeamService {
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
+  rpc InviteMember(InviteMemberRequest) returns (MemberDTO);
+  rpc ResendInvite(ResendInviteRequest) returns (MemberDTO);
+  rpc RevokeInvite(RevokeInviteRequest) returns (MemberDTO);
+  rpc RemoveMember(RemoveMemberRequest) returns (MemberDTO);
+  rpc ChangeRole(ChangeRoleRequest) returns (MemberDTO);
+}
+
+message MemberDTO {
+  string id = 1;
+  string email = 2;
+  string role = 3;
+  string status = 4;  // active | pending | revoked
+  string last_active_at = 5;  // ISO, or "" when never active
+  string invited_by = 6;  // inviter user_id, or "" for founding members
+}
+
+message ListMembersRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListMembersResponse {
+  repeated MemberDTO members = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total = 4;
+}
+
+message InviteMemberRequest {
+  string email = 1;
+  string role = 2;  // recruiter | hiring_manager
+  string temp_password = 3;
+}
+
+message ResendInviteRequest {
+  string user_id = 1;
+}
+
+message RevokeInviteRequest {
+  string user_id = 1;
+}
+
+message RemoveMemberRequest {
+  string user_id = 1;
+}
+
+message ChangeRoleRequest {
+  string user_id = 1;
+  string role = 2;
+}

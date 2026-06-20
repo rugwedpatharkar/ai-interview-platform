@@ -73,6 +73,7 @@ from app.routes.pb import (
     settings_pb2_grpc,
     sourcing_pb2_grpc,
     talent_pb2_grpc,
+    team_pb2_grpc,
 )
 from app.routes.profile import ProfileServicer
 from app.routes.recommendation import RecommendationServicer
@@ -83,6 +84,7 @@ from app.routes.scheduling import SchedulingServicer
 from app.routes.settings import SettingsServicer
 from app.routes.sourcing import SourcingServicer
 from app.routes.talent import TalentServicer
+from app.routes.team import TeamServicer
 
 
 def make_eraser(db, storage):
@@ -309,6 +311,17 @@ def create_web_app(
             tokens=tokens,
             notifications=NotificationRepository(db),
             limiter=RateLimiter(redis),
+        ),
+        app,
+    )
+    team_pb2_grpc.add_TeamServiceServicer_to_server(
+        TeamServicer(
+            users=UserRepository(db),
+            audit=AuditLogRepository(db),
+            tokens=tokens,
+            sessions=RefreshSessionStore(redis),
+            notifier=notifier,
+            nonces=SingleUseTokenStore(redis),
         ),
         app,
     )
