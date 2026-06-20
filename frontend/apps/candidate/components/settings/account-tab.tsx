@@ -8,7 +8,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  ConfirmDialog,
   Field,
   Input,
   toast,
@@ -21,6 +20,7 @@ import { useState } from "react";
 
 import { useAuth } from "../../lib/auth";
 import { passwordChangeError } from "../../app/settings/settings-client";
+import { ChangeEmailDialog } from "./change-email-dialog";
 import type { SettingsClient } from "../../app/settings/types";
 
 /** Account tab: shows the signed-in email (from the JWT) + verified badge, and hosts the
@@ -29,19 +29,9 @@ export function AccountTab({ client }: { client: SettingsClient }) {
   const { token } = useAuth();
   const email = token ? (decodeJwtPayload(token)?.email as string | undefined) ?? null : null;
 
-  const [newEmail, setNewEmail] = useState("");
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
-
-  const changeEmail = useMutation({
-    mutationFn: () => client.requestEmailChange(newEmail),
-    onSuccess: () => {
-      toast.success("Check your new inbox to confirm the change.");
-      setNewEmail("");
-    },
-    onError: (e) => toast.error(errorMessage(e)),
-  });
 
   const pwError = passwordChangeError(current, next, confirm);
   const changePassword = useMutation({
@@ -74,18 +64,7 @@ export function AccountTab({ client }: { client: SettingsClient }) {
               Verified
             </Badge>
           </div>
-          <ConfirmDialog
-            trigger={
-              <Button variant="outline" className="self-start">
-                Change email
-              </Button>
-            }
-            title="Change your email"
-            description="We'll email a confirmation link to the new address. Your current email stays active until you confirm."
-            confirmLabel="Send confirmation"
-            busy={changeEmail.isPending}
-            onConfirm={() => changeEmail.mutateAsync()}
-          />
+          <ChangeEmailDialog client={client} />
         </CardContent>
       </Card>
 
