@@ -51,4 +51,5 @@ class InterviewSession(BaseModel):
     transcript: Transcript = Field(default_factory=Transcript)
     current_question: str = ""
     started_at: str = ""  # ISO; anchors the time-budget clock
-    status: str = "in_progress"  # in_progress | completed
+    status: str = "in_progress"  # in_progress | completed | abandoned | terminated
+    terminated_by_proctor: str = ""  # triggering HIGH event type when proctor-terminated

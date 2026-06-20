@@ -334,3 +334,10 @@ async def test_submit_turn_rejects_completed_session(
             llm=fake_llm(InterviewTurnDecision(done=True)),
         )
     assert pub.events == []
+
+
+def test_session_has_proctor_termination_marker():
+    s = InterviewSession(application_id="a1")
+    assert s.terminated_by_proctor == ""
+    s.status = "terminated"  # the new terminal value is assignable
+    assert s.status == "terminated"
