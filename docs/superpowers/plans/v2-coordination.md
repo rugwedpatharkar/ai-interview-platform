@@ -49,6 +49,15 @@ on BE (mocks). BE order: W1 (SearchJobs → CompanyProfile → SavedJobs → Job
 Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 screens.
 
 ## Handoff log (append; newest last)
+- 2026-06-20 · BE · ✅ **SettingsService — notification prefs slice LANDED** (gate GREEN; admin 20
+  services). New `admin.settings.v1.SettingsService` with `GetNotificationPrefs`/`SetNotificationPrefs`
+  (self-scoped from token): safe defaults when unset, digest∈{off,daily,weekly} + quiet-hours HH:MM +
+  IANA-tz validation; `notification_prefs` collection (unique user_id) + CandidateEraser cascade.
+  `pnpm gen` emitted `settings_pb.ts`. **Remaining SettingsService (additive, not yet built):** ChangePassword
+  + RequestEmailChange/VerifyEmailChange (auth-critical), ListSessions/RevokeSession/RevokeAllSessions
+  (needs a `RefreshSessionStore` per-jti meta enrichment in lib), and **TOTP 2FA (SetupTotp/VerifyTotp/
+  DisableTotp + AuthService mfa_required branch) — BLOCKED on adding `pyotp` (a dependency decision).**
+  **FE:** add `settings` quad; wire the prefs tab now; sessions/2FA tabs await the rest.
 - 2026-06-20 · BE · ✅ **MessagingService LANDED** (gate GREEN; admin 19 services). New
   `admin.messaging.v1` (Send/ListThreads/ListMessages/MarkRead). Thread 1:1 with the application →
   authz reuses `aptitude._owned` (candidate) / `decision._scoped` (recruiter); sender identity from the
