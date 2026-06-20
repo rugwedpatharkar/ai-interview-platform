@@ -86,7 +86,7 @@ export function EmployerFirstRun() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="size-5 text-brand-500" aria-hidden />
+          <Sparkles className="size-5 text-info-foreground" aria-hidden />
           Finish setting up your account
         </CardTitle>
       </CardHeader>
@@ -100,10 +100,10 @@ export function EmployerFirstRun() {
           {STEPS.map((s) => (
             <li
               key={s.id}
-              className="flex items-start justify-between gap-3 rounded-lg border border-border p-3"
+              className="flex items-start justify-between gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-surface-muted"
             >
               <span className="flex min-w-0 items-start gap-3">
-                <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+                <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-info-surface text-info-foreground">
                   <s.icon className="size-5" aria-hidden />
                 </span>
                 <span className="flex min-w-0 flex-col">
@@ -128,7 +128,7 @@ export function EmployerFirstRun() {
           ))}
         </ul>
 
-        <div className="flex items-start gap-3 rounded-lg border border-border bg-surface p-3">
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-surface p-4">
           <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-success-surface text-success-foreground">
             <ShieldCheck className="size-5" aria-hidden />
           </span>

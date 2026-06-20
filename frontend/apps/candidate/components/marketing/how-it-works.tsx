@@ -5,7 +5,7 @@ export function HowItWorks() {
     <section id="how-it-works" className="border-y border-border bg-surface">
       <div className="mx-auto max-w-6xl px-6 py-20">
         <div className="text-center">
-          <p className="text-sm font-medium uppercase tracking-wide text-brand-600">For candidates</p>
+          <p className="text-sm font-medium text-primary">For candidates</p>
           <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-foreground">
             From “apply” to “you’re hired” — in four steps.
           </h2>

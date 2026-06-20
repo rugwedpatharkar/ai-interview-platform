@@ -1,10 +1,13 @@
+"use client";
+
 import type { ComponentType, ReactNode } from "react";
 
 import { cn } from "@ip/ui";
+import { useCountUp } from "@ip/shared";
 
 export interface KpiCardProps {
   label: string;
-  value: ReactNode; // pre-formatted (e.g. "92%", "18h")
+  value: ReactNode; // pre-formatted string (e.g. "92%", "18h") or a raw number to count up
   hint?: string; // sub-caption under the value
   icon?: ComponentType<{ className?: string }>;
   tone?: "default" | "positive" | "warning" | "danger";
@@ -20,7 +23,13 @@ const TONE: Record<NonNullable<KpiCardProps["tone"]>, string> = {
   danger: "text-danger-foreground",
 };
 
-// Midnight `.kpi` tile: icon-prefixed label, big serif tabular value, muted delta line.
+// Raw numeric values count up on mount; pre-formatted strings (e.g. "92%") render as-is.
+function KpiValue({ value }: { value: ReactNode }) {
+  const animated = useCountUp(typeof value === "number" ? value : 0);
+  return <>{typeof value === "number" ? Math.round(animated) : value}</>;
+}
+
+// Midnight `.kpi` tile: icon-prefixed label, big sans tabular value, muted delta line.
 export function KpiCard({
   label,
   value,
@@ -40,8 +49,8 @@ export function KpiCard({
         {Icon ? <Icon className="size-4" /> : null}
         <span>{label}</span>
       </div>
-      <div className="mt-2 font-display text-3xl font-semibold tracking-tight tabular-nums text-foreground">
-        {value}
+      <div className="mt-2 text-3xl font-semibold tracking-tight tabular-nums text-foreground">
+        <KpiValue value={value} />
       </div>
       {hint ? (
         <div className={cn("mt-1.5 text-sm tabular-nums", TONE[tone])}>{hint}</div>

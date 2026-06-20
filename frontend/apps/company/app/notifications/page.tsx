@@ -1,7 +1,7 @@
 "use client";
 
 import { errorMessage } from "@ip/shared";
-import { Button, Card, EmptyState, ErrorState, LoadingState, PageHeader } from "@ip/ui";
+import { Button, Card, EmptyState, ErrorState, PageHeader, Skeleton } from "@ip/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -55,7 +55,19 @@ export default function NotificationsPage() {
           </Button>
         }
       />
-      {q.isLoading && <LoadingState />}
+      {q.isLoading && (
+        <Card className="divide-y divide-border p-1" aria-busy="true" aria-label="Loading notifications">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-start gap-3 px-3 py-2.5">
+              <Skeleton className="size-8 shrink-0 rounded-full" />
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Skeleton className="h-3.5 w-1/2" />
+                <Skeleton className="h-3 w-4/5" />
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
       {q.isError && <ErrorState message={errorMessage(q.error)} retry={() => q.refetch()} />}
       {q.data && rows.length === 0 && (
         <EmptyState
@@ -66,9 +78,10 @@ export default function NotificationsPage() {
       )}
       {rows.length > 0 && (
         <Card className="divide-y divide-border p-1">
-          {rows.map((n) => (
+          {rows.map((n, i) => (
             <NotificationItem
               key={n.id}
+              index={i}
               notification={n}
               icon={iconForKind(n.kind)}
               onClick={() => {

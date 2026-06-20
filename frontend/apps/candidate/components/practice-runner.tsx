@@ -127,7 +127,7 @@ export function PracticeRunner({
       </div>
 
       <p
-        className="font-display text-lg font-semibold tracking-tight text-foreground"
+        className="text-lg font-semibold tracking-tight text-foreground"
         role="status"
         aria-live="polite"
       >

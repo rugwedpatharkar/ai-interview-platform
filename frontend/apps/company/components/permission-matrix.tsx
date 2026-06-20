@@ -24,7 +24,7 @@ export function PermissionMatrix() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-display text-base">What each role can do</CardTitle>
+        <CardTitle className="text-base">What each role can do</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto rounded-lg border border-border">

@@ -69,8 +69,9 @@ function NavItem({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground",
-        active && "bg-surface-muted font-medium text-foreground",
+        "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:bg-surface-muted hover:text-foreground active:scale-[0.99]",
+        active &&
+          "bg-surface-muted font-medium text-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary before:content-['']",
       )}
     >
       <Icon className="size-4 shrink-0" aria-hidden />
@@ -227,8 +228,9 @@ export function CandidateShell({ children }: { children: ReactNode }) {
               href={item.href}
               aria-current={isActive(item.href) ? "page" : undefined}
               className={cn(
-                "shrink-0 rounded-md px-3 py-1.5 transition-colors hover:bg-surface-muted hover:text-foreground",
-                isActive(item.href) && "bg-surface-muted font-medium text-foreground",
+                "shrink-0 rounded-md px-3 py-1.5 transition-colors duration-150 hover:bg-surface-muted hover:text-foreground active:scale-[0.99]",
+                isActive(item.href) &&
+                  "border-b-2 border-primary bg-surface-muted font-medium text-foreground",
               )}
             >
               {item.label}

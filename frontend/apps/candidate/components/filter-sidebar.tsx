@@ -152,7 +152,9 @@ export function FilterSidebar({
       aria-label="Filters"
     >
       {!hasAny ? (
-        <p className="text-sm text-muted-foreground">No filters available.</p>
+        <p className="text-sm text-muted-foreground">
+          Filters appear once roles load.
+        </p>
       ) : (
         <>
           <ChipFacetGroup

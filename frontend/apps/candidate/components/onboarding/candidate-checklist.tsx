@@ -150,7 +150,7 @@ export function CandidateChecklist() {
             <span className="text-muted-foreground">
               {doneCount} of {steps.length} done
             </span>
-            <span className="font-display font-semibold text-brand-600">
+            <span className="font-semibold tabular-nums text-primary">
               {p.completeness}%
             </span>
           </div>
@@ -204,7 +204,9 @@ export function CandidateChecklist() {
               className="flex flex-col gap-1 rounded-lg border border-border bg-surface p-3 transition-colors hover:border-border-strong hover:bg-surface-muted"
             >
               <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <n.icon className="size-4 text-brand-500" aria-hidden />
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <n.icon className="size-4" aria-hidden />
+                </span>
                 {n.title}
               </span>
               <span className="text-xs text-muted-foreground">{n.hint}</span>

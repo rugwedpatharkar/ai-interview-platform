@@ -4,8 +4,8 @@ import {
   Badge,
   EmptyState,
   ErrorState,
-  LoadingState,
   PageHeader,
+  Skeleton,
 } from "@ip/ui";
 import { Users } from "lucide-react";
 import { errorMessage, useAuthedQuery } from "@ip/shared";
@@ -36,7 +36,13 @@ export default function TalentPage() {
         {/* The full pool is the default view; a live search replaces it with ranked hits. */}
         {!searching && (
           <>
-            {pool.isLoading && <LoadingState />}
+            {pool.isLoading && (
+              <div className="flex flex-col gap-3" aria-busy="true" aria-label="Loading talent pool">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16 rounded-xl" />
+                ))}
+              </div>
+            )}
             {pool.isError && (
               <ErrorState message={errorMessage(pool.error)} retry={() => pool.refetch()} />
             )}
@@ -51,10 +57,11 @@ export default function TalentPage() {
               <>
                 {/* Stacked cards on narrow viewports keep the id + count readable at ~375px. */}
                 <div className="flex flex-col gap-3 sm:hidden">
-                  {entries.map((e) => (
+                  {entries.map((e, i) => (
                     <div
                       key={e.candidateUserId}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4"
+                      className="flex animate-rise-in items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4"
+                      style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
                     >
                       <span
                         className="truncate font-mono text-xs text-muted-foreground"
@@ -79,10 +86,11 @@ export default function TalentPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {entries.map((e) => (
+                      {entries.map((e, i) => (
                         <tr
                           key={e.candidateUserId}
-                          className="border-b border-border transition-colors last:border-b-0 hover:bg-surface-muted"
+                          className="animate-rise-in border-b border-border transition-colors last:border-b-0 hover:bg-surface-muted"
+                          style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
                         >
                           <td
                             className="px-4 py-3 font-mono text-xs text-muted-foreground"

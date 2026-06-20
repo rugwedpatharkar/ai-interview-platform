@@ -1,8 +1,8 @@
 "use client";
 
-import { EmptyState, Skeleton, cn } from "@ip/ui";
+import { Button, EmptyState, Skeleton, cn } from "@ip/ui";
 import { useQuery } from "@tanstack/react-query";
-import { SearchX } from "lucide-react";
+import { CloudOff, RefreshCw, SearchX } from "lucide-react";
 import { useState } from "react";
 
 import { FilterSidebar } from "../../components/filter-sidebar";
@@ -43,16 +43,13 @@ export function Marketplace({
     <div className="flex flex-col gap-4">
       <JobSearchBar value={params} onSearch={setParams} />
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr]">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[264px_1fr]">
         <FilterSidebar facets={q.data?.facets} value={params} onChange={setParams} />
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {q.data && (
             <div className="flex flex-wrap items-center gap-3">
-              <p
-                className="font-display text-sm text-muted-foreground"
-                aria-live="polite"
-              >
+              <p className="text-sm text-muted-foreground" aria-live="polite">
                 <span className="font-semibold tabular-nums text-foreground">
                   {q.data.total}
                 </span>{" "}
@@ -93,37 +90,45 @@ export function Marketplace({
             </div>
           )}
 
-          {showSkeletons && (
-            <>
-              <Skeleton className="h-28" />
-              <Skeleton className="h-28" />
-              <Skeleton className="h-28" />
-            </>
-          )}
+          {showSkeletons &&
+            Array.from({ length: 4 }, (_, i) => (
+              <Skeleton key={i} className="h-44 rounded-xl" />
+            ))}
 
           {q.isError && (
             <EmptyState
               title="Couldn't load jobs"
-              description="Something went wrong fetching the catalog. Try again in a moment."
-              icon={SearchX}
+              description="Something went wrong fetching the catalog. Check your connection, then try again."
+              icon={CloudOff}
+              action={
+                <Button variant="outline" size="sm" onClick={() => q.refetch()}>
+                  <RefreshCw className="size-4" aria-hidden />
+                  Try again
+                </Button>
+              }
             />
           )}
 
           {!showSkeletons && !q.isError && jobs.length === 0 && (
             <EmptyState
-              title="No matching jobs"
-              description="Try broadening your search or clearing some filters."
+              title="No roles match your filters"
+              description="Try broadening your search — remove a filter, widen the location, or clear the keyword to see more roles."
               icon={SearchX}
             />
           )}
 
           {jobs.map((j, i) => (
-            <JobCard
+            <div
               key={j.jobId}
-              job={j}
-              bestMatch={i === 0 && (params.sort ?? "relevance") === "relevance"}
-              action={<SaveJobButton jobId={j.jobId} />}
-            />
+              className="animate-rise-in"
+              style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+            >
+              <JobCard
+                job={j}
+                bestMatch={i === 0 && (params.sort ?? "relevance") === "relevance"}
+                action={<SaveJobButton jobId={j.jobId} />}
+              />
+            </div>
           ))}
         </div>
       </div>

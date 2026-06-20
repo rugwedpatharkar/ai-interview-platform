@@ -114,7 +114,7 @@ export default function JobsPage() {
                     <td className="px-4 py-3">
                       <Link
                         href={`/jobs/${job.jobId}`}
-                        className="font-display text-base font-medium text-foreground hover:underline"
+                        className="text-base font-medium text-foreground hover:underline"
                       >
                         {job.title}
                       </Link>
@@ -155,7 +155,7 @@ export default function JobsPage() {
                 className="group rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="min-w-0 flex-1 truncate font-display text-base font-medium text-foreground">
+                  <p className="min-w-0 flex-1 truncate text-base font-medium text-foreground">
                     {job.title}
                   </p>
                   <ArrowRight

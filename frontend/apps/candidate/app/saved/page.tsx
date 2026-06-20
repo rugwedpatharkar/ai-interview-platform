@@ -1,6 +1,6 @@
 "use client";
 
-import { EmptyState, Skeleton, buttonVariants, cn } from "@ip/ui";
+import { EmptyState, ErrorState, Skeleton, buttonVariants, cn } from "@ip/ui";
 import { errorMessage, useRequireAuth } from "@ip/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Bookmark } from "lucide-react";
@@ -46,10 +46,7 @@ export default function SavedJobsPage() {
           </>
         )}
         {q.isError && (
-          <EmptyState
-            title="Couldn't load saved jobs"
-            description={errorMessage(q.error)}
-          />
+          <ErrorState message={errorMessage(q.error)} retry={() => q.refetch()} />
         )}
         {!q.isLoading && !q.isError && jobs.length === 0 && (
           <EmptyState

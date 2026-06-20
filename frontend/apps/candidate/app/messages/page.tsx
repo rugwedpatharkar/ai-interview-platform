@@ -1,7 +1,7 @@
 "use client";
 
 import { errorMessage, useRequireAuth } from "@ip/shared";
-import { Card, EmptyState, ErrorState, LoadingState, PageHeader, cn } from "@ip/ui";
+import { Card, EmptyState, ErrorState, PageHeader, Skeleton, cn } from "@ip/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Mail } from "lucide-react";
 import Link from "next/link";
@@ -43,7 +43,26 @@ export default function MessagesPage() {
         title="Messages"
         description="Conversations about your applications"
       />
-      {q.isLoading && <LoadingState />}
+      {q.isLoading && (
+        <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
+          <div className="flex flex-col gap-2" aria-busy="true" aria-label="Loading conversations">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 rounded-lg border border-border bg-surface p-4"
+              >
+                <Skeleton className="size-9 shrink-0 rounded-full" />
+                <div className="flex flex-1 flex-col gap-2">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-3 w-4/5" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <Skeleton className="hidden h-96 rounded-xl lg:block" />
+        </div>
+      )}
       {q.isError && <ErrorState message={errorMessage(q.error)} retry={() => q.refetch()} />}
       {q.data && q.data.length === 0 && (
         <EmptyState
@@ -60,7 +79,7 @@ export default function MessagesPage() {
             className="flex flex-col gap-2 lg:max-h-[calc(100dvh-12rem)] lg:overflow-y-auto lg:pr-1"
           >
             {/* server sorts desc by last_message_at — do not re-sort */}
-            {q.data.map((t) => {
+            {q.data.map((t, i) => {
               const active = t.applicationId === openId;
               return (
                 <Link
@@ -72,6 +91,7 @@ export default function MessagesPage() {
                       ? `${t.jobTitle}, ${t.unread} unread`
                       : t.jobTitle
                   }
+                  style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
                   onClick={(e) => {
                     // On desktop, open the preview pane in place; let the route handle mobile.
                     if (window.matchMedia("(min-width: 1024px)").matches) {
@@ -80,7 +100,7 @@ export default function MessagesPage() {
                     }
                   }}
                   className={cn(
-                    "flex items-start justify-between gap-3 rounded-lg border border-border bg-surface p-4 transition-colors hover:bg-surface-muted",
+                    "flex animate-rise-in items-start justify-between gap-3 rounded-lg border border-border bg-surface p-4 transition-colors hover:bg-surface-muted",
                     active &&
                       "bg-surface-muted shadow-[inset_3px_0_0_var(--primary)]",
                   )}
@@ -93,7 +113,7 @@ export default function MessagesPage() {
                       {t.companyName.charAt(0).toUpperCase()}
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate font-display text-base font-medium text-foreground">
+                      <span className="block truncate text-base font-medium text-foreground">
                         {t.jobTitle}
                       </span>
                       <span className="block truncate text-sm text-muted-foreground">
@@ -119,7 +139,7 @@ export default function MessagesPage() {
             {openThread ? (
               <Card className="p-4">
                 <div className="mb-3 border-b border-border pb-3">
-                  <h3 className="truncate font-display text-base font-medium text-foreground">
+                  <h3 className="truncate text-base font-medium text-foreground">
                     {openThread.jobTitle}
                   </h3>
                   <p className="truncate text-sm text-muted-foreground">

@@ -7,7 +7,7 @@ import {
   Button,
   EmptyState,
   ErrorState,
-  LoadingState,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -44,7 +44,17 @@ export function ReportsPanel({ jobId }: { jobId: string }) {
 
   const list = reports.data?.reports ?? [];
 
-  if (reports.isLoading) return <LoadingState />;
+  if (reports.isLoading)
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-end">
+          <Skeleton className="h-8 w-32" />
+        </div>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full" />
+        ))}
+      </div>
+    );
   if (reports.isError)
     return (
       <ErrorState
@@ -56,7 +66,12 @@ export function ReportsPanel({ jobId }: { jobId: string }) {
     return (
       <EmptyState
         title="No scored candidates yet"
-        description="Reports appear once candidates finish their interview and are scored."
+        description="Reports appear once candidates finish their interview and are scored. Refresh to check for new results."
+        action={
+          <Button variant="outline" size="sm" onClick={() => reports.refetch()}>
+            Refresh
+          </Button>
+        }
       />
     );
 

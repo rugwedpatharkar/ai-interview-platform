@@ -4,7 +4,7 @@ import {
   Badge,
   EmptyState,
   ErrorState,
-  LoadingState,
+  Skeleton,
 } from "@ip/ui";
 import { errorMessage, useAuthedQuery } from "@ip/shared";
 import { Check, Sparkles } from "lucide-react";
@@ -32,10 +32,30 @@ export function RecommendedRoles() {
     queryFn: () => api.recommendations.getCandidateRecommendations({}),
   });
 
-  if (recs.isLoading) return <LoadingState />;
+  if (recs.isLoading)
+    return (
+      <div className="flex flex-col gap-3">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-4/5" />
+          </div>
+        ))}
+      </div>
+    );
   if (recs.isError)
     return (
-      <ErrorState message={errorMessage(recs.error)} retry={() => recs.refetch()} />
+      <ErrorState
+        message={`Couldn't load recommendations — ${errorMessage(recs.error)}`}
+        retry={() => recs.refetch()}
+      />
     );
 
   const matches = recs.data?.matches ?? [];
@@ -50,11 +70,12 @@ export function RecommendedRoles() {
 
   return (
     <div className="flex flex-col gap-3">
-      {matches.map((m) => (
+      {matches.map((m, i) => (
         <Link
           key={m.jobId}
           href={`/jobs/${m.jobId}`}
-          className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-muted/50"
+          style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+          className="animate-rise-in flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-muted/50"
         >
           <div className="flex items-start justify-between gap-3">
             <p className="font-medium text-foreground">Recommended role</p>

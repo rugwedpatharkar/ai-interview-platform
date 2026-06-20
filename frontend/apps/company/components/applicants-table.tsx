@@ -10,7 +10,7 @@ import {
   ConfirmDialog,
   EmptyState,
   ErrorState,
-  LoadingState,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -24,7 +24,7 @@ import { TERMINAL_STATES, errorMessage, useAuthedQuery } from "@ip/shared";
 import type { ApplicationResponse } from "@ip/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "../lib/auth";
 import { selectableIds, toggle, toggleAll } from "../lib/selection";
@@ -97,7 +97,10 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
     onError: (err) => toast.error(errorMessage(err)),
   });
 
-  const list = applicants.data?.applications ?? [];
+  const list = useMemo(
+    () => applicants.data?.applications ?? [],
+    [applicants.data],
+  );
 
   // Prune ids that left the decidable set after a refetch, so a stale selection can't
   // target a row that already transitioned out of a decidable state.
@@ -109,7 +112,34 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
     });
   }, [list]);
 
-  if (applicants.isLoading) return <LoadingState />;
+  // Memoize the funnel derivations so they recompute only when the fetched list / active
+  // stage actually change, not on every selection toggle.
+  const selectable = useMemo(() => selectableIds(list), [list]);
+  const visible = useMemo(
+    // Stage filter is presentation-only: it narrows the rendered rows but never the
+    // selection set (select-all + pruning still reason over the full list).
+    () => list.filter((a) => STAGES[stage](a.state)),
+    [list, stage],
+  );
+  const counts = useMemo(
+    () =>
+      (Object.keys(STAGES) as Stage[]).reduce(
+        (acc, key) => {
+          acc[key] = list.filter((a) => STAGES[key](a.state)).length;
+          return acc;
+        },
+        {} as Record<Stage, number>,
+      ),
+    [list],
+  );
+
+  // Stable per-row toggle so memoized rows don't re-render on unrelated selection changes.
+  const onToggle = useCallback(
+    (id: string) => setSel((prev) => toggle(prev, id)),
+    [],
+  );
+
+  if (applicants.isLoading) return <ApplicantsSkeleton />;
   if (applicants.isError)
     return (
       <ErrorState
@@ -121,18 +151,18 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
     return (
       <EmptyState
         title="No applicants yet"
-        description="Applications appear here as candidates apply."
+        description="Applications appear here as candidates apply. Refresh to check for new applicants."
+        action={
+          <Button variant="outline" size="sm" onClick={() => applicants.refetch()}>
+            Refresh
+          </Button>
+        }
       />
     );
 
-  const selectable = selectableIds(list);
   const allSelected = selectable.length > 0 && selectable.every((id) => sel.has(id));
 
-  // Stage filter is presentation-only: it narrows the rendered rows but never the
-  // selection set (select-all + pruning still reason over the full list).
-  const visible = list.filter((a) => STAGES[stage](a.state));
-
-  const stageCount = (key: Stage) => list.filter((a) => STAGES[key](a.state)).length;
+  const stageCount = (key: Stage) => counts[key];
   const kpis = [
     { label: "Applicants", value: String(list.length) },
     { label: "Interviewed", value: String(stageCount("interviewed")) },
@@ -261,19 +291,21 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
 
       {/* Stacked cards on narrow viewports — the table overflows at ~375px. */}
       <div className="flex flex-col gap-3 sm:hidden">
-        {visible.map((a) => {
+        {visible.map((a, i) => {
           const canSelect = selectable.includes(a.applicationId);
           return (
-            <Card key={a.applicationId}>
+            <Card
+              key={a.applicationId}
+              className="animate-rise-in"
+              style={i < 6 ? { animationDelay: `${i * 40}ms` } : undefined}
+            >
               <CardContent className="flex flex-col gap-3 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2">
                     {canSelect && (
                       <Checkbox
                         checked={sel.has(a.applicationId)}
-                        onCheckedChange={() =>
-                          setSel((prev) => toggle(prev, a.applicationId))
-                        }
+                        onCheckedChange={() => onToggle(a.applicationId)}
                         aria-label={`Select candidate ${a.candidateUserId}`}
                       />
                     )}
@@ -306,20 +338,20 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {visible.map((a) => {
+            {visible.map((a, i) => {
               const canSelect = selectable.includes(a.applicationId);
               return (
                 <TableRow
                   key={a.applicationId}
                   data-state={sel.has(a.applicationId) ? "selected" : undefined}
+                  className="animate-rise-in"
+                  style={i < 6 ? { animationDelay: `${i * 40}ms` } : undefined}
                 >
                   <TableCell>
                     {canSelect && (
                       <Checkbox
                         checked={sel.has(a.applicationId)}
-                        onCheckedChange={() =>
-                          setSel((prev) => toggle(prev, a.applicationId))
-                        }
+                        onCheckedChange={() => onToggle(a.applicationId)}
                         aria-label={`Select candidate ${a.candidateUserId}`}
                       />
                     )}
@@ -341,6 +373,28 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
           </TableBody>
         </Table>
       </div>
+    </div>
+  );
+}
+
+// Load state: mirror the KPI strip + table shape with shimmer blocks rather than a spinner,
+// so the layout doesn't jump when the data lands.
+function ApplicantsSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 rounded-xl" />
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-7 w-24 rounded-full" />
+        ))}
+      </div>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Skeleton key={i} className="h-12 w-full" />
+      ))}
     </div>
   );
 }

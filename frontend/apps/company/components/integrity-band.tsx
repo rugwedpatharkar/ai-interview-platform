@@ -153,7 +153,7 @@ export function IntegrityBand({
 
             {timeline.recordingUrl && (
               <div>
-                <p className="mb-1.5 font-display text-sm font-medium text-foreground">
+                <p className="mb-1.5 text-sm font-medium text-foreground">
                   Session recording
                 </p>
                 <video

@@ -137,8 +137,8 @@ export function ReportView({
             </Badge>
           </CardHeader>
           <CardContent>
-            {report.competencies.map((c) => (
-              <CompetencyCard key={c.competency} c={c} />
+            {report.competencies.map((c, i) => (
+              <CompetencyCard key={c.competency} c={c} index={i} />
             ))}
           </CardContent>
         </Card>
@@ -186,7 +186,7 @@ function SummaryStat({
         {label}
       </span>
       <span
-        className={`font-display text-lg font-semibold capitalize text-foreground${
+        className={`text-lg font-semibold capitalize text-foreground${
           mono ? " tabular-nums" : ""
         }`}
       >
@@ -211,7 +211,7 @@ function ReportSection({
   return (
     <Card>
       <CardContent className="flex flex-col gap-2 p-4">
-        <p className="font-display text-sm font-semibold text-foreground">{title}</p>
+        <p className="text-sm font-semibold text-foreground">{title}</p>
         <ul className={`flex flex-col gap-1.5 text-sm ${tone}`}>
           {items.map((item) => (
             <li key={item} className="flex gap-2">

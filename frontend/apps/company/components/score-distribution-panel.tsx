@@ -1,15 +1,17 @@
 "use client";
 
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   EmptyState,
   ErrorState,
-  LoadingState,
+  Skeleton,
 } from "@ip/ui";
 import { errorMessage, useAuthedQuery } from "@ip/shared";
+import { useMemo } from "react";
 
 import { useAuth } from "../lib/auth";
 
@@ -26,31 +28,54 @@ export function ScoreDistributionPanel({ jobId }: { jobId: string }) {
     queryFn: () => api.analytics.getJobScoreDistribution({ jobId }),
   });
 
-  if (dist.isLoading) return <LoadingState />;
+  const d = dist.data;
+  const count = d ? Number(d.count) : 0;
+
+  // Memoize the stat tiles + the flat-distribution check so they only recompute when the
+  // fetched distribution actually changes (not on unrelated re-renders).
+  const stats = useMemo(
+    () =>
+      d
+        ? [
+            { label: "Scored", value: String(count) },
+            { label: "Lowest", value: pct(d.min) },
+            { label: "Mean", value: pct(d.mean) },
+            { label: "Highest", value: pct(d.max) },
+          ]
+        : [],
+    [d, count],
+  );
+  // A single sample (or a zero-width range) makes the box plot a meaningless dot.
+  const flat = useMemo(() => !d || count === 1 || d.max <= d.min, [d, count]);
+
+  if (dist.isLoading)
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-32 rounded-xl" />
+      </div>
+    );
   if (dist.isError)
     return (
       <ErrorState message={errorMessage(dist.error)} retry={() => dist.refetch()} />
     );
 
-  const d = dist.data;
-  const count = d ? Number(d.count) : 0;
   if (!d || count === 0)
     return (
       <EmptyState
         title="No scores yet"
-        description="The score distribution appears once candidates are scored for this job."
+        description="The score distribution appears once candidates are scored for this job. Check back after interviews complete."
+        action={
+          <Button variant="outline" size="sm" onClick={() => dist.refetch()}>
+            Refresh
+          </Button>
+        }
       />
     );
-
-  const stats = [
-    { label: "Scored", value: String(count) },
-    { label: "Lowest", value: pct(d.min) },
-    { label: "Mean", value: pct(d.mean) },
-    { label: "Highest", value: pct(d.max) },
-  ];
-
-  // A single sample (or a zero-width range) makes the box plot a meaningless dot.
-  const flat = count === 1 || d.max <= d.min;
 
   return (
     <div className="flex flex-col gap-4">
@@ -62,7 +87,7 @@ export function ScoreDistributionPanel({ jobId }: { jobId: string }) {
                 {s.label}
               </CardTitle>
             </CardHeader>
-            <CardContent className="font-display text-2xl font-semibold tabular-nums text-foreground">
+            <CardContent className="text-2xl font-semibold tabular-nums text-foreground">
               {s.value}
             </CardContent>
           </Card>

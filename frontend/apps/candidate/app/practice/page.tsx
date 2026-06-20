@@ -65,7 +65,7 @@ export default function PracticePage() {
       )}
 
       <section className="mt-10 flex flex-col gap-3">
-        <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">
           Past practice runs
         </h2>
         {history.isLoading && <LoadingState />}

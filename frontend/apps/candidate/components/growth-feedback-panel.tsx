@@ -16,7 +16,7 @@ export function GrowthFeedbackPanel({ result }: { result: PracticeFeedbackResult
     <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle className="font-display">Your growth feedback</CardTitle>
+          <CardTitle>Your growth feedback</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           <p className="text-foreground">{feedback.summary}</p>
@@ -30,7 +30,7 @@ export function GrowthFeedbackPanel({ result }: { result: PracticeFeedbackResult
         {feedback.strengths.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-display text-success">
+              <CardTitle className="flex items-center gap-2 text-success">
                 <CheckCircle2 className="size-4" aria-hidden />
                 Strengths
               </CardTitle>
@@ -54,7 +54,7 @@ export function GrowthFeedbackPanel({ result }: { result: PracticeFeedbackResult
         {feedback.gaps.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-display">
+              <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="size-4 text-primary" aria-hidden />
                 Areas to grow
               </CardTitle>
@@ -78,7 +78,7 @@ export function GrowthFeedbackPanel({ result }: { result: PracticeFeedbackResult
       {feedback.suggested_topics.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-display">
+            <CardTitle className="flex items-center gap-2">
               <Lightbulb className="size-4 text-primary" aria-hidden />
               Topics to study next
             </CardTitle>

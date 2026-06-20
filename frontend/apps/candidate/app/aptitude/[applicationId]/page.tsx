@@ -173,10 +173,10 @@ export default function AptitudePage() {
       <main className="mx-auto max-w-xl p-6">
         <Card>
           <CardHeader>
-            <CardTitle className="font-display">Result</CardTitle>
+            <CardTitle>Result</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <p className="font-display text-3xl font-semibold tabular-nums text-foreground">
+            <p className="text-3xl font-semibold tabular-nums text-foreground">
               {submit.data.score}%
             </p>
             <Alert tone={submit.data.passed ? "success" : "danger"}>

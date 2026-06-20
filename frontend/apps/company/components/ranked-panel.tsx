@@ -3,11 +3,13 @@
 import {
   Avatar,
   Badge,
+  Button,
   Card,
   CardContent,
   EmptyState,
   ErrorState,
   LoadingState,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -47,16 +49,18 @@ export function RankedPanel({ jobId }: { jobId: string }) {
 
   const notReady = ranked.isError && isNotFound(ranked.error);
 
-  if (ranked.isLoading || notReady)
+  // Genuine first load → skeleton rows; "matcher not run yet" keeps the explanatory
+  // auto-updating label so the recruiter knows ranking is still in flight.
+  if (ranked.isLoading)
     return (
-      <LoadingState
-        label={
-          notReady
-            ? "Ranking candidates — this updates automatically…"
-            : "Loading…"
-        }
-      />
+      <div className="flex flex-col gap-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-14 w-full" />
+        ))}
+      </div>
     );
+  if (notReady)
+    return <LoadingState label="Ranking candidates — this updates automatically…" />;
   if (ranked.isError)
     return (
       <ErrorState message={errorMessage(ranked.error)} retry={() => ranked.refetch()} />
@@ -67,7 +71,12 @@ export function RankedPanel({ jobId }: { jobId: string }) {
     return (
       <EmptyState
         title="No ranked candidates yet"
-        description="Applicants appear here once the AI matcher scores them for this job."
+        description="Applicants appear here once the AI matcher scores them for this job. Refresh to check for new rankings."
+        action={
+          <Button variant="outline" size="sm" onClick={() => ranked.refetch()}>
+            Refresh
+          </Button>
+        }
       />
     );
 

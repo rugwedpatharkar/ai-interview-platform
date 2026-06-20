@@ -106,7 +106,7 @@ export default function BrandingPage() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
           <Card>
             <CardHeader>
-              <CardTitle className="font-display">Brand</CardTitle>
+              <CardTitle>Brand</CardTitle>
             </CardHeader>
             <CardContent>
             <form
@@ -215,13 +215,13 @@ function BrandPreview({
   return (
     <Card className="h-fit lg:sticky lg:top-24">
       <CardHeader>
-        <CardTitle className="font-display text-base">Marketplace preview</CardTitle>
+        <CardTitle className="text-base">Marketplace preview</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-start gap-3">
           <Avatar name={name} src={logoUrl || undefined} size="lg" />
           <div className="min-w-0 flex-1">
-            <p className="truncate font-display text-lg font-semibold tracking-tight text-foreground">
+            <p className="truncate text-lg font-semibold tracking-tight text-foreground">
               {name}
             </p>
             <div className="mt-1 flex flex-wrap gap-1.5">

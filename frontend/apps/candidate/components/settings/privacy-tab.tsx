@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
   ConfirmDialog,
+  ErrorState,
   LoadingState,
   toast,
 } from "@ip/ui";
@@ -70,14 +71,10 @@ export function PrivacyTab() {
           {consents.isLoading ? (
             <LoadingState label="Loading consents…" />
           ) : consents.isError ? (
-            <Alert tone="danger">
-              <span className="flex flex-col items-start gap-2">
-                Couldn't load your consent status.
-                <Button variant="outline" size="sm" onClick={() => consents.refetch()}>
-                  Try again
-                </Button>
-              </span>
-            </Alert>
+            <ErrorState
+              message={errorMessage(consents.error)}
+              retry={() => consents.refetch()}
+            />
           ) : (
             SCOPES.map((s) => (
               <div

@@ -121,7 +121,7 @@ export function RubricManager() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="font-display">
+          <CardTitle>
             {editingId ? "Edit rubric" : "New rubric"}
           </CardTitle>
         </CardHeader>
@@ -215,7 +215,7 @@ export function RubricManager() {
       </Card>
 
       <section className="flex flex-col gap-3">
-        <h2 className="font-display text-lg font-semibold text-foreground">
+        <h2 className="text-lg font-semibold text-foreground">
           Your rubrics
         </h2>
         {rubrics.isLoading && <LoadingState />}
@@ -235,7 +235,7 @@ export function RubricManager() {
           <Card key={r.id}>
             <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 flex-col gap-1">
-                <p className="font-display font-semibold text-foreground">{r.name}</p>
+                <p className="font-semibold text-foreground">{r.name}</p>
                 <p className="truncate text-sm text-muted-foreground">
                   {r.competencies.map((c) => c.name).join(", ") || "No competencies"}
                 </p>

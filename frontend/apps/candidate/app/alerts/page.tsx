@@ -1,6 +1,6 @@
 "use client";
 
-import { EmptyState, Skeleton, toast } from "@ip/ui";
+import { EmptyState, ErrorState, Skeleton, toast } from "@ip/ui";
 import { errorMessage, useRequireAuth } from "@ip/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -64,7 +64,7 @@ export default function JobAlertsPage() {
           </>
         )}
         {q.isError && (
-          <EmptyState title="Couldn't load alerts" description={errorMessage(q.error)} />
+          <ErrorState message={errorMessage(q.error)} retry={() => q.refetch()} />
         )}
         {!q.isLoading && !q.isError && alerts.length === 0 && (
           <EmptyState title="No alerts yet" description="Create your first saved search above." />

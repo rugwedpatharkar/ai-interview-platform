@@ -13,7 +13,7 @@ export function CompletenessMeter({ value }: { value: number }) {
     <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Profile completeness</span>
-        <span className="font-display text-sm font-semibold tabular-nums text-primary">
+        <span className="text-sm font-semibold tabular-nums text-primary">
           {value}%
         </span>
       </div>

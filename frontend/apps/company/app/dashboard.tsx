@@ -1,9 +1,10 @@
 "use client";
 
-import { Avatar, Button, ErrorState, LoadingState } from "@ip/ui";
+import { Avatar, Button, ErrorState, Skeleton } from "@ip/ui";
 import { errorMessage, useAuthedQuery } from "@ip/shared";
 import { Clock, Inbox, TrendingUp, Users } from "lucide-react";
 import Link from "next/link";
+import { useMemo } from "react";
 
 import { CompanyShell } from "../components/company-shell";
 import { FunnelChart } from "../components/funnel-chart";
@@ -32,6 +33,39 @@ export function RecruiterDashboard() {
   // KPI strip: mock until Analytics.GetNoGhostingKpis lands; then
   // api.analytics.getNoGhostingKpis({ windowDays: 30 }) (widen bigints with Number(...)).
   const kpis = makeMockKpis();
+
+  // Derive the KPI tiles once per kpis snapshot — formatting + tone math is pure.
+  const kpiCards = useMemo(
+    () => [
+      {
+        label: "Outcome rate",
+        value: formatPct(kpis.outcomeRate),
+        hint: `${kpis.totalApplicants} applicants · ${kpis.windowDays}d`,
+        icon: TrendingUp,
+        tone: kpiTone(kpis.outcomeRate),
+      },
+      {
+        label: "Awaiting outcome",
+        value: kpis.openNoOutcome,
+        hint: "Applicants with no decision yet",
+        icon: Inbox,
+        tone: kpis.openNoOutcome > 0 ? ("warning" as const) : ("positive" as const),
+      },
+      {
+        label: "Avg response time",
+        value: formatHours(kpis.avgResponseHours),
+        hint: `Median ${formatHours(kpis.medianResponseHours)}`,
+        icon: Clock,
+      },
+      {
+        label: "Total applicants",
+        value: kpis.totalApplicants,
+        hint: `Last ${kpis.windowDays} days`,
+        icon: Users,
+      },
+    ],
+    [kpis],
+  );
 
   return (
     <CompanyShell>
@@ -62,38 +96,15 @@ export function RecruiterDashboard() {
         <EmployerFirstRun />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard
-            label="Outcome rate"
-            value={formatPct(kpis.outcomeRate)}
-            hint={`${kpis.totalApplicants} applicants · ${kpis.windowDays}d`}
-            icon={TrendingUp}
-            tone={kpiTone(kpis.outcomeRate)}
-          />
-          <KpiCard
-            label="Awaiting outcome"
-            value={kpis.openNoOutcome}
-            hint="Applicants with no decision yet"
-            icon={Inbox}
-            tone={kpis.openNoOutcome > 0 ? "warning" : "positive"}
-          />
-          <KpiCard
-            label="Avg response time"
-            value={formatHours(kpis.avgResponseHours)}
-            hint={`Median ${formatHours(kpis.medianResponseHours)}`}
-            icon={Clock}
-          />
-          <KpiCard
-            label="Total applicants"
-            value={kpis.totalApplicants}
-            hint={`Last ${kpis.windowDays} days`}
-            icon={Users}
-          />
+          {kpiCards.map((card) => (
+            <KpiCard key={card.label} {...card} />
+          ))}
         </div>
 
         {/* Two-column body: hiring funnel LEFT · recent jobs + decision queue RIGHT */}
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_360px]">
           <div className="flex flex-col gap-4">
-            {funnel.isLoading && <LoadingState />}
+            {funnel.isLoading && <FunnelSkeleton />}
             {funnel.isError && (
               <ErrorState
                 message={errorMessage(funnel.error)}
@@ -108,7 +119,7 @@ export function RecruiterDashboard() {
 
             <div className="rounded-xl border border-border bg-surface p-4">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="font-display text-xl font-semibold tracking-tight text-foreground">
+                <h3 className="text-xl font-semibold tracking-tight text-foreground">
                   Needs your decision
                 </h3>
                 <span className="inline-flex items-center rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium tabular-nums text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
@@ -116,10 +127,11 @@ export function RecruiterDashboard() {
                 </span>
               </div>
               <ul>
-                {DECISIONS.map((d) => (
+                {DECISIONS.map((d, i) => (
                   <li
                     key={d.name}
-                    className="flex items-center justify-between gap-3 border-b border-border py-3 last:border-b-0"
+                    className="flex animate-rise-in items-center justify-between gap-3 border-b border-border py-3 last:border-b-0"
+                    style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar name={d.name} size="sm" />
@@ -146,5 +158,29 @@ export function RecruiterDashboard() {
         </div>
       </div>
     </CompanyShell>
+  );
+}
+
+// Funnel placeholder shaped like FunnelChart: header row + six stage bars.
+function FunnelSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-5 w-20" />
+      </div>
+      <div className="flex flex-col gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="grid grid-cols-[7.5rem_1fr_2.5rem] items-center gap-4 sm:grid-cols-[9.5rem_1fr_3rem]"
+          >
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-full rounded-full" />
+            <Skeleton className="h-4 w-8 justify-self-end" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

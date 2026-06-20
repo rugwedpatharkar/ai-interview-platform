@@ -101,7 +101,7 @@ function ScheduleBody() {
               >
                 {grouped.map((group) => (
                   <div key={group.day} className="flex flex-col gap-2">
-                    <p className="font-display text-sm font-medium text-foreground">
+                    <p className="text-sm font-medium text-foreground">
                       {group.day}
                     </p>
                     {group.slots.map((s) => (
@@ -145,7 +145,7 @@ function ScheduleBody() {
       {schedule && schedule.status === "booked" && (
         <Card>
           <CardContent className="flex flex-col gap-3 p-6">
-            <p className="font-display text-lg font-semibold text-foreground">
+            <p className="text-lg font-semibold text-foreground">
               Interview confirmed
             </p>
             <p className="text-sm tabular-nums text-foreground">

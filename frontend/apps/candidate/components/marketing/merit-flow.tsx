@@ -5,7 +5,7 @@ export function MeritFlow() {
   return (
     <section className="mx-auto max-w-6xl px-6 py-20">
       <div className="text-center">
-        <p className="text-sm font-medium uppercase tracking-wide text-brand-600">Merit, made visible</p>
+        <p className="text-sm font-medium text-primary">Merit, made visible</p>
         <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-foreground">
           A fair shot you can actually see.
         </h2>

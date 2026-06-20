@@ -13,11 +13,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  ErrorState,
   Skeleton,
   applicationStatus,
 } from "@ip/ui";
+import { errorMessage } from "@ip/shared";
 import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { Search, SearchX } from "lucide-react";
 import { useState } from "react";
 
 import { makeMockSourcingClient } from "../app/talent/sourcing-client";
@@ -92,11 +94,28 @@ export function CandidateSearch({ onActive }: { onActive: (active: boolean) => v
           </Button>
         </form>
 
-        {active && results.isLoading && <Skeleton className="h-24" />}
-        {active && !results.isLoading && (results.data?.hits.length ?? 0) === 0 && (
-          <EmptyState title="No candidates match" description="Try a different keyword or stage." />
+        {active && results.isLoading && (
+          <div
+            className="flex flex-col gap-2"
+            aria-busy="true"
+            aria-label="Searching candidates"
+          >
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 rounded-lg" />
+            ))}
+          </div>
         )}
-        {active && (results.data?.hits.length ?? 0) > 0 && (
+        {active && results.isError && (
+          <ErrorState message={errorMessage(results.error)} retry={() => results.refetch()} />
+        )}
+        {active && !results.isLoading && !results.isError && (results.data?.hits.length ?? 0) === 0 && (
+          <EmptyState
+            icon={SearchX}
+            title="No candidates match"
+            description="Try a different keyword, or widen the stage filter to see more applicants."
+          />
+        )}
+        {active && !results.isError && (results.data?.hits.length ?? 0) > 0 && (
           <div className="overflow-hidden rounded-xl border border-border bg-surface">
             <table className="w-full text-sm">
               <thead>
@@ -109,12 +128,13 @@ export function CandidateSearch({ onActive }: { onActive: (active: boolean) => v
                 </tr>
               </thead>
               <tbody>
-                {results.data!.hits.map((h) => {
+                {results.data!.hits.map((h, i) => {
                   const stage = applicationStatus(h.topStage);
                   return (
                     <tr
                       key={h.candidateUserId}
-                      className="border-b border-border transition-colors last:border-b-0 hover:bg-surface-muted"
+                      className="animate-rise-in border-b border-border transition-colors last:border-b-0 hover:bg-surface-muted"
+                      style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
                     >
                       <td
                         className="px-4 py-3 font-mono text-xs text-muted-foreground"

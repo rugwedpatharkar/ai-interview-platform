@@ -9,6 +9,7 @@ export interface NotificationItemProps {
   notification: Notification;
   icon: LucideIcon; // resolved by the KIND_ICON map (Bell fallback)
   onClick?: () => void;
+  index?: number; // feed position — drives the capped mount-stagger delay
 }
 
 function formatRelative(iso: string): string {
@@ -22,15 +23,21 @@ function formatRelative(iso: string): string {
 }
 
 /** One feed row — icon-by-kind + subject + clamped body + relative time + unread dot. */
-export function NotificationItem({ notification: n, icon: Icon, onClick }: NotificationItemProps) {
+export function NotificationItem({
+  notification: n,
+  icon: Icon,
+  onClick,
+  index = 0,
+}: NotificationItemProps) {
   const unread = n.readAt === null;
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={`${n.subject} — ${unread ? "unread" : "read"}`}
+      style={{ animationDelay: `${Math.min(index, 6) * 40}ms` }}
       className={cn(
-        "flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-surface-muted",
+        "flex w-full animate-rise-in items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-surface-muted",
         unread && "bg-surface-muted/40",
       )}
     >

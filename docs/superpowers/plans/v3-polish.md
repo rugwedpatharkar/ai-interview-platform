@@ -11,12 +11,12 @@
 
 ## Wave A — Foundation + P1 fixes ("feels pro / no lag" core)
 
-- [ ] A1. **Register fix — pull serif off product data.** Keep Fraunces (`font-display`) on the marketing
+- [x] A1. **Register fix — pull serif off product data.** Keep Fraunces (`font-display`) on the marketing
   landing + page-level titles/greetings ONLY. Revert `font-display` on KPI numbers, table data, badges,
   small labels, section sub-headings → Geist (sans) + `tabular-nums` for figures. (~80 usages audited.)
 - [x] A2. **Fixed rem type scale for product UI** _(verified: app uses fixed Tailwind text-* scale; no clamp() in app components)_ (no fluid `clamp()` in app screens; clamp stays on the
   landing only). Verify/normalize heading sizes to a fixed Tailwind scale.
-- [ ] A3. **Skeletons, not spinners/blank** — add skeleton loaders to: candidate dashboard, recruiter
+- [x] A3. **Skeletons, not spinners/blank** — add skeleton loaders to: candidate dashboard, recruiter
   dashboard, applicants table, talent, marketplace results, applicant report, messages, notifications.
 - [x] A4. **Light-mode contrast** — bump `--muted-foreground` (and verify accent-on-white) to ≥4.5:1.
 - [ ] A5. **Browser-verify the authed sidebar shells** structurally (no backend here → verify render/overflow
@@ -25,11 +25,11 @@
 ## Wave B — Micro-interactions (minimal · optimal · beautiful; mostly CSS)
 
 - [x] B1. **Card press** state on clickable cards (`active:scale-[0.99]`) — JobCard, ApplicationCard via Card.
-- [ ] B2. **Nav-item** hover/press polish; unify candidate↔company active state (left cyan accent + transition).
-- [ ] B3. **List stagger on mount** (job cards, applicants, notifications, messages) — reuse `slide-up`
+- [x] B2. **Nav-item** hover/press polish; unify candidate↔company active state (left cyan accent + transition).
+- [x] B3. **List stagger on mount** (job cards, applicants, notifications, messages) — reuse `slide-up`
   keyframe + capped `animationDelay` (≤6 items, total <250ms).
 - [x] B4. **Tab indicator slide** (animated active indicator instead of snap).
-- [ ] B5. **KPI count-up** on dashboard stats (rAF hook + `matchMedia` reduced-motion guard + `tabular-nums`).
+- [x] B5. **KPI count-up** on dashboard stats (rAF hook + `matchMedia` reduced-motion guard + `tabular-nums`).
 - [x] B6. **Fix existing motion** — `competency-card` linear → `ease-out`; trim `score-ring` 500ms→350ms.
 - [x] B7. **Origin-aware dropdown zoom** (`scale-in` keyframe + Radix transform-origin).
 - [x] B8. **Route cross-fade** via `template.tsx` (CSS opacity, not framer).
@@ -46,18 +46,18 @@
 
 ## Wave D — Optimizations + remaining fidelity/enhancements
 
-- [ ] D1. **Memoize** derived values + heavy maps (dashboard KPIs, funnel data, table row maps; stabilize
+- [x] D1. **Memoize** derived values + heavy maps (dashboard KPIs, funnel data, table row maps; stabilize
   callbacks) — zero memoization today.
 - [ ] D2. **List windowing** where a list can exceed ~50 rows (applicants, talent, notifications, messages)
   — add `@tanstack/react-virtual` OR a pragmatic cap/"show more" if a dep is unwarranted.
 - [ ] D3. **Code-split** heavy/below-fold via `next/dynamic` (assistant chat, future editor/LiveKit/MediaPipe
   stubs, charts).
-- [ ] D4. **Onboarding fidelity** — `candidate-checklist`, `employer-firstrun`: remove raw `brand-*`, lay out
+- [x] D4. **Onboarding fidelity** — `candidate-checklist`, `employer-firstrun`: remove raw `brand-*`, lay out
   to the card rhythm.
-- [ ] D5. **Lightly-reskinned pages → mockup rhythm** (marketplace grid + any page that only got a page-head).
-- [ ] D6. **Drop the landing "eyebrow" trope** ("UNIFIED HIRING PLATFORM" tracked-uppercase kicker) — replace
+- [x] D5. **Lightly-reskinned pages → mockup rhythm** (marketplace grid + any page that only got a page-head).
+- [x] D6. **Drop the landing "eyebrow" trope** ("UNIFIED HIRING PLATFORM" tracked-uppercase kicker) — replace
   cadence or make it a single deliberate brand element.
-- [ ] D7. **Empty/error states on-brand** — verify icon + teaching copy (not bare "nothing here").
+- [x] D7. **Empty/error states on-brand** — verify icon + teaching copy (not bare "nothing here").
 
 ## Verification gate (per wave)
 - `npx pnpm@9.15.0 --filter @ip/{candidate,company} exec tsc --noEmit` clean.

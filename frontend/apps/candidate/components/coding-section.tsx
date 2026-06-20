@@ -40,7 +40,7 @@ export function CodingSection({
       <CardContent className="flex flex-col gap-4 p-4 lg:grid lg:grid-cols-2 lg:gap-6">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="font-display font-semibold text-foreground">
+            <h3 className="font-semibold text-foreground">
               <span className="text-muted-foreground">
                 Question {index + 1} of {total}
               </span>

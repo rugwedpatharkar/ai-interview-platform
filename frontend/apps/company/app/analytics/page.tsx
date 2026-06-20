@@ -17,7 +17,7 @@ function Kpi({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-6">
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      <p className="mt-2 font-display text-3xl font-semibold tracking-tight tabular-nums text-foreground">
+      <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums text-foreground">
         {value}
       </p>
     </div>

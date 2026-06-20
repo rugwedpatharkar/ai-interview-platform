@@ -11,7 +11,7 @@ import {
   ErrorState,
   Field,
   Input,
-  LoadingState,
+  Skeleton,
   buttonVariants,
   cn,
   toast,
@@ -21,6 +21,7 @@ import {
   decodeJwtPayload,
   errorMessage,
   useAuthedQuery,
+  useCountUp,
 } from "@ip/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -32,7 +33,7 @@ import {
   Video,
 } from "lucide-react";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "../lib/auth";
 import { ApplicationCard } from "./application-card";
@@ -103,51 +104,66 @@ export function Dashboard() {
   const list = applications.data?.applications ?? [];
 
   // KPI + up-next are derived client-side from the already-fetched applications —
-  // display-only, no extra fetch.
-  const inFlightCount = list.filter((a) => !TERMINAL_STATES.has(a.state)).length;
-  const interviewApps = list.filter(
-    (a) => a.state === "interview_pending" || a.state === "interview_in_progress",
-  );
-  const respondedCount = list.filter((a) =>
-    [
-      "aptitude_pending",
-      "interview_pending",
-      "interview_in_progress",
-      "interviewed",
-      "scored",
-      "shortlisted",
-      "hired",
-      "rejected",
-      "gated_out",
-    ].includes(a.state),
-  ).length;
+  // display-only, no extra fetch. Memoized so the count-up tiles and up-next don't
+  // recompute (or re-animate) on unrelated re-renders.
+  const { inFlightCount, interviewApps, respondedCount, kpis } = useMemo(() => {
+    const inFlight = list.filter((a) => !TERMINAL_STATES.has(a.state)).length;
+    const interviews = list.filter(
+      (a) =>
+        a.state === "interview_pending" || a.state === "interview_in_progress",
+    );
+    const responded = list.filter((a) =>
+      [
+        "aptitude_pending",
+        "interview_pending",
+        "interview_in_progress",
+        "interviewed",
+        "scored",
+        "shortlisted",
+        "hired",
+        "rejected",
+        "gated_out",
+      ].includes(a.state),
+    ).length;
+    return {
+      inFlightCount: inFlight,
+      interviewApps: interviews,
+      respondedCount: responded,
+      kpis: [
+        {
+          label: "Applications in flight",
+          value: inFlight,
+          delta: `${list.length} total submitted`,
+        },
+        {
+          label: "Interviews scheduled",
+          value: interviews.length,
+          delta: interviews[0] ? "ready to join" : "none scheduled",
+        },
+        {
+          label: "Responses received",
+          value: responded,
+          delta: list.length ? "every company answers" : "—",
+        },
+        {
+          label: "Total applications",
+          value: list.length,
+          delta: "across all stages",
+        },
+      ],
+    };
+  }, [list]);
+
   const nextInterview = interviewApps[0];
   const firstName =
     (email ? email.split("@")[0] : identity?.id)?.split(/[.\s_]/)[0] ?? "there";
   const greetName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
 
-  const kpis = [
-    {
-      label: "Applications in flight",
-      value: inFlightCount,
-      delta: `${list.length} total submitted`,
-    },
-    {
-      label: "Interviews scheduled",
-      value: interviewApps.length,
-      delta: nextInterview ? "ready to join" : "none scheduled",
-    },
-    {
-      label: "Responses received",
-      value: respondedCount,
-      delta: list.length ? "every company answers" : "—",
-    },
-    {
-      label: "Total applications",
-      value: list.length,
-      delta: "across all stages",
-    },
-  ];
+  // Stable callback for the application rows so memoized children don't re-render.
+  const onWithdraw = useCallback(
+    (id: string) => withdraw.mutate(id),
+    [withdraw],
+  );
 
   return (
     <CandidateShell>
@@ -177,20 +193,18 @@ export function Dashboard() {
 
         {/* KPI strip */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {kpis.map((k) => (
-            <div
-              key={k.label}
-              className="rounded-xl border border-border bg-surface p-4"
-            >
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {k.label}
-              </p>
-              <p className="mt-2 font-display text-3xl font-semibold tabular-nums text-foreground">
-                {k.value}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">{k.delta}</p>
-            </div>
-          ))}
+          {applications.isLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-border bg-surface p-4"
+                >
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="mt-3 h-8 w-12" />
+                  <Skeleton className="mt-2 h-3 w-20" />
+                </div>
+              ))
+            : kpis.map((k) => <KpiTile key={k.label} {...k} />)}
         </div>
 
         {/* Two-column body */}
@@ -201,10 +215,23 @@ export function Dashboard() {
               <Briefcase className="size-5 text-primary" aria-hidden />
               Your applications
             </h2>
-            {applications.isLoading && <LoadingState />}
+            {applications.isLoading && (
+              <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-4">
+                    <Skeleton className="size-10 shrink-0 rounded-lg" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="mt-2 h-3 w-24" />
+                    </div>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            )}
             {applications.isError && (
               <ErrorState
-                message={errorMessage(applications.error)}
+                message={`Couldn't load your applications — ${errorMessage(applications.error)}`}
                 retry={() => applications.refetch()}
               />
             )}
@@ -213,19 +240,24 @@ export function Dashboard() {
               list.length === 0 && (
                 <EmptyState
                   title="No applications yet"
-                  description="Apply to a job below to get started."
+                  description="Apply to a job below — every company here answers, so you'll always hear back."
                   icon={Briefcase}
                 />
               )}
             {list.length > 0 && (
               <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
-                {list.map((a) => (
-                  <ApplicationCard
+                {list.map((a, i) => (
+                  <div
                     key={a.applicationId}
-                    app={a}
-                    withdrawing={withdraw.isPending}
-                    onWithdraw={(id) => withdraw.mutate(id)}
-                  />
+                    className="animate-rise-in"
+                    style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+                  >
+                    <ApplicationCard
+                      app={a}
+                      withdrawing={withdraw.isPending}
+                      onWithdraw={onWithdraw}
+                    />
+                  </div>
                 ))}
               </div>
             )}
@@ -344,5 +376,30 @@ export function Dashboard() {
         <AssistantChat />
       </div>
     </CandidateShell>
+  );
+}
+
+/** One KPI tile. Integer values animate from 0 on mount (count-up); the label/delta stay
+ * sans with tabular-nums on the figure so digits don't jitter mid-count. */
+function KpiTile({
+  label,
+  value,
+  delta,
+}: {
+  label: string;
+  value: number;
+  delta: string;
+}) {
+  const n = useCountUp(value);
+  return (
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
+        {Math.round(n)}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{delta}</p>
+    </div>
   );
 }

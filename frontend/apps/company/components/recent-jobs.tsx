@@ -1,7 +1,8 @@
 "use client";
 
-import { EmptyState, cn, jobStatus } from "@ip/ui";
-import { useAuthedQuery } from "@ip/shared";
+import { EmptyState, ErrorState, Skeleton, cn, jobStatus } from "@ip/ui";
+import { errorMessage, useAuthedQuery } from "@ip/shared";
+import { Briefcase } from "lucide-react";
 import Link from "next/link";
 
 import { useAuth } from "../lib/auth";
@@ -28,19 +29,46 @@ export function RecentJobs() {
 
   return (
     <div className="rounded-xl border border-border bg-surface">
-      <h3 className="px-4 pt-4 font-display text-xl font-semibold tracking-tight text-foreground">
+      <h3 className="px-4 pt-4 text-xl font-semibold tracking-tight text-foreground">
         Recent jobs
       </h3>
-      {rows.length === 0 ? (
+      {jobs.isLoading ? (
+        <ul className="mt-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <li
+              key={i}
+              className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 last:border-b-0"
+            >
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-6 w-16 rounded-full" />
+            </li>
+          ))}
+        </ul>
+      ) : jobs.isError ? (
         <div className="p-4">
-          <EmptyState title="No jobs yet" description="Post a role to get started." />
+          <ErrorState
+            message={errorMessage(jobs.error)}
+            retry={() => jobs.refetch()}
+          />
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="p-4">
+          <EmptyState
+            icon={Briefcase}
+            title="No jobs yet"
+            description="Post a role to start receiving applicants."
+          />
         </div>
       ) : (
         <ul className="mt-3">
-          {rows.map((job) => {
+          {rows.map((job, i) => {
             const status = jobStatus(job.status);
             return (
-              <li key={job.jobId}>
+              <li
+                key={job.jobId}
+                className="animate-rise-in"
+                style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+              >
                 <Link
                   href={`/jobs/${job.jobId}`}
                   className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 transition-colors last:border-b-0 hover:bg-surface-muted"

@@ -93,7 +93,7 @@ export default async function CompanyPage({
       </Card>
 
       <section className="mt-6 flex flex-col gap-3">
-        <h2 className="font-display text-lg font-medium text-foreground">
+        <h2 className="text-lg font-medium text-foreground">
           Open roles
         </h2>
         {jobs.length === 0 ? (

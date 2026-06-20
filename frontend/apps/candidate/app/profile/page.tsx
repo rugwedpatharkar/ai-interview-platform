@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  ErrorState,
   Field,
   Input,
   LoadingState,
@@ -258,6 +259,11 @@ export default function ProfilePage() {
 
       {profile.isLoading ? (
         <LoadingState label="Loading your profile…" />
+      ) : profile.isError ? (
+        <ErrorState
+          message={errorMessage(profile.error)}
+          retry={() => profile.refetch()}
+        />
       ) : (
         <form
           id="profile-form"

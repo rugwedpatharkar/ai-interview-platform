@@ -1,8 +1,8 @@
 "use client";
 
 import { errorMessage } from "@ip/shared";
-import { Button, EmptyState, ErrorState, Input, LoadingState, cn } from "@ip/ui";
-import { Send, User, UserRound } from "lucide-react";
+import { Button, EmptyState, ErrorState, Input, Skeleton, cn } from "@ip/ui";
+import { MessageSquare, Send, User, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useThreadMessages } from "../lib/use-thread-messages";
@@ -50,7 +50,7 @@ export function MessageThreadView({
     }
   }
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading) return <ThreadSkeleton />;
   if (isError) return <ErrorState message={errorMessage(error)} retry={() => refetch()} />;
 
   return (
@@ -64,7 +64,11 @@ export function MessageThreadView({
         className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"
       >
         {rows.length === 0 && (
-          <EmptyState title="No messages yet" description="Start the conversation below." />
+          <EmptyState
+            icon={MessageSquare}
+            title="No messages yet"
+            description="Start the conversation below — the candidate will see your reply."
+          />
         )}
         {rows.map((m) => {
           const isSelf = m.senderRole === side;
@@ -131,6 +135,24 @@ export function MessageThreadView({
           <Send className="size-4" aria-hidden />
         </Button>
       </form>
+    </div>
+  );
+}
+
+/** Bubble-shaped placeholders mirroring the chat layout while history loads. */
+function ThreadSkeleton() {
+  return (
+    <div
+      className="flex h-[28rem] flex-col gap-4 p-1"
+      aria-busy="true"
+      aria-label="Loading conversation"
+    >
+      {[false, true, false, true].map((self, i) => (
+        <div key={i} className={cn("flex gap-2.5", self ? "flex-row-reverse self-end" : "self-start")}>
+          <Skeleton className="size-7 shrink-0 rounded-full" />
+          <Skeleton className={cn("h-12 rounded-2xl", self ? "w-44" : "w-56")} />
+        </div>
+      ))}
     </div>
   );
 }
