@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package admin.sourcing.v1;
+
+// SourcingService — recruiter keyword search over the company's OWN applicants.
+// Manager + comp-scoped (comp_id from the token); no global candidate index.
+service SourcingService {
+  rpc SearchCandidates(SearchCandidatesRequest) returns (SearchCandidatesResponse);
+}
+
+message SearchCandidatesRequest {
+  string query = 1;       // keyword over the applicant's profile/skills/experience text
+  string stage = 2;       // optional furthest-stage filter; "" = any
+  double min_score = 3;   // optional fit floor (0..1); 0 = any
+  int32 page = 4;
+  int32 page_size = 5;    // capped server-side (<= 50)
+}
+
+message CandidateHit {
+  string candidate_user_id = 1;       // masked handle on render (same as GetTalentPool)
+  int64 application_count = 2;         // applications to THIS company
+  double fit_score = 3;               // 0..1 keyword relevance (the "fit" badge)
+  string top_stage = 4;               // furthest funnel state reached across this candidate
+  repeated string matched_skills = 5; // skills that matched the query
+}
+
+message SearchCandidatesResponse {
+  repeated CandidateHit hits = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}

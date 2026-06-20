@@ -48,6 +48,7 @@ from app.routes.pb import (
     report_pb2_grpc,
     rubric_pb2_grpc,
     saved_jobs_pb2_grpc,
+    sourcing_pb2_grpc,
     talent_pb2_grpc,
 )
 from app.routes.profile import ProfileServicer
@@ -55,6 +56,7 @@ from app.routes.recommendation import RecommendationServicer
 from app.routes.report import ReportServicer
 from app.routes.rubric import RubricServicer
 from app.routes.saved_jobs import SavedJobsServicer
+from app.routes.sourcing import SourcingServicer
 from app.routes.talent import TalentServicer
 
 
@@ -214,6 +216,14 @@ def create_web_app(
             saved_jobs=SavedJobsRepository(db),
             jobs=JobRepository(db),
             companies=CompanyRepository(db),
+            tokens=tokens,
+        ),
+        app,
+    )
+    sourcing_pb2_grpc.add_SourcingServiceServicer_to_server(
+        SourcingServicer(
+            applications=ApplicationRepository(db),
+            profiles=CandidateProfileRepository(db),
             tokens=tokens,
         ),
         app,
