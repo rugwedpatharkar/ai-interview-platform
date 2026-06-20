@@ -6,6 +6,42 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
+class ListSessionsRequest(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class SessionDTO(_message.Message):
+    __slots__ = ("jti", "ip", "user_agent", "created_at", "last_seen", "current")
+    JTI_FIELD_NUMBER: _ClassVar[int]
+    IP_FIELD_NUMBER: _ClassVar[int]
+    USER_AGENT_FIELD_NUMBER: _ClassVar[int]
+    CREATED_AT_FIELD_NUMBER: _ClassVar[int]
+    LAST_SEEN_FIELD_NUMBER: _ClassVar[int]
+    CURRENT_FIELD_NUMBER: _ClassVar[int]
+    jti: str
+    ip: str
+    user_agent: str
+    created_at: str
+    last_seen: str
+    current: bool
+    def __init__(self, jti: _Optional[str] = ..., ip: _Optional[str] = ..., user_agent: _Optional[str] = ..., created_at: _Optional[str] = ..., last_seen: _Optional[str] = ..., current: _Optional[bool] = ...) -> None: ...
+
+class ListSessionsResponse(_message.Message):
+    __slots__ = ("sessions",)
+    SESSIONS_FIELD_NUMBER: _ClassVar[int]
+    sessions: _containers.RepeatedCompositeFieldContainer[SessionDTO]
+    def __init__(self, sessions: _Optional[_Iterable[_Union[SessionDTO, _Mapping]]] = ...) -> None: ...
+
+class RevokeSessionRequest(_message.Message):
+    __slots__ = ("jti",)
+    JTI_FIELD_NUMBER: _ClassVar[int]
+    jti: str
+    def __init__(self, jti: _Optional[str] = ...) -> None: ...
+
+class RevokeAllSessionsRequest(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
 class ChangePasswordRequest(_message.Message):
     __slots__ = ("current_password", "new_password")
     CURRENT_PASSWORD_FIELD_NUMBER: _ClassVar[int]

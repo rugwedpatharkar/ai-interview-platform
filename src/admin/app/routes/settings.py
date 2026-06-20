@@ -204,3 +204,45 @@ class SettingsServicer(settings_pb2_grpc.SettingsServiceServicer):
                 return settings_pb2.OkResponse(ok=True)
             except AuthDomainError as exc:
                 await self._abort(context, exc, "VerifyEmailChange")
+
+    async def ListSessions(self, request, context):
+        _grpc_total.labels(method="ListSessions").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with log_context(log, "settings.ListSessions"):
+            rows = await settings_res.list_sessions(
+                ident["id"], ident.get("sid"), sessions=self._sessions
+            )
+            return settings_pb2.ListSessionsResponse(
+                sessions=[
+                    settings_pb2.SessionDTO(
+                        jti=s["jti"],
+                        ip=s["ip"],
+                        user_agent=s["user_agent"],
+                        created_at=s["created_at"],
+                        last_seen=s["last_seen"],
+                        current=s["current"],
+                    )
+                    for s in rows
+                ]
+            )
+
+    async def RevokeSession(self, request, context):
+        _grpc_total.labels(method="RevokeSession").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with log_context(log, "settings.RevokeSession"):
+            try:
+                await settings_res.revoke_session(
+                    ident["id"], request.jti, sessions=self._sessions
+                )
+                return settings_pb2.OkResponse(ok=True)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "RevokeSession")
+
+    async def RevokeAllSessions(self, request, context):
+        _grpc_total.labels(method="RevokeAllSessions").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with log_context(log, "settings.RevokeAllSessions"):
+            await settings_res.revoke_all_sessions(
+                ident["id"], ident.get("sid"), sessions=self._sessions
+            )
+            return settings_pb2.OkResponse(ok=True)

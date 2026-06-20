@@ -3,7 +3,12 @@
 import pytest
 from lib.security import TokenService, hash_password, verify_password
 
-from app.errors import ConflictError, InvalidTokenError, ValidationError
+from app.errors import (
+    ConflictError,
+    InvalidTokenError,
+    NotFoundError,
+    ValidationError,
+)
 from app.resources import settings
 
 _TOKENS = TokenService("s" * 40)
@@ -362,3 +367,55 @@ async def test_verify_email_change_swaps_email_and_rejects_replay():
         await settings.verify_email_change(
             token, users=users, tokens=_TOKENS, nonces=nonces
         )
+
+
+# --- Session management (ListSessions / RevokeSession / RevokeAllSessions) ---
+
+
+class _FakeSessionsList:
+    def __init__(self, rows):
+        self._rows = rows
+        self.revoked = []
+        self.revoked_others = []
+
+    async def list_for_user(self, user_id):
+        return list(self._rows)
+
+    async def revoke(self, jti):
+        self.revoked.append(jti)
+
+    async def revoke_all_except(self, user_id, current_jti):
+        self.revoked_others.append((user_id, current_jti))
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_marks_current_and_maps_meta():
+    rows = [
+        {
+            "jti": "j1",
+            "meta": {"ip": "1.1.1.1", "user_agent": "FF", "created_at": "t1"},
+        },
+        {
+            "jti": "j2",
+            "meta": {"ip": "2.2.2.2", "user_agent": "Chr", "created_at": "t2"},
+        },
+    ]
+    out = await settings.list_sessions("u1", "j1", sessions=_FakeSessionsList(rows))
+    assert {s["jti"]: s["current"] for s in out} == {"j1": True, "j2": False}
+    assert out[0]["ip"] == "1.1.1.1" and out[0]["user_agent"] == "FF"
+
+
+@pytest.mark.asyncio
+async def test_revoke_session_only_own_jti():
+    s = _FakeSessionsList([{"jti": "j1", "meta": {}}])
+    await settings.revoke_session("u1", "j1", sessions=s)
+    assert s.revoked == ["j1"]
+    with pytest.raises(NotFoundError):  # a jti not in the caller's set
+        await settings.revoke_session("u1", "j-foreign", sessions=s)
+
+
+@pytest.mark.asyncio
+async def test_revoke_all_sessions_keeps_current():
+    s = _FakeSessionsList([])
+    await settings.revoke_all_sessions("u1", "j1", sessions=s)
+    assert s.revoked_others == [("u1", "j1")]

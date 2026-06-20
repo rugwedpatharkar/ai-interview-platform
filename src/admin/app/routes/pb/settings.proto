@@ -18,7 +18,29 @@ service SettingsService {
   rpc ChangePassword(ChangePasswordRequest) returns (OkResponse);
   rpc RequestEmailChange(RequestEmailChangeRequest) returns (OkResponse);
   rpc VerifyEmailChange(VerifyEmailChangeRequest) returns (OkResponse);
+  // Active refresh sessions (devices). RevokeSession of a jti not in the caller's set
+  // is NOT_FOUND; RevokeAllSessions keeps the current device (logout-everywhere-else).
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+  rpc RevokeSession(RevokeSessionRequest) returns (OkResponse);
+  rpc RevokeAllSessions(RevokeAllSessionsRequest) returns (OkResponse);
 }
+
+message ListSessionsRequest {}
+message SessionDTO {
+  string jti = 1;
+  string ip = 2;
+  string user_agent = 3;
+  string created_at = 4;  // ISO
+  string last_seen = 5;   // ISO
+  bool current = 6;       // the caller's own device
+}
+message ListSessionsResponse {
+  repeated SessionDTO sessions = 1;
+}
+message RevokeSessionRequest {
+  string jti = 1;
+}
+message RevokeAllSessionsRequest {}
 
 message ChangePasswordRequest {
   string current_password = 1;

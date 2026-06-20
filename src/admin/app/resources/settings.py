@@ -233,3 +233,35 @@ async def verify_email_change(token, *, users, tokens, nonces=None, audit=None):
             AuditLog(entity="user", entity_id=claims["sub"], action="email_changed")
         )
     return {"ok": True}
+
+
+async def list_sessions(user_id, current_sid, *, sessions):
+    """The caller's active refresh sessions; `current` marks the caller's own device."""
+    rows = await sessions.list_for_user(user_id)
+    return [
+        {
+            "jti": r["jti"],
+            "ip": r["meta"].get("ip", ""),
+            "user_agent": r["meta"].get("user_agent", ""),
+            "created_at": r["meta"].get("created_at", ""),
+            "last_seen": r["meta"].get("last_seen", ""),
+            "current": r["jti"] == current_sid,
+        }
+        for r in rows
+    ]
+
+
+async def revoke_session(user_id, jti, *, sessions):
+    """Revoke one of the caller's own sessions. A jti not in their set -> NotFound (no
+    cross-user revoke, and no existence leak)."""
+    rows = await sessions.list_for_user(user_id)
+    if jti not in {r["jti"] for r in rows}:
+        raise NotFoundError("session not found")
+    await sessions.revoke(jti)
+    return {"ok": True}
+
+
+async def revoke_all_sessions(user_id, current_sid, *, sessions):
+    """Log out everywhere else — revoke all the caller's sessions but the current."""
+    await sessions.revoke_all_except(user_id, current_sid)
+    return {"ok": True}

@@ -77,6 +77,21 @@ class SettingsServiceStub:
                 request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.VerifyEmailChangeRequest.SerializeToString,
                 response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
                 _registered_method=True)
+        self.ListSessions = channel.unary_unary(
+                '/admin.settings.v1.SettingsService/ListSessions',
+                request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.ListSessionsRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.ListSessionsResponse.FromString,
+                _registered_method=True)
+        self.RevokeSession = channel.unary_unary(
+                '/admin.settings.v1.SettingsService/RevokeSession',
+                request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.RevokeSessionRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
+                _registered_method=True)
+        self.RevokeAllSessions = channel.unary_unary(
+                '/admin.settings.v1.SettingsService/RevokeAllSessions',
+                request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.RevokeAllSessionsRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
+                _registered_method=True)
 
 
 class SettingsServiceServicer:
@@ -137,6 +152,26 @@ class SettingsServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListSessions(self, request, context):
+        """Active refresh sessions (devices). RevokeSession of a jti not in the caller's set
+        is NOT_FOUND; RevokeAllSessions keeps the current device (logout-everywhere-else).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RevokeSession(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RevokeAllSessions(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SettingsServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -178,6 +213,21 @@ def add_SettingsServiceServicer_to_server(servicer, server):
             'VerifyEmailChange': grpc.unary_unary_rpc_method_handler(
                     servicer.VerifyEmailChange,
                     request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.VerifyEmailChangeRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.SerializeToString,
+            ),
+            'ListSessions': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListSessions,
+                    request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.ListSessionsRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.ListSessionsResponse.SerializeToString,
+            ),
+            'RevokeSession': grpc.unary_unary_rpc_method_handler(
+                    servicer.RevokeSession,
+                    request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.RevokeSessionRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.SerializeToString,
+            ),
+            'RevokeAllSessions': grpc.unary_unary_rpc_method_handler(
+                    servicer.RevokeAllSessions,
+                    request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.RevokeAllSessionsRequest.FromString,
                     response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.SerializeToString,
             ),
     }
@@ -399,6 +449,87 @@ class SettingsService:
             target,
             '/admin.settings.v1.SettingsService/VerifyEmailChange',
             app_dot_routes_dot_pb_dot_settings__pb2.VerifyEmailChangeRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListSessions(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.settings.v1.SettingsService/ListSessions',
+            app_dot_routes_dot_pb_dot_settings__pb2.ListSessionsRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_settings__pb2.ListSessionsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RevokeSession(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.settings.v1.SettingsService/RevokeSession',
+            app_dot_routes_dot_pb_dot_settings__pb2.RevokeSessionRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RevokeAllSessions(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.settings.v1.SettingsService/RevokeAllSessions',
+            app_dot_routes_dot_pb_dot_settings__pb2.RevokeAllSessionsRequest.SerializeToString,
             app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
             options,
             channel_credentials,

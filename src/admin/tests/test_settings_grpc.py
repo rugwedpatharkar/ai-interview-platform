@@ -29,6 +29,16 @@ class _FakeUsers:
 
 
 class _FakeSessions:
+    def __init__(self, rows=None):
+        self._rows = rows or []
+        self.revoked = []
+
+    async def list_for_user(self, user_id):
+        return list(self._rows)
+
+    async def revoke(self, jti):
+        self.revoked.append(jti)
+
     async def revoke_all_except(self, user_id, current_jti):
         pass
 
@@ -64,14 +74,14 @@ class _FakeAudit:
         pass
 
 
-def _app(users, *, nonces=None, notifier=None):
+def _app(users, *, nonces=None, notifier=None, sessions=None):
     grpc_app = GrpcWebASGI()
     settings_pb2_grpc.add_SettingsServiceServicer_to_server(
         SettingsServicer(
             prefs=None,
             tokens=TokenService(_SECRET),
             users=users,
-            sessions=_FakeSessions(),
+            sessions=sessions or _FakeSessions(),
             nonces=nonces or _FakeNonces(),
             notifier=notifier or _FakeNotifier(),
             audit=_FakeAudit(),
@@ -177,3 +187,35 @@ async def test_verify_email_change_is_pre_auth():
     assert status == 0
     assert settings_pb2.OkResponse.FromString(data).ok is True
     assert users.docs["u1"]["email"] == "new@b.co"
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_marks_caller_current():
+    sessions = _FakeSessions(
+        rows=[
+            {"jti": "sid1", "meta": {"ip": "1.1.1.1", "user_agent": "FF"}},
+            {"jti": "other", "meta": {"ip": "2.2.2.2", "user_agent": "Chr"}},
+        ]
+    )
+    app = _app(_FakeUsers([{"_id": "u1"}]), sessions=sessions)
+    resp = await _call(
+        app, "ListSessions", settings_pb2.ListSessionsRequest(), metadata=_auth()
+    )
+    data, status = _ds(resp.content)
+    assert status == 0
+    out = settings_pb2.ListSessionsResponse.FromString(data)
+    assert {s.jti: s.current for s in out.sessions} == {"sid1": True, "other": False}
+
+
+@pytest.mark.asyncio
+async def test_revoke_foreign_session_not_found():
+    sessions = _FakeSessions(rows=[{"jti": "sid1", "meta": {}}])
+    app = _app(_FakeUsers([{"_id": "u1"}]), sessions=sessions)
+    resp = await _call(
+        app,
+        "RevokeSession",
+        settings_pb2.RevokeSessionRequest(jti="not-mine"),
+        metadata=_auth(),
+    )
+    _, status = _ds(resp.content)
+    assert status == 5  # NOT_FOUND
