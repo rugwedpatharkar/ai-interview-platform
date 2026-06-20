@@ -2,7 +2,12 @@ from lib.schemas import Response, Role
 
 
 def test_role_values():
-    assert {r.value for r in Role} == {"company_admin", "recruiter", "candidate"}
+    assert {r.value for r in Role} == {
+        "company_admin",
+        "recruiter",
+        "hiring_manager",
+        "candidate",
+    }
 
 
 def test_response_defaults():

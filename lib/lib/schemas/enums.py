@@ -4,6 +4,7 @@ from enum import StrEnum
 class Role(StrEnum):
     company_admin = "company_admin"
     recruiter = "recruiter"
+    hiring_manager = "hiring_manager"
     candidate = "candidate"
 
 
