@@ -92,12 +92,17 @@ class JobRepository(BaseRepository[Job]):
         if skills:
             match["skills"] = {"$all": skills}
 
-        sort_spec: dict = {"created_at": -1}
-        stages: list = [{"$match": match}]
+        # Recency uses posted_at (the publish stamp), falling back to created_at for
+        # legacy jobs not yet backfilled — coalesced into a sort field before $facet.
+        sort_spec: dict = {"_posted": -1}
+        stages: list = [
+            {"$match": match},
+            {"$addFields": {"_posted": {"$ifNull": ["$posted_at", "$created_at"]}}},
+        ]
         if text:
             stages.append({"$addFields": {"_score": {"$meta": "textScore"}}})
             if sort == "relevance":
-                sort_spec = {"_score": -1, "created_at": -1}
+                sort_spec = {"_score": -1, "_posted": -1}
         stages.append(
             {
                 "$facet": {
