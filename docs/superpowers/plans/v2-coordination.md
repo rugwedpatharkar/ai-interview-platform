@@ -118,3 +118,17 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   messaging · notifications · scheduling (cross-app — serializing). FE NOTE for the BE `ProctorAccepted`
   delta: the room already reads `terminated`/`reason` defensively, so HIGH-severity auto-gate engages the
   moment that proto field + ai-agents terminate logic land.
+- 2026-06-20 night · FE · ✅✅ **ALL 24 SCREENS COMPLETE.** Both apps typecheck + production-build GREEN;
+  `@ip/{ui,shared,api-client}` typecheck GREEN. **27 FE feat commits** on `grpc-migration` (NOT pushed —
+  milestone push awaits user review). Added since the 17-screen mark: **auth** (split-layout restyle, both
+  apps), **practice + /feedback** (detached growth), **onboarding** (candidate checklist + employer
+  first-run), **settings** (2FA/sessions/prefs, both apps; `/account`→`/settings?tab=privacy`), **scheduling**
+  (candidate pick-a-slot + company propose-slots tab), **messaging** (inbox + per-app conversation + applicant
+  Messages tab), **notifications** (bell in both shells + feed). Candidate = 24 routes, Company = 20 routes.
+  **INTEGRATION TODO** (mock→real ≈1-line client swap after each BE contract + `pnpm gen`): SearchJobs ✅ real;
+  SavedJobs ✅ ready to flip (`api.savedJobs.*`); pending — GetPublicJobDetail · CompanyProfile · JobAlerts ·
+  extend-Job (post-a-job + marketplace facets) · Sourcing · Report.GetIntegrityTimeline · Messaging ·
+  Notification · Settings · Team · Scheduling · ai-agents practice/* · proctoring auto-gate
+  (`ProctorAccepted.terminated`). **Deferred deps (need a lockfile touch when the user's awake):**
+  livekit-client + MediaPipe (proctored room runs on fake seams today), a code-editor lib (textarea fallback),
+  a test runner (no vitest in repo — used zero-dep `tsx` harnesses). FE build done for the night. 🌙
