@@ -137,6 +137,30 @@ async def test_presigned_put_url_raises_storage_error_on_s3_failure():
 
 
 @pytest.mark.asyncio
+async def test_presigned_get_url_raw_uses_exact_key():
+    s = _storage_with_fake()
+    object_key = await s.put("c1", "recordings", "a1.mp4", b"X", "video/mp4")
+    url = await s.presigned_get_url_raw(object_key)
+    assert "c1/recordings/a1.mp4" in url and "exp=900" in url
+    assert s._client.last_presign["method"] == "get_object"
+
+
+@pytest.mark.asyncio
+async def test_presigned_get_url_raw_clamps_excessive_ttl():
+    s = _storage_with_fake()
+    url = await s.presigned_get_url_raw("c1/recordings/a1.mp4", ttl=99999)
+    assert "exp=3600" in url
+
+
+@pytest.mark.asyncio
+async def test_presigned_get_url_raw_raises_storage_error_on_s3_failure():
+    s = _storage_with_fake(presign_fail=True)
+    with pytest.raises(StorageError) as exc_info:
+        await s.presigned_get_url_raw("c1/recordings/a1.mp4")
+    assert exc_info.value.op == "presigned_get_url_raw"
+
+
+@pytest.mark.asyncio
 async def test_delete_removes_tenant_key():
     s = _storage_with_fake()
     await s.put("c1", "resumes", "u1.pdf", b"X", "application/pdf")

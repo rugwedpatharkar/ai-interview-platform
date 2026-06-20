@@ -161,6 +161,30 @@ class ObjectStorage:
                 op="presigned_get_url",
             ) from exc
 
+    async def presigned_get_url_raw(
+        self, object_key: str, ttl: int | None = None
+    ) -> str:
+        """Presign a GET by the exact key `put()` returned (e.g. an interview
+        recording_key). The key already carries the tenant prefix, so it is used
+        verbatim — the caller is responsible for the tenant authorization."""
+        expires_in = min(ttl or self._presign_ttl, self._presign_ttl_max)
+        try:
+            return await with_timeout(
+                self._client.generate_presigned_url(
+                    "get_object",
+                    Params={"Bucket": self._bucket, "Key": object_key},
+                    ExpiresIn=expires_in,
+                ),
+                seconds=self._op_timeout_seconds,
+                op="storage.presigned_get_url_raw",
+            )
+        except (ClientError, BotoCoreError, OperationTimeout) as exc:
+            log.error("storage.presign_raw_error key={} error={}", object_key, exc)
+            raise StorageError(
+                f"Failed to generate presigned URL for {object_key}: {exc}",
+                op="presigned_get_url_raw",
+            ) from exc
+
     async def presigned_put_url(
         self,
         comp_id: str,
