@@ -36,6 +36,9 @@ class BaseRepository[M: BaseModel]:
 
     collection: str
     _timeout_s: float = _DEFAULT_TIMEOUT_S
+    # Absolute ceiling for an unbounded find() — a backstop against loading a whole
+    # collection into memory. find_capped (200) is the norm for list endpoints.
+    _find_cap: int = 10_000
 
     def __init__(self, db: Any) -> None:
         self.col = db[self.collection]
@@ -69,15 +72,21 @@ class BaseRepository[M: BaseModel]:
             )
 
     async def find(self, query: dict, limit: int = 0, skip: int = 0) -> list[dict]:
+        # Always bound the result set: an explicit limit is honoured, but limit=0 falls
+        # back to the hard ceiling so an unbounded query can never load the whole
+        # collection (OOM / DoS). A list endpoint that wants the soft 200 cap uses
+        # find_capped.
+        cap = min(limit, self._find_cap) if limit else self._find_cap
         async with log_context(log, f"{self.collection}.find", limit=limit, skip=skip):
-            cursor = self.col.find(query).skip(skip)
-            if limit:
-                cursor = cursor.limit(limit)
-            return await with_timeout(
+            cursor = self.col.find(query).skip(skip).limit(cap)
+            rows = await with_timeout(
                 _collect(cursor),
                 self._timeout_s,
                 op=f"{self.collection}.find",
             )
+        if not limit and len(rows) >= self._find_cap:
+            log.warning("{}: find hit the hard cap {}", self.collection, self._find_cap)
+        return rows
 
     async def update(self, doc_id: str, fields: dict) -> None:
         oid = _oid(doc_id)
