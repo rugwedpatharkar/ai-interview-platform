@@ -18,7 +18,7 @@ from datetime import UTC, datetime
 from lib.logging import get_logger
 from pymongo.errors import DuplicateKeyError
 
-from app.errors import ConflictError, ForbiddenError, NotFoundError, ValidationError
+from app.errors import ForbiddenError, NotFoundError, ValidationError
 from app.model.aptitude import AptitudeAttempt, AptitudeDelivery
 
 log = get_logger(component="aptitude.resources")
@@ -144,7 +144,20 @@ async def grade_aptitude(
             )
         )
     except DuplicateKeyError:
-        raise ConflictError("Aptitude already submitted") from None
+        # Already graded on a prior submit. Re-emit the funnel event (the first
+        # submit's publish may have failed, stranding the application) and return the
+        # RECORDED result — single-attempt, so the retry never re-grades. The funnel
+        # CAS dedupes a duplicate aptitude.graded, so re-emitting is always safe.
+        existing = await attempts.get_by_application(application_id)
+        await publisher.publish(
+            "aptitude.graded",
+            {"application_id": application_id, "passed": existing["passed"]},
+        )
+        return {
+            "application_id": application_id,
+            "score": existing["score"],
+            "passed": existing["passed"],
+        }
     await publisher.publish(
         "aptitude.graded", {"application_id": application_id, "passed": passed}
     )

@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from pymongo.errors import DuplicateKeyError
 
-from app.errors import ConflictError, ForbiddenError, ValidationError
+from app.errors import ForbiddenError, ValidationError
 from app.model.application import Application
 from app.resources import aptitude
 
@@ -265,7 +265,10 @@ async def test_grade_rejects_after_time_limit(fakes):
         )
 
 
-async def test_grade_duplicate_submission_is_conflict(fakes):
+async def test_grade_duplicate_submission_is_idempotent(fakes):
+    # A resubmit (unique-index conflict) returns the RECORDED result and re-emits the
+    # funnel event — it does not error. This recovers an application that was graded but
+    # whose aptitude.graded publish failed the first time (downstream CAS dedupes).
     app_id = await _seed_application(fakes)
     fakes["banks"]._by_job["j1"] = _bank(correct=(0, 1, 2))
     _seed_job(fakes)
@@ -275,15 +278,60 @@ async def test_grade_duplicate_submission_is_conflict(fakes):
         async def insert(self, attempt):
             raise DuplicateKeyError("duplicate application_id")
 
-    with pytest.raises(ConflictError):
-        await aptitude.grade_aptitude(
-            _identity(),
-            app_id,
-            [0, 1, 2],
-            applications=fakes["applications"],
-            jobs=fakes["jobs"],
-            banks=fakes["banks"],
-            attempts=_DupAttempts(),
-            deliveries=fakes["deliveries"],
-            publisher=fakes["publisher"],
-        )
+        async def get_by_application(self, application_id):
+            return {"application_id": application_id, "score": 80, "passed": True}
+
+    result = await aptitude.grade_aptitude(
+        _identity(),
+        app_id,
+        [0, 1, 2],
+        applications=fakes["applications"],
+        jobs=fakes["jobs"],
+        banks=fakes["banks"],
+        attempts=_DupAttempts(),
+        deliveries=fakes["deliveries"],
+        publisher=fakes["publisher"],
+    )
+    assert result["score"] == 80 and result["passed"] is True
+    assert ("aptitude.graded", {"application_id": app_id, "passed": True}) in fakes[
+        "publisher"
+    ].published
+
+
+async def test_grade_reemits_after_publish_failure(fakes):
+    # The real stranding scenario: first submit persists the attempt, then the publish
+    # fails (broker blip) → strands. The candidate's retry hits the unique index and the
+    # idempotent path re-emits the event, recovering the funnel.
+    app_id = await _seed_application(fakes)
+    fakes["banks"]._by_job["j1"] = _bank(correct=(0, 1, 2))
+    _seed_job(fakes, threshold=60)
+    _seed_delivery(fakes, app_id)
+
+    class _FlakyPublisher:
+        def __init__(self):
+            self.published: list[tuple] = []
+            self.calls = 0
+
+        async def publish(self, routing_key, payload):
+            self.calls += 1
+            if self.calls == 1:
+                raise RuntimeError("broker down")
+            self.published.append((routing_key, payload))
+
+    pub = _FlakyPublisher()
+    deps = {
+        "applications": fakes["applications"],
+        "jobs": fakes["jobs"],
+        "banks": fakes["banks"],
+        "attempts": fakes["attempts"],
+        "deliveries": fakes["deliveries"],
+        "publisher": pub,
+    }
+    with pytest.raises(RuntimeError):
+        await aptitude.grade_aptitude(_identity(), app_id, [0, 1, 2], **deps)
+    result = await aptitude.grade_aptitude(_identity(), app_id, [0, 1, 2], **deps)
+    assert result["passed"] is True
+    assert (
+        "aptitude.graded",
+        {"application_id": app_id, "passed": True},
+    ) in pub.published

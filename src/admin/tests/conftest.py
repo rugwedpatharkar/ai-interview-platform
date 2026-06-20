@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 import pytest
+from pymongo.errors import DuplicateKeyError
 
 # Fixed stand-in timestamp for fake transition records (deterministic in tests).
 _NOW = datetime(2026, 6, 20, tzinfo=UTC)
@@ -323,14 +324,26 @@ class FakeAptitudeBankRepo:
 
 
 class FakeAptitudeAttemptRepo:
-    """In-memory stand-in for AptitudeAttemptRepository."""
+    """In-memory stand-in for AptitudeAttemptRepository.
+
+    Enforces the production unique index on application_id (a second insert for the
+    same application raises DuplicateKeyError) so idempotency paths are exercised.
+    """
 
     def __init__(self):
         self.records: list[dict] = []
 
     async def insert(self, attempt) -> str:
-        self.records.append(attempt.model_dump())
+        doc = attempt.model_dump()
+        if any(r["application_id"] == doc["application_id"] for r in self.records):
+            raise DuplicateKeyError("duplicate application_id")
+        self.records.append(doc)
         return str(len(self.records))
+
+    async def get_by_application(self, application_id):
+        return next(
+            (r for r in self.records if r["application_id"] == application_id), None
+        )
 
     async def delete_by_candidate(self, candidate_user_id):
         self.records = [
