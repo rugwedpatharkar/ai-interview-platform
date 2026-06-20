@@ -550,3 +550,31 @@ async def test_reminder_sweep_completes_past_and_sends_once():
         await reminder_sweep(bookings=bookings, notifications=notifications, now=_NOW)
         == 0
     )
+
+
+@pytest.mark.asyncio
+async def test_reminder_sweep_retries_on_notify_failure():
+    # A transient notify failure must NOT stamp the flag, so the next tick retries —
+    # otherwise the reminder is silently lost.
+    bookings = _FakeBookings()
+    bookings.docs["app1"] = {
+        "application_id": "app1",
+        "comp_id": "c1",
+        "candidate_user_id": "cand1",
+        "status": "booked",
+        "chosen_start_at": _NOW + timedelta(minutes=30),
+        "chosen_duration_minutes": 60,
+        "version": 1,
+        "reminded_24h": False,
+        "reminded_1h": False,
+    }
+
+    class _FailingNotifications:
+        async def insert_dedup(self, notification):
+            raise RuntimeError("notify broker down")
+
+    sent = await reminder_sweep(
+        bookings=bookings, notifications=_FailingNotifications(), now=_NOW
+    )
+    assert sent == 0
+    assert bookings.docs["app1"]["reminded_1h"] is False  # not stamped → retried

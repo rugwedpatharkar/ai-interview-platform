@@ -29,8 +29,12 @@ async def aptitude_expiry_pass(
     cutoff = now - timedelta(hours=max_age_hours)
     expired = 0
     for delivery in await deliveries.list_stale(cutoff):
-        application = await applications.get(delivery["application_id"])
-        if application is not None and application.get("state") == "aptitude_pending":
+        # Per-item isolation: one delivery's failure (e.g. a publish blip) must not
+        # abort the tick + skip its siblings — list_stale re-returns it next tick.
+        try:
+            application = await applications.get(delivery["application_id"])
+            if application is None or application.get("state") != "aptitude_pending":
+                continue
             await publisher.publish(
                 "application.expired",
                 {
@@ -39,6 +43,10 @@ async def aptitude_expiry_pass(
                 },
             )
             expired += 1
+        except Exception:
+            log.exception(
+                "aptitude expiry failed for {}", delivery.get("application_id")
+            )
     if expired:
         log.info("aptitude expiry pass expired {} deliveries", expired)
     return expired
@@ -55,8 +63,10 @@ async def reconcile_pass(*, applications, attempts, publisher):
     """
     recovered = 0
     for application in await applications.list_by_state("aptitude_pending"):
-        attempt = await attempts.get_by_application(str(application["_id"]))
-        if attempt is not None:
+        try:
+            attempt = await attempts.get_by_application(str(application["_id"]))
+            if attempt is None:
+                continue
             await publisher.publish(
                 "aptitude.graded",
                 {
@@ -65,6 +75,8 @@ async def reconcile_pass(*, applications, attempts, publisher):
                 },
             )
             recovered += 1
+        except Exception:
+            log.exception("reconcile failed for {}", application.get("_id"))
     if recovered:
         log.info("reconcile pass re-emitted {} aptitude.graded", recovered)
     return recovered
@@ -89,16 +101,21 @@ async def reminder_sweep(*, bookings, notifications, now):
         field = "reminded_1h" if (start - now) <= timedelta(hours=1) else "reminded_24h"
         if booking.get(field):
             continue
+        # Notify FIRST, stamp only on success: a transient notify failure must leave the
+        # flag unset so the next tick retries, never silently lose the reminder. The CAS
+        # stamp still dedupes the common sequential-tick double; a rare replica-race
+        # double is acceptable for a best-effort reminder.
+        try:
+            await notify_event(
+                booking.get("candidate_user_id", ""),
+                booking.get("comp_id", ""),
+                "interview_reminder",
+                notifications=notifications,
+            )
+        except Exception:
+            log.exception("reminder notify failed; not stamping, will retry next tick")
+            continue
         if await bookings.stamp_reminder_if_unset(booking["application_id"], field):
-            try:
-                await notify_event(
-                    booking.get("candidate_user_id", ""),
-                    booking.get("comp_id", ""),
-                    "interview_reminder",
-                    notifications=notifications,
-                )
-            except Exception:
-                log.exception("reminder notify failed")
             sent += 1
     if completed or sent:
         log.info("reminder sweep: completed {}, sent {} reminders", completed, sent)
