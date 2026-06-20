@@ -33,7 +33,7 @@
 | W1 company profile | `CompanyProfileService` | ⬜ | ⬜ | ⬜ | ⚠️ trust `responds_in_days` needs funnel transition timings (Application has none) — see log |
 | W1 saved jobs | `SavedJobsService` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `api.savedJobs` (save/unsave/listSavedJobs). FE: flip `/saved` off mock |
 | W1 job alerts | `JobAlertsService` | ⬜ | ⬜ | ⬜ | |
-| W1 post-a-job | extend `Job` + `UpdateJob` + `gate_mode` | ⬜ | ⬜ | ⬜ | **next BE pickup** — pre-analyzed in log; wide JobService change, do with fresh context |
+| W1 post-a-job | extend `Job` + `UpdateJob` + `gate_mode` | ✅ | ✅ | ⬜ | **landed** — `pnpm gen` has marketplace fields + `api.jobs.updateJob`; SearchJobs facets now populate. FE: flip post-a-job + `/jobs/[id]` off mock |
 | W2 proctored interview | proctoring auto-gate + rtc (video) | 🟦 | ✅ | ⬜ | **auto-gate ✅ landed** (`ProctorAccepted.terminated`/`reason`); rtc video still on fake seams (Plan H) |
 | W2 candidate report | `Report.GetIntegrityTimeline` | ⬜ | ⬜ | ⬜ | first reader of proctoring_events |
 
@@ -153,6 +153,20 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   FE wiring already in place: `ProctorAck` in `frontend/apps/candidate/app/interview/[applicationId]/types.ts`
   + the `sink` callback in `page.tsx` read `terminated`/`reason` via a defensive cast → engages the moment
   this lands. No FE change needed.
+- 2026-06-20 · BE · ✅ **extend-Job LANDED** (gate GREEN: admin 266). `JobService` now carries the full
+  marketplace contract: `CreateJob`/`JobResponse` gain `city/region/country/remote_mode/employment_type/
+  salary_min/salary_max/salary_currency/skills/gate_mode/posted_at` (additive field numbers 5–15) + a new
+  **`UpdateJob`** RPC (manager + comp-scoped; cross-tenant → NotFound). Boundary validation: remote_mode∈
+  {remote,hybrid,onsite}, employment_type∈{full_time,contract,internship}, gate_mode∈{auto,advisory}
+  (default **auto** — proctored platform), salary_min≤salary_max, skills lowercased+de-duped; off-enum →
+  INVALID_ARGUMENT. `gate_mode` persists on `aptitude_config.gate_mode` (ties to the ProctorAccepted
+  auto-gate). `publish_job` stamps `posted_at=now` at the draft→published flip; SearchJobs recency sort
+  now uses `posted_at` (fallback created_at) and **marketplace facets/fields go live** (no SearchJobs
+  code change needed — it already read them via `$ifNull`/`.get`). New indexes: `(status,posted_at)`,
+  `(status,remote_mode,employment_type)`, `(status,city)`. `pnpm gen` done → `job_pb.ts` has the fields +
+  `api.jobs.updateJob`. **FE:** flip post-a-job to the real `createJob`/`updateJob`; `/jobs/[id]` edit can
+  mount `JobForm`. **Deferred:** `posted_at` backfill for legacy published jobs (search falls back to
+  created_at, so non-blocking).
 - 2026-06-20 · BE · ✅ **ProctorAccepted auto-gate LANDED** (gate GREEN; ai-agents +5 tests). A server-
   classified HIGH-severity proctor event (`second_face`/`second_voice`/`phone_detected`/`screen_share`/
   `virtual_camera`/`synthetic_audio_suspected`) now auto-terminates the live interview:

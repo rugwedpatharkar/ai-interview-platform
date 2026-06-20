@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file job.proto.
  */
 export const file_job: GenFile = /*@__PURE__*/
-  fileDesc("Cglqb2IucHJvdG8SDGFkbWluLmpvYi52MSI7CglQdWJsaWNKb2ISDgoGam9iX2lkGAEgASgJEg0KBXRpdGxlGAIgASgJEg8KB2pkX3RleHQYAyABKAkiMgoQQ3JlYXRlSm9iUmVxdWVzdBINCgV0aXRsZRgBIAEoCRIPCgdqZF90ZXh0GAIgASgJIh8KDUdldEpvYlJlcXVlc3QSDgoGam9iX2lkGAEgASgJIiMKEVB1Ymxpc2hKb2JSZXF1ZXN0Eg4KBmpvYl9pZBgBIAEoCSIRCg9MaXN0Sm9ic1JlcXVlc3QiTQoLSm9iUmVzcG9uc2USDgoGam9iX2lkGAEgASgJEg8KB2NvbXBfaWQYAiABKAkSDQoFdGl0bGUYAyABKAkSDgoGc3RhdHVzGAQgASgJIjsKEExpc3RKb2JzUmVzcG9uc2USJwoEam9icxgBIAMoCzIZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZTLxAgoKSm9iU2VydmljZRJGCglDcmVhdGVKb2ISHi5hZG1pbi5qb2IudjEuQ3JlYXRlSm9iUmVxdWVzdBoZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZRJACgZHZXRKb2ISGy5hZG1pbi5qb2IudjEuR2V0Sm9iUmVxdWVzdBoZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZRJJCghMaXN0Sm9icxIdLmFkbWluLmpvYi52MS5MaXN0Sm9ic1JlcXVlc3QaHi5hZG1pbi5qb2IudjEuTGlzdEpvYnNSZXNwb25zZRJICgpQdWJsaXNoSm9iEh8uYWRtaW4uam9iLnYxLlB1Ymxpc2hKb2JSZXF1ZXN0GhkuYWRtaW4uam9iLnYxLkpvYlJlc3BvbnNlEkQKDEdldFB1YmxpY0pvYhIbLmFkbWluLmpvYi52MS5HZXRKb2JSZXF1ZXN0GhcuYWRtaW4uam9iLnYxLlB1YmxpY0pvYmIGcHJvdG8z");
+  fileDesc("Cglqb2IucHJvdG8SDGFkbWluLmpvYi52MSI7CglQdWJsaWNKb2ISDgoGam9iX2lkGAEgASgJEg0KBXRpdGxlGAIgASgJEg8KB2pkX3RleHQYAyABKAki8wEKEENyZWF0ZUpvYlJlcXVlc3QSDQoFdGl0bGUYASABKAkSDwoHamRfdGV4dBgCIAEoCRIMCgRjaXR5GAMgASgJEg4KBnJlZ2lvbhgEIAEoCRIPCgdjb3VudHJ5GAUgASgJEhMKC3JlbW90ZV9tb2RlGAYgASgJEhcKD2VtcGxveW1lbnRfdHlwZRgHIAEoCRISCgpzYWxhcnlfbWluGAggASgDEhIKCnNhbGFyeV9tYXgYCSABKAMSFwoPc2FsYXJ5X2N1cnJlbmN5GAogASgJEg4KBnNraWxscxgLIAMoCRIRCglnYXRlX21vZGUYDCABKAkigwIKEFVwZGF0ZUpvYlJlcXVlc3QSDgoGam9iX2lkGAEgASgJEg0KBXRpdGxlGAIgASgJEg8KB2pkX3RleHQYAyABKAkSDAoEY2l0eRgEIAEoCRIOCgZyZWdpb24YBSABKAkSDwoHY291bnRyeRgGIAEoCRITCgtyZW1vdGVfbW9kZRgHIAEoCRIXCg9lbXBsb3ltZW50X3R5cGUYCCABKAkSEgoKc2FsYXJ5X21pbhgJIAEoAxISCgpzYWxhcnlfbWF4GAogASgDEhcKD3NhbGFyeV9jdXJyZW5jeRgLIAEoCRIOCgZza2lsbHMYDCADKAkSEQoJZ2F0ZV9tb2RlGA0gASgJIh8KDUdldEpvYlJlcXVlc3QSDgoGam9iX2lkGAEgASgJIiMKEVB1Ymxpc2hKb2JSZXF1ZXN0Eg4KBmpvYl9pZBgBIAEoCSIRCg9MaXN0Sm9ic1JlcXVlc3QioQIKC0pvYlJlc3BvbnNlEg4KBmpvYl9pZBgBIAEoCRIPCgdjb21wX2lkGAIgASgJEg0KBXRpdGxlGAMgASgJEg4KBnN0YXR1cxgEIAEoCRIMCgRjaXR5GAUgASgJEg4KBnJlZ2lvbhgGIAEoCRIPCgdjb3VudHJ5GAcgASgJEhMKC3JlbW90ZV9tb2RlGAggASgJEhcKD2VtcGxveW1lbnRfdHlwZRgJIAEoCRISCgpzYWxhcnlfbWluGAogASgDEhIKCnNhbGFyeV9tYXgYCyABKAMSFwoPc2FsYXJ5X2N1cnJlbmN5GAwgASgJEg4KBnNraWxscxgNIAMoCRIRCglnYXRlX21vZGUYDiABKAkSEQoJcG9zdGVkX2F0GA8gASgJIjsKEExpc3RKb2JzUmVzcG9uc2USJwoEam9icxgBIAMoCzIZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZTK5AwoKSm9iU2VydmljZRJGCglDcmVhdGVKb2ISHi5hZG1pbi5qb2IudjEuQ3JlYXRlSm9iUmVxdWVzdBoZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZRJGCglVcGRhdGVKb2ISHi5hZG1pbi5qb2IudjEuVXBkYXRlSm9iUmVxdWVzdBoZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZRJACgZHZXRKb2ISGy5hZG1pbi5qb2IudjEuR2V0Sm9iUmVxdWVzdBoZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZRJJCghMaXN0Sm9icxIdLmFkbWluLmpvYi52MS5MaXN0Sm9ic1JlcXVlc3QaHi5hZG1pbi5qb2IudjEuTGlzdEpvYnNSZXNwb25zZRJICgpQdWJsaXNoSm9iEh8uYWRtaW4uam9iLnYxLlB1Ymxpc2hKb2JSZXF1ZXN0GhkuYWRtaW4uam9iLnYxLkpvYlJlc3BvbnNlEkQKDEdldFB1YmxpY0pvYhIbLmFkbWluLmpvYi52MS5HZXRKb2JSZXF1ZXN0GhcuYWRtaW4uam9iLnYxLlB1YmxpY0pvYmIGcHJvdG8z");
 
 /**
  * @generated from message admin.job.v1.PublicJob
@@ -52,6 +52,68 @@ export type CreateJobRequest = Message<"admin.job.v1.CreateJobRequest"> & {
    * @generated from field: string jd_text = 2;
    */
   jdText: string;
+
+  /**
+   * Additive marketplace fields (all optional).
+   *
+   * @generated from field: string city = 3;
+   */
+  city: string;
+
+  /**
+   * @generated from field: string region = 4;
+   */
+  region: string;
+
+  /**
+   * @generated from field: string country = 5;
+   */
+  country: string;
+
+  /**
+   * "remote" | "hybrid" | "onsite"
+   *
+   * @generated from field: string remote_mode = 6;
+   */
+  remoteMode: string;
+
+  /**
+   * "full_time" | "contract" | "internship"
+   *
+   * @generated from field: string employment_type = 7;
+   */
+  employmentType: string;
+
+  /**
+   * @generated from field: int64 salary_min = 8;
+   */
+  salaryMin: bigint;
+
+  /**
+   * @generated from field: int64 salary_max = 9;
+   */
+  salaryMax: bigint;
+
+  /**
+   * ISO 4217, e.g. "USD"
+   *
+   * @generated from field: string salary_currency = 10;
+   */
+  salaryCurrency: string;
+
+  /**
+   * lowercased + de-duped on write
+   *
+   * @generated from field: repeated string skills = 11;
+   */
+  skills: string[];
+
+  /**
+   * "auto" | "advisory" (default auto)
+   *
+   * @generated from field: string gate_mode = 12;
+   */
+  gateMode: string;
 };
 
 /**
@@ -60,6 +122,83 @@ export type CreateJobRequest = Message<"admin.job.v1.CreateJobRequest"> & {
  */
 export const CreateJobRequestSchema: GenMessage<CreateJobRequest> = /*@__PURE__*/
   messageDesc(file_job, 1);
+
+/**
+ * @generated from message admin.job.v1.UpdateJobRequest
+ */
+export type UpdateJobRequest = Message<"admin.job.v1.UpdateJobRequest"> & {
+  /**
+   * @generated from field: string job_id = 1;
+   */
+  jobId: string;
+
+  /**
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string jd_text = 3;
+   */
+  jdText: string;
+
+  /**
+   * @generated from field: string city = 4;
+   */
+  city: string;
+
+  /**
+   * @generated from field: string region = 5;
+   */
+  region: string;
+
+  /**
+   * @generated from field: string country = 6;
+   */
+  country: string;
+
+  /**
+   * @generated from field: string remote_mode = 7;
+   */
+  remoteMode: string;
+
+  /**
+   * @generated from field: string employment_type = 8;
+   */
+  employmentType: string;
+
+  /**
+   * @generated from field: int64 salary_min = 9;
+   */
+  salaryMin: bigint;
+
+  /**
+   * @generated from field: int64 salary_max = 10;
+   */
+  salaryMax: bigint;
+
+  /**
+   * @generated from field: string salary_currency = 11;
+   */
+  salaryCurrency: string;
+
+  /**
+   * @generated from field: repeated string skills = 12;
+   */
+  skills: string[];
+
+  /**
+   * @generated from field: string gate_mode = 13;
+   */
+  gateMode: string;
+};
+
+/**
+ * Describes the message admin.job.v1.UpdateJobRequest.
+ * Use `create(UpdateJobRequestSchema)` to create a new message.
+ */
+export const UpdateJobRequestSchema: GenMessage<UpdateJobRequest> = /*@__PURE__*/
+  messageDesc(file_job, 2);
 
 /**
  * @generated from message admin.job.v1.GetJobRequest
@@ -76,7 +215,7 @@ export type GetJobRequest = Message<"admin.job.v1.GetJobRequest"> & {
  * Use `create(GetJobRequestSchema)` to create a new message.
  */
 export const GetJobRequestSchema: GenMessage<GetJobRequest> = /*@__PURE__*/
-  messageDesc(file_job, 2);
+  messageDesc(file_job, 3);
 
 /**
  * @generated from message admin.job.v1.PublishJobRequest
@@ -93,7 +232,7 @@ export type PublishJobRequest = Message<"admin.job.v1.PublishJobRequest"> & {
  * Use `create(PublishJobRequestSchema)` to create a new message.
  */
 export const PublishJobRequestSchema: GenMessage<PublishJobRequest> = /*@__PURE__*/
-  messageDesc(file_job, 3);
+  messageDesc(file_job, 4);
 
 /**
  * @generated from message admin.job.v1.ListJobsRequest
@@ -106,7 +245,7 @@ export type ListJobsRequest = Message<"admin.job.v1.ListJobsRequest"> & {
  * Use `create(ListJobsRequestSchema)` to create a new message.
  */
 export const ListJobsRequestSchema: GenMessage<ListJobsRequest> = /*@__PURE__*/
-  messageDesc(file_job, 4);
+  messageDesc(file_job, 5);
 
 /**
  * @generated from message admin.job.v1.JobResponse
@@ -131,6 +270,65 @@ export type JobResponse = Message<"admin.job.v1.JobResponse"> & {
    * @generated from field: string status = 4;
    */
   status: string;
+
+  /**
+   * Additive marketplace echoes.
+   *
+   * @generated from field: string city = 5;
+   */
+  city: string;
+
+  /**
+   * @generated from field: string region = 6;
+   */
+  region: string;
+
+  /**
+   * @generated from field: string country = 7;
+   */
+  country: string;
+
+  /**
+   * @generated from field: string remote_mode = 8;
+   */
+  remoteMode: string;
+
+  /**
+   * @generated from field: string employment_type = 9;
+   */
+  employmentType: string;
+
+  /**
+   * @generated from field: int64 salary_min = 10;
+   */
+  salaryMin: bigint;
+
+  /**
+   * @generated from field: int64 salary_max = 11;
+   */
+  salaryMax: bigint;
+
+  /**
+   * @generated from field: string salary_currency = 12;
+   */
+  salaryCurrency: string;
+
+  /**
+   * @generated from field: repeated string skills = 13;
+   */
+  skills: string[];
+
+  /**
+   * @generated from field: string gate_mode = 14;
+   */
+  gateMode: string;
+
+  /**
+   * ISO; empty for drafts
+   *
+   * @generated from field: string posted_at = 15;
+   */
+  postedAt: string;
 };
 
 /**
@@ -138,7 +336,7 @@ export type JobResponse = Message<"admin.job.v1.JobResponse"> & {
  * Use `create(JobResponseSchema)` to create a new message.
  */
 export const JobResponseSchema: GenMessage<JobResponse> = /*@__PURE__*/
-  messageDesc(file_job, 5);
+  messageDesc(file_job, 6);
 
 /**
  * @generated from message admin.job.v1.ListJobsResponse
@@ -155,7 +353,7 @@ export type ListJobsResponse = Message<"admin.job.v1.ListJobsResponse"> & {
  * Use `create(ListJobsResponseSchema)` to create a new message.
  */
 export const ListJobsResponseSchema: GenMessage<ListJobsResponse> = /*@__PURE__*/
-  messageDesc(file_job, 6);
+  messageDesc(file_job, 7);
 
 /**
  * JobService — company-side job posting + lifecycle. Auth via `authorization`
@@ -170,6 +368,14 @@ export const JobService: GenService<{
   createJob: {
     methodKind: "unary";
     input: typeof CreateJobRequestSchema;
+    output: typeof JobResponseSchema;
+  },
+  /**
+   * @generated from rpc admin.job.v1.JobService.UpdateJob
+   */
+  updateJob: {
+    methodKind: "unary";
+    input: typeof UpdateJobRequestSchema;
     output: typeof JobResponseSchema;
   },
   /**
