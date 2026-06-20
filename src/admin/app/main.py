@@ -152,6 +152,7 @@ async def serve() -> None:
             "companies": CompanyRepository(mongo.db),
             "company_profiles": CompanyProfileRepository(mongo.db),
             "applications": ApplicationRepository(mongo.db),
+            "storage": storage,  # presigned company-logo GET URLs on the public page
             "limiter": RateLimiter(redis),
             "trusted_proxy": s.trusted_proxy,
             "rate_limit": s.public_search_limit,

@@ -26,9 +26,10 @@ if _version_not_supported:
 
 
 class CompanyProfileServiceStub:
-    """CompanyProfileService — public read of an employer's branding + trust signals.
-    GetCompanyProfile is an UNAUTHENTICATED read of a published company (the public REST
-    mirror shares the resource). Upsert/logo-presign (company-branding) are out of scope.
+    """CompanyProfileService — public read of an employer's branding + trust signals, plus
+    the company-admin branding write. GetCompanyProfile is an UNAUTHENTICATED read of a
+    published company (the public REST mirror shares the resource); the write RPCs are
+    branding:edit-gated (company_admin only) and comp-scoped from the token.
     """
 
     def __init__(self, channel):
@@ -42,15 +43,38 @@ class CompanyProfileServiceStub:
                 request_serializer=app_dot_routes_dot_pb_dot_company__profile__pb2.GetCompanyProfileRequest.SerializeToString,
                 response_deserializer=app_dot_routes_dot_pb_dot_company__profile__pb2.CompanyProfile.FromString,
                 _registered_method=True)
+        self.UpsertCompanyProfile = channel.unary_unary(
+                '/admin.company_profile.v1.CompanyProfileService/UpsertCompanyProfile',
+                request_serializer=app_dot_routes_dot_pb_dot_company__profile__pb2.UpsertCompanyProfileRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_company__profile__pb2.CompanyProfile.FromString,
+                _registered_method=True)
+        self.PresignLogoUpload = channel.unary_unary(
+                '/admin.company_profile.v1.CompanyProfileService/PresignLogoUpload',
+                request_serializer=app_dot_routes_dot_pb_dot_company__profile__pb2.PresignLogoUploadRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_company__profile__pb2.PresignLogoUploadResponse.FromString,
+                _registered_method=True)
 
 
 class CompanyProfileServiceServicer:
-    """CompanyProfileService — public read of an employer's branding + trust signals.
-    GetCompanyProfile is an UNAUTHENTICATED read of a published company (the public REST
-    mirror shares the resource). Upsert/logo-presign (company-branding) are out of scope.
+    """CompanyProfileService — public read of an employer's branding + trust signals, plus
+    the company-admin branding write. GetCompanyProfile is an UNAUTHENTICATED read of a
+    published company (the public REST mirror shares the resource); the write RPCs are
+    branding:edit-gated (company_admin only) and comp-scoped from the token.
     """
 
     def GetCompanyProfile(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UpsertCompanyProfile(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def PresignLogoUpload(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -64,6 +88,16 @@ def add_CompanyProfileServiceServicer_to_server(servicer, server):
                     request_deserializer=app_dot_routes_dot_pb_dot_company__profile__pb2.GetCompanyProfileRequest.FromString,
                     response_serializer=app_dot_routes_dot_pb_dot_company__profile__pb2.CompanyProfile.SerializeToString,
             ),
+            'UpsertCompanyProfile': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpsertCompanyProfile,
+                    request_deserializer=app_dot_routes_dot_pb_dot_company__profile__pb2.UpsertCompanyProfileRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_company__profile__pb2.CompanyProfile.SerializeToString,
+            ),
+            'PresignLogoUpload': grpc.unary_unary_rpc_method_handler(
+                    servicer.PresignLogoUpload,
+                    request_deserializer=app_dot_routes_dot_pb_dot_company__profile__pb2.PresignLogoUploadRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_company__profile__pb2.PresignLogoUploadResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'admin.company_profile.v1.CompanyProfileService', rpc_method_handlers)
@@ -73,9 +107,10 @@ def add_CompanyProfileServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class CompanyProfileService:
-    """CompanyProfileService — public read of an employer's branding + trust signals.
-    GetCompanyProfile is an UNAUTHENTICATED read of a published company (the public REST
-    mirror shares the resource). Upsert/logo-presign (company-branding) are out of scope.
+    """CompanyProfileService — public read of an employer's branding + trust signals, plus
+    the company-admin branding write. GetCompanyProfile is an UNAUTHENTICATED read of a
+    published company (the public REST mirror shares the resource); the write RPCs are
+    branding:edit-gated (company_admin only) and comp-scoped from the token.
     """
 
     @staticmethod
@@ -95,6 +130,60 @@ class CompanyProfileService:
             '/admin.company_profile.v1.CompanyProfileService/GetCompanyProfile',
             app_dot_routes_dot_pb_dot_company__profile__pb2.GetCompanyProfileRequest.SerializeToString,
             app_dot_routes_dot_pb_dot_company__profile__pb2.CompanyProfile.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpsertCompanyProfile(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.company_profile.v1.CompanyProfileService/UpsertCompanyProfile',
+            app_dot_routes_dot_pb_dot_company__profile__pb2.UpsertCompanyProfileRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_company__profile__pb2.CompanyProfile.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def PresignLogoUpload(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.company_profile.v1.CompanyProfileService/PresignLogoUpload',
+            app_dot_routes_dot_pb_dot_company__profile__pb2.PresignLogoUploadRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_company__profile__pb2.PresignLogoUploadResponse.FromString,
             options,
             channel_credentials,
             insecure,

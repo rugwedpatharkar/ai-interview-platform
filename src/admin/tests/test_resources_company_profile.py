@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from app.errors import ForbiddenError, ValidationError
 from app.resources import company_profile as cp
 
 NOW = datetime(2026, 6, 20, tzinfo=UTC)
@@ -152,3 +153,93 @@ async def test_list_company_jobs_maps_cards_and_caps_page_size():
     assert out["jobs"][0]["company_name"] == "Acme"
     assert out["jobs"][0]["company_id"] == "c1"
     assert "comp_id" not in out["jobs"][0]
+
+
+# --- Branding write (A2): UpsertCompanyProfile + PresignLogoUpload ---
+
+_ADMIN = {"id": "a1", "role": "company_admin", "comp_id": "c1"}
+_REC = {"id": "r1", "role": "recruiter", "comp_id": "c1"}
+
+
+class _MutProfiles:
+    def __init__(self, doc=None):
+        self.doc = doc
+
+    async def get_by_comp(self, comp_id):
+        return self.doc
+
+    async def upsert_branding(self, comp_id, fields):
+        self.doc = {**(self.doc or {}), **fields, "comp_id": comp_id}
+
+
+class _FakeStorage:
+    async def presigned_put_url(self, comp_id, category, key, content_type, ttl=None):
+        return f"https://put/{comp_id}/{category}/{key}?ct={content_type}"
+
+    async def presigned_get_url(self, comp_id, category, key, ttl=None):
+        return f"https://get/{comp_id}/{category}/{key}"
+
+
+@pytest.mark.asyncio
+async def test_upsert_branding_company_admin_only():
+    profiles = _MutProfiles()
+    jobs = _FakeJobs(published=[{"comp_id": "c1"}])
+    out = await cp.upsert_company_profile(
+        _ADMIN,
+        {"about": "We build", "website": "https://acme.co", "locations": ["NYC"]},
+        profiles=profiles,
+        companies=_FakeCompanies({"c1": "Acme"}),
+        jobs=jobs,
+        applications=_FakeApps(),
+    )
+    assert out["about"] == "We build" and out["website"] == "https://acme.co"
+    assert out["locations"] == ["NYC"]
+    with pytest.raises(ForbiddenError):  # recruiter lacks branding:edit
+        await cp.upsert_company_profile(
+            _REC,
+            {"about": "x"},
+            profiles=profiles,
+            companies=_FakeCompanies(),
+            jobs=jobs,
+            applications=_FakeApps(),
+        )
+
+
+@pytest.mark.asyncio
+async def test_upsert_branding_validation():
+    kw = {
+        "profiles": _MutProfiles(),
+        "companies": _FakeCompanies(),
+        "jobs": _FakeJobs(published=[{"comp_id": "c1"}]),
+        "applications": _FakeApps(),
+    }
+    with pytest.raises(ValidationError):
+        await cp.upsert_company_profile(_ADMIN, {"website": "notaurl"}, **kw)
+    with pytest.raises(ValidationError):
+        await cp.upsert_company_profile(_ADMIN, {"about": "x" * 5000}, **kw)
+
+
+@pytest.mark.asyncio
+async def test_presign_logo_upload():
+    out = await cp.presign_logo_upload(_ADMIN, "image/png", storage=_FakeStorage())
+    assert out["upload_url"].startswith("https://put/c1/branding/logo-")
+    assert out["object_key"].startswith("logo-") and out["object_key"].endswith(".png")
+    with pytest.raises(ValidationError):  # unsupported type
+        await cp.presign_logo_upload(_ADMIN, "image/gif", storage=_FakeStorage())
+    with pytest.raises(ForbiddenError):  # recruiter denied
+        await cp.presign_logo_upload(_REC, "image/png", storage=_FakeStorage())
+
+
+@pytest.mark.asyncio
+async def test_get_company_profile_presigns_logo_when_stored():
+    profiles = _MutProfiles({"comp_id": "c1", "logo": "logo-x.png", "about": "hi"})
+    out = await cp.get_company_profile(
+        "c1",
+        companies=_FakeCompanies({"c1": "Acme"}),
+        profiles=profiles,
+        jobs=_FakeJobs(published=[{"comp_id": "c1"}]),
+        applications=_FakeApps(),
+        storage=_FakeStorage(),
+        now=NOW,
+    )
+    assert out["logo"] == "https://get/c1/branding/logo-x.png"

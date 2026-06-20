@@ -11,8 +11,11 @@ the same JobCard as search. Internals (comp_id, funnel rows, applicant ids) neve
 
 from datetime import UTC, datetime, timedelta
 from statistics import median
+from uuid import uuid4
 
+from app.errors import ValidationError
 from app.resources.discovery import job_card
+from app.resources.permissions import require_permission
 
 _MIN_SAMPLE = 3
 _WINDOW_DAYS = 30
@@ -55,8 +58,19 @@ def _trust_signals(apps, open_jobs, *, now) -> dict:
     }
 
 
+async def _logo_url(comp_id, logo_key, storage):
+    """A presigned GET URL for the stored logo key (regenerated per read); "" when no
+    logo or no storage. The page caches ~5m, well within the URL lifetime."""
+    if not logo_key or storage is None:
+        return ""
+    try:
+        return await storage.presigned_get_url(comp_id, "branding", logo_key)
+    except Exception:
+        return ""
+
+
 async def get_company_profile(
-    comp_id, *, companies, profiles, jobs, applications, now=None
+    comp_id, *, companies, profiles, jobs, applications, storage=None, now=None
 ) -> dict | None:
     now = now or _utcnow()
     open_jobs = await jobs.count_published_by_comp(comp_id)
@@ -71,7 +85,7 @@ async def get_company_profile(
         "name": names.get(comp_id, ""),
         "about": branding.get("about") or "",
         "website": branding.get("website") or "",
-        "logo": branding.get("logo") or "",
+        "logo": await _logo_url(comp_id, branding.get("logo") or "", storage),
         "locations": branding.get("locations") or [],
         "trust": _trust_signals(apps, open_jobs, now=now),
     }
@@ -91,3 +105,64 @@ async def list_company_jobs(comp_id, *, jobs, companies, page=1, page_size=24) -
         "page": page,
         "page_size": page_size,
     }
+
+
+_LOGO_TYPES = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
+_MAX_ABOUT = 4096
+_MAX_WEBSITE = 512
+_MAX_LOCATIONS = 20
+_MAX_LOCATION_LEN = 120
+
+
+def _validate_branding(payload):
+    about = payload.get("about", "") or ""
+    website = payload.get("website", "") or ""
+    locations = payload.get("locations") or []
+    if len(about) > _MAX_ABOUT:
+        raise ValidationError("about is too long")
+    if len(website) > _MAX_WEBSITE:
+        raise ValidationError("website is too long")
+    if website and not website.startswith(("http://", "https://")):
+        raise ValidationError("website must be an http(s) URL")
+    if len(locations) > _MAX_LOCATIONS:
+        raise ValidationError(f"at most {_MAX_LOCATIONS} locations")
+    if any(len(loc) > _MAX_LOCATION_LEN for loc in locations):
+        raise ValidationError("a location is too long")
+    return {
+        "about": about,
+        "website": website,
+        "logo": payload.get("logo", "") or "",
+        "locations": list(locations),
+    }
+
+
+async def upsert_company_profile(
+    identity, payload, *, profiles, companies, jobs, applications, storage=None
+):
+    """Company-admin edits their company's branding (branding:edit scope). Returns the
+    merged public profile DTO (with a freshly-presigned logo URL)."""
+    require_permission(identity, "branding:edit")
+    fields = _validate_branding(payload)
+    await profiles.upsert_branding(identity["comp_id"], fields)
+    return await get_company_profile(
+        identity["comp_id"],
+        companies=companies,
+        profiles=profiles,
+        jobs=jobs,
+        applications=applications,
+        storage=storage,
+    )
+
+
+async def presign_logo_upload(identity, content_type, *, storage):
+    """A presigned PUT for the company logo (branding:edit). The returned object_key is
+    echoed back as UpsertCompanyProfile.logo once the upload completes."""
+    require_permission(identity, "branding:edit")
+    ext = _LOGO_TYPES.get(content_type)
+    if ext is None:
+        raise ValidationError("logo must be PNG, JPEG, or WebP")
+    key = f"logo-{uuid4().hex}.{ext}"
+    upload_url = await storage.presigned_put_url(
+        identity["comp_id"], "branding", key, content_type
+    )
+    return {"upload_url": upload_url, "object_key": key}

@@ -24,19 +24,25 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n#app/routes/pb/company_profile.proto\x12\x18\x61\x64min.company_profile.v1\"+\n\x18GetCompanyProfileRequest\x12\x0f\n\x07\x63omp_id\x18\x01 \x01(\t\"\xa2\x01\n\x0e\x43ompanyProfile\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\r\n\x05\x61\x62out\x18\x03 \x01(\t\x12\x0f\n\x07website\x18\x04 \x01(\t\x12\x0c\n\x04logo\x18\x05 \x01(\t\x12\x11\n\tlocations\x18\x06 \x03(\t\x12\x35\n\x05trust\x18\x07 \x01(\x0b\x32&.admin.company_profile.v1.TrustSignals\"W\n\x0cTrustSignals\x12\x1a\n\x12\x61\x63tively_reviewing\x18\x01 \x01(\x08\x12\x18\n\x10responds_in_days\x18\x02 \x01(\x05\x12\x11\n\topen_jobs\x18\x03 \x01(\x05\x32\x8a\x01\n\x15\x43ompanyProfileService\x12q\n\x11GetCompanyProfile\x12\x32.admin.company_profile.v1.GetCompanyProfileRequest\x1a(.admin.company_profile.v1.CompanyProfileb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n#app/routes/pb/company_profile.proto\x12\x18\x61\x64min.company_profile.v1\"^\n\x1bUpsertCompanyProfileRequest\x12\r\n\x05\x61\x62out\x18\x01 \x01(\t\x12\x0f\n\x07website\x18\x02 \x01(\t\x12\x0c\n\x04logo\x18\x03 \x01(\t\x12\x11\n\tlocations\x18\x04 \x03(\t\"0\n\x18PresignLogoUploadRequest\x12\x14\n\x0c\x63ontent_type\x18\x01 \x01(\t\"C\n\x19PresignLogoUploadResponse\x12\x12\n\nupload_url\x18\x01 \x01(\t\x12\x12\n\nobject_key\x18\x02 \x01(\t\"+\n\x18GetCompanyProfileRequest\x12\x0f\n\x07\x63omp_id\x18\x01 \x01(\t\"\xa2\x01\n\x0e\x43ompanyProfile\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\r\n\x05\x61\x62out\x18\x03 \x01(\t\x12\x0f\n\x07website\x18\x04 \x01(\t\x12\x0c\n\x04logo\x18\x05 \x01(\t\x12\x11\n\tlocations\x18\x06 \x03(\t\x12\x35\n\x05trust\x18\x07 \x01(\x0b\x32&.admin.company_profile.v1.TrustSignals\"W\n\x0cTrustSignals\x12\x1a\n\x12\x61\x63tively_reviewing\x18\x01 \x01(\x08\x12\x18\n\x10responds_in_days\x18\x02 \x01(\x05\x12\x11\n\topen_jobs\x18\x03 \x01(\x05\x32\x81\x03\n\x15\x43ompanyProfileService\x12q\n\x11GetCompanyProfile\x12\x32.admin.company_profile.v1.GetCompanyProfileRequest\x1a(.admin.company_profile.v1.CompanyProfile\x12w\n\x14UpsertCompanyProfile\x12\x35.admin.company_profile.v1.UpsertCompanyProfileRequest\x1a(.admin.company_profile.v1.CompanyProfile\x12|\n\x11PresignLogoUpload\x12\x32.admin.company_profile.v1.PresignLogoUploadRequest\x1a\x33.admin.company_profile.v1.PresignLogoUploadResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'app.routes.pb.company_profile_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_GETCOMPANYPROFILEREQUEST']._serialized_start=65
-  _globals['_GETCOMPANYPROFILEREQUEST']._serialized_end=108
-  _globals['_COMPANYPROFILE']._serialized_start=111
-  _globals['_COMPANYPROFILE']._serialized_end=273
-  _globals['_TRUSTSIGNALS']._serialized_start=275
-  _globals['_TRUSTSIGNALS']._serialized_end=362
-  _globals['_COMPANYPROFILESERVICE']._serialized_start=365
-  _globals['_COMPANYPROFILESERVICE']._serialized_end=503
+  _globals['_UPSERTCOMPANYPROFILEREQUEST']._serialized_start=65
+  _globals['_UPSERTCOMPANYPROFILEREQUEST']._serialized_end=159
+  _globals['_PRESIGNLOGOUPLOADREQUEST']._serialized_start=161
+  _globals['_PRESIGNLOGOUPLOADREQUEST']._serialized_end=209
+  _globals['_PRESIGNLOGOUPLOADRESPONSE']._serialized_start=211
+  _globals['_PRESIGNLOGOUPLOADRESPONSE']._serialized_end=278
+  _globals['_GETCOMPANYPROFILEREQUEST']._serialized_start=280
+  _globals['_GETCOMPANYPROFILEREQUEST']._serialized_end=323
+  _globals['_COMPANYPROFILE']._serialized_start=326
+  _globals['_COMPANYPROFILE']._serialized_end=488
+  _globals['_TRUSTSIGNALS']._serialized_start=490
+  _globals['_TRUSTSIGNALS']._serialized_end=577
+  _globals['_COMPANYPROFILESERVICE']._serialized_start=580
+  _globals['_COMPANYPROFILESERVICE']._serialized_end=965
 # @@protoc_insertion_point(module_scope)

@@ -8,3 +8,10 @@ class CompanyProfileRepository(BaseRepository[CompanyProfile]):
 
     async def get_by_comp(self, comp_id: str) -> dict | None:
         return await self.find_one({"comp_id": comp_id})
+
+    async def upsert_branding(self, comp_id: str, fields: dict) -> None:
+        await self.col.update_one(
+            {"comp_id": comp_id},
+            {"$set": {**fields, "comp_id": comp_id}},
+            upsert=True,
+        )

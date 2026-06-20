@@ -2,11 +2,30 @@ syntax = "proto3";
 
 package admin.company_profile.v1;
 
-// CompanyProfileService — public read of an employer's branding + trust signals.
-// GetCompanyProfile is an UNAUTHENTICATED read of a published company (the public REST
-// mirror shares the resource). Upsert/logo-presign (company-branding) are out of scope.
+// CompanyProfileService — public read of an employer's branding + trust signals, plus
+// the company-admin branding write. GetCompanyProfile is an UNAUTHENTICATED read of a
+// published company (the public REST mirror shares the resource); the write RPCs are
+// branding:edit-gated (company_admin only) and comp-scoped from the token.
 service CompanyProfileService {
   rpc GetCompanyProfile(GetCompanyProfileRequest) returns (CompanyProfile);
+  rpc UpsertCompanyProfile(UpsertCompanyProfileRequest) returns (CompanyProfile);
+  rpc PresignLogoUpload(PresignLogoUploadRequest) returns (PresignLogoUploadResponse);
+}
+
+message UpsertCompanyProfileRequest {
+  string about = 1;
+  string website = 2;
+  string logo = 3;  // the object_key from PresignLogoUpload, or "" to clear
+  repeated string locations = 4;
+}
+
+message PresignLogoUploadRequest {
+  string content_type = 1;  // image/png | image/jpeg | image/webp
+}
+
+message PresignLogoUploadResponse {
+  string upload_url = 1;   // PUT the file here
+  string object_key = 2;   // echo back as UpsertCompanyProfileRequest.logo
 }
 
 message GetCompanyProfileRequest {

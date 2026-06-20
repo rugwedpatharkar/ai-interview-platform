@@ -6,6 +6,32 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
+class UpsertCompanyProfileRequest(_message.Message):
+    __slots__ = ("about", "website", "logo", "locations")
+    ABOUT_FIELD_NUMBER: _ClassVar[int]
+    WEBSITE_FIELD_NUMBER: _ClassVar[int]
+    LOGO_FIELD_NUMBER: _ClassVar[int]
+    LOCATIONS_FIELD_NUMBER: _ClassVar[int]
+    about: str
+    website: str
+    logo: str
+    locations: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, about: _Optional[str] = ..., website: _Optional[str] = ..., logo: _Optional[str] = ..., locations: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class PresignLogoUploadRequest(_message.Message):
+    __slots__ = ("content_type",)
+    CONTENT_TYPE_FIELD_NUMBER: _ClassVar[int]
+    content_type: str
+    def __init__(self, content_type: _Optional[str] = ...) -> None: ...
+
+class PresignLogoUploadResponse(_message.Message):
+    __slots__ = ("upload_url", "object_key")
+    UPLOAD_URL_FIELD_NUMBER: _ClassVar[int]
+    OBJECT_KEY_FIELD_NUMBER: _ClassVar[int]
+    upload_url: str
+    object_key: str
+    def __init__(self, upload_url: _Optional[str] = ..., object_key: _Optional[str] = ...) -> None: ...
+
 class GetCompanyProfileRequest(_message.Message):
     __slots__ = ("comp_id",)
     COMP_ID_FIELD_NUMBER: _ClassVar[int]

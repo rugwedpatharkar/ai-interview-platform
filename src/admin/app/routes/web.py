@@ -272,6 +272,8 @@ def create_web_app(
             profiles=CompanyProfileRepository(db),
             jobs=JobRepository(db),
             applications=ApplicationRepository(db),
+            tokens=tokens,
+            storage=storage,
         ),
         app,
     )

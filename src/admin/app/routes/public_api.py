@@ -103,6 +103,7 @@ def make_public_routes(deps):
             profiles=deps["company_profiles"],
             jobs=deps["jobs"],
             applications=deps["applications"],
+            storage=deps.get("storage"),
         )
         if out is None:
             return JSONResponse({"error": "not_found"}, status_code=404)

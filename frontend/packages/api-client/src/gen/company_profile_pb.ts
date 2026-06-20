@@ -10,7 +10,86 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file company_profile.proto.
  */
 export const file_company_profile: GenFile = /*@__PURE__*/
-  fileDesc("ChVjb21wYW55X3Byb2ZpbGUucHJvdG8SGGFkbWluLmNvbXBhbnlfcHJvZmlsZS52MSIrChhHZXRDb21wYW55UHJvZmlsZVJlcXVlc3QSDwoHY29tcF9pZBgBIAEoCSKiAQoOQ29tcGFueVByb2ZpbGUSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVhYm91dBgDIAEoCRIPCgd3ZWJzaXRlGAQgASgJEgwKBGxvZ28YBSABKAkSEQoJbG9jYXRpb25zGAYgAygJEjUKBXRydXN0GAcgASgLMiYuYWRtaW4uY29tcGFueV9wcm9maWxlLnYxLlRydXN0U2lnbmFscyJXCgxUcnVzdFNpZ25hbHMSGgoSYWN0aXZlbHlfcmV2aWV3aW5nGAEgASgIEhgKEHJlc3BvbmRzX2luX2RheXMYAiABKAUSEQoJb3Blbl9qb2JzGAMgASgFMooBChVDb21wYW55UHJvZmlsZVNlcnZpY2UScQoRR2V0Q29tcGFueVByb2ZpbGUSMi5hZG1pbi5jb21wYW55X3Byb2ZpbGUudjEuR2V0Q29tcGFueVByb2ZpbGVSZXF1ZXN0GiguYWRtaW4uY29tcGFueV9wcm9maWxlLnYxLkNvbXBhbnlQcm9maWxlYgZwcm90bzM");
+  fileDesc("ChVjb21wYW55X3Byb2ZpbGUucHJvdG8SGGFkbWluLmNvbXBhbnlfcHJvZmlsZS52MSJeChtVcHNlcnRDb21wYW55UHJvZmlsZVJlcXVlc3QSDQoFYWJvdXQYASABKAkSDwoHd2Vic2l0ZRgCIAEoCRIMCgRsb2dvGAMgASgJEhEKCWxvY2F0aW9ucxgEIAMoCSIwChhQcmVzaWduTG9nb1VwbG9hZFJlcXVlc3QSFAoMY29udGVudF90eXBlGAEgASgJIkMKGVByZXNpZ25Mb2dvVXBsb2FkUmVzcG9uc2USEgoKdXBsb2FkX3VybBgBIAEoCRISCgpvYmplY3Rfa2V5GAIgASgJIisKGEdldENvbXBhbnlQcm9maWxlUmVxdWVzdBIPCgdjb21wX2lkGAEgASgJIqIBCg5Db21wYW55UHJvZmlsZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWFib3V0GAMgASgJEg8KB3dlYnNpdGUYBCABKAkSDAoEbG9nbxgFIAEoCRIRCglsb2NhdGlvbnMYBiADKAkSNQoFdHJ1c3QYByABKAsyJi5hZG1pbi5jb21wYW55X3Byb2ZpbGUudjEuVHJ1c3RTaWduYWxzIlcKDFRydXN0U2lnbmFscxIaChJhY3RpdmVseV9yZXZpZXdpbmcYASABKAgSGAoQcmVzcG9uZHNfaW5fZGF5cxgCIAEoBRIRCglvcGVuX2pvYnMYAyABKAUygQMKFUNvbXBhbnlQcm9maWxlU2VydmljZRJxChFHZXRDb21wYW55UHJvZmlsZRIyLmFkbWluLmNvbXBhbnlfcHJvZmlsZS52MS5HZXRDb21wYW55UHJvZmlsZVJlcXVlc3QaKC5hZG1pbi5jb21wYW55X3Byb2ZpbGUudjEuQ29tcGFueVByb2ZpbGUSdwoUVXBzZXJ0Q29tcGFueVByb2ZpbGUSNS5hZG1pbi5jb21wYW55X3Byb2ZpbGUudjEuVXBzZXJ0Q29tcGFueVByb2ZpbGVSZXF1ZXN0GiguYWRtaW4uY29tcGFueV9wcm9maWxlLnYxLkNvbXBhbnlQcm9maWxlEnwKEVByZXNpZ25Mb2dvVXBsb2FkEjIuYWRtaW4uY29tcGFueV9wcm9maWxlLnYxLlByZXNpZ25Mb2dvVXBsb2FkUmVxdWVzdBozLmFkbWluLmNvbXBhbnlfcHJvZmlsZS52MS5QcmVzaWduTG9nb1VwbG9hZFJlc3BvbnNlYgZwcm90bzM");
+
+/**
+ * @generated from message admin.company_profile.v1.UpsertCompanyProfileRequest
+ */
+export type UpsertCompanyProfileRequest = Message<"admin.company_profile.v1.UpsertCompanyProfileRequest"> & {
+  /**
+   * @generated from field: string about = 1;
+   */
+  about: string;
+
+  /**
+   * @generated from field: string website = 2;
+   */
+  website: string;
+
+  /**
+   * the object_key from PresignLogoUpload, or "" to clear
+   *
+   * @generated from field: string logo = 3;
+   */
+  logo: string;
+
+  /**
+   * @generated from field: repeated string locations = 4;
+   */
+  locations: string[];
+};
+
+/**
+ * Describes the message admin.company_profile.v1.UpsertCompanyProfileRequest.
+ * Use `create(UpsertCompanyProfileRequestSchema)` to create a new message.
+ */
+export const UpsertCompanyProfileRequestSchema: GenMessage<UpsertCompanyProfileRequest> = /*@__PURE__*/
+  messageDesc(file_company_profile, 0);
+
+/**
+ * @generated from message admin.company_profile.v1.PresignLogoUploadRequest
+ */
+export type PresignLogoUploadRequest = Message<"admin.company_profile.v1.PresignLogoUploadRequest"> & {
+  /**
+   * image/png | image/jpeg | image/webp
+   *
+   * @generated from field: string content_type = 1;
+   */
+  contentType: string;
+};
+
+/**
+ * Describes the message admin.company_profile.v1.PresignLogoUploadRequest.
+ * Use `create(PresignLogoUploadRequestSchema)` to create a new message.
+ */
+export const PresignLogoUploadRequestSchema: GenMessage<PresignLogoUploadRequest> = /*@__PURE__*/
+  messageDesc(file_company_profile, 1);
+
+/**
+ * @generated from message admin.company_profile.v1.PresignLogoUploadResponse
+ */
+export type PresignLogoUploadResponse = Message<"admin.company_profile.v1.PresignLogoUploadResponse"> & {
+  /**
+   * PUT the file here
+   *
+   * @generated from field: string upload_url = 1;
+   */
+  uploadUrl: string;
+
+  /**
+   * echo back as UpsertCompanyProfileRequest.logo
+   *
+   * @generated from field: string object_key = 2;
+   */
+  objectKey: string;
+};
+
+/**
+ * Describes the message admin.company_profile.v1.PresignLogoUploadResponse.
+ * Use `create(PresignLogoUploadResponseSchema)` to create a new message.
+ */
+export const PresignLogoUploadResponseSchema: GenMessage<PresignLogoUploadResponse> = /*@__PURE__*/
+  messageDesc(file_company_profile, 2);
 
 /**
  * @generated from message admin.company_profile.v1.GetCompanyProfileRequest
@@ -27,7 +106,7 @@ export type GetCompanyProfileRequest = Message<"admin.company_profile.v1.GetComp
  * Use `create(GetCompanyProfileRequestSchema)` to create a new message.
  */
 export const GetCompanyProfileRequestSchema: GenMessage<GetCompanyProfileRequest> = /*@__PURE__*/
-  messageDesc(file_company_profile, 0);
+  messageDesc(file_company_profile, 3);
 
 /**
  * @generated from message admin.company_profile.v1.CompanyProfile
@@ -82,7 +161,7 @@ export type CompanyProfile = Message<"admin.company_profile.v1.CompanyProfile"> 
  * Use `create(CompanyProfileSchema)` to create a new message.
  */
 export const CompanyProfileSchema: GenMessage<CompanyProfile> = /*@__PURE__*/
-  messageDesc(file_company_profile, 1);
+  messageDesc(file_company_profile, 4);
 
 /**
  * Computed from funnel ground-truth (application transition timings) — never self-reported.
@@ -113,12 +192,13 @@ export type TrustSignals = Message<"admin.company_profile.v1.TrustSignals"> & {
  * Use `create(TrustSignalsSchema)` to create a new message.
  */
 export const TrustSignalsSchema: GenMessage<TrustSignals> = /*@__PURE__*/
-  messageDesc(file_company_profile, 2);
+  messageDesc(file_company_profile, 5);
 
 /**
- * CompanyProfileService — public read of an employer's branding + trust signals.
- * GetCompanyProfile is an UNAUTHENTICATED read of a published company (the public REST
- * mirror shares the resource). Upsert/logo-presign (company-branding) are out of scope.
+ * CompanyProfileService — public read of an employer's branding + trust signals, plus
+ * the company-admin branding write. GetCompanyProfile is an UNAUTHENTICATED read of a
+ * published company (the public REST mirror shares the resource); the write RPCs are
+ * branding:edit-gated (company_admin only) and comp-scoped from the token.
  *
  * @generated from service admin.company_profile.v1.CompanyProfileService
  */
@@ -130,6 +210,22 @@ export const CompanyProfileService: GenService<{
     methodKind: "unary";
     input: typeof GetCompanyProfileRequestSchema;
     output: typeof CompanyProfileSchema;
+  },
+  /**
+   * @generated from rpc admin.company_profile.v1.CompanyProfileService.UpsertCompanyProfile
+   */
+  upsertCompanyProfile: {
+    methodKind: "unary";
+    input: typeof UpsertCompanyProfileRequestSchema;
+    output: typeof CompanyProfileSchema;
+  },
+  /**
+   * @generated from rpc admin.company_profile.v1.CompanyProfileService.PresignLogoUpload
+   */
+  presignLogoUpload: {
+    methodKind: "unary";
+    input: typeof PresignLogoUploadRequestSchema;
+    output: typeof PresignLogoUploadResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_company_profile, 0);
