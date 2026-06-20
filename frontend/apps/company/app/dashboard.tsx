@@ -7,6 +7,7 @@ import { Clock, Inbox, TrendingUp, Users } from "lucide-react";
 import { CompanyShell } from "../components/company-shell";
 import { FunnelChart } from "../components/funnel-chart";
 import { KpiCard } from "../components/kpi-card";
+import { EmployerFirstRun } from "../components/onboarding/employer-firstrun";
 import { RecentJobs } from "../components/recent-jobs";
 import { useAuth } from "../lib/auth";
 
@@ -30,6 +31,8 @@ export function RecruiterDashboard() {
         description="Your hiring at a glance — no applicant left without an outcome."
       />
       <div className="flex flex-col gap-6">
+        <EmployerFirstRun />
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
             label="Outcome rate"
