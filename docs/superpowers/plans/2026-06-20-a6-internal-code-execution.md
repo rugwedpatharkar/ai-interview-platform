@@ -1,5 +1,11 @@
 # A6 — Internal Coding-Assessment Execution Implementation Plan
 
+> **STATUS: IMPLEMENTED (2026-06-20)** — all 9 tasks landed (`429c68a`..`837e7a3`),
+> full gate green. Executor (`lib/lib/execution/`), `admin.coding.v1.CodingService`,
+> typed grading, attempt persistence + eraser, static seed, and the deploy-layer
+> isolation manifests + `A6-EXECUTION-SECURITY.md`. Remaining: the FE quad + screen
+> flip (separate FE session) and the gated LLM-authoring follow-up.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Let a candidate run and submit code in the assessment screen and have it executed + graded **inside our own services** — no hosted code-exec API, no self-hosted sandbox VM/container — using only the Python standard library, plus typed-section grading.
