@@ -15,6 +15,10 @@ class User(BaseModel):
     totp_enabled: bool = False
     recovery_codes: list = Field(default_factory=list)  # hashed one-time codes
     pending_email: str = ""  # staged email change, awaiting verification
+    # Team-seat lifecycle (company members; candidates leave these at defaults).
+    status: str = "pending"  # pending | active | revoked
+    last_active_at: datetime | None = None
+    invited_by: str = ""  # inviter user_id; "" for founding members
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 

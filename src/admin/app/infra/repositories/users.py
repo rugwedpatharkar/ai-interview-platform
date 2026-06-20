@@ -1,5 +1,6 @@
 from bson import ObjectId
 from lib.mongodb import BaseRepository
+from lib.schemas import Role
 
 from app.model.auth import User
 
@@ -51,4 +52,39 @@ class UserRepository(BaseRepository[User]):
             },
             limit=limit,
             skip=skip,
+        )
+
+    # --- Team seats (company members) ---
+    async def list_company(
+        self, comp_id: str, *, skip: int = 0, limit: int = 50
+    ) -> list[dict]:
+        cursor = (
+            self.col.find({"comp_id": comp_id})
+            .sort("created_at", -1)
+            .skip(skip)
+            .limit(limit)
+        )
+        return await cursor.to_list(length=limit)
+
+    async def count_company(self, comp_id: str) -> int:
+        return await self.col.count_documents({"comp_id": comp_id})
+
+    async def set_status(self, user_id: str, status: str) -> None:
+        await self.col.update_one(
+            {"_id": ObjectId(user_id)}, {"$set": {"status": status}}
+        )
+
+    async def set_role(self, user_id: str, role: str) -> None:
+        await self.col.update_one({"_id": ObjectId(user_id)}, {"$set": {"role": role}})
+
+    async def count_active_admins(self, comp_id: str) -> int:
+        return await self.col.count_documents(
+            {"comp_id": comp_id, "role": Role.company_admin.value, "status": "active"}
+        )
+
+    async def revoke_seat(self, user_id: str) -> None:
+        # Revoke an employee seat: blank the password (locks login) + mark revoked.
+        await self.col.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"status": "revoked", "password_hash": ""}},
         )

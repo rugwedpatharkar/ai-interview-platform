@@ -108,6 +108,16 @@ INDEXES: list[IndexSpec] = [
     IndexSpec("interview_bookings", [("candidate_user_id", 1), ("status", 1)]),
     # reminder sweep read path: booked bookings ordered by start time.
     IndexSpec("interview_bookings", [("status", 1), ("chosen_start_at", 1)]),
+    # team roster reads + the last-admin count (comp_id, role, status).
+    IndexSpec("users", [("comp_id", 1), ("role", 1), ("status", 1)]),
+    # member_job_assignments (per-job seat scoping; enforcement deferred). Unique
+    # (user_id, job_id) makes an assignment idempotent; comp_id backs tenant scans.
+    IndexSpec(
+        "member_job_assignments",
+        [("user_id", 1), ("job_id", 1)],
+        {"unique": True},
+    ),
+    IndexSpec("member_job_assignments", "comp_id"),
 ]
 
 
