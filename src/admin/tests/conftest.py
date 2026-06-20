@@ -338,6 +338,22 @@ class FakeAptitudeAttemptRepo:
         ]
 
 
+class FakeCodingAttemptRepo:
+    """In-memory stand-in for CodingAttemptRepository."""
+
+    def __init__(self):
+        self.records: list[dict] = []
+
+    async def insert(self, attempt) -> str:
+        self.records.append(attempt.model_dump())
+        return str(len(self.records))
+
+    async def delete_by_candidate(self, candidate_user_id):
+        self.records = [
+            r for r in self.records if r["candidate_user_id"] != candidate_user_id
+        ]
+
+
 class FakeInterviewRepo:
     """In-memory stand-in for InterviewRepository (transcripts, keyed by user)."""
 
@@ -447,6 +463,7 @@ def fakes():
         "audit": FakeAuditRepo(),
         "banks": FakeAptitudeBankRepo(),
         "attempts": FakeAptitudeAttemptRepo(),
+        "coding_attempts": FakeCodingAttemptRepo(),
         "deliveries": FakeAptitudeDeliveryRepo(),
         "reports": FakeReportRepo(),
         "interviews": FakeInterviewRepo(),

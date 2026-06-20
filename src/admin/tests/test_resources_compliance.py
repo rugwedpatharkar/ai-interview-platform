@@ -7,6 +7,7 @@ from app.errors import ValidationError
 from app.model.application import Application
 from app.model.aptitude import AptitudeAttempt
 from app.model.auth import User
+from app.model.coding import CodingAttempt
 from app.model.profile import CandidateProfile
 from app.resources import compliance
 
@@ -60,6 +61,7 @@ def _eraser(fakes):
         reports=fakes["reports"],
         interviews=fakes["interviews"],
         attempts=fakes["attempts"],
+        coding_attempts=fakes["coding_attempts"],
         consents=fakes["consents"],
         practice=fakes["practice"],
         slots=fakes["interview_slots"],
@@ -119,6 +121,27 @@ async def test_erase_cascades_into_ai_artifacts(fakes):
     assert await fakes["reports"].get_by_application(app_id) is None
     assert fakes["interviews"].docs == {}
     assert fakes["attempts"].records == []
+
+
+async def test_erase_deletes_coding_attempts(fakes):
+    uid = await fakes["users"].insert(
+        User(email="c@x.com", password_hash="h", role=Role.candidate)
+    )
+    await fakes["coding_attempts"].insert(
+        CodingAttempt(
+            application_id="a1",
+            comp_id="c1",
+            candidate_user_id=uid,
+            job_id="j1",
+            cases_passed=1,
+            cases_total=1,
+            typed_correct=0,
+            typed_total=0,
+            passed=True,
+        )
+    )
+    await _eraser(fakes).erase(uid)
+    assert fakes["coding_attempts"].records == []
 
 
 async def test_erase_deletes_practice_sessions(fakes):

@@ -57,6 +57,7 @@ class CandidateEraser:
         reports,
         interviews,
         attempts,
+        coding_attempts=None,
         consents,
         notifications=None,
         message_threads=None,
@@ -74,6 +75,7 @@ class CandidateEraser:
         self._reports = reports
         self._interviews = interviews
         self._attempts = attempts
+        self._coding_attempts = coding_attempts
         self._consents = consents
         self._notifications = notifications
         self._message_threads = message_threads
@@ -97,6 +99,8 @@ class CandidateEraser:
                 await self._messages.delete_by_application(application_id)
         await self._interviews.delete_by_user(user_id)
         await self._attempts.delete_by_candidate(user_id)
+        if self._coding_attempts is not None:
+            await self._coding_attempts.delete_by_candidate(user_id)
         # The consent ledger is keyed by user_id (identifying PII); erase it too so a
         # right-to-erasure leaves no residual linkage back to the candidate.
         await self._consents.delete_by_user(user_id)
