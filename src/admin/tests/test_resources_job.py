@@ -1,6 +1,6 @@
 import pytest
 
-from app.errors import ForbiddenError, NotFoundError
+from app.errors import ForbiddenError, NotFoundError, ValidationError
 from app.resources import job
 
 ADMIN = {"id": "u1", "role": "company_admin", "comp_id": "c1"}
@@ -47,6 +47,108 @@ async def test_get_public_job_draft_is_not_found(fakes):
     created = await job.create_job(ADMIN, "Draft Role", "x", jobs=fakes["jobs"])
     with pytest.raises(NotFoundError):
         await job.get_public_job(created["job_id"], jobs=fakes["jobs"])
+
+
+_MARKET = {
+    "city": "Berlin",
+    "region": "BE",
+    "country": "DE",
+    "remote_mode": "hybrid",
+    "employment_type": "full_time",
+    "salary_min": 80000,
+    "salary_max": 120000,
+    "salary_currency": "eur",
+    "skills": ["React", "react", " GO "],
+    "gate_mode": "advisory",
+}
+
+
+@pytest.mark.asyncio
+async def test_create_job_with_marketplace_fields(fakes):
+    out = await job.create_job(
+        ADMIN, "Eng", "JD", jobs=fakes["jobs"], marketplace=_MARKET
+    )
+    assert out["city"] == "Berlin" and out["region"] == "BE" and out["country"] == "DE"
+    assert out["remote_mode"] == "hybrid" and out["employment_type"] == "full_time"
+    assert out["salary_min"] == 80000 and out["salary_max"] == 120000
+    assert out["salary_currency"] == "eur"
+    assert out["skills"] == ["go", "react"]  # lowercased, de-duped, sorted
+    assert out["gate_mode"] == "advisory"
+    assert out["posted_at"] == ""  # draft is unstamped
+
+
+@pytest.mark.asyncio
+async def test_create_job_gate_mode_defaults_auto(fakes):
+    out = await job.create_job(ADMIN, "Eng", "JD", jobs=fakes["jobs"])
+    assert out["gate_mode"] == "auto"  # proctored-platform default
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("remote_mode", "on-the-moon"),
+        ("employment_type", "freelance"),
+        ("gate_mode", "off"),
+    ],
+)
+async def test_create_job_rejects_off_enum(fakes, field, value):
+    with pytest.raises(ValidationError):
+        await job.create_job(
+            ADMIN, "Eng", "JD", jobs=fakes["jobs"], marketplace={field: value}
+        )
+
+
+@pytest.mark.asyncio
+async def test_create_job_rejects_salary_min_over_max(fakes):
+    with pytest.raises(ValidationError):
+        await job.create_job(
+            ADMIN,
+            "Eng",
+            "JD",
+            jobs=fakes["jobs"],
+            marketplace={"salary_min": 200000, "salary_max": 100000},
+        )
+
+
+@pytest.mark.asyncio
+async def test_update_job_changes_fields(fakes):
+    created = await job.create_job(ADMIN, "Eng", "JD", jobs=fakes["jobs"])
+    out = await job.update_job(
+        ADMIN,
+        created["job_id"],
+        "Senior Eng",
+        "Better JD",
+        jobs=fakes["jobs"],
+        marketplace={"remote_mode": "remote", "gate_mode": "advisory"},
+    )
+    assert out["title"] == "Senior Eng"
+    assert out["remote_mode"] == "remote" and out["gate_mode"] == "advisory"
+
+
+@pytest.mark.asyncio
+async def test_update_job_is_company_scoped(fakes):
+    created = await job.create_job(ADMIN, "Eng", "JD", jobs=fakes["jobs"])
+    with pytest.raises(NotFoundError):
+        await job.update_job(OTHER, created["job_id"], "X", "y", jobs=fakes["jobs"])
+
+
+@pytest.mark.asyncio
+async def test_candidate_cannot_update_job(fakes):
+    created = await job.create_job(ADMIN, "Eng", "JD", jobs=fakes["jobs"])
+    with pytest.raises(ForbiddenError):
+        await job.update_job(CAND, created["job_id"], "X", "y", jobs=fakes["jobs"])
+
+
+@pytest.mark.asyncio
+async def test_publish_stamps_posted_at(fakes):
+    created = await job.create_job(ADMIN, "Eng", "JD", jobs=fakes["jobs"])
+    assert created["posted_at"] == ""  # draft
+    await job.publish_job(
+        ADMIN, created["job_id"], jobs=fakes["jobs"], publisher=fakes["publisher"]
+    )
+    got = await job.get_job(ADMIN, created["job_id"], jobs=fakes["jobs"])
+    assert got["posted_at"] != ""  # stamped at the draft -> published flip
 
 
 @pytest.mark.asyncio

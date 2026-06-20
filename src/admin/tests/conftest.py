@@ -202,6 +202,18 @@ class FakeJobRepo:
     async def get_by_id(self, job_id):
         return self._docs.get(job_id)
 
+    async def update_fields(self, job_id, comp_id, fields):
+        doc = self._docs.get(job_id)
+        if not doc or doc["comp_id"] != comp_id:
+            return 0
+        for key, val in fields.items():
+            if "." in key:  # dotted key -> one-level nested set (mirrors Mongo $set)
+                head, tail = key.split(".", 1)
+                doc.setdefault(head, {})[tail] = val
+            else:
+                doc[key] = val
+        return 1
+
 
 class FakeApplicationRepo:
     """In-memory stand-in for ApplicationRepository."""

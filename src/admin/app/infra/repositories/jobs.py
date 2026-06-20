@@ -47,6 +47,17 @@ class JobRepository(BaseRepository[Job]):
         )
         return res.modified_count
 
+    async def update_fields(self, job_id: str, comp_id: str, fields: dict) -> int:
+        """Comp-scoped `$set` of job fields (dotted keys like aptitude_config.gate_mode
+        are honoured by Mongo). Returns modified_count; 0 if missing/cross-tenant."""
+        oid = _oid(job_id)
+        if oid is None:
+            return 0
+        res = await self.col.update_one(
+            {"_id": oid, "comp_id": comp_id}, {"$set": fields}
+        )
+        return res.modified_count
+
     async def search_published(
         self,
         *,
