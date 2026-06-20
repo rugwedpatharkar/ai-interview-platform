@@ -27,7 +27,13 @@ class MongoManager:
         return self._db
 
     async def ping(self) -> bool:
-        await self._client.admin.command("ping")
+        # Startup health probe: wrap the raw pymongo failure (ServerSelectionTimeout,
+        # auth, etc.) in a clear error so a downed DB fails fast with a readable message
+        # instead of an opaque driver traceback.
+        try:
+            await self._client.admin.command("ping")
+        except Exception as exc:
+            raise RuntimeError("MongoDB unavailable") from exc
         return True
 
     async def close(self) -> None:

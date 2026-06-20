@@ -84,6 +84,7 @@ async def serve() -> None:
     mongo = MongoManager(
         s.mongo_uri, s.mongo_db_name, s.mongo_max_pool_size, s.mongo_min_pool_size
     )
+    await mongo.ping()  # fail fast with a clear message if the DB is unreachable
     redis = create_redis(s.redis_url)
     storage = ObjectStorage(
         s.s3_endpoint_url,
