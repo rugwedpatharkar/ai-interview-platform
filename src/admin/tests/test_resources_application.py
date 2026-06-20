@@ -1,4 +1,5 @@
 import pytest
+from pymongo.errors import DuplicateKeyError
 
 from app.errors import (
     ConflictError,
@@ -94,6 +95,30 @@ async def test_apply_once_per_job(fakes):
     await application.apply(CAND, jid, True, **kw)
     with pytest.raises(ConflictError):
         await application.apply(CAND, jid, True, **kw)
+
+
+@pytest.mark.asyncio
+async def test_apply_concurrent_race_maps_to_conflict(fakes):
+    # Two applies race past the existence check and both insert; the loser hits the
+    # unique index. That must surface as a clean Conflict, not a raw 500.
+    jid = await _published_job(fakes)
+
+    class _RacyApps:
+        async def get_by_job_and_candidate(self, job_id, candidate_user_id):
+            return None  # the check passes — both racers reach the insert
+
+        async def insert(self, application):
+            raise DuplicateKeyError("dup (job_id, candidate_user_id)")
+
+    with pytest.raises(ConflictError):
+        await application.apply(
+            CAND,
+            jid,
+            True,
+            applications=_RacyApps(),
+            jobs=fakes["jobs"],
+            publisher=fakes["publisher"],
+        )
 
 
 @pytest.mark.asyncio
