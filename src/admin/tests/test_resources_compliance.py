@@ -62,6 +62,7 @@ def _eraser(fakes):
         interviews=fakes["interviews"],
         attempts=fakes["attempts"],
         coding_attempts=fakes["coding_attempts"],
+        user_preferences=fakes["user_preferences"],
         consents=fakes["consents"],
         practice=fakes["practice"],
         slots=fakes["interview_slots"],
@@ -142,6 +143,17 @@ async def test_erase_deletes_coding_attempts(fakes):
     )
     await _eraser(fakes).erase(uid)
     assert fakes["coding_attempts"].records == []
+
+
+async def test_erase_deletes_user_preferences(fakes):
+    uid = await fakes["users"].insert(
+        User(email="c@x.com", password_hash="h", role=Role.candidate)
+    )
+    await fakes["user_preferences"].upsert(
+        uid, {"mode": "dark", "base": "mint", "accent": "cyan", "accent_hue": None}
+    )
+    await _eraser(fakes).erase(uid)
+    assert await fakes["user_preferences"].get_by_user(uid) is None
 
 
 async def test_erase_deletes_practice_sessions(fakes):

@@ -106,6 +106,7 @@ def make_eraser(db, storage):
         interviews=InterviewRepository(db),
         attempts=AptitudeAttemptRepository(db),
         coding_attempts=CodingAttemptRepository(db),
+        user_preferences=UserPreferencesRepository(db),
         consents=ConsentRepository(db),
         notifications=NotificationRepository(db),
         message_threads=MessageThreadRepository(db),

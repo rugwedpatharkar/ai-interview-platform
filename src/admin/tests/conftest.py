@@ -377,6 +377,22 @@ class FakeCodingAttemptRepo:
         ]
 
 
+class FakeUserPreferencesRepo:
+    """In-memory stand-in for UserPreferencesRepository."""
+
+    def __init__(self):
+        self.docs: dict[str, dict] = {}
+
+    async def get_by_user(self, user_id):
+        return self.docs.get(user_id)
+
+    async def upsert(self, user_id, fields):
+        self.docs[user_id] = {**fields, "user_id": user_id}
+
+    async def delete_by_user(self, user_id):
+        self.docs.pop(user_id, None)
+
+
 class FakeInterviewRepo:
     """In-memory stand-in for InterviewRepository (transcripts, keyed by user)."""
 
@@ -487,6 +503,7 @@ def fakes():
         "banks": FakeAptitudeBankRepo(),
         "attempts": FakeAptitudeAttemptRepo(),
         "coding_attempts": FakeCodingAttemptRepo(),
+        "user_preferences": FakeUserPreferencesRepo(),
         "deliveries": FakeAptitudeDeliveryRepo(),
         "reports": FakeReportRepo(),
         "interviews": FakeInterviewRepo(),
