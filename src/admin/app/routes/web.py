@@ -22,6 +22,10 @@ from app.infra.repositories.interviews import InterviewRepository
 from app.infra.repositories.job_alerts import JobAlertsRepository
 from app.infra.repositories.jobs import JobRepository
 from app.infra.repositories.match_results import MatchResultRepository
+from app.infra.repositories.messaging import (
+    MessageRepository,
+    MessageThreadRepository,
+)
 from app.infra.repositories.notifications import NotificationRepository
 from app.infra.repositories.proctoring_events import ProctorEventsRepository
 from app.infra.repositories.profiles import CandidateProfileRepository
@@ -40,6 +44,7 @@ from app.routes.decision import DecisionServicer
 from app.routes.discovery import DiscoveryServicer
 from app.routes.job import JobServicer
 from app.routes.job_alerts import JobAlertsServicer
+from app.routes.messaging import MessagingServicer
 from app.routes.notification import NotificationServicer
 from app.routes.pb import (
     analytics_pb2_grpc,
@@ -52,6 +57,7 @@ from app.routes.pb import (
     discovery_pb2_grpc,
     job_alerts_pb2_grpc,
     job_pb2_grpc,
+    messaging_pb2_grpc,
     notification_pb2_grpc,
     profile_pb2_grpc,
     recommendation_pb2_grpc,
@@ -83,6 +89,8 @@ def make_eraser(db, storage):
         attempts=AptitudeAttemptRepository(db),
         consents=ConsentRepository(db),
         notifications=NotificationRepository(db),
+        message_threads=MessageThreadRepository(db),
+        messages=MessageRepository(db),
     )
 
 
@@ -256,6 +264,18 @@ def create_web_app(
     )
     notification_pb2_grpc.add_NotificationServiceServicer_to_server(
         NotificationServicer(notifications=NotificationRepository(db), tokens=tokens),
+        app,
+    )
+    messaging_pb2_grpc.add_MessagingServiceServicer_to_server(
+        MessagingServicer(
+            applications=ApplicationRepository(db),
+            threads=MessageThreadRepository(db),
+            messages=MessageRepository(db),
+            jobs=JobRepository(db),
+            companies=CompanyRepository(db),
+            tokens=tokens,
+            notifications=NotificationRepository(db),
+        ),
         app,
     )
     return app

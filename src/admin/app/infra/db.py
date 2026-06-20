@@ -75,6 +75,12 @@ INDEXES: list[IndexSpec] = [
         [("user_id", 1), ("dedup_key", 1)],
         {"unique": True, "sparse": True},
     ),
+    # messaging: thread 1:1 per application (the authz invariant) + the two inboxes.
+    IndexSpec("message_threads", "application_id", {"unique": True}),
+    IndexSpec("message_threads", [("candidate_user_id", 1), ("last_message_at", -1)]),
+    IndexSpec("message_threads", [("comp_id", 1), ("last_message_at", -1)]),
+    IndexSpec("messages", [("thread_id", 1), ("created_at", 1)]),
+    IndexSpec("messages", "application_id"),
     # saved_jobs: candidate bookmarks; unique (candidate, job) makes Save idempotent.
     IndexSpec(
         "saved_jobs", [("candidate_user_id", 1), ("job_id", 1)], {"unique": True}

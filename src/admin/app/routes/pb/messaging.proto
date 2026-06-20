@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package admin.messaging.v1;
+
+// MessagingService — candidate <-> recruiter chat, 1:1 with an application. Authed;
+// sender identity from the token (no impersonation); authz reuses the application owner.
+service MessagingService {
+  rpc SendMessage(SendMessageRequest) returns (MessageDTO);
+  rpc ListThreads(ListThreadsRequest) returns (ListThreadsResponse);
+  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
+  rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
+}
+
+message SendMessageRequest {
+  string application_id = 1;
+  string body = 2;
+}
+
+message MessageDTO {
+  string id = 1;
+  string application_id = 2;
+  string sender_role = 3;       // "candidate" | "recruiter"
+  string sender_user_id = 4;
+  string body = 5;
+  string created_at = 6;
+  string read_at = 7;           // ISO; "" when unread
+}
+
+message ThreadDTO {
+  string application_id = 1;
+  string candidate_user_id = 2;
+  string recruiter_user_id = 3;
+  string job_title = 4;
+  string company_name = 5;
+  string last_message_at = 6;
+  string last_snippet = 7;
+  int32 unread = 8;             // the CALLER's-side unread
+}
+
+message ListThreadsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+message ListThreadsResponse {
+  repeated ThreadDTO threads = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total = 4;
+}
+
+message ListMessagesRequest {
+  string application_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+message ListMessagesResponse {
+  repeated MessageDTO messages = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total = 4;
+}
+
+message MarkReadRequest {
+  string application_id = 1;
+}
+message MarkReadResponse {
+  string application_id = 1;
+  int32 unread = 2;
+}

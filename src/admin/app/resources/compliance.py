@@ -59,6 +59,8 @@ class CandidateEraser:
         attempts,
         consents,
         notifications=None,
+        message_threads=None,
+        messages=None,
     ):
         self._users = users
         self._profiles = profiles
@@ -70,12 +72,21 @@ class CandidateEraser:
         self._attempts = attempts
         self._consents = consents
         self._notifications = notifications
+        self._message_threads = message_threads
+        self._messages = messages
 
     async def erase(self, user_id):
         applications = await self._applications.list_by_candidate(user_id)
         await self._reports.delete_by_applications(
             [str(a["_id"]) for a in applications]
         )
+        # Messaging is keyed by application_id (no candidate field) — cascade per app so
+        # the recruiter's copy of the chat goes too.
+        if self._message_threads is not None:
+            for application in applications:
+                application_id = str(application["_id"])
+                await self._message_threads.delete_by_application(application_id)
+                await self._messages.delete_by_application(application_id)
         await self._interviews.delete_by_user(user_id)
         await self._attempts.delete_by_candidate(user_id)
         # The consent ledger is keyed by user_id (identifying PII); erase it too so a
