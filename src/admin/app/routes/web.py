@@ -22,6 +22,7 @@ from app.infra.repositories.interviews import InterviewRepository
 from app.infra.repositories.job_alerts import JobAlertsRepository
 from app.infra.repositories.jobs import JobRepository
 from app.infra.repositories.match_results import MatchResultRepository
+from app.infra.repositories.notifications import NotificationRepository
 from app.infra.repositories.proctoring_events import ProctorEventsRepository
 from app.infra.repositories.profiles import CandidateProfileRepository
 from app.infra.repositories.reports import ReportRepository
@@ -39,6 +40,7 @@ from app.routes.decision import DecisionServicer
 from app.routes.discovery import DiscoveryServicer
 from app.routes.job import JobServicer
 from app.routes.job_alerts import JobAlertsServicer
+from app.routes.notification import NotificationServicer
 from app.routes.pb import (
     analytics_pb2_grpc,
     application_pb2_grpc,
@@ -50,6 +52,7 @@ from app.routes.pb import (
     discovery_pb2_grpc,
     job_alerts_pb2_grpc,
     job_pb2_grpc,
+    notification_pb2_grpc,
     profile_pb2_grpc,
     recommendation_pb2_grpc,
     report_pb2_grpc,
@@ -79,6 +82,7 @@ def make_eraser(db, storage):
         interviews=InterviewRepository(db),
         attempts=AptitudeAttemptRepository(db),
         consents=ConsentRepository(db),
+        notifications=NotificationRepository(db),
     )
 
 
@@ -248,6 +252,10 @@ def create_web_app(
     )
     job_alerts_pb2_grpc.add_JobAlertsServiceServicer_to_server(
         JobAlertsServicer(alerts=JobAlertsRepository(db), tokens=tokens),
+        app,
+    )
+    notification_pb2_grpc.add_NotificationServiceServicer_to_server(
+        NotificationServicer(notifications=NotificationRepository(db), tokens=tokens),
         app,
     )
     return app

@@ -58,6 +58,7 @@ class CandidateEraser:
         interviews,
         attempts,
         consents,
+        notifications=None,
     ):
         self._users = users
         self._profiles = profiles
@@ -68,6 +69,7 @@ class CandidateEraser:
         self._interviews = interviews
         self._attempts = attempts
         self._consents = consents
+        self._notifications = notifications
 
     async def erase(self, user_id):
         applications = await self._applications.list_by_candidate(user_id)
@@ -79,6 +81,8 @@ class CandidateEraser:
         # The consent ledger is keyed by user_id (identifying PII); erase it too so a
         # right-to-erasure leaves no residual linkage back to the candidate.
         await self._consents.delete_by_user(user_id)
+        if self._notifications is not None:
+            await self._notifications.delete_by_user(user_id)
         profile = await self._profiles.get_by_user(user_id)
         await self._profiles.delete_by_user(user_id)
         if profile and profile.get("resume_key"):

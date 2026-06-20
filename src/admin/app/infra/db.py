@@ -66,6 +66,15 @@ INDEXES: list[IndexSpec] = [
     # job_alerts: a candidate's saved searches; list by recency + a sweep scan index.
     IndexSpec("job_alerts", [("candidate_user_id", 1), ("created_at", -1)]),
     IndexSpec("job_alerts", [("frequency", 1), ("last_run_at", 1)]),
+    # notifications: per-recipient feed (recency), unread filter / fresh count, + a
+    # sparse-unique (user_id, dedup_key) for idempotent triggers.
+    IndexSpec("notifications", [("user_id", 1), ("created_at", -1)]),
+    IndexSpec("notifications", [("user_id", 1), ("read_at", 1)]),
+    IndexSpec(
+        "notifications",
+        [("user_id", 1), ("dedup_key", 1)],
+        {"unique": True, "sparse": True},
+    ),
     # saved_jobs: candidate bookmarks; unique (candidate, job) makes Save idempotent.
     IndexSpec(
         "saved_jobs", [("candidate_user_id", 1), ("job_id", 1)], {"unique": True}
