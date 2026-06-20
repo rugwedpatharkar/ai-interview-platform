@@ -7,14 +7,42 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class PublicJob(_message.Message):
-    __slots__ = ("job_id", "title", "jd_text")
+    __slots__ = ("job_id", "title", "jd_text", "location", "remote_mode", "employment_type", "salary_min", "salary_max", "salary_currency", "skills", "posted_at", "company")
     JOB_ID_FIELD_NUMBER: _ClassVar[int]
     TITLE_FIELD_NUMBER: _ClassVar[int]
     JD_TEXT_FIELD_NUMBER: _ClassVar[int]
+    LOCATION_FIELD_NUMBER: _ClassVar[int]
+    REMOTE_MODE_FIELD_NUMBER: _ClassVar[int]
+    EMPLOYMENT_TYPE_FIELD_NUMBER: _ClassVar[int]
+    SALARY_MIN_FIELD_NUMBER: _ClassVar[int]
+    SALARY_MAX_FIELD_NUMBER: _ClassVar[int]
+    SALARY_CURRENCY_FIELD_NUMBER: _ClassVar[int]
+    SKILLS_FIELD_NUMBER: _ClassVar[int]
+    POSTED_AT_FIELD_NUMBER: _ClassVar[int]
+    COMPANY_FIELD_NUMBER: _ClassVar[int]
     job_id: str
     title: str
     jd_text: str
-    def __init__(self, job_id: _Optional[str] = ..., title: _Optional[str] = ..., jd_text: _Optional[str] = ...) -> None: ...
+    location: str
+    remote_mode: str
+    employment_type: str
+    salary_min: int
+    salary_max: int
+    salary_currency: str
+    skills: _containers.RepeatedScalarFieldContainer[str]
+    posted_at: str
+    company: Company
+    def __init__(self, job_id: _Optional[str] = ..., title: _Optional[str] = ..., jd_text: _Optional[str] = ..., location: _Optional[str] = ..., remote_mode: _Optional[str] = ..., employment_type: _Optional[str] = ..., salary_min: _Optional[int] = ..., salary_max: _Optional[int] = ..., salary_currency: _Optional[str] = ..., skills: _Optional[_Iterable[str]] = ..., posted_at: _Optional[str] = ..., company: _Optional[_Union[Company, _Mapping]] = ...) -> None: ...
+
+class Company(_message.Message):
+    __slots__ = ("id", "name", "logo")
+    ID_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    LOGO_FIELD_NUMBER: _ClassVar[int]
+    id: str
+    name: str
+    logo: str
+    def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., logo: _Optional[str] = ...) -> None: ...
 
 class CreateJobRequest(_message.Message):
     __slots__ = ("title", "jd_text", "city", "region", "country", "remote_mode", "employment_type", "salary_min", "salary_max", "salary_currency", "skills", "gate_mode")

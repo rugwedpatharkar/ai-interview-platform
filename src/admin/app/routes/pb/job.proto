@@ -18,6 +18,22 @@ message PublicJob {
   string job_id = 1;
   string title = 2;
   string jd_text = 3;
+  // Additive public marketplace fields.
+  string location = 4;          // "" when unset
+  string remote_mode = 5;       // "remote" | "hybrid" | "onsite" | ""
+  string employment_type = 6;   // "full_time" | "contract" | "internship" | ""
+  int64 salary_min = 7;
+  int64 salary_max = 8;
+  string salary_currency = 9;
+  repeated string skills = 10;
+  string posted_at = 11;        // ISO-8601; "" for legacy jobs not yet backfilled
+  Company company = 12;
+}
+
+message Company {
+  string id = 1;
+  string name = 2;
+  string logo = 3;  // logo URL or "" (links to /companies/{id})
 }
 
 message CreateJobRequest {
