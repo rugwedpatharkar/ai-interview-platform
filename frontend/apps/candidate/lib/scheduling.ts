@@ -2,6 +2,10 @@
 // candidate-specific deltas — the `candidateListQueryKey` and a `schedulingClient(api)` that
 // bakes in the candidate `cancelledBy` — so existing imports (`use-schedule.ts`, the schedule
 // page) resolve unchanged.
+//
+// Wiring (2026-06-21): @ip/shared's `schedulingClient(api, role)` returns the gRPC-backed
+// `createSchedulingClient(api)` by default (`NEXT_PUBLIC_MOCK !== "1"`), which delegates to
+// `api.scheduling.*` on the admin transport. The mock path remains gated behind the env flag.
 import { schedulingClient as sharedSchedulingClient } from "@ip/shared";
 
 export {
