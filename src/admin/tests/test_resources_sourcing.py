@@ -1,4 +1,4 @@
-"""resources/sourcing.search_candidates — comp-scoped keyword search over OWN applicants.
+"""resources/sourcing.search_candidates — comp-scoped keyword search over applicants.
 
 The seed is the company's applications (same as GetTalentPool); the universe is
 application-existence, not current funnel state. No global candidate index.

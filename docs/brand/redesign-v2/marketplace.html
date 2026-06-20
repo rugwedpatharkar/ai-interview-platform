@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aptura — Find your next role</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,540;9..144,600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="app.css" />
+<style>
+  /* Screen-specific layout for the marketplace. Shared primitives come from app.css. */
+  .market { display: grid; grid-template-columns: 264px 1fr; gap: var(--sp-6); align-items: start; }
+
+  /* Filter rail — sticky under the topbar */
+  .rail { position: sticky; top: 88px; display: flex; flex-direction: column; gap: var(--sp-6); }
+  .rail .facet { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .rail .facet-h { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); }
+  .rail .chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .check-row { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--step-0); color: var(--ink); cursor: pointer; }
+  .check-row .cnt { margin-left: auto; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-3); }
+  .check { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--line-2); display: inline-grid; place-items: center; flex: none; }
+  .check.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-size: 11px; line-height: 1; }
+  .range { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .range .ends { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-2); }
+  .range .track { height: 6px; border-radius: 999px; background: var(--surface-2); position: relative; }
+  .range .track > i { position: absolute; top: 0; bottom: 0; left: 22%; right: 28%; border-radius: 999px; background: var(--accent); }
+  .range .track > b { position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); transform: translate(-50%, -50%); }
+
+  /* Results column */
+  .results { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .results-bar { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+  .results-bar .count { color: var(--ink-2); font-size: var(--step-0); }
+  .results-bar .count b { color: var(--ink); font-weight: 600; }
+  .results-bar .spacer { flex: 1; }
+
+  /* Job card */
+  .jobcard { position: relative; display: flex; flex-direction: column; gap: var(--sp-4); }
+  .jobcard.best { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
+  .jobcard .top { display: flex; gap: var(--sp-4); align-items: flex-start; }
+  .logo { width: 48px; height: 48px; flex: none; border-radius: var(--r-md); display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); }
+  .jobcard .title { font-family: var(--font-display); font-size: var(--step-2); letter-spacing: -0.025em; line-height: 1.1; }
+  .jobcard .company { color: var(--ink-2); margin-top: 4px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .jobcard .company .dot { color: var(--ink-3); }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+  .skills { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .jobcard .foot { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+  .jobcard .posted { font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-3); }
+  .jobcard .foot .spacer { flex: 1; }
+  .save { width: 40px; padding-inline: 0; }
+  .best-flag { position: absolute; top: var(--sp-4); right: var(--sp-4); }
+
+  @media (max-width: 1000px) {
+    .market { grid-template-columns: 1fr; }
+    .rail { position: static; }
+    .best-flag { position: static; }
+    .jobcard.best .best-flag { align-self: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Candidate sidebar -->
+  <aside class="side">
+    <a class="brand" href="#"><span class="mark">◐</span> Aptura</a>
+    <div class="navlabel">Discover</div>
+    <a class="navitem" href="#"><span class="ic">▦</span> Dashboard</a>
+    <a class="navitem" aria-current="page" href="#"><span class="ic">◎</span> Jobs</a>
+    <a class="navitem" href="#"><span class="ic">♡</span> Saved</a>
+    <a class="navitem" href="#"><span class="ic">◷</span> Alerts</a>
+    <div class="navlabel">My search</div>
+    <a class="navitem" href="#"><span class="ic">▤</span> Applications</a>
+    <a class="navitem" href="#"><span class="ic">✎</span> Practice</a>
+    <a class="navitem" href="#"><span class="ic">✉</span> Messages</a>
+    <a class="navitem" href="#"><span class="ic">⚙</span> Settings</a>
+    <div class="foot"><span class="avatar">DM</span><div><div style="font-weight:540;font-size:.9rem">Devin Mehta</div><div style="color:var(--ink-3);font-size:.78rem">Open to work</div></div></div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="searchbox" style="flex:1;max-width:520px">⌕ <input style="flex:1" placeholder="Job title, skill, or company" value="Backend engineer" /></div>
+      <div class="toolbar">
+        <div class="searchbox" style="width:200px">⌖ <input placeholder="Location or remote" value="Remote" /></div>
+        <button class="btn btn-primary btn-sm">Search</button>
+        <span class="avatar">DM</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Page head -->
+      <div class="page-head">
+        <div>
+          <h2>Find your next role</h2>
+          <div class="sub">Search the live catalog of published, proctored roles.</div>
+        </div>
+        <div class="toolbar">
+          <button class="chip-toggle" aria-pressed="true">⟲ Reset</button>
+          <button class="btn btn-ghost btn-sm">Save this search</button>
+        </div>
+      </div>
+
+      <!-- Two-column: filter rail + results -->
+      <div class="market">
+        <!-- Filter rail -->
+        <aside class="rail" aria-label="Filters">
+          <div class="facet">
+            <div class="facet-h">Work mode</div>
+            <div class="chips">
+              <button class="chip-toggle" aria-pressed="true">Remote · 312</button>
+              <button class="chip-toggle">Hybrid · 148</button>
+              <button class="chip-toggle">On-site · 96</button>
+            </div>
+          </div>
+
+          <div class="facet">
+            <div class="facet-h">Employment type</div>
+            <label class="check-row"><span class="check on">✓</span> Full-time <span class="cnt">428</span></label>
+            <label class="check-row"><span class="check"></span> Contract <span class="cnt">74</span></label>
+            <label class="check-row"><span class="check"></span> Part-time <span class="cnt">19</span></label>
+            <label class="check-row"><span class="check"></span> Internship <span class="cnt">11</span></label>
+          </div>
+
+          <div class="facet">
+            <div class="facet-h">Experience level</div>
+            <label class="check-row"><span class="check"></span> Junior <span class="cnt">88</span></label>
+            <label class="check-row"><span class="check on">✓</span> Mid <span class="cnt">204</span></label>
+            <label class="check-row"><span class="check on">✓</span> Senior <span class="cnt">176</span></label>
+            <label class="check-row"><span class="check"></span> Staff+ <span class="cnt">63</span></label>
+          </div>
+
+          <div class="facet">
+            <div class="facet-h">Salary range</div>
+            <div class="range">
+              <div class="ends"><span>$80k</span><span>$220k</span></div>
+              <div class="track"><i></i><b style="left:22%"></b><b style="left:72%"></b></div>
+              <div class="ends" style="color:var(--ink-3)"><span>min</span><span>max</span></div>
+            </div>
+          </div>
+
+          <div class="facet">
+            <div class="facet-h">Skills</div>
+            <div class="chips">
+              <button class="chip-toggle" aria-pressed="true">Python</button>
+              <button class="chip-toggle" aria-pressed="true">Go</button>
+              <button class="chip-toggle">TypeScript</button>
+              <button class="chip-toggle">Kubernetes</button>
+              <button class="chip-toggle">React</button>
+            </div>
+          </div>
+
+          <button class="btn btn-ghost btn-sm" style="align-self:flex-start">Clear filters</button>
+        </aside>
+
+        <!-- Results -->
+        <section class="results">
+          <div class="results-bar">
+            <div class="count"><b>556</b> roles match</div>
+            <span class="spacer"></span>
+            <div class="tabs" role="tablist" aria-label="Sort">
+              <button role="tab" aria-selected="true">Best match</button>
+              <button role="tab" aria-selected="false">Newest</button>
+              <button role="tab" aria-selected="false">Salary</button>
+            </div>
+          </div>
+
+          <!-- Card 1 — best match -->
+          <article class="card jobcard best">
+            <span class="pill pill-accent best-flag">Best match</span>
+            <div class="top">
+              <span class="logo">S</span>
+              <div style="min-width:0">
+                <div class="title">Senior Backend Engineer</div>
+                <div class="company">Strat0Sys <span class="dot">·</span> <span style="color:var(--ink-3)">Series C · Fintech</span></div>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="badge">Remote</span>
+              <span class="badge">⌖ Berlin / EU</span>
+              <span class="badge">Full-time</span>
+              <span class="pill pill-good"><span class="tnum">$140k–185k</span></span>
+            </div>
+            <div class="skills">
+              <span class="badge">Python</span>
+              <span class="badge">Go</span>
+              <span class="badge">PostgreSQL</span>
+              <span class="badge">Kubernetes</span>
+            </div>
+            <div class="foot">
+              <span class="posted">posted 2d ago</span>
+              <span class="spacer"></span>
+              <button class="btn btn-ghost btn-sm save" aria-label="Save job" title="Save">♡</button>
+              <button class="btn btn-primary btn-sm">Apply</button>
+            </div>
+          </article>
+
+          <!-- Card 2 -->
+          <article class="card jobcard">
+            <div class="top">
+              <span class="logo">L</span>
+              <div style="min-width:0">
+                <div class="title">Product Designer</div>
+                <div class="company">Lumen Labs <span class="dot">·</span> <span style="color:var(--ink-3)">Design tooling</span></div>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="badge">Hybrid</span>
+              <span class="badge">⌖ Lisbon</span>
+              <span class="badge">Full-time</span>
+              <span class="pill pill-good"><span class="tnum">€65k–90k</span></span>
+            </div>
+            <div class="skills">
+              <span class="badge">Figma</span>
+              <span class="badge">Design systems</span>
+              <span class="badge">Prototyping</span>
+            </div>
+            <div class="foot">
+              <span class="posted">posted 4d ago</span>
+              <span class="spacer"></span>
+              <button class="btn btn-ghost btn-sm save" aria-label="Save job" title="Save">♡</button>
+              <button class="btn btn-primary btn-sm">Apply</button>
+            </div>
+          </article>
+
+          <!-- Card 3 -->
+          <article class="card jobcard">
+            <div class="top">
+              <span class="logo">A</span>
+              <div style="min-width:0">
+                <div class="title">Data Scientist</div>
+                <div class="company">Atlas Health <span class="dot">·</span> <span style="color:var(--ink-3)">Healthcare AI</span></div>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="badge">Remote</span>
+              <span class="badge">⌖ US / Anywhere</span>
+              <span class="badge">Full-time</span>
+              <span class="pill pill-good"><span class="tnum">$150k–195k</span></span>
+            </div>
+            <div class="skills">
+              <span class="badge">Python</span>
+              <span class="badge">PyTorch</span>
+              <span class="badge">SQL</span>
+              <span class="badge">Statistics</span>
+            </div>
+            <div class="foot">
+              <span class="posted">posted 5d ago</span>
+              <span class="spacer"></span>
+              <button class="btn btn-ghost btn-sm save" aria-label="Save job" title="Save">♡</button>
+              <button class="btn btn-primary btn-sm">Apply</button>
+            </div>
+          </article>
+
+          <!-- Card 4 -->
+          <article class="card jobcard">
+            <div class="top">
+              <span class="logo">N</span>
+              <div style="min-width:0">
+                <div class="title">Frontend Engineer</div>
+                <div class="company">Nimbus <span class="dot">·</span> <span style="color:var(--ink-3)">Developer tools</span></div>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="badge">Remote</span>
+              <span class="badge">⌖ Bengaluru</span>
+              <span class="badge">Contract</span>
+              <span class="pill pill-good"><span class="tnum">$90k–120k</span></span>
+            </div>
+            <div class="skills">
+              <span class="badge">TypeScript</span>
+              <span class="badge">React</span>
+              <span class="badge">Next.js</span>
+              <span class="badge">CSS</span>
+            </div>
+            <div class="foot">
+              <span class="posted">posted 6d ago</span>
+              <span class="spacer"></span>
+              <button class="btn btn-ghost btn-sm save" aria-label="Save job" title="Save">♡</button>
+              <button class="btn btn-primary btn-sm">Apply</button>
+            </div>
+          </article>
+
+          <!-- Card 5 -->
+          <article class="card jobcard">
+            <div class="top">
+              <span class="logo">V</span>
+              <div style="min-width:0">
+                <div class="title">Machine Learning Engineer</div>
+                <div class="company">Vectorise <span class="dot">·</span> <span style="color:var(--ink-3)">Search infra</span></div>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="badge">Hybrid</span>
+              <span class="badge">⌖ Singapore</span>
+              <span class="badge">Full-time</span>
+              <span class="pill pill-good"><span class="tnum">$160k–210k</span></span>
+            </div>
+            <div class="skills">
+              <span class="badge">Python</span>
+              <span class="badge">PyTorch</span>
+              <span class="badge">CUDA</span>
+              <span class="badge">Ray</span>
+            </div>
+            <div class="foot">
+              <span class="posted">posted 8d ago</span>
+              <span class="spacer"></span>
+              <button class="btn btn-ghost btn-sm save" aria-label="Save job" title="Save">♡</button>
+              <button class="btn btn-primary btn-sm">Apply</button>
+            </div>
+          </article>
+
+          <!-- Card 6 -->
+          <article class="card jobcard">
+            <div class="top">
+              <span class="logo">H</span>
+              <div style="min-width:0">
+                <div class="title">DevOps Engineer</div>
+                <div class="company">Helios Cloud <span class="dot">·</span> <span style="color:var(--ink-3)">Platform</span></div>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="badge">Remote</span>
+              <span class="badge">⌖ EU timezones</span>
+              <span class="badge">Full-time</span>
+              <span class="pill pill-good"><span class="tnum">$130k–170k</span></span>
+            </div>
+            <div class="skills">
+              <span class="badge">Kubernetes</span>
+              <span class="badge">Terraform</span>
+              <span class="badge">AWS</span>
+              <span class="badge">Go</span>
+            </div>
+            <div class="foot">
+              <span class="posted">posted 11d ago</span>
+              <span class="spacer"></span>
+              <button class="btn btn-ghost btn-sm save" aria-label="Save job" title="Save">♡</button>
+              <button class="btn btn-primary btn-sm">Apply</button>
+            </div>
+          </article>
+
+          <div style="display:flex;justify-content:center;padding-top:var(--sp-2)">
+            <button class="btn btn-ghost">Load more roles</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

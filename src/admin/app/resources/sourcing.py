@@ -1,10 +1,10 @@
 """Talent sourcing: keyword search over the company's OWN applicants.
 
 The candidate universe is **every candidate with an application to a job owned by this
-comp_id** (the same seed `get_talent_pool` uses) — application-existence, never current
-funnel state, so rejected / closed-job applicants stay searchable. There is no global
-candidate index. The DTO carries only the human-in-the-loop subset (masked handle, counts,
-fit score, furthest stage, matched skills) — no ID / background / biometric data.
+comp_id** (the same seed `get_talent_pool` uses) — application-existence, not current
+funnel state, so rejected / closed-job applicants stay searchable. No global candidate
+index. The DTO carries only the human-in-the-loop subset (masked handle, counts, fit
+score, furthest stage, matched skills) — no ID / background / biometric data.
 """
 
 from collections import defaultdict

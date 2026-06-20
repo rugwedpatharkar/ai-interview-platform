@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aptura — Candidate dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,540;9..144,600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="app.css" />
+<style>
+  /* Screen-specific layout only — everything else reuses app.css / tokens.css. */
+  .split { display: grid; grid-template-columns: 1fr 360px; gap: var(--sp-6); align-items: start; }
+  .col { display: flex; flex-direction: column; gap: var(--sp-4); }
+  .section-h { font-family: var(--font-display); font-size: var(--step-2); display: flex; align-items: center; gap: var(--sp-3); }
+  .section-h .ic { color: var(--accent); font-size: 0.9em; }
+
+  /* Application row (card-style list) */
+  .approw { display: grid; grid-template-columns: 40px 1fr auto; gap: var(--sp-4); align-items: center; padding: var(--sp-4); border-bottom: 1px solid var(--line); }
+  .approw:last-child { border-bottom: 0; }
+  .approw:hover { background: var(--surface-2); }
+  .approw .logo { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-2); font-family: var(--font-display); font-weight: 600; }
+  .approw .role { font-weight: 540; color: var(--ink); }
+  .approw .co { color: var(--ink-3); font-size: var(--step--1); }
+  .approw .meta { display: flex; align-items: center; gap: var(--sp-3); }
+  .approw .when { color: var(--ink-2); font-size: var(--step--1); }
+
+  /* Compact recommended-job cards */
+  .reccard { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .reccard .top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+  .reccard .role { font-weight: 600; color: var(--ink); }
+  .reccard .co { color: var(--ink-3); font-size: var(--step--1); }
+  .reccard ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .reccard li { display: flex; gap: 8px; color: var(--ink-2); font-size: var(--step--1); }
+  .reccard li .ck { color: var(--accent); }
+
+  /* Up-next interview panel */
+  .upnext { background: linear-gradient(160deg, color-mix(in oklch, var(--accent-soft) 14%, var(--surface)), var(--surface)); border-color: var(--line-2); }
+  .upnext .slot { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-3) 0 var(--sp-4); }
+  .upnext .slot .dot { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); }
+  .upnext .slot .nm { font-weight: 540; color: var(--ink); }
+  .upnext .slot .tm { color: var(--ink-2); font-size: var(--step--1); }
+
+  /* Practice CTA */
+  .practice { display: flex; align-items: center; gap: var(--sp-3); }
+  .practice .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-2); color: var(--accent); flex-shrink: 0; }
+  .practice .t { font-weight: 540; color: var(--ink); }
+  .practice .d { color: var(--ink-3); font-size: var(--step--1); }
+
+  @media (max-width: 1000px) {
+    .split { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Candidate sidebar -->
+  <aside class="side">
+    <a class="brand" href="#"><span class="mark">◐</span> Aptura</a>
+    <div class="navlabel">For you</div>
+    <a class="navitem" aria-current="page" href="#"><span class="ic">▦</span> Dashboard</a>
+    <a class="navitem" href="#"><span class="ic">◎</span> Jobs</a>
+    <a class="navitem" href="#"><span class="ic">♡</span> Saved</a>
+    <a class="navitem" href="#"><span class="ic">◔</span> Alerts</a>
+    <a class="navitem" href="#"><span class="ic">▤</span> Applications</a>
+    <div class="navlabel">Prepare</div>
+    <a class="navitem" href="#"><span class="ic">✦</span> Practice</a>
+    <a class="navitem" href="#"><span class="ic">✉</span> Messages</a>
+    <a class="navitem" href="#"><span class="ic">⚙</span> Settings</a>
+    <div class="foot"><span class="avatar">AR</span><div><div style="font-weight:540;font-size:.9rem">Aisha Rahman</div><div style="color:var(--ink-3);font-size:.78rem">Bengaluru · 6y exp</div></div></div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div><div class="crumb"><b>Home</b> / Dashboard</div></div>
+      <div class="toolbar">
+        <div class="searchbox" style="width:220px">⌕ <input placeholder="Search jobs &amp; companies" /></div>
+        <button class="btn btn-ghost btn-sm">◔ Alerts</button>
+        <span class="avatar">AR</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Greeting -->
+      <div class="page-head">
+        <div>
+          <h2>Welcome back, Aisha</h2>
+          <div class="sub">3 applications in flight · 1 interview tomorrow · every company here answers.</div>
+        </div>
+        <div class="toolbar">
+          <span class="pill pill-accent">✦ New match</span>
+          <button class="btn btn-primary">Find roles →</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpis">
+        <div class="kpi"><div class="k-label">▤ Applications in flight</div><div class="k-val tnum">3</div><div class="k-delta">2 awaiting your action</div></div>
+        <div class="kpi"><div class="k-label">◎ Interviews scheduled</div><div class="k-val tnum">1</div><div class="k-delta up">starts in 18h</div></div>
+        <div class="kpi"><div class="k-label">✉ Responses received</div><div class="k-val tnum">5</div><div class="k-delta up">100% answered</div></div>
+        <div class="kpi"><div class="k-label">↩ Avg response time</div><div class="k-val tnum">1.8<span style="font-size:1rem;color:var(--ink-3)">d</span></div><div class="k-delta up">faster than typical</div></div>
+      </div>
+
+      <!-- Two-column body -->
+      <div class="split">
+        <!-- LEFT: applications -->
+        <div class="col">
+          <h3 class="section-h"><span class="ic">▤</span> Your applications</h3>
+          <div class="table-wrap">
+            <div class="approw">
+              <span class="logo">N</span>
+              <div>
+                <div class="role">Senior Backend Engineer</div>
+                <div class="co">Northwind Inc. · Remote</div>
+              </div>
+              <div class="meta">
+                <span class="pill pill-accent">Interview</span>
+                <span class="when tnum">2d ago</span>
+              </div>
+            </div>
+            <div class="approw">
+              <span class="logo">H</span>
+              <div>
+                <div class="role">Platform Engineer</div>
+                <div class="co">Halcyon Systems · Hybrid · Berlin</div>
+              </div>
+              <div class="meta">
+                <span class="pill pill-good">Offer</span>
+                <span class="when tnum">5d ago</span>
+              </div>
+            </div>
+            <div class="approw">
+              <span class="logo">V</span>
+              <div>
+                <div class="role">Staff Software Engineer</div>
+                <div class="co">Veritas Labs · Remote</div>
+              </div>
+              <div class="meta">
+                <span class="pill pill-warn">Decision</span>
+                <span class="when tnum">6d ago</span>
+              </div>
+            </div>
+            <div class="approw">
+              <span class="logo">A</span>
+              <div>
+                <div class="role">Backend Engineer, Payments</div>
+                <div class="co">Arcadia Pay · Remote</div>
+              </div>
+              <div class="meta">
+                <span class="pill pill-neutral">Applied</span>
+                <span class="when tnum">8d ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: recommendations + up-next + practice -->
+        <div class="col">
+          <!-- Up next -->
+          <div class="card upnext">
+            <div class="card-head"><h3>Up next</h3><span class="badge">Proctored</span></div>
+            <div class="slot">
+              <span class="dot">◎</span>
+              <div>
+                <div class="nm">Interview · Northwind Inc.</div>
+                <div class="tm tnum">Tomorrow · 14:00 IST · 45 min</div>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="width:100%">Join interview →</button>
+          </div>
+
+          <!-- Recommended -->
+          <h3 class="section-h" style="font-size:var(--step-1)"><span class="ic">✦</span> Recommended for you</h3>
+          <div class="card tight reccard">
+            <div class="top">
+              <div><div class="role">Backend Engineer</div><div class="co">Lumen Data · Remote</div></div>
+              <span class="pill pill-good tnum">92% match</span>
+            </div>
+            <ul>
+              <li><span class="ck">✓</span> Go &amp; distributed systems depth</li>
+              <li><span class="ck">✓</span> Remote-first, your timezone</li>
+            </ul>
+          </div>
+          <div class="card tight reccard">
+            <div class="top">
+              <div><div class="role">Senior Platform Engineer</div><div class="co">Northstar · Hybrid</div></div>
+              <span class="pill pill-good tnum">87% match</span>
+            </div>
+            <ul>
+              <li><span class="ck">✓</span> Kubernetes &amp; infra experience</li>
+              <li><span class="ck">✓</span> Pays above your target band</li>
+            </ul>
+          </div>
+          <div class="card tight reccard">
+            <div class="top">
+              <div><div class="role">Software Engineer, API</div><div class="co">Cobalt · Remote</div></div>
+              <span class="pill pill-accent tnum">74% match</span>
+            </div>
+            <ul>
+              <li><span class="ck">✓</span> Strong API-design signal</li>
+            </ul>
+          </div>
+
+          <!-- Practice CTA -->
+          <div class="card tight practice">
+            <span class="ic">✦</span>
+            <div style="flex:1">
+              <div class="t">Practice an interview</div>
+              <div class="d">Private mock with feedback — never shared with employers.</div>
+            </div>
+            <button class="btn btn-ghost btn-sm">Start</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

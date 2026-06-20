@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aptura — Candidate report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,540;9..144,600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="app.css" />
+<style>
+  /* Screen-specific: report summary band, competency rows, integrity timeline rail. */
+  .summary { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-6); align-items: center; }
+  .summary .ring { --size: 132px; }
+  .summary .ring .v { font-size: 2.1rem; }
+  .summary .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-4); }
+  .summary .stat .k-label { color: var(--ink-2); font-size: var(--step--1); display: flex; align-items: center; gap: 8px; }
+  .summary .stat .k-val { font-family: var(--font-display); font-size: var(--step-2); font-weight: 600; letter-spacing: -0.03em; margin-top: 4px; }
+  .summary .stat .k-sub { font-size: var(--step--1); color: var(--ink-3); margin-top: 2px; }
+
+  .verdict-row { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+
+  /* Competency row */
+  .comp { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-3) var(--sp-6); align-items: center; padding: var(--sp-4) 0; border-bottom: 1px solid var(--line); }
+  .comp:last-child { border-bottom: 0; padding-bottom: 0; }
+  .comp:first-child { padding-top: 0; }
+  .comp .c-name { font-weight: 600; color: var(--ink); }
+  .comp .c-score { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; font-size: var(--step-1); color: var(--ink); text-align: right; }
+  .comp .c-score em { font-style: normal; color: var(--ink-3); font-size: var(--step--1); }
+  .comp .c-bar { grid-column: 1 / -1; }
+  .comp .c-ev { grid-column: 1 / -1; color: var(--ink-2); font-size: var(--step--1); border-left: 2px solid var(--line-2); padding-left: var(--sp-3); font-style: italic; }
+
+  /* Integrity timeline — vertical rail */
+  .rail { position: relative; margin: 0; padding: 0; list-style: none; }
+  .rail::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: var(--line); border-radius: 2px; }
+  .rail li { position: relative; display: grid; grid-template-columns: 78px 1fr auto; gap: var(--sp-3); align-items: center; padding: var(--sp-3) 0 var(--sp-3) var(--sp-6); }
+  .rail li::before { content: ""; position: absolute; left: 2px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line-2); box-shadow: 0 0 0 4px var(--surface); }
+  .rail li.sev-med::before { border-color: oklch(0.78 0.13 75); }
+  .rail li.sev-high::before { border-color: oklch(0.7 0.16 25); }
+  .rail li.sev-clean::before { border-color: var(--accent); }
+  .rail .ts { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--step--1); color: var(--ink-3); }
+  .rail .sig { color: var(--ink); font-weight: 500; }
+  .rail .sig .note { display: block; color: var(--ink-2); font-weight: 400; font-size: var(--step--1); margin-top: 2px; }
+  .rail li.row-gate { background: var(--surface-2); border-radius: var(--r-md); }
+
+  .quote { border-left: 2px solid var(--accent); padding: 2px 0 2px var(--sp-4); }
+  .quote p { font-style: italic; color: var(--ink); margin: 0; max-width: none; }
+  .quote .q-meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-3); margin-top: 6px; letter-spacing: 0.03em; }
+  .quotes { display: flex; flex-direction: column; gap: var(--sp-5); }
+
+  .caption { display: flex; align-items: center; gap: 8px; color: var(--ink-3); font-size: var(--step--1); margin-top: var(--sp-4); }
+
+  .grid-2 { display: grid; grid-template-columns: 1.35fr 1fr; gap: var(--sp-6); align-items: start; }
+  @media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } .summary { grid-template-columns: 1fr; } .summary .stats { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar (same company shell) -->
+  <aside class="side">
+    <a class="brand" href="#"><span class="mark">◐</span> Aptura</a>
+    <div class="navlabel">Hiring</div>
+    <a class="navitem" href="#"><span class="ic">▦</span> Dashboard</a>
+    <a class="navitem" aria-current="page" href="#"><span class="ic">▤</span> Jobs &amp; applicants</a>
+    <a class="navitem" href="#"><span class="ic">◎</span> Talent search</a>
+    <a class="navitem" href="#"><span class="ic">✦</span> Branding</a>
+    <div class="navlabel">Workspace</div>
+    <a class="navitem" href="#"><span class="ic">✉</span> Messages</a>
+    <a class="navitem" href="#"><span class="ic">◔</span> Team</a>
+    <a class="navitem" href="#"><span class="ic">⚙</span> Settings</a>
+    <div class="foot"><span class="avatar">NK</span><div><div style="font-weight:540;font-size:.9rem">Nadia Khan</div><div style="color:var(--ink-3);font-size:.78rem">Northwind Inc.</div></div></div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div><div class="crumb"><b>Jobs</b> / Senior Backend Engineer / <b>Aisha Rahman</b></div></div>
+      <div class="toolbar">
+        <button class="btn btn-ghost btn-sm">Download PDF</button>
+        <span class="avatar">NK</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Page head -->
+      <div class="page-head">
+        <div>
+          <h2>Aisha Rahman</h2>
+          <div class="sub">Senior Backend Engineer · Bengaluru · 6y experience</div>
+        </div>
+        <div class="verdict-row">
+          <span class="pill pill-good">Verdict · Pass</span>
+          <button class="btn btn-ghost">Reject</button>
+          <button class="btn btn-primary">Advance →</button>
+        </div>
+      </div>
+
+      <!-- Summary band -->
+      <div class="card">
+        <div class="summary">
+          <div class="ring" style="--p:87"><span class="v tnum">87</span></div>
+          <div class="stats">
+            <div class="stat">
+              <div class="k-label">★ Recommendation</div>
+              <div class="k-val">Advance</div>
+              <div class="k-sub">strong technical signal</div>
+            </div>
+            <div class="stat">
+              <div class="k-label">▲ Percentile</div>
+              <div class="k-val tnum">92<span style="font-size:1rem;color:var(--ink-3)">th</span></div>
+              <div class="k-sub">vs. role applicants</div>
+            </div>
+            <div class="stat">
+              <div class="k-label">◷ Duration</div>
+              <div class="k-val tnum">48<span style="font-size:1rem;color:var(--ink-3)">m</span></div>
+              <div class="k-sub">live proctored session</div>
+            </div>
+            <div class="stat">
+              <div class="k-label">⛉ Integrity</div>
+              <div class="k-val" style="font-size:var(--step-1)"><span class="pill pill-good">Clean</span></div>
+              <div class="k-sub">1 medium signal · no gate</div>
+            </div>
+          </div>
+        </div>
+        <div class="caption">⛉ Server-authoritatively proctored &amp; AI-scored · camera + mic + screen monitored throughout</div>
+      </div>
+
+      <!-- Two-column: competencies + integrity timeline -->
+      <div class="grid-2">
+
+        <!-- Competency breakdown -->
+        <div class="card">
+          <div class="card-head"><h3>Competency breakdown</h3><span class="badge">5 dimensions</span></div>
+
+          <div class="comp">
+            <span class="c-name">Problem solving</span>
+            <span class="c-score">91<em> / 100</em></span>
+            <div class="c-bar bar"><i style="width:91%"></i></div>
+            <div class="c-ev">“Decomposed the rate-limiter into token-bucket vs. sliding-window and justified the trade-off unprompted.”</div>
+          </div>
+
+          <div class="comp">
+            <span class="c-name">System design</span>
+            <span class="c-score">88<em> / 100</em></span>
+            <div class="c-bar bar"><i style="width:88%"></i></div>
+            <div class="c-ev">“Sharded the write path and reasoned about hot-partition failure before being asked about scale.”</div>
+          </div>
+
+          <div class="comp">
+            <span class="c-name">Communication</span>
+            <span class="c-score">85<em> / 100</em></span>
+            <div class="c-bar bar"><i style="width:85%"></i></div>
+            <div class="c-ev">“Stated assumptions out loud and checked scope with the interviewer before coding.”</div>
+          </div>
+
+          <div class="comp">
+            <span class="c-name">Code quality</span>
+            <span class="c-score">82<em> / 100</em></span>
+            <div class="c-bar bar"><i style="width:82%"></i></div>
+            <div class="c-ev">“Clean naming and small functions; missed one edge case on empty input, caught it on review.”</div>
+          </div>
+
+          <div class="comp">
+            <span class="c-name">Domain knowledge</span>
+            <span class="c-score">79<em> / 100</em></span>
+            <div class="c-bar bar"><i style="width:79%"></i></div>
+            <div class="c-ev">“Solid on Postgres isolation levels; shallow on the specific message-broker delivery guarantees.”</div>
+          </div>
+        </div>
+
+        <!-- Integrity timeline -->
+        <div class="card">
+          <div class="card-head">
+            <h3>Integrity timeline</h3>
+            <span class="pill pill-good">No gate triggered</span>
+          </div>
+
+          <ul class="rail">
+            <li class="sev-clean">
+              <span class="ts">00:00</span>
+              <span class="sig">Environment check passed<span class="note">Camera, mic &amp; screen-share confirmed</span></span>
+              <span class="pill pill-good">OK</span>
+            </li>
+            <li class="sev-clean">
+              <span class="ts">00:42</span>
+              <span class="sig">Single face, in frame<span class="note">Continuous presence confirmed</span></span>
+              <span class="pill pill-neutral">Info</span>
+            </li>
+            <li class="sev-med">
+              <span class="ts">14:08</span>
+              <span class="sig">Looked away from screen<span class="note">Gaze off-screen 6s</span></span>
+              <span class="pill pill-warn">Medium</span>
+            </li>
+            <li class="sev-clean">
+              <span class="ts">22:31</span>
+              <span class="sig">Single face, in frame<span class="note">Re-confirmed after pause</span></span>
+              <span class="pill pill-neutral">Info</span>
+            </li>
+            <li class="sev-med">
+              <span class="ts">29:50</span>
+              <span class="sig">Switched tab<span class="note">Returned within 4s</span></span>
+              <span class="pill pill-warn">Medium</span>
+            </li>
+            <li class="sev-high row-gate">
+              <span class="ts">—:—</span>
+              <span class="sig">Second person detected<span class="note">Auto-gate trigger · not raised in this session</span></span>
+              <span class="pill pill-bad">High</span>
+            </li>
+            <li class="sev-clean">
+              <span class="ts">48:00</span>
+              <span class="sig">Session ended cleanly<span class="note">Recording sealed &amp; hashed</span></span>
+              <span class="pill pill-good">OK</span>
+            </li>
+          </ul>
+
+          <div class="caption">⛉ A single HIGH signal auto-gates the interview server-side. This session raised none.</div>
+        </div>
+      </div>
+
+      <!-- Transcript highlights -->
+      <div class="card">
+        <div class="card-head"><h3>Transcript highlights</h3><span class="badge">AI-extracted</span></div>
+        <div class="quotes">
+          <div class="quote">
+            <p>“I'd reach for a token bucket here — the bursty traffic pattern means a fixed window would either reject legitimate spikes or over-admit at the boundary.”</p>
+            <div class="q-meta">11:24 · Rate-limiter design</div>
+          </div>
+          <div class="quote">
+            <p>“Before I optimize, let me confirm the read/write ratio — if it's read-heavy I'd cache aggressively, but a write-heavy load changes the whole approach.”</p>
+            <div class="q-meta">26:07 · Scaling the API</div>
+          </div>
+          <div class="quote">
+            <p>“That's a fair point — I missed the empty-input case. Let me add a guard clause and a test for it now.”</p>
+            <div class="q-meta">38:52 · Code review exchange</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

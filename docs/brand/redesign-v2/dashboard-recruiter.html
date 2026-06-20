@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aptura — Recruiter dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,540;9..144,600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="app.css" />
+<style>
+  /* Screen-specific layout only — everything else reuses app.css / tokens.css. */
+  .split { display: grid; grid-template-columns: 1fr 360px; gap: var(--sp-6); align-items: start; }
+  .col { display: flex; flex-direction: column; gap: var(--sp-4); }
+  .section-h { font-family: var(--font-display); font-size: var(--step-1); display: flex; align-items: center; gap: var(--sp-3); }
+  .section-h .ic { color: var(--accent); font-size: 0.9em; }
+
+  /* Funnel meter rows */
+  .funnel { display: flex; flex-direction: column; gap: var(--sp-4); }
+  .frow { display: grid; grid-template-columns: 150px 1fr 48px; gap: var(--sp-4); align-items: center; }
+  .frow .lbl { color: var(--ink-2); font-size: var(--step-0); font-weight: 500; }
+  .frow .lbl small { display: block; color: var(--ink-3); font-size: var(--step--1); font-weight: 400; }
+  .frow .ct { text-align: right; font-weight: 600; color: var(--ink); }
+  .bar.lg { height: 12px; }
+
+  /* Recent jobs rows */
+  .jobrow { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-3); align-items: center; padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--line); }
+  .jobrow:last-child { border-bottom: 0; }
+  .jobrow:hover { background: var(--surface-2); }
+  .jobrow .t { font-weight: 540; color: var(--ink); }
+  .jobrow .s { color: var(--ink-3); font-size: var(--step--1); }
+  .jobrow .s .nw { color: var(--accent); }
+
+  /* Decision queue */
+  .decrow { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-3); align-items: center; padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); }
+  .decrow:last-child { border-bottom: 0; }
+  .decrow .acts { display: flex; gap: var(--sp-2); }
+
+  @media (max-width: 1000px) {
+    .split { grid-template-columns: 1fr; }
+    .frow { grid-template-columns: 120px 1fr 40px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Company sidebar (same as applicants-pipeline reference) -->
+  <aside class="side">
+    <a class="brand" href="#"><span class="mark">◐</span> Aptura</a>
+    <div class="navlabel">Hiring</div>
+    <a class="navitem" aria-current="page" href="#"><span class="ic">▦</span> Dashboard</a>
+    <a class="navitem" href="#"><span class="ic">▤</span> Jobs &amp; applicants</a>
+    <a class="navitem" href="#"><span class="ic">◎</span> Talent search</a>
+    <a class="navitem" href="#"><span class="ic">✦</span> Branding</a>
+    <div class="navlabel">Workspace</div>
+    <a class="navitem" href="#"><span class="ic">✉</span> Messages</a>
+    <a class="navitem" href="#"><span class="ic">◔</span> Team</a>
+    <a class="navitem" href="#"><span class="ic">⚙</span> Settings</a>
+    <div class="foot"><span class="avatar">NK</span><div><div style="font-weight:540;font-size:.9rem">Nadia Khan</div><div style="color:var(--ink-3);font-size:.78rem">Northwind Inc.</div></div></div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div><div class="crumb"><b>Northwind Inc.</b> / Dashboard</div></div>
+      <div class="toolbar">
+        <div class="searchbox" style="width:220px">⌕ <input placeholder="Search jobs &amp; applicants" /></div>
+        <button class="btn btn-ghost btn-sm">Export</button>
+        <span class="avatar">NK</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Greeting -->
+      <div class="page-head">
+        <div>
+          <h2>Good morning, Northwind</h2>
+          <div class="sub">Your hiring at a glance — no applicant left without an outcome.</div>
+        </div>
+        <div class="toolbar">
+          <span class="pill pill-good">100% answered</span>
+          <button class="btn btn-primary">+ Post a job</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpis">
+        <div class="kpi"><div class="k-label">▤ Open roles</div><div class="k-val tnum">6</div><div class="k-delta up">+1 this week</div></div>
+        <div class="kpi"><div class="k-label">◷ Applicants this week</div><div class="k-val tnum">42</div><div class="k-delta up">+18 vs last week</div></div>
+        <div class="kpi"><div class="k-label">◎ Interviews completed</div><div class="k-val tnum">54</div><div class="k-delta">across all roles</div></div>
+        <div class="kpi"><div class="k-label">↩ Median response</div><div class="k-val tnum">2.4<span style="font-size:1rem;color:var(--ink-3)">d</span></div><div class="k-delta up">100% answered</div></div>
+      </div>
+
+      <!-- Two-column body -->
+      <div class="split">
+        <!-- LEFT: hiring funnel -->
+        <div class="col">
+          <div class="card">
+            <div class="card-head">
+              <h3>Hiring funnel</h3>
+              <span class="badge">Last 30 days</span>
+            </div>
+            <div class="funnel">
+              <div class="frow">
+                <div class="lbl">Applied</div>
+                <div class="bar lg"><i style="width:100%"></i></div>
+                <div class="ct tnum">128</div>
+              </div>
+              <div class="frow">
+                <div class="lbl">Interviewed<small>42% of applicants</small></div>
+                <div class="bar lg"><i style="width:42%"></i></div>
+                <div class="ct tnum">54</div>
+              </div>
+              <div class="frow">
+                <div class="lbl">Passed gate<small>advisory · you decide</small></div>
+                <div class="bar lg"><i style="width:24%"></i></div>
+                <div class="ct tnum">31</div>
+              </div>
+              <div class="frow">
+                <div class="lbl">Shortlisted</div>
+                <div class="bar lg"><i style="width:9%"></i></div>
+                <div class="ct tnum">12</div>
+              </div>
+              <div class="frow">
+                <div class="lbl">Offer</div>
+                <div class="bar lg"><i style="width:2%"></i></div>
+                <div class="ct tnum">3</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: recent jobs + decision queue -->
+        <div class="col">
+          <!-- Recent jobs -->
+          <div class="card tight" style="padding:0">
+            <div class="card-head" style="padding:var(--sp-4) var(--sp-4) 0;margin-bottom:var(--sp-3)"><h3>Recent jobs</h3></div>
+            <div class="jobrow">
+              <div>
+                <div class="t">Senior Backend Engineer</div>
+                <div class="s"><span class="tnum">128</span> applicants · <span class="nw tnum">+18 new</span></div>
+              </div>
+              <span class="pill pill-good">Open</span>
+            </div>
+            <div class="jobrow">
+              <div>
+                <div class="t">Platform Engineer</div>
+                <div class="s"><span class="tnum">76</span> applicants · <span class="nw tnum">+9 new</span></div>
+              </div>
+              <span class="pill pill-good">Open</span>
+            </div>
+            <div class="jobrow">
+              <div>
+                <div class="t">Product Designer</div>
+                <div class="s"><span class="tnum">54</span> applicants · <span class="nw tnum">+4 new</span></div>
+              </div>
+              <span class="pill pill-warn">Closing</span>
+            </div>
+            <div class="jobrow">
+              <div>
+                <div class="t">Engineering Manager</div>
+                <div class="s"><span class="tnum">21</span> applicants</div>
+              </div>
+              <span class="pill pill-neutral">Draft</span>
+            </div>
+          </div>
+
+          <!-- Needs your decision -->
+          <div class="card tight">
+            <div class="card-head"><h3>Needs your decision</h3><span class="pill pill-accent tnum">3</span></div>
+            <div class="decrow">
+              <div class="who"><span class="avatar">AR</span><div><div class="nm">Aisha Rahman</div><div class="sub">Score <span class="tnum">91</span> · passed gate</div></div></div>
+              <div class="acts">
+                <button class="btn btn-primary btn-sm">Advance</button>
+                <button class="btn btn-ghost btn-sm">Reject</button>
+              </div>
+            </div>
+            <div class="decrow">
+              <div class="who"><span class="avatar">MO</span><div><div class="nm">Marcus Olsen</div><div class="sub">Score <span class="tnum">88</span> · passed gate</div></div></div>
+              <div class="acts">
+                <button class="btn btn-primary btn-sm">Advance</button>
+                <button class="btn btn-ghost btn-sm">Reject</button>
+              </div>
+            </div>
+            <div class="decrow">
+              <div class="who"><span class="avatar">JL</span><div><div class="nm">Jia Li</div><div class="sub">Score <span class="tnum">84</span> · 2 flags</div></div></div>
+              <div class="acts">
+                <button class="btn btn-primary btn-sm">Advance</button>
+                <button class="btn btn-ghost btn-sm">Reject</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
