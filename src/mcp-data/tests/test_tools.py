@@ -3,12 +3,28 @@ from bson import ObjectId
 from app.tools import DataStore
 
 
+class _FakeCursor:
+    def __init__(self, docs):
+        self._docs = docs
+        self.sorts = []
+
+    def sort(self, field, direction):
+        self.sorts.append((field, direction))
+        return self
+
+    async def to_list(self, length):
+        return self._docs[:length]
+
+
 class _FakeCollection:
-    def __init__(self, find_result=None):
+    def __init__(self, find_result=None, find_list=None):
         self.find_result = find_result
+        self.find_list = find_list or []
         self.updates = []
         self.queries = []
         self.inserted = []
+        self.find_queries = []
+        self.last_cursor = None
 
     async def update_one(self, filt, update, upsert=False):
         self.updates.append((filt, update, upsert))
@@ -19,6 +35,11 @@ class _FakeCollection:
     async def find_one(self, filt):
         self.queries.append(filt)
         return self.find_result
+
+    def find(self, filt, projection=None):
+        self.find_queries.append(filt)
+        self.last_cursor = _FakeCursor(self.find_list)
+        return self.last_cursor
 
 
 class _FakeDB:
@@ -40,6 +61,7 @@ def _store(**cols):
         "match_results",
         "job_question_plans",
         "proctoring_events",
+        "practice_sessions",
     ):
         cols.setdefault(name, _FakeCollection())
     return DataStore(_FakeDB(**cols)), cols
@@ -166,3 +188,35 @@ async def test_save_and_get_question_plan():
     assert filt == {"job_id": "j1"}
     assert upsert is True
     assert await store.get_question_plan("j1") == {"job_id": "j1", "competencies": []}
+
+
+async def test_save_practice_summary_upserts_by_user_and_practice():
+    store, cols = _store()
+    await store.save_practice_summary(
+        "u1", {"practice_id": "p1", "role_label": "Backend"}
+    )
+    filt, update, upsert = cols["practice_sessions"].updates[0]
+    # Keyed by (user_id, practice_id) — never comp_id (the detached invariant).
+    assert filt == {"user_id": "u1", "practice_id": "p1"}
+    assert upsert is True
+    assert update["$set"]["user_id"] == "u1"
+    assert update["$set"]["role_label"] == "Backend"
+
+
+async def test_get_practice_summary_reads_by_user_and_practice():
+    doc = {"user_id": "u1", "practice_id": "p1", "feedback": {}}
+    store, cols = _store(practice_sessions=_FakeCollection(find_result=doc))
+    assert await store.get_practice_summary("u1", "p1") == doc
+    assert cols["practice_sessions"].queries[0] == {
+        "user_id": "u1",
+        "practice_id": "p1",
+    }
+
+
+async def test_list_practice_summaries_owner_scoped_recent_first():
+    rows = [{"practice_id": "p2"}, {"practice_id": "p1"}]
+    col = _FakeCollection(find_list=rows)
+    store, _ = _store(practice_sessions=col)
+    assert await store.list_practice_summaries("u1") == rows
+    assert col.find_queries[0] == {"user_id": "u1"}
+    assert col.last_cursor.sorts == [("created_at", -1)]

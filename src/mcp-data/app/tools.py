@@ -54,6 +54,7 @@ class DataStore:
         self._match_results = db["match_results"]
         self._question_plans = db["job_question_plans"]
         self._proctoring = db["proctoring_events"]
+        self._practice = db["practice_sessions"]
 
     async def save_profile(self, user_id, doc):
         async with log_context(log, "data.save_profile", **bind_ids(user_id=user_id)):
@@ -460,3 +461,65 @@ class DataStore:
                 "job_id": application.get("job_id"),
                 "state": application.get("state"),
             }
+
+    async def save_practice_summary(self, user_id, summary):
+        # Detached growth artifact: keyed by (user_id, practice_id) only — never
+        # comp_id/application_id. Upsert is idempotent so a re-finalize re-writes
+        # cleanly.
+        async with log_context(
+            log, "data.save_practice_summary", **bind_ids(user_id=user_id)
+        ):
+            t0 = time.monotonic()
+            op = "save_practice_summary"
+            _mongo_total.labels(op=op).inc()
+            try:
+                async with span("mongo.save_practice_summary", user_id=user_id):
+                    await self._practice.update_one(
+                        {"user_id": user_id, "practice_id": summary["practice_id"]},
+                        {"$set": {**summary, "user_id": user_id}},
+                        upsert=True,
+                    )
+            except Exception:
+                _mongo_errors.labels(op=op).inc()
+                raise
+            finally:
+                _mongo_duration.labels(op=op).observe(_ms(t0))
+
+    async def get_practice_summary(self, user_id, practice_id):
+        async with log_context(
+            log, "data.get_practice_summary", **bind_ids(user_id=user_id)
+        ):
+            t0 = time.monotonic()
+            op = "get_practice_summary"
+            _mongo_total.labels(op=op).inc()
+            try:
+                async with span("mongo.get_practice_summary", user_id=user_id):
+                    return await self._practice.find_one(
+                        {"user_id": user_id, "practice_id": practice_id}
+                    )
+            except Exception:
+                _mongo_errors.labels(op=op).inc()
+                raise
+            finally:
+                _mongo_duration.labels(op=op).observe(_ms(t0))
+
+    async def list_practice_summaries(self, user_id):
+        # Owner-scoped history (user_id is the caller, never a client param); most
+        # recent first. Powers the history list and the erasure delete_by_user.
+        async with log_context(
+            log, "data.list_practice_summaries", **bind_ids(user_id=user_id)
+        ):
+            t0 = time.monotonic()
+            op = "list_practice_summaries"
+            _mongo_total.labels(op=op).inc()
+            try:
+                async with span("mongo.list_practice_summaries", user_id=user_id):
+                    cursor = self._practice.find({"user_id": user_id}).sort(
+                        "created_at", -1
+                    )
+                    return await cursor.to_list(length=200)
+            except Exception:
+                _mongo_errors.labels(op=op).inc()
+                raise
+            finally:
+                _mongo_duration.labels(op=op).observe(_ms(t0))

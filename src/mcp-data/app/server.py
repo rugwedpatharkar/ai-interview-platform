@@ -241,6 +241,33 @@ async def get_match_results(job_id: str = "", candidate_user_id: str = "") -> li
         )
 
 
+@mcp.tool()
+async def save_practice_summary(user_id: str, summary: dict) -> None:
+    """Persist a candidate's detached practice-interview growth summary."""
+    async with log_context(
+        log, "tool.save_practice_summary", **bind_ids(user_id=user_id)
+    ):
+        await _store.save_practice_summary(user_id, summary)
+
+
+@mcp.tool()
+async def get_practice_summary(user_id: str, practice_id: str) -> dict | None:
+    """Fetch one completed practice summary (owner-scoped; None if not finalized)."""
+    async with log_context(
+        log, "tool.get_practice_summary", **bind_ids(user_id=user_id)
+    ):
+        return _jsonable(await _store.get_practice_summary(user_id, practice_id))
+
+
+@mcp.tool()
+async def list_practice_summaries(user_id: str) -> list:
+    """List a candidate's practice runs, most recent first (owner-scoped)."""
+    async with log_context(
+        log, "tool.list_practice_summaries", **bind_ids(user_id=user_id)
+    ):
+        return _jsonable(await _store.list_practice_summaries(user_id))
+
+
 def main() -> None:
     import asyncio
 
