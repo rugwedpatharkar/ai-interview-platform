@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file auth.proto.
  */
 export const file_auth: GenFile = /*@__PURE__*/
-  fileDesc("CgphdXRoLnByb3RvEg1hZG1pbi5hdXRoLnYxIk8KFlJlZ2lzdGVyQ29tcGFueVJlcXVlc3QSFAoMY29tcGFueV9uYW1lGAEgASgJEg0KBWVtYWlsGAIgASgJEhAKCHBhc3N3b3JkGAMgASgJIjsKGFJlZ2lzdGVyQ2FuZGlkYXRlUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSIeCg1WZXJpZnlSZXF1ZXN0Eg0KBXRva2VuGAEgASgJIi8KDExvZ2luUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSILCglNZVJlcXVlc3QiYAoMVXNlclJlc3BvbnNlEgoKAmlkGAEgASgJEg0KBWVtYWlsGAIgASgJEgwKBHJvbGUYAyABKAkSDwoHY29tcF9pZBgEIAEoCRIWCg5lbWFpbF92ZXJpZmllZBgFIAEoCCJQCg1Ub2tlblJlc3BvbnNlEhQKDGFjY2Vzc190b2tlbhgBIAEoCRIVCg1yZWZyZXNoX3Rva2VuGAIgASgJEhIKCnRva2VuX3R5cGUYAyABKAkiPQoQSWRlbnRpdHlSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRyb2xlGAIgASgJEg8KB2NvbXBfaWQYAyABKAkiJwoOUmVmcmVzaFJlcXVlc3QSFQoNcmVmcmVzaF90b2tlbhgBIAEoCSImCg1Mb2dvdXRSZXF1ZXN0EhUKDXJlZnJlc2hfdG9rZW4YASABKAkiHAoOTG9nb3V0UmVzcG9uc2USCgoCb2sYASABKAgiOQoWSW52aXRlUmVjcnVpdGVyUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSImChVGb3Jnb3RQYXNzd29yZFJlcXVlc3QSDQoFZW1haWwYASABKAkiOwoUUmVzZXRQYXNzd29yZFJlcXVlc3QSDQoFdG9rZW4YASABKAkSFAoMbmV3X3Bhc3N3b3JkGAIgASgJIioKGVJlc2VuZFZlcmlmaWNhdGlvblJlcXVlc3QSDQoFZW1haWwYASABKAkiGwoZTGlzdE9BdXRoUHJvdmlkZXJzUmVxdWVzdCIrChZPQXV0aFByb3ZpZGVyc1Jlc3BvbnNlEhEKCXByb3ZpZGVycxgBIAMoCSIYCgpPa1Jlc3BvbnNlEgoKAm9rGAEgASgIMtUHCgtBdXRoU2VydmljZRJVCg9SZWdpc3RlckNvbXBhbnkSJS5hZG1pbi5hdXRoLnYxLlJlZ2lzdGVyQ29tcGFueVJlcXVlc3QaGy5hZG1pbi5hdXRoLnYxLlVzZXJSZXNwb25zZRJZChFSZWdpc3RlckNhbmRpZGF0ZRInLmFkbWluLmF1dGgudjEuUmVnaXN0ZXJDYW5kaWRhdGVSZXF1ZXN0GhsuYWRtaW4uYXV0aC52MS5Vc2VyUmVzcG9uc2USQwoGVmVyaWZ5EhwuYWRtaW4uYXV0aC52MS5WZXJpZnlSZXF1ZXN0GhsuYWRtaW4uYXV0aC52MS5Vc2VyUmVzcG9uc2USQgoFTG9naW4SGy5hZG1pbi5hdXRoLnYxLkxvZ2luUmVxdWVzdBocLmFkbWluLmF1dGgudjEuVG9rZW5SZXNwb25zZRJGCgdSZWZyZXNoEh0uYWRtaW4uYXV0aC52MS5SZWZyZXNoUmVxdWVzdBocLmFkbWluLmF1dGgudjEuVG9rZW5SZXNwb25zZRJFCgZMb2dvdXQSHC5hZG1pbi5hdXRoLnYxLkxvZ291dFJlcXVlc3QaHS5hZG1pbi5hdXRoLnYxLkxvZ291dFJlc3BvbnNlElUKD0ludml0ZVJlY3J1aXRlchIlLmFkbWluLmF1dGgudjEuSW52aXRlUmVjcnVpdGVyUmVxdWVzdBobLmFkbWluLmF1dGgudjEuVXNlclJlc3BvbnNlElEKDkZvcmdvdFBhc3N3b3JkEiQuYWRtaW4uYXV0aC52MS5Gb3Jnb3RQYXNzd29yZFJlcXVlc3QaGS5hZG1pbi5hdXRoLnYxLk9rUmVzcG9uc2USTwoNUmVzZXRQYXNzd29yZBIjLmFkbWluLmF1dGgudjEuUmVzZXRQYXNzd29yZFJlcXVlc3QaGS5hZG1pbi5hdXRoLnYxLk9rUmVzcG9uc2USWQoSUmVzZW5kVmVyaWZpY2F0aW9uEiguYWRtaW4uYXV0aC52MS5SZXNlbmRWZXJpZmljYXRpb25SZXF1ZXN0GhkuYWRtaW4uYXV0aC52MS5Pa1Jlc3BvbnNlEj8KAk1lEhguYWRtaW4uYXV0aC52MS5NZVJlcXVlc3QaHy5hZG1pbi5hdXRoLnYxLklkZW50aXR5UmVzcG9uc2USZQoSTGlzdE9BdXRoUHJvdmlkZXJzEiguYWRtaW4uYXV0aC52MS5MaXN0T0F1dGhQcm92aWRlcnNSZXF1ZXN0GiUuYWRtaW4uYXV0aC52MS5PQXV0aFByb3ZpZGVyc1Jlc3BvbnNlYgZwcm90bzM");
+  fileDesc("CgphdXRoLnByb3RvEg1hZG1pbi5hdXRoLnYxIk8KFlJlZ2lzdGVyQ29tcGFueVJlcXVlc3QSFAoMY29tcGFueV9uYW1lGAEgASgJEg0KBWVtYWlsGAIgASgJEhAKCHBhc3N3b3JkGAMgASgJIjsKGFJlZ2lzdGVyQ2FuZGlkYXRlUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSIeCg1WZXJpZnlSZXF1ZXN0Eg0KBXRva2VuGAEgASgJIi8KDExvZ2luUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSILCglNZVJlcXVlc3QiYAoMVXNlclJlc3BvbnNlEgoKAmlkGAEgASgJEg0KBWVtYWlsGAIgASgJEgwKBHJvbGUYAyABKAkSDwoHY29tcF9pZBgEIAEoCRIWCg5lbWFpbF92ZXJpZmllZBgFIAEoCCJ5Cg1Ub2tlblJlc3BvbnNlEhQKDGFjY2Vzc190b2tlbhgBIAEoCRIVCg1yZWZyZXNoX3Rva2VuGAIgASgJEhIKCnRva2VuX3R5cGUYAyABKAkSFAoMbWZhX3JlcXVpcmVkGAQgASgIEhEKCW1mYV90b2tlbhgFIAEoCSI5ChZWZXJpZnlUb3RwTG9naW5SZXF1ZXN0EhEKCW1mYV90b2tlbhgBIAEoCRIMCgRjb2RlGAIgASgJIj0KEElkZW50aXR5UmVzcG9uc2USCgoCaWQYASABKAkSDAoEcm9sZRgCIAEoCRIPCgdjb21wX2lkGAMgASgJIicKDlJlZnJlc2hSZXF1ZXN0EhUKDXJlZnJlc2hfdG9rZW4YASABKAkiJgoNTG9nb3V0UmVxdWVzdBIVCg1yZWZyZXNoX3Rva2VuGAEgASgJIhwKDkxvZ291dFJlc3BvbnNlEgoKAm9rGAEgASgIIjkKFkludml0ZVJlY3J1aXRlclJlcXVlc3QSDQoFZW1haWwYASABKAkSEAoIcGFzc3dvcmQYAiABKAkiJgoVRm9yZ290UGFzc3dvcmRSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJIjsKFFJlc2V0UGFzc3dvcmRSZXF1ZXN0Eg0KBXRva2VuGAEgASgJEhQKDG5ld19wYXNzd29yZBgCIAEoCSIqChlSZXNlbmRWZXJpZmljYXRpb25SZXF1ZXN0Eg0KBWVtYWlsGAEgASgJIhsKGUxpc3RPQXV0aFByb3ZpZGVyc1JlcXVlc3QiKwoWT0F1dGhQcm92aWRlcnNSZXNwb25zZRIRCglwcm92aWRlcnMYASADKAkiGAoKT2tSZXNwb25zZRIKCgJvaxgBIAEoCDKtCAoLQXV0aFNlcnZpY2USVQoPUmVnaXN0ZXJDb21wYW55EiUuYWRtaW4uYXV0aC52MS5SZWdpc3RlckNvbXBhbnlSZXF1ZXN0GhsuYWRtaW4uYXV0aC52MS5Vc2VyUmVzcG9uc2USWQoRUmVnaXN0ZXJDYW5kaWRhdGUSJy5hZG1pbi5hdXRoLnYxLlJlZ2lzdGVyQ2FuZGlkYXRlUmVxdWVzdBobLmFkbWluLmF1dGgudjEuVXNlclJlc3BvbnNlEkMKBlZlcmlmeRIcLmFkbWluLmF1dGgudjEuVmVyaWZ5UmVxdWVzdBobLmFkbWluLmF1dGgudjEuVXNlclJlc3BvbnNlEkIKBUxvZ2luEhsuYWRtaW4uYXV0aC52MS5Mb2dpblJlcXVlc3QaHC5hZG1pbi5hdXRoLnYxLlRva2VuUmVzcG9uc2USVgoPVmVyaWZ5VG90cExvZ2luEiUuYWRtaW4uYXV0aC52MS5WZXJpZnlUb3RwTG9naW5SZXF1ZXN0GhwuYWRtaW4uYXV0aC52MS5Ub2tlblJlc3BvbnNlEkYKB1JlZnJlc2gSHS5hZG1pbi5hdXRoLnYxLlJlZnJlc2hSZXF1ZXN0GhwuYWRtaW4uYXV0aC52MS5Ub2tlblJlc3BvbnNlEkUKBkxvZ291dBIcLmFkbWluLmF1dGgudjEuTG9nb3V0UmVxdWVzdBodLmFkbWluLmF1dGgudjEuTG9nb3V0UmVzcG9uc2USVQoPSW52aXRlUmVjcnVpdGVyEiUuYWRtaW4uYXV0aC52MS5JbnZpdGVSZWNydWl0ZXJSZXF1ZXN0GhsuYWRtaW4uYXV0aC52MS5Vc2VyUmVzcG9uc2USUQoORm9yZ290UGFzc3dvcmQSJC5hZG1pbi5hdXRoLnYxLkZvcmdvdFBhc3N3b3JkUmVxdWVzdBoZLmFkbWluLmF1dGgudjEuT2tSZXNwb25zZRJPCg1SZXNldFBhc3N3b3JkEiMuYWRtaW4uYXV0aC52MS5SZXNldFBhc3N3b3JkUmVxdWVzdBoZLmFkbWluLmF1dGgudjEuT2tSZXNwb25zZRJZChJSZXNlbmRWZXJpZmljYXRpb24SKC5hZG1pbi5hdXRoLnYxLlJlc2VuZFZlcmlmaWNhdGlvblJlcXVlc3QaGS5hZG1pbi5hdXRoLnYxLk9rUmVzcG9uc2USPwoCTWUSGC5hZG1pbi5hdXRoLnYxLk1lUmVxdWVzdBofLmFkbWluLmF1dGgudjEuSWRlbnRpdHlSZXNwb25zZRJlChJMaXN0T0F1dGhQcm92aWRlcnMSKC5hZG1pbi5hdXRoLnYxLkxpc3RPQXV0aFByb3ZpZGVyc1JlcXVlc3QaJS5hZG1pbi5hdXRoLnYxLk9BdXRoUHJvdmlkZXJzUmVzcG9uc2ViBnByb3RvMw");
 
 /**
  * @generated from message admin.auth.v1.RegisterCompanyRequest
@@ -170,6 +170,19 @@ export type TokenResponse = Message<"admin.auth.v1.TokenResponse"> & {
    * @generated from field: string token_type = 3;
    */
   tokenType: string;
+
+  /**
+   * Additive: false/"" (proto defaults) for a normal 2FA-off login — the wire
+   * response stays byte-for-byte identical. Set only when 2FA is required.
+   *
+   * @generated from field: bool mfa_required = 4;
+   */
+  mfaRequired: boolean;
+
+  /**
+   * @generated from field: string mfa_token = 5;
+   */
+  mfaToken: string;
 };
 
 /**
@@ -178,6 +191,30 @@ export type TokenResponse = Message<"admin.auth.v1.TokenResponse"> & {
  */
 export const TokenResponseSchema: GenMessage<TokenResponse> = /*@__PURE__*/
   messageDesc(file_auth, 6);
+
+/**
+ * @generated from message admin.auth.v1.VerifyTotpLoginRequest
+ */
+export type VerifyTotpLoginRequest = Message<"admin.auth.v1.VerifyTotpLoginRequest"> & {
+  /**
+   * @generated from field: string mfa_token = 1;
+   */
+  mfaToken: string;
+
+  /**
+   * a TOTP code or an unused recovery code
+   *
+   * @generated from field: string code = 2;
+   */
+  code: string;
+};
+
+/**
+ * Describes the message admin.auth.v1.VerifyTotpLoginRequest.
+ * Use `create(VerifyTotpLoginRequestSchema)` to create a new message.
+ */
+export const VerifyTotpLoginRequestSchema: GenMessage<VerifyTotpLoginRequest> = /*@__PURE__*/
+  messageDesc(file_auth, 7);
 
 /**
  * @generated from message admin.auth.v1.IdentityResponse
@@ -204,7 +241,7 @@ export type IdentityResponse = Message<"admin.auth.v1.IdentityResponse"> & {
  * Use `create(IdentityResponseSchema)` to create a new message.
  */
 export const IdentityResponseSchema: GenMessage<IdentityResponse> = /*@__PURE__*/
-  messageDesc(file_auth, 7);
+  messageDesc(file_auth, 8);
 
 /**
  * @generated from message admin.auth.v1.RefreshRequest
@@ -221,7 +258,7 @@ export type RefreshRequest = Message<"admin.auth.v1.RefreshRequest"> & {
  * Use `create(RefreshRequestSchema)` to create a new message.
  */
 export const RefreshRequestSchema: GenMessage<RefreshRequest> = /*@__PURE__*/
-  messageDesc(file_auth, 8);
+  messageDesc(file_auth, 9);
 
 /**
  * @generated from message admin.auth.v1.LogoutRequest
@@ -238,7 +275,7 @@ export type LogoutRequest = Message<"admin.auth.v1.LogoutRequest"> & {
  * Use `create(LogoutRequestSchema)` to create a new message.
  */
 export const LogoutRequestSchema: GenMessage<LogoutRequest> = /*@__PURE__*/
-  messageDesc(file_auth, 9);
+  messageDesc(file_auth, 10);
 
 /**
  * @generated from message admin.auth.v1.LogoutResponse
@@ -255,7 +292,7 @@ export type LogoutResponse = Message<"admin.auth.v1.LogoutResponse"> & {
  * Use `create(LogoutResponseSchema)` to create a new message.
  */
 export const LogoutResponseSchema: GenMessage<LogoutResponse> = /*@__PURE__*/
-  messageDesc(file_auth, 10);
+  messageDesc(file_auth, 11);
 
 /**
  * @generated from message admin.auth.v1.InviteRecruiterRequest
@@ -277,7 +314,7 @@ export type InviteRecruiterRequest = Message<"admin.auth.v1.InviteRecruiterReque
  * Use `create(InviteRecruiterRequestSchema)` to create a new message.
  */
 export const InviteRecruiterRequestSchema: GenMessage<InviteRecruiterRequest> = /*@__PURE__*/
-  messageDesc(file_auth, 11);
+  messageDesc(file_auth, 12);
 
 /**
  * @generated from message admin.auth.v1.ForgotPasswordRequest
@@ -294,7 +331,7 @@ export type ForgotPasswordRequest = Message<"admin.auth.v1.ForgotPasswordRequest
  * Use `create(ForgotPasswordRequestSchema)` to create a new message.
  */
 export const ForgotPasswordRequestSchema: GenMessage<ForgotPasswordRequest> = /*@__PURE__*/
-  messageDesc(file_auth, 12);
+  messageDesc(file_auth, 13);
 
 /**
  * @generated from message admin.auth.v1.ResetPasswordRequest
@@ -316,7 +353,7 @@ export type ResetPasswordRequest = Message<"admin.auth.v1.ResetPasswordRequest">
  * Use `create(ResetPasswordRequestSchema)` to create a new message.
  */
 export const ResetPasswordRequestSchema: GenMessage<ResetPasswordRequest> = /*@__PURE__*/
-  messageDesc(file_auth, 13);
+  messageDesc(file_auth, 14);
 
 /**
  * @generated from message admin.auth.v1.ResendVerificationRequest
@@ -333,7 +370,7 @@ export type ResendVerificationRequest = Message<"admin.auth.v1.ResendVerificatio
  * Use `create(ResendVerificationRequestSchema)` to create a new message.
  */
 export const ResendVerificationRequestSchema: GenMessage<ResendVerificationRequest> = /*@__PURE__*/
-  messageDesc(file_auth, 14);
+  messageDesc(file_auth, 15);
 
 /**
  * @generated from message admin.auth.v1.ListOAuthProvidersRequest
@@ -346,7 +383,7 @@ export type ListOAuthProvidersRequest = Message<"admin.auth.v1.ListOAuthProvider
  * Use `create(ListOAuthProvidersRequestSchema)` to create a new message.
  */
 export const ListOAuthProvidersRequestSchema: GenMessage<ListOAuthProvidersRequest> = /*@__PURE__*/
-  messageDesc(file_auth, 15);
+  messageDesc(file_auth, 16);
 
 /**
  * @generated from message admin.auth.v1.OAuthProvidersResponse
@@ -365,7 +402,7 @@ export type OAuthProvidersResponse = Message<"admin.auth.v1.OAuthProvidersRespon
  * Use `create(OAuthProvidersResponseSchema)` to create a new message.
  */
 export const OAuthProvidersResponseSchema: GenMessage<OAuthProvidersResponse> = /*@__PURE__*/
-  messageDesc(file_auth, 16);
+  messageDesc(file_auth, 17);
 
 /**
  * @generated from message admin.auth.v1.OkResponse
@@ -382,7 +419,7 @@ export type OkResponse = Message<"admin.auth.v1.OkResponse"> & {
  * Use `create(OkResponseSchema)` to create a new message.
  */
 export const OkResponseSchema: GenMessage<OkResponse> = /*@__PURE__*/
-  messageDesc(file_auth, 17);
+  messageDesc(file_auth, 18);
 
 /**
  * AuthService — identity + session for company users and candidates.
@@ -421,6 +458,17 @@ export const AuthService: GenService<{
   login: {
     methodKind: "unary";
     input: typeof LoginRequestSchema;
+    output: typeof TokenResponseSchema;
+  },
+  /**
+   * When the account has 2FA on, Login returns mfa_required + a single-use mfa_token
+   * (no access/refresh); the client completes via VerifyTotpLogin (TOTP or recovery).
+   *
+   * @generated from rpc admin.auth.v1.AuthService.VerifyTotpLogin
+   */
+  verifyTotpLogin: {
+    methodKind: "unary";
+    input: typeof VerifyTotpLoginRequestSchema;
     output: typeof TokenResponseSchema;
   },
   /**

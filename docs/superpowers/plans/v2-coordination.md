@@ -309,3 +309,15 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   meta-cleanup-on-revoke requirement; the VerifyEmailChange replay-status nuance) live in the RESUME ledger
   `.superpowers/sdd/progress.md` ("L1 EXPLORATION FINDINGS"). **FE:** the `settings`/2FA/sessions tabs await L1;
   the `practice`/`scheduling`/`team` quads + screens are ready to flip off `NEXT_PUBLIC_MOCK` now.
+- 2026-06-20 · BE · ✅ **L1 Settings + Auth MFA LANDED — v2 BACKEND PROGRAM COMPLETE** (full gate GREEN:
+  lib 101 / admin 403 / ai-agents 286 / mcp 44+42). 5 commits cea04b4..b1800df: **L1.1** lib
+  `RefreshSessionStore` per-jti meta + `list_for_user`/`revoke_all_except` + `TokenService.sid`/`mfa_token`
+  (additive, backward-compat; +lib tests); **L1.2** thread ip/user_agent/sid into login/refresh/oauth
+  (Login response byte-for-byte); **L1.3** `SettingsService.ChangePassword` (verify current, SSO-blocked,
+  min-8, revoke-others-keep-current) + `RequestEmailChange`/`VerifyEmailChange` (pending_email + single-use
+  link, pre-auth verify); **L1.4** `ListSessions`/`RevokeSession`(NOT_FOUND on foreign jti)/`RevokeAllSessions`;
+  **L1.5** `Login` MFA branch (`mfa_required`+`mfa_token` when `totp_enabled`; 2FA-off byte-for-byte) +
+  `VerifyTotpLogin` (pre-auth; TOTP or one-time recovery code → tokens). `pnpm gen` → `settings_pb.ts` +
+  `auth_pb.ts` grew the new RPCs/fields. **FE:** wire the `settings` quad + build the Password/Email/Sessions
+  tabs + the Login `mfa_required` → 2FA step (per `settings-security.md` Part B). **ALL 4 v2 contracts
+  (L4/L3/L2/L1) DONE + the gap-closure plan written (A2–A6 remain as future backend work).**

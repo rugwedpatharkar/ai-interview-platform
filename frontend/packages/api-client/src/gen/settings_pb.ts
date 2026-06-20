@@ -10,7 +10,171 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file settings.proto.
  */
 export const file_settings: GenFile = /*@__PURE__*/
-  fileDesc("Cg5zZXR0aW5ncy5wcm90bxIRYWRtaW4uc2V0dGluZ3MudjEiEgoQU2V0dXBUb3RwUmVxdWVzdCI9ChFTZXR1cFRvdHBSZXNwb25zZRIYChBwcm92aXNpb25pbmdfdXJpGAEgASgJEg4KBnNlY3JldBgCIAEoCSIhChFWZXJpZnlUb3RwUmVxdWVzdBIMCgRjb2RlGAEgASgJIj0KElZlcmlmeVRvdHBSZXNwb25zZRIPCgdlbmFibGVkGAEgASgIEhYKDnJlY292ZXJ5X2NvZGVzGAIgAygJIiIKEkRpc2FibGVUb3RwUmVxdWVzdBIMCgRjb2RlGAEgASgJIhgKCk9rUmVzcG9uc2USCgoCb2sYASABKAgiNAoKUXVpZXRIb3VycxINCgVzdGFydBgBIAEoCRILCgNlbmQYAiABKAkSCgoCdHoYAyABKAkiHQobR2V0Tm90aWZpY2F0aW9uUHJlZnNSZXF1ZXN0IvoBChFOb3RpZmljYXRpb25QcmVmcxJTChBlbWFpbF9jYXRlZ29yaWVzGAEgAygLMjkuYWRtaW4uc2V0dGluZ3MudjEuTm90aWZpY2F0aW9uUHJlZnMuRW1haWxDYXRlZ29yaWVzRW50cnkSFAoMc21zX2NyaXRpY2FsGAIgASgIEg4KBmRpZ2VzdBgDIAEoCRIyCgtxdWlldF9ob3VycxgEIAEoCzIdLmFkbWluLnNldHRpbmdzLnYxLlF1aWV0SG91cnMaNgoURW1haWxDYXRlZ29yaWVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgIOgI4ATLrAwoPU2V0dGluZ3NTZXJ2aWNlEmwKFEdldE5vdGlmaWNhdGlvblByZWZzEi4uYWRtaW4uc2V0dGluZ3MudjEuR2V0Tm90aWZpY2F0aW9uUHJlZnNSZXF1ZXN0GiQuYWRtaW4uc2V0dGluZ3MudjEuTm90aWZpY2F0aW9uUHJlZnMSYgoUU2V0Tm90aWZpY2F0aW9uUHJlZnMSJC5hZG1pbi5zZXR0aW5ncy52MS5Ob3RpZmljYXRpb25QcmVmcxokLmFkbWluLnNldHRpbmdzLnYxLk5vdGlmaWNhdGlvblByZWZzElYKCVNldHVwVG90cBIjLmFkbWluLnNldHRpbmdzLnYxLlNldHVwVG90cFJlcXVlc3QaJC5hZG1pbi5zZXR0aW5ncy52MS5TZXR1cFRvdHBSZXNwb25zZRJZCgpWZXJpZnlUb3RwEiQuYWRtaW4uc2V0dGluZ3MudjEuVmVyaWZ5VG90cFJlcXVlc3QaJS5hZG1pbi5zZXR0aW5ncy52MS5WZXJpZnlUb3RwUmVzcG9uc2USUwoLRGlzYWJsZVRvdHASJS5hZG1pbi5zZXR0aW5ncy52MS5EaXNhYmxlVG90cFJlcXVlc3QaHS5hZG1pbi5zZXR0aW5ncy52MS5Pa1Jlc3BvbnNlYgZwcm90bzM");
+  fileDesc("Cg5zZXR0aW5ncy5wcm90bxIRYWRtaW4uc2V0dGluZ3MudjEiFQoTTGlzdFNlc3Npb25zUmVxdWVzdCJxCgpTZXNzaW9uRFRPEgsKA2p0aRgBIAEoCRIKCgJpcBgCIAEoCRISCgp1c2VyX2FnZW50GAMgASgJEhIKCmNyZWF0ZWRfYXQYBCABKAkSEQoJbGFzdF9zZWVuGAUgASgJEg8KB2N1cnJlbnQYBiABKAgiRwoUTGlzdFNlc3Npb25zUmVzcG9uc2USLwoIc2Vzc2lvbnMYASADKAsyHS5hZG1pbi5zZXR0aW5ncy52MS5TZXNzaW9uRFRPIiMKFFJldm9rZVNlc3Npb25SZXF1ZXN0EgsKA2p0aRgBIAEoCSIaChhSZXZva2VBbGxTZXNzaW9uc1JlcXVlc3QiRwoVQ2hhbmdlUGFzc3dvcmRSZXF1ZXN0EhgKEGN1cnJlbnRfcGFzc3dvcmQYASABKAkSFAoMbmV3X3Bhc3N3b3JkGAIgASgJIi4KGVJlcXVlc3RFbWFpbENoYW5nZVJlcXVlc3QSEQoJbmV3X2VtYWlsGAEgASgJIikKGFZlcmlmeUVtYWlsQ2hhbmdlUmVxdWVzdBINCgV0b2tlbhgBIAEoCSISChBTZXR1cFRvdHBSZXF1ZXN0Ij0KEVNldHVwVG90cFJlc3BvbnNlEhgKEHByb3Zpc2lvbmluZ191cmkYASABKAkSDgoGc2VjcmV0GAIgASgJIiEKEVZlcmlmeVRvdHBSZXF1ZXN0EgwKBGNvZGUYASABKAkiPQoSVmVyaWZ5VG90cFJlc3BvbnNlEg8KB2VuYWJsZWQYASABKAgSFgoOcmVjb3ZlcnlfY29kZXMYAiADKAkiIgoSRGlzYWJsZVRvdHBSZXF1ZXN0EgwKBGNvZGUYASABKAkiGAoKT2tSZXNwb25zZRIKCgJvaxgBIAEoCCI0CgpRdWlldEhvdXJzEg0KBXN0YXJ0GAEgASgJEgsKA2VuZBgCIAEoCRIKCgJ0ehgDIAEoCSIdChtHZXROb3RpZmljYXRpb25QcmVmc1JlcXVlc3Qi+gEKEU5vdGlmaWNhdGlvblByZWZzElMKEGVtYWlsX2NhdGVnb3JpZXMYASADKAsyOS5hZG1pbi5zZXR0aW5ncy52MS5Ob3RpZmljYXRpb25QcmVmcy5FbWFpbENhdGVnb3JpZXNFbnRyeRIUCgxzbXNfY3JpdGljYWwYAiABKAgSDgoGZGlnZXN0GAMgASgJEjIKC3F1aWV0X2hvdXJzGAQgASgLMh0uYWRtaW4uc2V0dGluZ3MudjEuUXVpZXRIb3Vycxo2ChRFbWFpbENhdGVnb3JpZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAg6AjgBMqUICg9TZXR0aW5nc1NlcnZpY2USbAoUR2V0Tm90aWZpY2F0aW9uUHJlZnMSLi5hZG1pbi5zZXR0aW5ncy52MS5HZXROb3RpZmljYXRpb25QcmVmc1JlcXVlc3QaJC5hZG1pbi5zZXR0aW5ncy52MS5Ob3RpZmljYXRpb25QcmVmcxJiChRTZXROb3RpZmljYXRpb25QcmVmcxIkLmFkbWluLnNldHRpbmdzLnYxLk5vdGlmaWNhdGlvblByZWZzGiQuYWRtaW4uc2V0dGluZ3MudjEuTm90aWZpY2F0aW9uUHJlZnMSVgoJU2V0dXBUb3RwEiMuYWRtaW4uc2V0dGluZ3MudjEuU2V0dXBUb3RwUmVxdWVzdBokLmFkbWluLnNldHRpbmdzLnYxLlNldHVwVG90cFJlc3BvbnNlElkKClZlcmlmeVRvdHASJC5hZG1pbi5zZXR0aW5ncy52MS5WZXJpZnlUb3RwUmVxdWVzdBolLmFkbWluLnNldHRpbmdzLnYxLlZlcmlmeVRvdHBSZXNwb25zZRJTCgtEaXNhYmxlVG90cBIlLmFkbWluLnNldHRpbmdzLnYxLkRpc2FibGVUb3RwUmVxdWVzdBodLmFkbWluLnNldHRpbmdzLnYxLk9rUmVzcG9uc2USWQoOQ2hhbmdlUGFzc3dvcmQSKC5hZG1pbi5zZXR0aW5ncy52MS5DaGFuZ2VQYXNzd29yZFJlcXVlc3QaHS5hZG1pbi5zZXR0aW5ncy52MS5Pa1Jlc3BvbnNlEmEKElJlcXVlc3RFbWFpbENoYW5nZRIsLmFkbWluLnNldHRpbmdzLnYxLlJlcXVlc3RFbWFpbENoYW5nZVJlcXVlc3QaHS5hZG1pbi5zZXR0aW5ncy52MS5Pa1Jlc3BvbnNlEl8KEVZlcmlmeUVtYWlsQ2hhbmdlEisuYWRtaW4uc2V0dGluZ3MudjEuVmVyaWZ5RW1haWxDaGFuZ2VSZXF1ZXN0Gh0uYWRtaW4uc2V0dGluZ3MudjEuT2tSZXNwb25zZRJfCgxMaXN0U2Vzc2lvbnMSJi5hZG1pbi5zZXR0aW5ncy52MS5MaXN0U2Vzc2lvbnNSZXF1ZXN0GicuYWRtaW4uc2V0dGluZ3MudjEuTGlzdFNlc3Npb25zUmVzcG9uc2USVwoNUmV2b2tlU2Vzc2lvbhInLmFkbWluLnNldHRpbmdzLnYxLlJldm9rZVNlc3Npb25SZXF1ZXN0Gh0uYWRtaW4uc2V0dGluZ3MudjEuT2tSZXNwb25zZRJfChFSZXZva2VBbGxTZXNzaW9ucxIrLmFkbWluLnNldHRpbmdzLnYxLlJldm9rZUFsbFNlc3Npb25zUmVxdWVzdBodLmFkbWluLnNldHRpbmdzLnYxLk9rUmVzcG9uc2ViBnByb3RvMw");
+
+/**
+ * @generated from message admin.settings.v1.ListSessionsRequest
+ */
+export type ListSessionsRequest = Message<"admin.settings.v1.ListSessionsRequest"> & {
+};
+
+/**
+ * Describes the message admin.settings.v1.ListSessionsRequest.
+ * Use `create(ListSessionsRequestSchema)` to create a new message.
+ */
+export const ListSessionsRequestSchema: GenMessage<ListSessionsRequest> = /*@__PURE__*/
+  messageDesc(file_settings, 0);
+
+/**
+ * @generated from message admin.settings.v1.SessionDTO
+ */
+export type SessionDTO = Message<"admin.settings.v1.SessionDTO"> & {
+  /**
+   * @generated from field: string jti = 1;
+   */
+  jti: string;
+
+  /**
+   * @generated from field: string ip = 2;
+   */
+  ip: string;
+
+  /**
+   * @generated from field: string user_agent = 3;
+   */
+  userAgent: string;
+
+  /**
+   * ISO
+   *
+   * @generated from field: string created_at = 4;
+   */
+  createdAt: string;
+
+  /**
+   * ISO
+   *
+   * @generated from field: string last_seen = 5;
+   */
+  lastSeen: string;
+
+  /**
+   * the caller's own device
+   *
+   * @generated from field: bool current = 6;
+   */
+  current: boolean;
+};
+
+/**
+ * Describes the message admin.settings.v1.SessionDTO.
+ * Use `create(SessionDTOSchema)` to create a new message.
+ */
+export const SessionDTOSchema: GenMessage<SessionDTO> = /*@__PURE__*/
+  messageDesc(file_settings, 1);
+
+/**
+ * @generated from message admin.settings.v1.ListSessionsResponse
+ */
+export type ListSessionsResponse = Message<"admin.settings.v1.ListSessionsResponse"> & {
+  /**
+   * @generated from field: repeated admin.settings.v1.SessionDTO sessions = 1;
+   */
+  sessions: SessionDTO[];
+};
+
+/**
+ * Describes the message admin.settings.v1.ListSessionsResponse.
+ * Use `create(ListSessionsResponseSchema)` to create a new message.
+ */
+export const ListSessionsResponseSchema: GenMessage<ListSessionsResponse> = /*@__PURE__*/
+  messageDesc(file_settings, 2);
+
+/**
+ * @generated from message admin.settings.v1.RevokeSessionRequest
+ */
+export type RevokeSessionRequest = Message<"admin.settings.v1.RevokeSessionRequest"> & {
+  /**
+   * @generated from field: string jti = 1;
+   */
+  jti: string;
+};
+
+/**
+ * Describes the message admin.settings.v1.RevokeSessionRequest.
+ * Use `create(RevokeSessionRequestSchema)` to create a new message.
+ */
+export const RevokeSessionRequestSchema: GenMessage<RevokeSessionRequest> = /*@__PURE__*/
+  messageDesc(file_settings, 3);
+
+/**
+ * @generated from message admin.settings.v1.RevokeAllSessionsRequest
+ */
+export type RevokeAllSessionsRequest = Message<"admin.settings.v1.RevokeAllSessionsRequest"> & {
+};
+
+/**
+ * Describes the message admin.settings.v1.RevokeAllSessionsRequest.
+ * Use `create(RevokeAllSessionsRequestSchema)` to create a new message.
+ */
+export const RevokeAllSessionsRequestSchema: GenMessage<RevokeAllSessionsRequest> = /*@__PURE__*/
+  messageDesc(file_settings, 4);
+
+/**
+ * @generated from message admin.settings.v1.ChangePasswordRequest
+ */
+export type ChangePasswordRequest = Message<"admin.settings.v1.ChangePasswordRequest"> & {
+  /**
+   * @generated from field: string current_password = 1;
+   */
+  currentPassword: string;
+
+  /**
+   * @generated from field: string new_password = 2;
+   */
+  newPassword: string;
+};
+
+/**
+ * Describes the message admin.settings.v1.ChangePasswordRequest.
+ * Use `create(ChangePasswordRequestSchema)` to create a new message.
+ */
+export const ChangePasswordRequestSchema: GenMessage<ChangePasswordRequest> = /*@__PURE__*/
+  messageDesc(file_settings, 5);
+
+/**
+ * @generated from message admin.settings.v1.RequestEmailChangeRequest
+ */
+export type RequestEmailChangeRequest = Message<"admin.settings.v1.RequestEmailChangeRequest"> & {
+  /**
+   * @generated from field: string new_email = 1;
+   */
+  newEmail: string;
+};
+
+/**
+ * Describes the message admin.settings.v1.RequestEmailChangeRequest.
+ * Use `create(RequestEmailChangeRequestSchema)` to create a new message.
+ */
+export const RequestEmailChangeRequestSchema: GenMessage<RequestEmailChangeRequest> = /*@__PURE__*/
+  messageDesc(file_settings, 6);
+
+/**
+ * @generated from message admin.settings.v1.VerifyEmailChangeRequest
+ */
+export type VerifyEmailChangeRequest = Message<"admin.settings.v1.VerifyEmailChangeRequest"> & {
+  /**
+   * @generated from field: string token = 1;
+   */
+  token: string;
+};
+
+/**
+ * Describes the message admin.settings.v1.VerifyEmailChangeRequest.
+ * Use `create(VerifyEmailChangeRequestSchema)` to create a new message.
+ */
+export const VerifyEmailChangeRequestSchema: GenMessage<VerifyEmailChangeRequest> = /*@__PURE__*/
+  messageDesc(file_settings, 7);
 
 /**
  * @generated from message admin.settings.v1.SetupTotpRequest
@@ -23,7 +187,7 @@ export type SetupTotpRequest = Message<"admin.settings.v1.SetupTotpRequest"> & {
  * Use `create(SetupTotpRequestSchema)` to create a new message.
  */
 export const SetupTotpRequestSchema: GenMessage<SetupTotpRequest> = /*@__PURE__*/
-  messageDesc(file_settings, 0);
+  messageDesc(file_settings, 8);
 
 /**
  * @generated from message admin.settings.v1.SetupTotpResponse
@@ -49,7 +213,7 @@ export type SetupTotpResponse = Message<"admin.settings.v1.SetupTotpResponse"> &
  * Use `create(SetupTotpResponseSchema)` to create a new message.
  */
 export const SetupTotpResponseSchema: GenMessage<SetupTotpResponse> = /*@__PURE__*/
-  messageDesc(file_settings, 1);
+  messageDesc(file_settings, 9);
 
 /**
  * @generated from message admin.settings.v1.VerifyTotpRequest
@@ -66,7 +230,7 @@ export type VerifyTotpRequest = Message<"admin.settings.v1.VerifyTotpRequest"> &
  * Use `create(VerifyTotpRequestSchema)` to create a new message.
  */
 export const VerifyTotpRequestSchema: GenMessage<VerifyTotpRequest> = /*@__PURE__*/
-  messageDesc(file_settings, 2);
+  messageDesc(file_settings, 10);
 
 /**
  * @generated from message admin.settings.v1.VerifyTotpResponse
@@ -90,7 +254,7 @@ export type VerifyTotpResponse = Message<"admin.settings.v1.VerifyTotpResponse">
  * Use `create(VerifyTotpResponseSchema)` to create a new message.
  */
 export const VerifyTotpResponseSchema: GenMessage<VerifyTotpResponse> = /*@__PURE__*/
-  messageDesc(file_settings, 3);
+  messageDesc(file_settings, 11);
 
 /**
  * @generated from message admin.settings.v1.DisableTotpRequest
@@ -109,7 +273,7 @@ export type DisableTotpRequest = Message<"admin.settings.v1.DisableTotpRequest">
  * Use `create(DisableTotpRequestSchema)` to create a new message.
  */
 export const DisableTotpRequestSchema: GenMessage<DisableTotpRequest> = /*@__PURE__*/
-  messageDesc(file_settings, 4);
+  messageDesc(file_settings, 12);
 
 /**
  * @generated from message admin.settings.v1.OkResponse
@@ -126,7 +290,7 @@ export type OkResponse = Message<"admin.settings.v1.OkResponse"> & {
  * Use `create(OkResponseSchema)` to create a new message.
  */
 export const OkResponseSchema: GenMessage<OkResponse> = /*@__PURE__*/
-  messageDesc(file_settings, 5);
+  messageDesc(file_settings, 13);
 
 /**
  * @generated from message admin.settings.v1.QuietHours
@@ -159,7 +323,7 @@ export type QuietHours = Message<"admin.settings.v1.QuietHours"> & {
  * Use `create(QuietHoursSchema)` to create a new message.
  */
 export const QuietHoursSchema: GenMessage<QuietHours> = /*@__PURE__*/
-  messageDesc(file_settings, 6);
+  messageDesc(file_settings, 14);
 
 /**
  * @generated from message admin.settings.v1.GetNotificationPrefsRequest
@@ -172,7 +336,7 @@ export type GetNotificationPrefsRequest = Message<"admin.settings.v1.GetNotifica
  * Use `create(GetNotificationPrefsRequestSchema)` to create a new message.
  */
 export const GetNotificationPrefsRequestSchema: GenMessage<GetNotificationPrefsRequest> = /*@__PURE__*/
-  messageDesc(file_settings, 7);
+  messageDesc(file_settings, 15);
 
 /**
  * @generated from message admin.settings.v1.NotificationPrefs
@@ -210,7 +374,7 @@ export type NotificationPrefs = Message<"admin.settings.v1.NotificationPrefs"> &
  * Use `create(NotificationPrefsSchema)` to create a new message.
  */
 export const NotificationPrefsSchema: GenMessage<NotificationPrefs> = /*@__PURE__*/
-  messageDesc(file_settings, 8);
+  messageDesc(file_settings, 16);
 
 /**
  * SettingsService — self-scoped account settings (the caller is the token; no request
@@ -261,6 +425,60 @@ export const SettingsService: GenService<{
   disableTotp: {
     methodKind: "unary";
     input: typeof DisableTotpRequestSchema;
+    output: typeof OkResponseSchema;
+  },
+  /**
+   * Password + email change (self-scoped). VerifyEmailChange is pre-auth (the link is
+   * the proof); a single-use nonce blocks replay.
+   *
+   * @generated from rpc admin.settings.v1.SettingsService.ChangePassword
+   */
+  changePassword: {
+    methodKind: "unary";
+    input: typeof ChangePasswordRequestSchema;
+    output: typeof OkResponseSchema;
+  },
+  /**
+   * @generated from rpc admin.settings.v1.SettingsService.RequestEmailChange
+   */
+  requestEmailChange: {
+    methodKind: "unary";
+    input: typeof RequestEmailChangeRequestSchema;
+    output: typeof OkResponseSchema;
+  },
+  /**
+   * @generated from rpc admin.settings.v1.SettingsService.VerifyEmailChange
+   */
+  verifyEmailChange: {
+    methodKind: "unary";
+    input: typeof VerifyEmailChangeRequestSchema;
+    output: typeof OkResponseSchema;
+  },
+  /**
+   * Active refresh sessions (devices). RevokeSession of a jti not in the caller's set
+   * is NOT_FOUND; RevokeAllSessions keeps the current device (logout-everywhere-else).
+   *
+   * @generated from rpc admin.settings.v1.SettingsService.ListSessions
+   */
+  listSessions: {
+    methodKind: "unary";
+    input: typeof ListSessionsRequestSchema;
+    output: typeof ListSessionsResponseSchema;
+  },
+  /**
+   * @generated from rpc admin.settings.v1.SettingsService.RevokeSession
+   */
+  revokeSession: {
+    methodKind: "unary";
+    input: typeof RevokeSessionRequestSchema;
+    output: typeof OkResponseSchema;
+  },
+  /**
+   * @generated from rpc admin.settings.v1.SettingsService.RevokeAllSessions
+   */
+  revokeAllSessions: {
+    methodKind: "unary";
+    input: typeof RevokeAllSessionsRequestSchema;
     output: typeof OkResponseSchema;
   },
 }> = /*@__PURE__*/
