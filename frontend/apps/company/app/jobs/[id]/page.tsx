@@ -4,6 +4,8 @@ import {
   Alert,
   Badge,
   Button,
+  Card,
+  CardContent,
   ConfirmDialog,
   ErrorState,
   LoadingState,
@@ -17,13 +19,25 @@ import {
 import { errorMessage, useAuthedQuery } from "@ip/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { ApplicantsTable } from "../../../components/applicants-table";
 import { CompanyShell } from "../../../components/company-shell";
+import { GateModeToggle } from "../../../components/gate-mode-toggle";
 import { RankedPanel } from "../../../components/ranked-panel";
 import { ReportsPanel } from "../../../components/reports-panel";
 import { ScoreDistributionPanel } from "../../../components/score-distribution-panel";
 import { useAuth } from "../../../lib/auth";
+import type { GateMode } from "./pipeline-types";
+
+// `updateJob` isn't in the proto yet (TIER F's flagged dependency). Until `pnpm gen` adds
+// it, persisting the gate mode is a no-op behind this flag so the Settings tab builds and
+// previews; the cast below is the seam that binds to the real RPC after regen.
+const MOCK = process.env.NEXT_PUBLIC_MOCK === "1";
+
+const jobGateMode = (job: unknown): GateMode =>
+  ((job as { aptitudeConfig?: { gateMode?: GateMode } } | undefined)?.aptitudeConfig
+    ?.gateMode as GateMode) ?? "auto";
 
 export default function JobDetailPage() {
   const { api, token } = useAuth();
@@ -39,6 +53,30 @@ export default function JobDetailPage() {
     mutationFn: () => api.jobs.publishJob({ jobId: id }),
     onSuccess: () => {
       toast.success("Job published");
+      queryClient.invalidateQueries({ queryKey: ["job", id] });
+    },
+    onError: (err) => toast.error(errorMessage(err)),
+  });
+
+  // Local gate-mode state seeded from the job; resyncs when the job refetches.
+  const persistedMode = jobGateMode(job.data);
+  const [gateMode, setGateMode] = useState<GateMode>("auto");
+  useEffect(() => {
+    setGateMode(jobGateMode(job.data));
+  }, [job.data]);
+
+  const updateMode = useMutation({
+    mutationFn: async () => {
+      // No-op until `updateJob` exists; the real call binds after `pnpm gen`.
+      if (MOCK) return;
+      await (
+        api.jobs as unknown as {
+          updateJob(req: { jobId: string; gateMode: GateMode }): Promise<unknown>;
+        }
+      ).updateJob({ jobId: id, gateMode });
+    },
+    onSuccess: () => {
+      toast.success("Gate mode updated");
       queryClient.invalidateQueries({ queryKey: ["job", id] });
     },
     onError: (err) => toast.error(errorMessage(err)),
@@ -86,6 +124,7 @@ export default function JobDetailPage() {
               <TabsTrigger value="ranked">Ranked</TabsTrigger>
               <TabsTrigger value="reports">Reports</TabsTrigger>
               <TabsTrigger value="scores">Scores</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
             <TabsContent value="applicants">
               <ApplicantsTable jobId={id} />
@@ -98,6 +137,21 @@ export default function JobDetailPage() {
             </TabsContent>
             <TabsContent value="scores">
               <ScoreDistributionPanel jobId={id} />
+            </TabsContent>
+            <TabsContent value="settings">
+              <Card>
+                <CardContent className="flex max-w-md flex-col gap-4 p-4">
+                  <GateModeToggle value={gateMode} onChange={setGateMode} />
+                  <Button
+                    className="self-start"
+                    loading={updateMode.isPending}
+                    disabled={gateMode === persistedMode}
+                    onClick={() => updateMode.mutate()}
+                  >
+                    Save
+                  </Button>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
