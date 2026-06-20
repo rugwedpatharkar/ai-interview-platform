@@ -8,37 +8,38 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ---------------------------------------------------------------------------
-   Design tokens — violet / AI-forward brand on a zinc neutral.
-   Raw values live in :root (light) and .dark; the @theme inline block at the
-   bottom maps them onto Tailwind color utilities (bg-background, text-foreground,
-   bg-primary, ring-ring, bg-brand-600, …) so they auto-adapt to the active theme.
+   Design tokens — "Midnight Intelligence" (v3). Deep cool indigo base +
+   electric-cyan signal; OKLCH throughout. Raw values live in :root (light) and
+   .dark; the @theme inline block maps them onto Tailwind color utilities
+   (bg-background, text-foreground, bg-primary, ring-ring, bg-brand-600, …) so
+   they auto-adapt to the active theme.
 --------------------------------------------------------------------------- */
 :root {
-  /* Brand scale (Tailwind violet). Fixed across themes — used for accents. */
-  --brand-50: #f5f3ff;
-  --brand-100: #ede9fe;
-  --brand-200: #ddd6fe;
-  --brand-300: #c4b5fd;
-  --brand-400: #a78bfa;
-  --brand-500: #8b5cf6;
-  --brand-600: #7c3aed;
-  --brand-700: #6d28d9;
-  --brand-800: #5b21b6;
-  --brand-900: #4c1d95;
-  --brand-950: #2e1065;
+  /* Brand scale (cyan). Fixed across themes — used for accents/charts. */
+  --brand-50: oklch(0.97 0.02 215);
+  --brand-100: oklch(0.93 0.04 213);
+  --brand-200: oklch(0.88 0.07 211);
+  --brand-300: oklch(0.82 0.1 209);
+  --brand-400: oklch(0.74 0.12 207);
+  --brand-500: oklch(0.66 0.14 212);
+  --brand-600: oklch(0.58 0.14 222);
+  --brand-700: oklch(0.5 0.14 232);
+  --brand-800: oklch(0.42 0.12 240);
+  --brand-900: oklch(0.34 0.1 248);
+  --brand-950: oklch(0.24 0.07 255);
 
-  /* Semantic surface tokens (light). */
-  --background: #fafafa; /* zinc-50 */
-  --surface: #ffffff;
-  --surface-muted: #f4f4f5; /* zinc-100 */
-  --border: #e4e4e7; /* zinc-200 */
-  --input: #d4d4d8; /* zinc-300 — control borders read a touch stronger */
-  --foreground: #18181b; /* zinc-900 */
-  --muted-foreground: #71717a; /* zinc-500 */
-  --primary: #7c3aed; /* violet-600 */
-  --primary-hover: #6d28d9; /* violet-700 */
-  --primary-foreground: #ffffff;
-  --ring: #8b5cf6; /* violet-500 */
+  /* Semantic surface tokens (light — cool off-white). */
+  --background: oklch(0.975 0.006 255);
+  --surface: oklch(0.995 0.004 255);
+  --surface-muted: oklch(0.945 0.01 255);
+  --border: oklch(0.9 0.01 255);
+  --input: oklch(0.84 0.012 255); /* control borders read a touch stronger */
+  --foreground: oklch(0.22 0.025 260);
+  --muted-foreground: oklch(0.5 0.02 258);
+  --primary: oklch(0.58 0.13 218); /* deep cyan — white text on top */
+  --primary-hover: oklch(0.5 0.13 220);
+  --primary-foreground: oklch(0.99 0.01 215);
+  --ring: oklch(0.58 0.13 218);
 
   /* Status tokens (light): solid color + tinted surface + text + border. */
   --success: #059669; /* emerald-600 */
@@ -60,32 +61,33 @@
 }
 
 .dark {
-  --background: #09090b; /* zinc-950 */
-  --surface: #18181b; /* zinc-900 */
-  --surface-muted: #27272a; /* zinc-800 */
-  --border: #27272a; /* zinc-800 */
-  --input: #3f3f46; /* zinc-700 — visible against zinc-900 surfaces */
-  --foreground: #fafafa; /* zinc-50 */
-  --muted-foreground: #a1a1aa; /* zinc-400 */
-  --primary: #8b5cf6; /* violet-500 */
-  --primary-hover: #a78bfa; /* violet-400 */
-  --primary-foreground: #09090b; /* zinc-950 — readable on violet-500 */
-  --ring: #a78bfa; /* violet-400 */
+  /* Deep indigo base + electric cyan (the hero look). */
+  --background: oklch(0.17 0.028 264);
+  --surface: oklch(0.215 0.03 264);
+  --surface-muted: oklch(0.27 0.035 264);
+  --border: oklch(0.31 0.03 264);
+  --input: oklch(0.4 0.035 264); /* visible against indigo surfaces */
+  --foreground: oklch(0.97 0.012 250);
+  --muted-foreground: oklch(0.74 0.025 255);
+  --primary: oklch(0.82 0.135 205); /* electric cyan */
+  --primary-hover: oklch(0.86 0.13 200);
+  --primary-foreground: oklch(0.2 0.04 240); /* dark ink on cyan */
+  --ring: oklch(0.82 0.135 205);
 
   --success: #10b981; /* emerald-500 */
-  --success-surface: #022c22;
+  --success-surface: oklch(0.32 0.06 165);
   --success-foreground: #6ee7b7;
   --success-border: #065f46;
   --warning: #f59e0b; /* amber-500 */
-  --warning-surface: #2e1c00;
+  --warning-surface: oklch(0.33 0.06 80);
   --warning-foreground: #fcd34d;
   --warning-border: #92400e;
   --danger: #fb7185; /* rose-400 */
-  --danger-surface: #3f0d18;
+  --danger-surface: oklch(0.34 0.08 25);
   --danger-foreground: #fda4af;
   --danger-border: #9f1239;
   --info: #38bdf8; /* sky-400 */
-  --info-surface: #082f49;
+  --info-surface: oklch(0.33 0.06 230);
   --info-foreground: #7dd3fc;
   --info-border: #075985;
 }
@@ -140,7 +142,7 @@
   --font-sans:
     var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     sans-serif;
-  --font-display: var(--font-display), var(--font-sans), sans-serif;
+  --font-display: var(--font-display), var(--font-sans), serif;
 
   /* Motion utilities (enter/exit) keyed off Radix data-[state]. */
   --animate-fade-in: fade-in 150ms ease-out;

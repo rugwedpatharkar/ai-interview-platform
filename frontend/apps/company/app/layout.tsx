@@ -1,20 +1,21 @@
 import { ThemeProvider, Toaster, themeScript } from "@ip/ui";
-import { Inter, Sora } from "next/font/google";
+import { Geist, Fraunces } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
 import { Providers } from "./providers";
 
-const sans = Inter({
+const sans = Geist({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
 });
 
-const display = Sora({
+// Editorial serif display (Midnight v3). Optical-size variable; 400 + 600 cover body-display + headings.
+const display = Fraunces({
   subsets: ["latin"],
   display: "swap",
-  weight: ["600", "700"],
+  weight: ["400", "600"],
   variable: "--font-display",
 });
 
