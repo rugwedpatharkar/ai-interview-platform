@@ -1,4 +1,19 @@
+// Saved-jobs transport. Real gRPC client wraps `api.savedJobs.*` (admin); in-memory mock is
+// kept so NEXT_PUBLIC_MOCK=1 and the test harness (saved-jobs-client.test.ts) still build.
+//
+// Wired 2026-06-21 — `api.savedJobs.*` is live. The proto `SavedJob` carries
+// `salaryMin/Max: bigint` (int64); the SavedJobDTO uses `number`, so the adapter coerces with
+// Number(...) — saved jobs live in user-mode currencies, never anywhere near 2^53.
+//
+// Singleton → hook: pages used to import `savedJobsClient` from module-eval time. The hook
+// `useSavedJobsClient()` lets us read `api` at React render time. Consumers grab it once at
+// the top of the component and use it byte-identically to the old singleton.
+
+import { useMemo } from "react";
+
+import type { SavedJob as ProtoSavedJob } from "@ip/api-client";
 import type { SavedJobDTO, SavedJobsClient } from "../app/saved/types.js";
+import { useAuth } from "./auth";
 
 const FIXTURES: SavedJobDTO[] = [
   {
@@ -53,7 +68,7 @@ const SAVED_TEMPLATE: Omit<SavedJobDTO, "jobId" | "savedAt"> = {
   snippet: "",
 };
 
-/** In-memory saved-jobs client for building the screen before `api.savedJobs` lands. */
+/** In-memory saved-jobs client for the test harness + NEXT_PUBLIC_MOCK=1 local dev. */
 export function makeMockSavedJobsClient(): SavedJobsClient {
   const saved = new Map<string, SavedJobDTO>(FIXTURES.map((j) => [j.jobId, j]));
   const byId = new Map<string, SavedJobDTO>(FIXTURES.map((j) => [j.jobId, j]));
@@ -72,16 +87,48 @@ export function makeMockSavedJobsClient(): SavedJobsClient {
   };
 }
 
-// Real adapter — wired after `pnpm gen` exposes api.savedJobs (snake→camel via proto-es).
-// import type { ApiClients } from "@ip/api-client";
-// export function makeApiSavedJobsClient(api: ApiClients): SavedJobsClient {
-//   return {
-//     list: async () => (await api.savedJobs.listSavedJobs({})).jobs as unknown as SavedJobDTO[],
-//     save: async (jobId) => void (await api.savedJobs.saveJob({ jobId })),
-//     unsave: async (jobId) => void (await api.savedJobs.unsaveJob({ jobId })),
-//   };
-// }
+type Api = ReturnType<typeof useAuth>["api"];
+
+/** SavedJob (proto, int64 salaries) → SavedJobDTO (number). Saved jobs are user-scoped
+ *  marketplace cards — coercing bigint → number is safe well past any plausible salary. */
+function mapSavedJob(j: ProtoSavedJob): SavedJobDTO {
+  return {
+    jobId: j.jobId,
+    title: j.title,
+    companyName: j.companyName,
+    companyId: j.companyId,
+    location: j.location,
+    remoteMode: j.remoteMode as SavedJobDTO["remoteMode"],
+    employmentType: j.employmentType,
+    salaryMin: Number(j.salaryMin),
+    salaryMax: Number(j.salaryMax),
+    salaryCurrency: j.salaryCurrency,
+    skills: j.skills,
+    postedAt: j.postedAt,
+    snippet: j.snippet,
+    savedAt: j.savedAt,
+  };
+}
+
+/** Real gRPC client over `api.savedJobs.*`. */
+export function makeApiSavedJobsClient(api: Api): SavedJobsClient {
+  return {
+    list: async () => (await api.savedJobs.listSavedJobs({})).jobs.map(mapSavedJob),
+    save: async (jobId) => void (await api.savedJobs.saveJob({ jobId })),
+    unsave: async (jobId) => void (await api.savedJobs.unsaveJob({ jobId })),
+  };
+}
 
 export const USE_MOCK = process.env.NEXT_PUBLIC_MOCK === "1";
-// Swap to makeApiSavedJobsClient(api) once `pnpm gen` exposes api.savedJobs.
-export const savedJobsClient = makeMockSavedJobsClient();
+
+/** Hook: per-render memoized client. The page, SaveJobButton, and useSavedSet hook all call
+ *  this and treat the returned object exactly the way the old `savedJobsClient` singleton
+ *  was used — preserves the optimistic `["saved-jobs","ids"]` flip + rollback + invalidate
+ *  pattern in SaveJobButton (the cache key map lives in the consumers). */
+export function useSavedJobsClient(): SavedJobsClient {
+  const { api } = useAuth();
+  return useMemo(
+    () => (USE_MOCK ? makeMockSavedJobsClient() : makeApiSavedJobsClient(api)),
+    [api],
+  );
+}
