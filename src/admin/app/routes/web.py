@@ -15,6 +15,8 @@ from app.infra.repositories.aptitude_attempts import AptitudeAttemptRepository
 from app.infra.repositories.aptitude_banks import AptitudeBankRepository
 from app.infra.repositories.aptitude_deliveries import AptitudeDeliveryRepository
 from app.infra.repositories.audit_logs import AuditLogRepository
+from app.infra.repositories.coding_attempts import CodingAttemptRepository
+from app.infra.repositories.coding_tasks import CodingTaskRepository
 from app.infra.repositories.companies import CompanyRepository
 from app.infra.repositories.company_profiles import CompanyProfileRepository
 from app.infra.repositories.consents import ConsentRepository
@@ -43,6 +45,7 @@ from app.routes.analytics import AnalyticsServicer
 from app.routes.application import ApplicationServicer
 from app.routes.aptitude import AptitudeServicer
 from app.routes.auth import AuthServicer
+from app.routes.coding import CodingServicer
 from app.routes.company_profile import CompanyProfileServicer
 from app.routes.compliance import ComplianceServicer
 from app.routes.decision import DecisionServicer
@@ -56,6 +59,7 @@ from app.routes.pb import (
     application_pb2_grpc,
     aptitude_pb2_grpc,
     auth_pb2_grpc,
+    coding_pb2_grpc,
     company_profile_pb2_grpc,
     compliance_pb2_grpc,
     decision_pb2_grpc,
@@ -195,6 +199,17 @@ def create_web_app(
             attempts=AptitudeAttemptRepository(db),
             deliveries=AptitudeDeliveryRepository(db),
             publisher=publisher,
+            tokens=tokens,
+        ),
+        app,
+    )
+    coding_pb2_grpc.add_CodingServiceServicer_to_server(
+        CodingServicer(
+            applications=ApplicationRepository(db),
+            tasks=CodingTaskRepository(db),
+            attempts=CodingAttemptRepository(db),
+            publisher=publisher,
+            limiter=RateLimiter(redis),
             tokens=tokens,
         ),
         app,
