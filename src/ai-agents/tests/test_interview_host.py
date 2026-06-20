@@ -417,7 +417,7 @@ async def test_record_proctoring_high_on_terminated_does_not_republish(
 ):
     data, sessions, pub = fake_data(), fake_sessions(), fake_publisher()
     sessions.saved["a1"] = _session(status="terminated")
-    accepted, terminated, reason = await record_proctoring_events(
+    accepted, _, _ = await record_proctoring_events(
         "a1",
         [ProctoringEvent(type="phone_detected", at="t")],
         caller_user_id="u1",

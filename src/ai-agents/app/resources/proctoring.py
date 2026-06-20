@@ -1,7 +1,7 @@
 """Record candidate proctoring signals during an interview.
 
-Signals-only: the browser sends typed events (never raw media); we verify the caller owns
-the interview, stamp the server-canonical severity (client can't set it), and persist.
+Signals-only: the browser sends typed events (never raw media); we verify the caller
+owns the interview, stamp the server-canonical severity (client can't set it), persist.
 MED/LOW flags are advisory (human review). A server-classified HIGH-severity event
 auto-terminates the live session (returns terminated=True + the triggering type) — the
 client cannot force or dodge this since the input DTO carries no severity field.
