@@ -102,6 +102,8 @@ def make_eraser(db, storage):
         messages=MessageRepository(db),
         notification_prefs=NotificationPrefsRepository(db),
         practice=PracticeSessionRepository(db),
+        slots=InterviewSlotsRepository(db),
+        bookings=InterviewBookingRepository(db),
     )
 
 

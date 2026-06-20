@@ -63,6 +63,8 @@ class CandidateEraser:
         messages=None,
         notification_prefs=None,
         practice=None,
+        slots=None,
+        bookings=None,
     ):
         self._users = users
         self._profiles = profiles
@@ -78,6 +80,8 @@ class CandidateEraser:
         self._messages = messages
         self._notification_prefs = notification_prefs
         self._practice = practice
+        self._slots = slots
+        self._bookings = bookings
 
     async def erase(self, user_id):
         applications = await self._applications.list_by_candidate(user_id)
@@ -104,6 +108,11 @@ class CandidateEraser:
         # link), so they cascade by user — not via the applications above.
         if self._practice is not None:
             await self._practice.delete_by_user(user_id)
+        # Interview scheduling (slots + bookings) cascades by application_id.
+        if self._slots is not None:
+            application_ids = [str(a["_id"]) for a in applications]
+            await self._slots.delete_by_applications(application_ids)
+            await self._bookings.delete_by_applications(application_ids)
         profile = await self._profiles.get_by_user(user_id)
         await self._profiles.delete_by_user(user_id)
         if profile and profile.get("resume_key"):

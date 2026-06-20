@@ -62,6 +62,8 @@ def _eraser(fakes):
         attempts=fakes["attempts"],
         consents=fakes["consents"],
         practice=fakes["practice"],
+        slots=fakes["interview_slots"],
+        bookings=fakes["interview_bookings"],
     )
 
 
@@ -130,6 +132,23 @@ async def test_erase_deletes_practice_sessions(fakes):
     await _eraser(fakes).erase(uid)
     assert "p1" not in fakes["practice"].docs
     assert "p2" in fakes["practice"].docs
+
+
+async def test_erase_deletes_interview_scheduling(fakes):
+    # Scheduling slots + bookings cascade by the candidate's application_ids.
+    uid = await fakes["users"].insert(
+        User(email="c@x.com", password_hash="h", role=Role.candidate)
+    )
+    app_id = await fakes["applications"].insert(
+        Application(
+            comp_id="c1", job_id="j1", candidate_user_id=uid, state="interview_pending"
+        )
+    )
+    fakes["interview_slots"].docs.append({"application_id": app_id})
+    fakes["interview_bookings"].docs[app_id] = {"application_id": app_id}
+    await _eraser(fakes).erase(uid)
+    assert fakes["interview_slots"].docs == []
+    assert fakes["interview_bookings"].docs == {}
 
 
 async def test_retention_sweep_erases_only_expired(fakes):

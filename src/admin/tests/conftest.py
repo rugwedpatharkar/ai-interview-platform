@@ -391,6 +391,27 @@ class FakePracticeRepo:
         self.docs = {k: v for k, v in self.docs.items() if v.get("user_id") != user_id}
 
 
+class FakeInterviewSlotsRepo:
+    """In-memory stand-in for InterviewSlotsRepository (cascade by application)."""
+
+    def __init__(self):
+        self.docs: list[dict] = []
+
+    async def delete_by_applications(self, application_ids):
+        self.docs = [d for d in self.docs if d["application_id"] not in application_ids]
+
+
+class FakeInterviewBookingRepo:
+    """In-memory stand-in for InterviewBookingRepository (cascade by application)."""
+
+    def __init__(self):
+        self.docs: dict[str, dict] = {}
+
+    async def delete_by_applications(self, application_ids):
+        for aid in application_ids:
+            self.docs.pop(aid, None)
+
+
 @pytest.fixture
 def fakes():
     return {
@@ -410,4 +431,6 @@ def fakes():
         "interviews": FakeInterviewRepo(),
         "consents": FakeConsentRepo(),
         "practice": FakePracticeRepo(),
+        "interview_slots": FakeInterviewSlotsRepo(),
+        "interview_bookings": FakeInterviewBookingRepo(),
     }

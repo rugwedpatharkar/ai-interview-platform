@@ -22,7 +22,9 @@ from app.infra.repositories.aptitude_deliveries import AptitudeDeliveryRepositor
 from app.infra.repositories.audit_logs import AuditLogRepository
 from app.infra.repositories.companies import CompanyRepository
 from app.infra.repositories.company_profiles import CompanyProfileRepository
+from app.infra.repositories.interview_bookings import InterviewBookingRepository
 from app.infra.repositories.jobs import JobRepository
+from app.infra.repositories.notifications import NotificationRepository
 from app.infra.repositories.users import UserRepository
 from app.resources import funnel, recommend, scheduler
 from app.resources.notification import TransitionNotifier
@@ -224,6 +226,8 @@ async def serve() -> None:
     # Liveness reapers: purge past-retention candidates + expire abandoned aptitude.
     eraser = make_eraser(mongo.db, storage)
     deliveries = AptitudeDeliveryRepository(mongo.db)
+    bookings = InterviewBookingRepository(mongo.db)
+    reminder_notifications = NotificationRepository(mongo.db)
 
     async def run_schedulers():
         while True:
@@ -239,6 +243,11 @@ async def serve() -> None:
                     publisher=publisher,
                     now=now,
                     max_age_hours=s.aptitude_expiry_hours,
+                )
+                await scheduler.reminder_sweep(
+                    bookings=bookings,
+                    notifications=reminder_notifications,
+                    now=now,
                 )
             except Exception:
                 log.exception("scheduler pass failed")
