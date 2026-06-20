@@ -99,6 +99,15 @@ INDEXES: list[IndexSpec] = [
         [("user_id", 1), ("practice_id", 1)],
         {"unique": True},
     ),
+    # interview scheduling: append-only proposal history + one current booking per
+    # application (the unique application_id is the 1:1 invariant the CAS relies on).
+    IndexSpec("interview_slots", [("application_id", 1), ("created_at", -1)]),
+    IndexSpec("interview_slots", "comp_id"),
+    IndexSpec("interview_bookings", "application_id", {"unique": True}),
+    IndexSpec("interview_bookings", [("comp_id", 1), ("status", 1)]),
+    IndexSpec("interview_bookings", [("candidate_user_id", 1), ("status", 1)]),
+    # reminder sweep read path: booked bookings ordered by start time.
+    IndexSpec("interview_bookings", [("status", 1), ("chosen_start_at", 1)]),
 ]
 
 
