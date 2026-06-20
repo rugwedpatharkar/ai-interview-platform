@@ -20,7 +20,22 @@ _grpc_errors = counter(
 )
 
 
+def _competency_proto(c):
+    return report_pb2.CompetencyScore(
+        competency=c.get("competency", ""),
+        score=c.get("score", 0.0),
+        rationale=c.get("rationale", ""),
+        evidence=[
+            report_pb2.Evidence(
+                quote=e.get("quote", ""), turn_index=e.get("turn_index", 0)
+            )
+            for e in c.get("evidence", [])
+        ],
+    )
+
+
 def _to_proto(r):
+    integrity = r.get("integrity")
     return report_pb2.InterviewReport(
         application_id=r["application_id"],
         candidate_user_id=r["candidate_user_id"],
@@ -30,6 +45,16 @@ def _to_proto(r):
         risks=r["risks"],
         overall_score=r["overall_score"],
         recommendation=r["recommendation"],
+        competency_scores=[
+            _competency_proto(c) for c in r.get("competency_scores", [])
+        ],
+        integrity=report_pb2.IntegritySummary(
+            score=integrity["score"],
+            flags=integrity["flags"],
+            auto_terminated=integrity["auto_terminated"],
+        )
+        if integrity
+        else None,
     )
 
 

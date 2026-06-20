@@ -32,6 +32,10 @@ def _enrich(application_id, application, report):
         "executive_summary": report.get("executive_summary", ""),
         "highlights": report.get("highlights", []),
         "risks": report.get("risks", []),
+        # Per-competency breakdown + evidence and the integrity snapshot are written by
+        # the ai-agents report-writer; a pre-A4 doc lacks them, so default empty/None.
+        "competency_scores": report.get("competency_scores", []),
+        "integrity": report.get("integrity"),
         "overall_score": report.get("overall_score", 0.0),
         "recommendation": report.get("recommendation", ""),
     }

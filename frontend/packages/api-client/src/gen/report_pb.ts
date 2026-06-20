@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file report.proto.
  */
 export const file_report: GenFile = /*@__PURE__*/
-  fileDesc("CgxyZXBvcnQucHJvdG8SD2FkbWluLnJlcG9ydC52MSI1ChtHZXRJbnRlZ3JpdHlUaW1lbGluZVJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkinAEKC1Byb2N0b3JGbGFnEgwKBHR5cGUYASABKAkSEAoIc2V2ZXJpdHkYAiABKAkSCgoCYXQYAyABKAkSNAoEbWV0YRgEIAMoCzImLmFkbWluLnJlcG9ydC52MS5Qcm9jdG9yRmxhZy5NZXRhRW50cnkaKwoJTWV0YUVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEipAEKEUludGVncml0eVRpbWVsaW5lEhcKD2ludGVncml0eV9zY29yZRgBIAEoBRIrCgVmbGFncxgCIAMoCzIcLmFkbWluLnJlcG9ydC52MS5Qcm9jdG9yRmxhZxIVCg1yZWNvcmRpbmdfdXJsGAMgASgJEhcKD2F1dG9fdGVybWluYXRlZBgEIAEoCBIZChF0ZXJtaW5hdGVkX3JlYXNvbhgFIAEoCSIqChBHZXRSZXBvcnRSZXF1ZXN0EhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJIiQKEkxpc3RSZXBvcnRzUmVxdWVzdBIOCgZqb2JfaWQYASABKAkiwAEKD0ludGVydmlld1JlcG9ydBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIZChFjYW5kaWRhdGVfdXNlcl9pZBgCIAEoCRINCgVzdGF0ZRgDIAEoCRIZChFleGVjdXRpdmVfc3VtbWFyeRgEIAEoCRISCgpoaWdobGlnaHRzGAUgAygJEg0KBXJpc2tzGAYgAygJEhUKDW92ZXJhbGxfc2NvcmUYByABKAESFgoOcmVjb21tZW5kYXRpb24YCCABKAkiPwoKUmVwb3J0TGlzdBIxCgdyZXBvcnRzGAEgAygLMiAuYWRtaW4ucmVwb3J0LnYxLkludGVydmlld1JlcG9ydCIxCgxSZXBvcnRFeHBvcnQSEAoIZmlsZW5hbWUYASABKAkSDwoHY29udGVudBgCIAEoDDLxAgoNUmVwb3J0U2VydmljZRJQCglHZXRSZXBvcnQSIS5hZG1pbi5yZXBvcnQudjEuR2V0UmVwb3J0UmVxdWVzdBogLmFkbWluLnJlcG9ydC52MS5JbnRlcnZpZXdSZXBvcnQSTwoLTGlzdFJlcG9ydHMSIy5hZG1pbi5yZXBvcnQudjEuTGlzdFJlcG9ydHNSZXF1ZXN0GhsuYWRtaW4ucmVwb3J0LnYxLlJlcG9ydExpc3QSUwoNRXhwb3J0UmVwb3J0cxIjLmFkbWluLnJlcG9ydC52MS5MaXN0UmVwb3J0c1JlcXVlc3QaHS5hZG1pbi5yZXBvcnQudjEuUmVwb3J0RXhwb3J0EmgKFEdldEludGVncml0eVRpbWVsaW5lEiwuYWRtaW4ucmVwb3J0LnYxLkdldEludGVncml0eVRpbWVsaW5lUmVxdWVzdBoiLmFkbWluLnJlcG9ydC52MS5JbnRlZ3JpdHlUaW1lbGluZWIGcHJvdG8z");
+  fileDesc("CgxyZXBvcnQucHJvdG8SD2FkbWluLnJlcG9ydC52MSI1ChtHZXRJbnRlZ3JpdHlUaW1lbGluZVJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkinAEKC1Byb2N0b3JGbGFnEgwKBHR5cGUYASABKAkSEAoIc2V2ZXJpdHkYAiABKAkSCgoCYXQYAyABKAkSNAoEbWV0YRgEIAMoCzImLmFkbWluLnJlcG9ydC52MS5Qcm9jdG9yRmxhZy5NZXRhRW50cnkaKwoJTWV0YUVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEipAEKEUludGVncml0eVRpbWVsaW5lEhcKD2ludGVncml0eV9zY29yZRgBIAEoBRIrCgVmbGFncxgCIAMoCzIcLmFkbWluLnJlcG9ydC52MS5Qcm9jdG9yRmxhZxIVCg1yZWNvcmRpbmdfdXJsGAMgASgJEhcKD2F1dG9fdGVybWluYXRlZBgEIAEoCBIZChF0ZXJtaW5hdGVkX3JlYXNvbhgFIAEoCSIqChBHZXRSZXBvcnRSZXF1ZXN0EhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJIiQKEkxpc3RSZXBvcnRzUmVxdWVzdBIOCgZqb2JfaWQYASABKAkiLQoIRXZpZGVuY2USDQoFcXVvdGUYASABKAkSEgoKdHVybl9pbmRleBgCIAEoBSJ0Cg9Db21wZXRlbmN5U2NvcmUSEgoKY29tcGV0ZW5jeRgBIAEoCRINCgVzY29yZRgCIAEoARIRCglyYXRpb25hbGUYAyABKAkSKwoIZXZpZGVuY2UYBCADKAsyGS5hZG1pbi5yZXBvcnQudjEuRXZpZGVuY2UiSQoQSW50ZWdyaXR5U3VtbWFyeRINCgVzY29yZRgBIAEoARINCgVmbGFncxgCIAMoCRIXCg9hdXRvX3Rlcm1pbmF0ZWQYAyABKAgiswIKD0ludGVydmlld1JlcG9ydBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIZChFjYW5kaWRhdGVfdXNlcl9pZBgCIAEoCRINCgVzdGF0ZRgDIAEoCRIZChFleGVjdXRpdmVfc3VtbWFyeRgEIAEoCRISCgpoaWdobGlnaHRzGAUgAygJEg0KBXJpc2tzGAYgAygJEhUKDW92ZXJhbGxfc2NvcmUYByABKAESFgoOcmVjb21tZW5kYXRpb24YCCABKAkSOwoRY29tcGV0ZW5jeV9zY29yZXMYCSADKAsyIC5hZG1pbi5yZXBvcnQudjEuQ29tcGV0ZW5jeVNjb3JlEjQKCWludGVncml0eRgKIAEoCzIhLmFkbWluLnJlcG9ydC52MS5JbnRlZ3JpdHlTdW1tYXJ5Ij8KClJlcG9ydExpc3QSMQoHcmVwb3J0cxgBIAMoCzIgLmFkbWluLnJlcG9ydC52MS5JbnRlcnZpZXdSZXBvcnQiMQoMUmVwb3J0RXhwb3J0EhAKCGZpbGVuYW1lGAEgASgJEg8KB2NvbnRlbnQYAiABKAwy8QIKDVJlcG9ydFNlcnZpY2USUAoJR2V0UmVwb3J0EiEuYWRtaW4ucmVwb3J0LnYxLkdldFJlcG9ydFJlcXVlc3QaIC5hZG1pbi5yZXBvcnQudjEuSW50ZXJ2aWV3UmVwb3J0Ek8KC0xpc3RSZXBvcnRzEiMuYWRtaW4ucmVwb3J0LnYxLkxpc3RSZXBvcnRzUmVxdWVzdBobLmFkbWluLnJlcG9ydC52MS5SZXBvcnRMaXN0ElMKDUV4cG9ydFJlcG9ydHMSIy5hZG1pbi5yZXBvcnQudjEuTGlzdFJlcG9ydHNSZXF1ZXN0Gh0uYWRtaW4ucmVwb3J0LnYxLlJlcG9ydEV4cG9ydBJoChRHZXRJbnRlZ3JpdHlUaW1lbGluZRIsLmFkbWluLnJlcG9ydC52MS5HZXRJbnRlZ3JpdHlUaW1lbGluZVJlcXVlc3QaIi5hZG1pbi5yZXBvcnQudjEuSW50ZWdyaXR5VGltZWxpbmViBnByb3RvMw");
 
 /**
  * @generated from message admin.report.v1.GetIntegrityTimelineRequest
@@ -151,6 +151,99 @@ export const ListReportsRequestSchema: GenMessage<ListReportsRequest> = /*@__PUR
   messageDesc(file_report, 4);
 
 /**
+ * @generated from message admin.report.v1.Evidence
+ */
+export type Evidence = Message<"admin.report.v1.Evidence"> & {
+  /**
+   * short transcript-grounded snippet
+   *
+   * @generated from field: string quote = 1;
+   */
+  quote: string;
+
+  /**
+   * which Q/A turn it came from
+   *
+   * @generated from field: int32 turn_index = 2;
+   */
+  turnIndex: number;
+};
+
+/**
+ * Describes the message admin.report.v1.Evidence.
+ * Use `create(EvidenceSchema)` to create a new message.
+ */
+export const EvidenceSchema: GenMessage<Evidence> = /*@__PURE__*/
+  messageDesc(file_report, 5);
+
+/**
+ * @generated from message admin.report.v1.CompetencyScore
+ */
+export type CompetencyScore = Message<"admin.report.v1.CompetencyScore"> & {
+  /**
+   * @generated from field: string competency = 1;
+   */
+  competency: string;
+
+  /**
+   * 0.0 .. 1.0
+   *
+   * @generated from field: double score = 2;
+   */
+  score: number;
+
+  /**
+   * @generated from field: string rationale = 3;
+   */
+  rationale: string;
+
+  /**
+   * @generated from field: repeated admin.report.v1.Evidence evidence = 4;
+   */
+  evidence: Evidence[];
+};
+
+/**
+ * Describes the message admin.report.v1.CompetencyScore.
+ * Use `create(CompetencyScoreSchema)` to create a new message.
+ */
+export const CompetencyScoreSchema: GenMessage<CompetencyScore> = /*@__PURE__*/
+  messageDesc(file_report, 6);
+
+/**
+ * @generated from message admin.report.v1.IntegritySummary
+ */
+export type IntegritySummary = Message<"admin.report.v1.IntegritySummary"> & {
+  /**
+   * weighted sum of proctoring severities
+   *
+   * @generated from field: double score = 1;
+   */
+  score: number;
+
+  /**
+   * distinct medium+ event types
+   *
+   * @generated from field: repeated string flags = 2;
+   */
+  flags: string[];
+
+  /**
+   * a HIGH-severity signal ended the interview
+   *
+   * @generated from field: bool auto_terminated = 3;
+   */
+  autoTerminated: boolean;
+};
+
+/**
+ * Describes the message admin.report.v1.IntegritySummary.
+ * Use `create(IntegritySummarySchema)` to create a new message.
+ */
+export const IntegritySummarySchema: GenMessage<IntegritySummary> = /*@__PURE__*/
+  messageDesc(file_report, 7);
+
+/**
  * @generated from message admin.report.v1.InterviewReport
  */
 export type InterviewReport = Message<"admin.report.v1.InterviewReport"> & {
@@ -195,6 +288,20 @@ export type InterviewReport = Message<"admin.report.v1.InterviewReport"> & {
    * @generated from field: string recommendation = 8;
    */
   recommendation: string;
+
+  /**
+   * per-competency + evidence
+   *
+   * @generated from field: repeated admin.report.v1.CompetencyScore competency_scores = 9;
+   */
+  competencyScores: CompetencyScore[];
+
+  /**
+   * proctoring snapshot (in-report)
+   *
+   * @generated from field: admin.report.v1.IntegritySummary integrity = 10;
+   */
+  integrity?: IntegritySummary | undefined;
 };
 
 /**
@@ -202,7 +309,7 @@ export type InterviewReport = Message<"admin.report.v1.InterviewReport"> & {
  * Use `create(InterviewReportSchema)` to create a new message.
  */
 export const InterviewReportSchema: GenMessage<InterviewReport> = /*@__PURE__*/
-  messageDesc(file_report, 5);
+  messageDesc(file_report, 8);
 
 /**
  * @generated from message admin.report.v1.ReportList
@@ -219,7 +326,7 @@ export type ReportList = Message<"admin.report.v1.ReportList"> & {
  * Use `create(ReportListSchema)` to create a new message.
  */
 export const ReportListSchema: GenMessage<ReportList> = /*@__PURE__*/
-  messageDesc(file_report, 6);
+  messageDesc(file_report, 9);
 
 /**
  * @generated from message admin.report.v1.ReportExport
@@ -243,7 +350,7 @@ export type ReportExport = Message<"admin.report.v1.ReportExport"> & {
  * Use `create(ReportExportSchema)` to create a new message.
  */
 export const ReportExportSchema: GenMessage<ReportExport> = /*@__PURE__*/
-  messageDesc(file_report, 7);
+  messageDesc(file_report, 10);
 
 /**
  * ReportService — recruiters read the AI-generated interview report for scored

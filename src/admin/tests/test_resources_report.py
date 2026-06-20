@@ -38,6 +38,46 @@ async def test_get_report_returns_enriched(fakes):
     assert result["state"] == "scored"
 
 
+async def test_get_report_carries_competency_evidence_and_integrity(fakes):
+    aid = await fakes["applications"].insert(
+        Application(comp_id="c1", job_id="j1", candidate_user_id="cand", state="scored")
+    )
+    fakes["reports"]._by_app[aid] = {
+        "application_id": aid,
+        "executive_summary": "Strong",
+        "competency_scores": [
+            {
+                "competency": "python",
+                "score": 0.9,
+                "rationale": "solid",
+                "evidence": [{"quote": "it yields control", "turn_index": 0}],
+            }
+        ],
+        "integrity": {"score": 4.0, "flags": ["paste_large"], "auto_terminated": False},
+        "overall_score": 0.8,
+        "recommendation": "advance",
+    }
+    result = await report.get_report(
+        _identity(), aid, applications=fakes["applications"], reports=fakes["reports"]
+    )
+    cs = result["competency_scores"][0]
+    assert cs["competency"] == "python"
+    assert cs["evidence"][0]["quote"] == "it yields control"
+    assert result["integrity"]["flags"] == ["paste_large"]
+    assert result["integrity"]["auto_terminated"] is False
+
+
+async def test_get_report_defaults_missing_enrichment(fakes):
+    # A pre-A4 report doc (no competency_scores/integrity) reads as empty/None — the DTO
+    # is always well-formed so the FE never crashes on a legacy report.
+    aid = await _seed(fakes)
+    result = await report.get_report(
+        _identity(), aid, applications=fakes["applications"], reports=fakes["reports"]
+    )
+    assert result["competency_scores"] == []
+    assert result["integrity"] is None
+
+
 async def test_get_report_rejects_other_company(fakes):
     aid = await _seed(fakes, comp_id="other")
     with pytest.raises(NotFoundError):

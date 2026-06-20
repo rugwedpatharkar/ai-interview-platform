@@ -40,6 +40,24 @@ message ListReportsRequest {
   string job_id = 1;
 }
 
+message Evidence {
+  string quote = 1;       // short transcript-grounded snippet
+  int32 turn_index = 2;   // which Q/A turn it came from
+}
+
+message CompetencyScore {
+  string competency = 1;
+  double score = 2;                  // 0.0 .. 1.0
+  string rationale = 3;
+  repeated Evidence evidence = 4;
+}
+
+message IntegritySummary {
+  double score = 1;             // weighted sum of proctoring severities
+  repeated string flags = 2;    // distinct medium+ event types
+  bool auto_terminated = 3;     // a HIGH-severity signal ended the interview
+}
+
 message InterviewReport {
   string application_id = 1;
   string candidate_user_id = 2;
@@ -49,6 +67,8 @@ message InterviewReport {
   repeated string risks = 6;
   double overall_score = 7;
   string recommendation = 8;
+  repeated CompetencyScore competency_scores = 9;  // per-competency + evidence
+  IntegritySummary integrity = 10;                 // proctoring snapshot (in-report)
 }
 
 message ReportList {

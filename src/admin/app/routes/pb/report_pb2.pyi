@@ -57,8 +57,38 @@ class ListReportsRequest(_message.Message):
     job_id: str
     def __init__(self, job_id: _Optional[str] = ...) -> None: ...
 
+class Evidence(_message.Message):
+    __slots__ = ("quote", "turn_index")
+    QUOTE_FIELD_NUMBER: _ClassVar[int]
+    TURN_INDEX_FIELD_NUMBER: _ClassVar[int]
+    quote: str
+    turn_index: int
+    def __init__(self, quote: _Optional[str] = ..., turn_index: _Optional[int] = ...) -> None: ...
+
+class CompetencyScore(_message.Message):
+    __slots__ = ("competency", "score", "rationale", "evidence")
+    COMPETENCY_FIELD_NUMBER: _ClassVar[int]
+    SCORE_FIELD_NUMBER: _ClassVar[int]
+    RATIONALE_FIELD_NUMBER: _ClassVar[int]
+    EVIDENCE_FIELD_NUMBER: _ClassVar[int]
+    competency: str
+    score: float
+    rationale: str
+    evidence: _containers.RepeatedCompositeFieldContainer[Evidence]
+    def __init__(self, competency: _Optional[str] = ..., score: _Optional[float] = ..., rationale: _Optional[str] = ..., evidence: _Optional[_Iterable[_Union[Evidence, _Mapping]]] = ...) -> None: ...
+
+class IntegritySummary(_message.Message):
+    __slots__ = ("score", "flags", "auto_terminated")
+    SCORE_FIELD_NUMBER: _ClassVar[int]
+    FLAGS_FIELD_NUMBER: _ClassVar[int]
+    AUTO_TERMINATED_FIELD_NUMBER: _ClassVar[int]
+    score: float
+    flags: _containers.RepeatedScalarFieldContainer[str]
+    auto_terminated: bool
+    def __init__(self, score: _Optional[float] = ..., flags: _Optional[_Iterable[str]] = ..., auto_terminated: _Optional[bool] = ...) -> None: ...
+
 class InterviewReport(_message.Message):
-    __slots__ = ("application_id", "candidate_user_id", "state", "executive_summary", "highlights", "risks", "overall_score", "recommendation")
+    __slots__ = ("application_id", "candidate_user_id", "state", "executive_summary", "highlights", "risks", "overall_score", "recommendation", "competency_scores", "integrity")
     APPLICATION_ID_FIELD_NUMBER: _ClassVar[int]
     CANDIDATE_USER_ID_FIELD_NUMBER: _ClassVar[int]
     STATE_FIELD_NUMBER: _ClassVar[int]
@@ -67,6 +97,8 @@ class InterviewReport(_message.Message):
     RISKS_FIELD_NUMBER: _ClassVar[int]
     OVERALL_SCORE_FIELD_NUMBER: _ClassVar[int]
     RECOMMENDATION_FIELD_NUMBER: _ClassVar[int]
+    COMPETENCY_SCORES_FIELD_NUMBER: _ClassVar[int]
+    INTEGRITY_FIELD_NUMBER: _ClassVar[int]
     application_id: str
     candidate_user_id: str
     state: str
@@ -75,7 +107,9 @@ class InterviewReport(_message.Message):
     risks: _containers.RepeatedScalarFieldContainer[str]
     overall_score: float
     recommendation: str
-    def __init__(self, application_id: _Optional[str] = ..., candidate_user_id: _Optional[str] = ..., state: _Optional[str] = ..., executive_summary: _Optional[str] = ..., highlights: _Optional[_Iterable[str]] = ..., risks: _Optional[_Iterable[str]] = ..., overall_score: _Optional[float] = ..., recommendation: _Optional[str] = ...) -> None: ...
+    competency_scores: _containers.RepeatedCompositeFieldContainer[CompetencyScore]
+    integrity: IntegritySummary
+    def __init__(self, application_id: _Optional[str] = ..., candidate_user_id: _Optional[str] = ..., state: _Optional[str] = ..., executive_summary: _Optional[str] = ..., highlights: _Optional[_Iterable[str]] = ..., risks: _Optional[_Iterable[str]] = ..., overall_score: _Optional[float] = ..., recommendation: _Optional[str] = ..., competency_scores: _Optional[_Iterable[_Union[CompetencyScore, _Mapping]]] = ..., integrity: _Optional[_Union[IntegritySummary, _Mapping]] = ...) -> None: ...
 
 class ReportList(_message.Message):
     __slots__ = ("reports",)
