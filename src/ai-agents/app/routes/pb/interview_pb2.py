@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1d\x61pp/routes/pb/interview.proto\x12\x15\x61iagents.interview.v1\"/\n\x15StartInterviewRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\"$\n\x10QuestionResponse\x12\x10\n\x08question\x18\x01 \x01(\t\";\n\x11SubmitTurnRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x0e\n\x06\x61nswer\x18\x02 \x01(\t\".\n\x0cTurnResponse\x12\x0c\n\x04\x64one\x18\x01 \x01(\x08\x12\x10\n\x08question\x18\x02 \x01(\t\";\n\x0cProctorEvent\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\n\n\x02\x61t\x18\x02 \x01(\t\x12\x11\n\tmeta_json\x18\x03 \x01(\t\"c\n\x14ProctorEventsRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x33\n\x06\x65vents\x18\x02 \x03(\x0b\x32#.aiagents.interview.v1.ProctorEvent\"#\n\x0fProctorAccepted\x12\x10\n\x08\x61\x63\x63\x65pted\x18\x01 \x01(\x05\")\n\x0fRtcTokenRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\"<\n\x10RtcTokenResponse\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\r\n\x05token\x18\x02 \x01(\t\x12\x0c\n\x04room\x18\x03 \x01(\t2\xa1\x03\n\x10InterviewService\x12g\n\x0eStartInterview\x12,.aiagents.interview.v1.StartInterviewRequest\x1a\'.aiagents.interview.v1.QuestionResponse\x12[\n\nSubmitTurn\x12(.aiagents.interview.v1.SubmitTurnRequest\x1a#.aiagents.interview.v1.TurnResponse\x12j\n\x13RecordProctorEvents\x12+.aiagents.interview.v1.ProctorEventsRequest\x1a&.aiagents.interview.v1.ProctorAccepted\x12[\n\x08RtcToken\x12&.aiagents.interview.v1.RtcTokenRequest\x1a\'.aiagents.interview.v1.RtcTokenResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1d\x61pp/routes/pb/interview.proto\x12\x15\x61iagents.interview.v1\"/\n\x15StartInterviewRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\"$\n\x10QuestionResponse\x12\x10\n\x08question\x18\x01 \x01(\t\";\n\x11SubmitTurnRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x0e\n\x06\x61nswer\x18\x02 \x01(\t\".\n\x0cTurnResponse\x12\x0c\n\x04\x64one\x18\x01 \x01(\x08\x12\x10\n\x08question\x18\x02 \x01(\t\";\n\x0cProctorEvent\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\n\n\x02\x61t\x18\x02 \x01(\t\x12\x11\n\tmeta_json\x18\x03 \x01(\t\"c\n\x14ProctorEventsRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x33\n\x06\x65vents\x18\x02 \x03(\x0b\x32#.aiagents.interview.v1.ProctorEvent\"G\n\x0fProctorAccepted\x12\x10\n\x08\x61\x63\x63\x65pted\x18\x01 \x01(\x05\x12\x12\n\nterminated\x18\x02 \x01(\x08\x12\x0e\n\x06reason\x18\x03 \x01(\t\")\n\x0fRtcTokenRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\"<\n\x10RtcTokenResponse\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\r\n\x05token\x18\x02 \x01(\t\x12\x0c\n\x04room\x18\x03 \x01(\t2\xa1\x03\n\x10InterviewService\x12g\n\x0eStartInterview\x12,.aiagents.interview.v1.StartInterviewRequest\x1a\'.aiagents.interview.v1.QuestionResponse\x12[\n\nSubmitTurn\x12(.aiagents.interview.v1.SubmitTurnRequest\x1a#.aiagents.interview.v1.TurnResponse\x12j\n\x13RecordProctorEvents\x12+.aiagents.interview.v1.ProctorEventsRequest\x1a&.aiagents.interview.v1.ProctorAccepted\x12[\n\x08RtcToken\x12&.aiagents.interview.v1.RtcTokenRequest\x1a\'.aiagents.interview.v1.RtcTokenResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -44,11 +44,11 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_PROCTOREVENTSREQUEST']._serialized_start=313
   _globals['_PROCTOREVENTSREQUEST']._serialized_end=412
   _globals['_PROCTORACCEPTED']._serialized_start=414
-  _globals['_PROCTORACCEPTED']._serialized_end=449
-  _globals['_RTCTOKENREQUEST']._serialized_start=451
-  _globals['_RTCTOKENREQUEST']._serialized_end=492
-  _globals['_RTCTOKENRESPONSE']._serialized_start=494
-  _globals['_RTCTOKENRESPONSE']._serialized_end=554
-  _globals['_INTERVIEWSERVICE']._serialized_start=557
-  _globals['_INTERVIEWSERVICE']._serialized_end=974
+  _globals['_PROCTORACCEPTED']._serialized_end=485
+  _globals['_RTCTOKENREQUEST']._serialized_start=487
+  _globals['_RTCTOKENREQUEST']._serialized_end=528
+  _globals['_RTCTOKENRESPONSE']._serialized_start=530
+  _globals['_RTCTOKENRESPONSE']._serialized_end=590
+  _globals['_INTERVIEWSERVICE']._serialized_start=593
+  _globals['_INTERVIEWSERVICE']._serialized_end=1010
 # @@protoc_insertion_point(module_scope)

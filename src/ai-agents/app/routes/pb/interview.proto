@@ -43,6 +43,8 @@ message ProctorEventsRequest {
 
 message ProctorAccepted {
   int32 accepted = 1;
+  bool terminated = 2;   // a HIGH-severity event ended the session
+  string reason = 3;     // triggering event type when terminated, else ""
 }
 
 message RtcTokenRequest {

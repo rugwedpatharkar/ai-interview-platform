@@ -53,10 +53,14 @@ class ProctorEventsRequest(_message.Message):
     def __init__(self, application_id: _Optional[str] = ..., events: _Optional[_Iterable[_Union[ProctorEvent, _Mapping]]] = ...) -> None: ...
 
 class ProctorAccepted(_message.Message):
-    __slots__ = ("accepted",)
+    __slots__ = ("accepted", "terminated", "reason")
     ACCEPTED_FIELD_NUMBER: _ClassVar[int]
+    TERMINATED_FIELD_NUMBER: _ClassVar[int]
+    REASON_FIELD_NUMBER: _ClassVar[int]
     accepted: int
-    def __init__(self, accepted: _Optional[int] = ...) -> None: ...
+    terminated: bool
+    reason: str
+    def __init__(self, accepted: _Optional[int] = ..., terminated: _Optional[bool] = ..., reason: _Optional[str] = ...) -> None: ...
 
 class RtcTokenRequest(_message.Message):
     __slots__ = ("application_id",)
