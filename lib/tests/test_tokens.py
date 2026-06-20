@@ -16,6 +16,20 @@ def test_access_token_roundtrip_carries_aud_and_iss():
     assert claims["aud"] == "interview-platform"
 
 
+def test_access_token_sid_claim_is_optional_and_additive():
+    svc = TokenService(SECRET)
+    # sid (the refresh-session id) is included only when supplied; callers unchanged.
+    with_sid = svc.decode(
+        svc.access_token("u1", "candidate", None, "j1", sid="s1"),
+        expected_type="access",
+    )
+    assert with_sid["sid"] == "s1"
+    without = svc.decode(
+        svc.access_token("u1", "candidate", None, "j1"), expected_type="access"
+    )
+    assert "sid" not in without
+
+
 def test_decode_rejects_foreign_audience():
     # A token signed with the same secret but a different audience must be rejected.
     now = datetime.now(UTC)

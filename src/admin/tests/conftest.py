@@ -84,6 +84,7 @@ class FakeRedis:
         self.kv: dict[str, str] = {}
         self.ttls: dict[str, int] = {}
         self.sets: dict[str, set] = {}
+        self.hashes: dict[str, dict] = {}
 
     async def incr(self, key):
         # incr + get share kv (as real Redis does), so RateLimiter.peek reads it.
@@ -104,10 +105,11 @@ class FakeRedis:
         return self.kv.get(key)
 
     async def delete(self, key):
-        existed = key in self.kv or key in self.sets
+        existed = key in self.kv or key in self.sets or key in self.hashes
         self.kv.pop(key, None)
         self.sets.pop(key, None)
         self.ttls.pop(key, None)
+        self.hashes.pop(key, None)
         return 1 if existed else 0
 
     async def exists(self, key):
@@ -121,6 +123,17 @@ class FakeRedis:
 
     async def srem(self, key, *members):
         self.sets.get(key, set()).difference_update(members)
+
+    async def hset(self, key, mapping=None, **kwargs):
+        h = self.hashes.setdefault(key, {})
+        if mapping:
+            h.update(mapping)
+        if kwargs:
+            h.update(kwargs)
+        return len(mapping or kwargs)
+
+    async def hgetall(self, key):
+        return dict(self.hashes.get(key, {}))
 
     async def eval(self, script, numkeys, *keys_and_args):
         # Model Redis's atomic EVAL for revoke_user: delete each jti key in the user's

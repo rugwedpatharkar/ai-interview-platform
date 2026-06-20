@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from redis.asyncio import Redis
 
 from lib.logging import get_logger
@@ -46,7 +48,18 @@ class RefreshSessionStore:
     def _user_key(self, user_id: str) -> str:
         return f"{self._ns}:user:{user_id}"
 
-    async def allow(self, user_id: str, jti: str, ttl_seconds: int) -> None:
+    def _meta_key(self, jti: str) -> str:
+        return f"{self._ns}:meta:{jti}"
+
+    async def allow(
+        self,
+        user_id: str,
+        jti: str,
+        ttl_seconds: int,
+        *,
+        ip: str = "",
+        user_agent: str = "",
+    ) -> None:
         try:
             await with_timeout(
                 self._r.set(self._jti_key(jti), user_id, ex=ttl_seconds),
@@ -62,6 +75,27 @@ class RefreshSessionStore:
                 self._r.expire(self._user_key(user_id), ttl_seconds),
                 self._timeout_s,
                 op="sessions.allow.expire",
+            )
+            # Per-jti display metadata for the sessions list (ip/ua, when it started).
+            # Shares the jti TTL; not listed once revoke() srem's the jti from the set.
+            now = datetime.now(UTC).isoformat()
+            await with_timeout(
+                self._r.hset(
+                    self._meta_key(jti),
+                    mapping={
+                        "ip": ip,
+                        "user_agent": user_agent,
+                        "created_at": now,
+                        "last_seen": now,
+                    },
+                ),
+                self._timeout_s,
+                op="sessions.allow.meta",
+            )
+            await with_timeout(
+                self._r.expire(self._meta_key(jti), ttl_seconds),
+                self._timeout_s,
+                op="sessions.allow.meta_expire",
             )
         except Exception:
             log.error("sessions.allow_failed jti={} user_id={}", jti, user_id)
@@ -110,6 +144,42 @@ class RefreshSessionStore:
         except Exception:
             log.error("sessions.revoke_user_failed user_id={}", user_id)
             raise
+
+    async def list_for_user(self, user_id: str) -> list[dict]:
+        """Active refresh sessions for a user: [{jti, meta}], most-recent set members.
+
+        The user set is the source of truth; a still-active jti (key not yet expired) is
+        included with its meta hash. Stale set entries whose jti key has expired are
+        skipped, so the list never shows a revoked/expired session.
+        """
+        jtis = await with_timeout(
+            self._r.smembers(self._user_key(user_id)),
+            self._timeout_s,
+            op="sessions.list.smembers",
+        )
+        out = []
+        for jti in jtis:
+            if not await self.is_active(jti):
+                continue
+            meta = await with_timeout(
+                self._r.hgetall(self._meta_key(jti)),
+                self._timeout_s,
+                op="sessions.list.hgetall",
+            )
+            out.append({"jti": jti, "meta": dict(meta)})
+        return out
+
+    async def revoke_all_except(self, user_id: str, current_jti: str) -> None:
+        """Revoke every refresh jti for the user except `current_jti` (keep-this-device
+        logout — password change / 'log out everywhere else')."""
+        jtis = await with_timeout(
+            self._r.smembers(self._user_key(user_id)),
+            self._timeout_s,
+            op="sessions.revoke_others.smembers",
+        )
+        for jti in jtis:
+            if jti != current_jti:
+                await self.revoke(jti)
 
 
 class SingleUseTokenStore:

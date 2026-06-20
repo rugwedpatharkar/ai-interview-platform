@@ -58,17 +58,21 @@ class TokenService:
             algorithm=self._alg,
         )
 
-    def access_token(self, sub: str, role: str, comp_id: str | None, jti: str) -> str:
-        return self._encode(
-            {
-                "sub": sub,
-                "role": role,
-                "comp_id": comp_id,
-                "jti": jti,
-                "type": "access",
-            },
-            self._access_minutes,
-        )
+    def access_token(
+        self, sub: str, role: str, comp_id: str | None, jti: str, sid: str | None = None
+    ) -> str:
+        # `sid` binds the access token to its refresh-session jti so settings can show
+        # "this device" + keep-current on revoke. Additive: included only when supplied.
+        claims = {
+            "sub": sub,
+            "role": role,
+            "comp_id": comp_id,
+            "jti": jti,
+            "type": "access",
+        }
+        if sid is not None:
+            claims["sid"] = sid
+        return self._encode(claims, self._access_minutes)
 
     def refresh_token(self, sub: str, jti: str) -> str:
         return self._encode(
