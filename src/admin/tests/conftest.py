@@ -1,4 +1,9 @@
+from datetime import UTC, datetime
+
 import pytest
+
+# Fixed stand-in timestamp for fake transition records (deterministic in tests).
+_NOW = datetime(2026, 6, 20, tzinfo=UTC)
 
 
 class FakeUserRepo:
@@ -261,14 +266,17 @@ class FakeApplicationRepo:
         return self._docs.get(application_id)
 
     async def set_state(self, application_id, state):
-        if application_id in self._docs:
-            self._docs[application_id]["state"] = state
+        doc = self._docs.get(application_id)
+        if doc is not None:
+            doc["state"] = state
+            doc.setdefault("transitions", []).append({"state": state, "at": _NOW})
 
     async def set_state_if(self, application_id, expected_current, new):
         doc = self._docs.get(application_id)
         if doc is None or doc["state"] != expected_current:
             return False
         doc["state"] = new
+        doc.setdefault("transitions", []).append({"state": new, "at": _NOW})
         return True
 
 

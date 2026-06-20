@@ -93,6 +93,38 @@ async def test_advance_application_updates_state_and_audits(fakes):
 
 
 @pytest.mark.asyncio
+async def test_advance_records_transition_timing(fakes):
+    # The funnel CAS appends a {state, at} entry to the application's transitions log so
+    # CompanyProfile / Analytics can derive stage timings (applied -> first decision).
+    app_id = await fakes["applications"].insert(
+        Application(comp_id="c1", job_id="j1", candidate_user_id="u1", state="applied")
+    )
+    assert (await fakes["applications"].get(app_id))["transitions"] == []
+    await funnel.advance_application(
+        app_id,
+        "application.created",
+        {},
+        applications=fakes["applications"],
+        audit=fakes["audit"],
+    )
+    transitions = (await fakes["applications"].get(app_id))["transitions"]
+    assert len(transitions) == 1
+    assert transitions[0]["state"] == "aptitude_pending"
+    assert transitions[0]["at"] is not None
+
+
+@pytest.mark.asyncio
+async def test_failed_cas_records_no_transition(fakes):
+    app_id = await fakes["applications"].insert(
+        Application(comp_id="c1", job_id="j1", candidate_user_id="u1", state="applied")
+    )
+    # CAS miss (wrong expected state) must not append a transition.
+    moved = await fakes["applications"].set_state_if(app_id, "scored", "hired")
+    assert moved is False
+    assert (await fakes["applications"].get(app_id))["transitions"] == []
+
+
+@pytest.mark.asyncio
 async def test_advance_unknown_application_raises(fakes):
     with pytest.raises(NotFoundError):
         await funnel.advance_application(

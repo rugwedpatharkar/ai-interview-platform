@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from bson import ObjectId
 from bson.errors import InvalidId
 from lib.mongodb import BaseRepository
@@ -10,6 +12,10 @@ def _oid(application_id: str) -> ObjectId | None:
         return ObjectId(application_id)
     except InvalidId:
         return None
+
+
+def _transition(state: str) -> dict:
+    return {"state": state, "at": datetime.now(UTC)}
 
 
 class ApplicationRepository(BaseRepository[Application]):
@@ -37,18 +43,26 @@ class ApplicationRepository(BaseRepository[Application]):
         return await self.find_capped({"comp_id": comp_id})
 
     async def set_state(self, application_id: str, state: str) -> None:
-        await self.update(application_id, {"state": state})
+        oid = _oid(application_id)
+        if oid is None:
+            return
+        await self.col.update_one(
+            {"_id": oid},
+            {"$set": {"state": state}, "$push": {"transitions": _transition(state)}},
+        )
 
     async def set_state_if(
         self, application_id: str, expected_current: str, new: str
     ) -> bool:
         """Compare-and-swap the funnel state. Returns False when the row is not in
         `expected_current` (already advanced, missing, or a malformed id), so callers
-        can treat a redelivery/race as a no-op instead of clobbering state."""
+        can treat a redelivery/race as a no-op instead of clobbering state. On success
+        appends a {state, at} entry to `transitions` for stage-timing analytics."""
         oid = _oid(application_id)
         if oid is None:
             return False
         res = await self.col.update_one(
-            {"_id": oid, "state": expected_current}, {"$set": {"state": new}}
+            {"_id": oid, "state": expected_current},
+            {"$set": {"state": new}, "$push": {"transitions": _transition(new)}},
         )
         return res.modified_count == 1
