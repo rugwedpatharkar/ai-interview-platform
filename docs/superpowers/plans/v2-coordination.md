@@ -266,3 +266,20 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   `CandidateEraser` cascades `delete_by_user`. **REST → no proto, no `pnpm gen`** — FE flips
   `makePracticeClient` off its mock (already built per `practice-feedback.md`). **Remaining BE:** L3
   Scheduling → L2 Team → L1 Settings/2FA remainder.
+- 2026-06-20 · BE · ✅ **L3 SchedulingService LANDED** (full gate GREEN; admin = **21** services). New
+  `admin.scheduling.v1.SchedulingService` (8 RPCs: ProposeSlots/Reschedule/GetSchedule/ChooseSlot/
+  Cancel/GetIcs/ListCandidateInterviews/ListCompanyBookings). **Funnel-adjacent — never writes funnel
+  state;** its own status machine (`proposed|booked|completed|cancelled`) + a **`version` CAS** on
+  `interview_bookings` (unique `application_id` = the 1:1 invariant). **Double-booking CAS:** `ChooseSlot`
+  validates the time ∈ offered slots → `INVALID_ARGUMENT` **before** any write, then `choose_if_proposed`
+  (filter `status==proposed AND version==expected`); a lost race → **`ALREADY_EXISTS`** (first pick wins).
+  Ready-gate reads `application.state ∈ {interview_pending, shortlisted}` else `INVALID_ARGUMENT`. Authz
+  reuses `decision._require_manager/_scoped` (manager) + `aptitude._owned` (candidate); write RPCs
+  rate-limited → `RESOURCE_EXHAUSTED`. All datetimes **UTC ISO** on the wire. **ICS** hand-rolled (RFC-5545
+  `VEVENT`, stable UID + `SEQUENCE=version`) — **no new dependency** (deviated from the spec's `icalendar`).
+  Reminder sweep (T-24h/T-1h, once each via per-flag CAS) + `complete_past` wired into `run_schedulers`
+  (system job). Both collections cascade in `CandidateEraser` by `application_id`. `pnpm gen` emitted
+  `scheduling_pb.ts`. **FE:** add the `scheduling` quad to `api-client/index.ts` + flip the candidate
+  `/schedule` page + the company applicant **Schedule** tab off `NEXT_PUBLIC_MOCK` (per `scheduling.md`).
+  ICS job-title/attendee enrichment + recruiter-side notifications (no single recruiter user_id on the
+  application) are best-effort follow-ons. **Remaining BE:** L2 Team → L1 Settings/2FA remainder.
