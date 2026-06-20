@@ -75,6 +75,13 @@
   --shadow: 0 1px 2px oklch(0 0 0 / 0.3), 0 12px 32px oklch(0 0 0 / 0.4);
   --grain-opacity: 0.05;
   --accent-l: 0.86;  /* lift accent slightly for dark surfaces */
+  /* Re-derive: custom props that reference other custom props resolve at their
+     declaring scope, so the accent ramp must be re-declared here to pick up the
+     dark --accent-l (and any --accent-h/-c override below it). */
+  --accent:        oklch(var(--accent-l) var(--accent-c) var(--accent-h));
+  --accent-strong: oklch(0.74 var(--accent-c) var(--accent-h));
+  --accent-soft:   oklch(0.92 0.06 var(--accent-h));
+  --accent-ink:    oklch(0.27 0.07 var(--accent-h));
 }
 
 * { box-sizing: border-box; }
