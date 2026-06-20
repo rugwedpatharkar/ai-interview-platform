@@ -6,6 +6,7 @@ package admin.job.v1;
 // metadata; jobs are scoped to the caller's company (comp_id from the token).
 service JobService {
   rpc CreateJob(CreateJobRequest) returns (JobResponse);
+  rpc UpdateJob(UpdateJobRequest) returns (JobResponse);
   rpc GetJob(GetJobRequest) returns (JobResponse);
   rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
   rpc PublishJob(PublishJobRequest) returns (JobResponse);
@@ -22,6 +23,33 @@ message PublicJob {
 message CreateJobRequest {
   string title = 1;
   string jd_text = 2;
+  // Additive marketplace fields (all optional).
+  string city = 3;
+  string region = 4;
+  string country = 5;
+  string remote_mode = 6;       // "remote" | "hybrid" | "onsite"
+  string employment_type = 7;   // "full_time" | "contract" | "internship"
+  int64 salary_min = 8;
+  int64 salary_max = 9;
+  string salary_currency = 10;  // ISO 4217, e.g. "USD"
+  repeated string skills = 11;  // lowercased + de-duped on write
+  string gate_mode = 12;        // "auto" | "advisory" (default auto)
+}
+
+message UpdateJobRequest {
+  string job_id = 1;
+  string title = 2;
+  string jd_text = 3;
+  string city = 4;
+  string region = 5;
+  string country = 6;
+  string remote_mode = 7;
+  string employment_type = 8;
+  int64 salary_min = 9;
+  int64 salary_max = 10;
+  string salary_currency = 11;
+  repeated string skills = 12;
+  string gate_mode = 13;
 }
 
 message GetJobRequest {
@@ -39,6 +67,18 @@ message JobResponse {
   string comp_id = 2;
   string title = 3;
   string status = 4;
+  // Additive marketplace echoes.
+  string city = 5;
+  string region = 6;
+  string country = 7;
+  string remote_mode = 8;
+  string employment_type = 9;
+  int64 salary_min = 10;
+  int64 salary_max = 11;
+  string salary_currency = 12;
+  repeated string skills = 13;
+  string gate_mode = 14;
+  string posted_at = 15;  // ISO; empty for drafts
 }
 
 message ListJobsResponse {

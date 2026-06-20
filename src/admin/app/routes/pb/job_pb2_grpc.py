@@ -41,6 +41,11 @@ class JobServiceStub:
                 request_serializer=app_dot_routes_dot_pb_dot_job__pb2.CreateJobRequest.SerializeToString,
                 response_deserializer=app_dot_routes_dot_pb_dot_job__pb2.JobResponse.FromString,
                 _registered_method=True)
+        self.UpdateJob = channel.unary_unary(
+                '/admin.job.v1.JobService/UpdateJob',
+                request_serializer=app_dot_routes_dot_pb_dot_job__pb2.UpdateJobRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_job__pb2.JobResponse.FromString,
+                _registered_method=True)
         self.GetJob = channel.unary_unary(
                 '/admin.job.v1.JobService/GetJob',
                 request_serializer=app_dot_routes_dot_pb_dot_job__pb2.GetJobRequest.SerializeToString,
@@ -69,6 +74,12 @@ class JobServiceServicer:
     """
 
     def CreateJob(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UpdateJob(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -105,6 +116,11 @@ def add_JobServiceServicer_to_server(servicer, server):
             'CreateJob': grpc.unary_unary_rpc_method_handler(
                     servicer.CreateJob,
                     request_deserializer=app_dot_routes_dot_pb_dot_job__pb2.CreateJobRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_job__pb2.JobResponse.SerializeToString,
+            ),
+            'UpdateJob': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateJob,
+                    request_deserializer=app_dot_routes_dot_pb_dot_job__pb2.UpdateJobRequest.FromString,
                     response_serializer=app_dot_routes_dot_pb_dot_job__pb2.JobResponse.SerializeToString,
             ),
             'GetJob': grpc.unary_unary_rpc_method_handler(
@@ -156,6 +172,33 @@ class JobService:
             target,
             '/admin.job.v1.JobService/CreateJob',
             app_dot_routes_dot_pb_dot_job__pb2.CreateJobRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_job__pb2.JobResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpdateJob(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.job.v1.JobService/UpdateJob',
+            app_dot_routes_dot_pb_dot_job__pb2.UpdateJobRequest.SerializeToString,
             app_dot_routes_dot_pb_dot_job__pb2.JobResponse.FromString,
             options,
             channel_credentials,

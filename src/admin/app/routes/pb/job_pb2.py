@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17\x61pp/routes/pb/job.proto\x12\x0c\x61\x64min.job.v1\";\n\tPublicJob\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\r\n\x05title\x18\x02 \x01(\t\x12\x0f\n\x07jd_text\x18\x03 \x01(\t\"2\n\x10\x43reateJobRequest\x12\r\n\x05title\x18\x01 \x01(\t\x12\x0f\n\x07jd_text\x18\x02 \x01(\t\"\x1f\n\rGetJobRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"#\n\x11PublishJobRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"\x11\n\x0fListJobsRequest\"M\n\x0bJobResponse\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x0f\n\x07\x63omp_id\x18\x02 \x01(\t\x12\r\n\x05title\x18\x03 \x01(\t\x12\x0e\n\x06status\x18\x04 \x01(\t\";\n\x10ListJobsResponse\x12\'\n\x04jobs\x18\x01 \x03(\x0b\x32\x19.admin.job.v1.JobResponse2\xf1\x02\n\nJobService\x12\x46\n\tCreateJob\x12\x1e.admin.job.v1.CreateJobRequest\x1a\x19.admin.job.v1.JobResponse\x12@\n\x06GetJob\x12\x1b.admin.job.v1.GetJobRequest\x1a\x19.admin.job.v1.JobResponse\x12I\n\x08ListJobs\x12\x1d.admin.job.v1.ListJobsRequest\x1a\x1e.admin.job.v1.ListJobsResponse\x12H\n\nPublishJob\x12\x1f.admin.job.v1.PublishJobRequest\x1a\x19.admin.job.v1.JobResponse\x12\x44\n\x0cGetPublicJob\x12\x1b.admin.job.v1.GetJobRequest\x1a\x17.admin.job.v1.PublicJobb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17\x61pp/routes/pb/job.proto\x12\x0c\x61\x64min.job.v1\";\n\tPublicJob\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\r\n\x05title\x18\x02 \x01(\t\x12\x0f\n\x07jd_text\x18\x03 \x01(\t\"\xf3\x01\n\x10\x43reateJobRequest\x12\r\n\x05title\x18\x01 \x01(\t\x12\x0f\n\x07jd_text\x18\x02 \x01(\t\x12\x0c\n\x04\x63ity\x18\x03 \x01(\t\x12\x0e\n\x06region\x18\x04 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x05 \x01(\t\x12\x13\n\x0bremote_mode\x18\x06 \x01(\t\x12\x17\n\x0f\x65mployment_type\x18\x07 \x01(\t\x12\x12\n\nsalary_min\x18\x08 \x01(\x03\x12\x12\n\nsalary_max\x18\t \x01(\x03\x12\x17\n\x0fsalary_currency\x18\n \x01(\t\x12\x0e\n\x06skills\x18\x0b \x03(\t\x12\x11\n\tgate_mode\x18\x0c \x01(\t\"\x83\x02\n\x10UpdateJobRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\r\n\x05title\x18\x02 \x01(\t\x12\x0f\n\x07jd_text\x18\x03 \x01(\t\x12\x0c\n\x04\x63ity\x18\x04 \x01(\t\x12\x0e\n\x06region\x18\x05 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x06 \x01(\t\x12\x13\n\x0bremote_mode\x18\x07 \x01(\t\x12\x17\n\x0f\x65mployment_type\x18\x08 \x01(\t\x12\x12\n\nsalary_min\x18\t \x01(\x03\x12\x12\n\nsalary_max\x18\n \x01(\x03\x12\x17\n\x0fsalary_currency\x18\x0b \x01(\t\x12\x0e\n\x06skills\x18\x0c \x03(\t\x12\x11\n\tgate_mode\x18\r \x01(\t\"\x1f\n\rGetJobRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"#\n\x11PublishJobRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"\x11\n\x0fListJobsRequest\"\xa1\x02\n\x0bJobResponse\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x0f\n\x07\x63omp_id\x18\x02 \x01(\t\x12\r\n\x05title\x18\x03 \x01(\t\x12\x0e\n\x06status\x18\x04 \x01(\t\x12\x0c\n\x04\x63ity\x18\x05 \x01(\t\x12\x0e\n\x06region\x18\x06 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x07 \x01(\t\x12\x13\n\x0bremote_mode\x18\x08 \x01(\t\x12\x17\n\x0f\x65mployment_type\x18\t \x01(\t\x12\x12\n\nsalary_min\x18\n \x01(\x03\x12\x12\n\nsalary_max\x18\x0b \x01(\x03\x12\x17\n\x0fsalary_currency\x18\x0c \x01(\t\x12\x0e\n\x06skills\x18\r \x03(\t\x12\x11\n\tgate_mode\x18\x0e \x01(\t\x12\x11\n\tposted_at\x18\x0f \x01(\t\";\n\x10ListJobsResponse\x12\'\n\x04jobs\x18\x01 \x03(\x0b\x32\x19.admin.job.v1.JobResponse2\xb9\x03\n\nJobService\x12\x46\n\tCreateJob\x12\x1e.admin.job.v1.CreateJobRequest\x1a\x19.admin.job.v1.JobResponse\x12\x46\n\tUpdateJob\x12\x1e.admin.job.v1.UpdateJobRequest\x1a\x19.admin.job.v1.JobResponse\x12@\n\x06GetJob\x12\x1b.admin.job.v1.GetJobRequest\x1a\x19.admin.job.v1.JobResponse\x12I\n\x08ListJobs\x12\x1d.admin.job.v1.ListJobsRequest\x1a\x1e.admin.job.v1.ListJobsResponse\x12H\n\nPublishJob\x12\x1f.admin.job.v1.PublishJobRequest\x1a\x19.admin.job.v1.JobResponse\x12\x44\n\x0cGetPublicJob\x12\x1b.admin.job.v1.GetJobRequest\x1a\x17.admin.job.v1.PublicJobb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,18 +33,20 @@ if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_PUBLICJOB']._serialized_start=41
   _globals['_PUBLICJOB']._serialized_end=100
-  _globals['_CREATEJOBREQUEST']._serialized_start=102
-  _globals['_CREATEJOBREQUEST']._serialized_end=152
-  _globals['_GETJOBREQUEST']._serialized_start=154
-  _globals['_GETJOBREQUEST']._serialized_end=185
-  _globals['_PUBLISHJOBREQUEST']._serialized_start=187
-  _globals['_PUBLISHJOBREQUEST']._serialized_end=222
-  _globals['_LISTJOBSREQUEST']._serialized_start=224
-  _globals['_LISTJOBSREQUEST']._serialized_end=241
-  _globals['_JOBRESPONSE']._serialized_start=243
-  _globals['_JOBRESPONSE']._serialized_end=320
-  _globals['_LISTJOBSRESPONSE']._serialized_start=322
-  _globals['_LISTJOBSRESPONSE']._serialized_end=381
-  _globals['_JOBSERVICE']._serialized_start=384
-  _globals['_JOBSERVICE']._serialized_end=753
+  _globals['_CREATEJOBREQUEST']._serialized_start=103
+  _globals['_CREATEJOBREQUEST']._serialized_end=346
+  _globals['_UPDATEJOBREQUEST']._serialized_start=349
+  _globals['_UPDATEJOBREQUEST']._serialized_end=608
+  _globals['_GETJOBREQUEST']._serialized_start=610
+  _globals['_GETJOBREQUEST']._serialized_end=641
+  _globals['_PUBLISHJOBREQUEST']._serialized_start=643
+  _globals['_PUBLISHJOBREQUEST']._serialized_end=678
+  _globals['_LISTJOBSREQUEST']._serialized_start=680
+  _globals['_LISTJOBSREQUEST']._serialized_end=697
+  _globals['_JOBRESPONSE']._serialized_start=700
+  _globals['_JOBRESPONSE']._serialized_end=989
+  _globals['_LISTJOBSRESPONSE']._serialized_start=991
+  _globals['_LISTJOBSRESPONSE']._serialized_end=1050
+  _globals['_JOBSERVICE']._serialized_start=1053
+  _globals['_JOBSERVICE']._serialized_end=1494
 # @@protoc_insertion_point(module_scope)
