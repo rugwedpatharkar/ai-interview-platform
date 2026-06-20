@@ -32,15 +32,22 @@ import {
   Sparkles,
   Video,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "../lib/auth";
 import { ApplicationCard } from "./application-card";
-import { AssistantChat } from "./assistant-chat";
 import { CandidateShell } from "./candidate-shell";
 import { CandidateChecklist } from "./onboarding/candidate-checklist";
 import { RecommendedRoles } from "./recommended-roles";
+
+// Heavy, below-the-fold, client-only widget — load it lazily so it stays out of
+// the initial dashboard bundle.
+const AssistantChat = dynamic(
+  () => import("./assistant-chat").then((m) => m.AssistantChat),
+  { ssr: false, loading: () => null },
+);
 
 export function Dashboard() {
   const { api, token, identity } = useAuth();

@@ -12,11 +12,18 @@ import {
 } from "@ip/ui";
 import { errorMessage, useAuthedQuery } from "@ip/shared";
 import { ArrowRight, FileText, Plus } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 
-import { AssistantChat } from "../../components/assistant-chat";
 import { CompanyShell } from "../../components/company-shell";
 import { useAuth } from "../../lib/auth";
+
+// Heavy, below-the-fold, client-only widget — load it lazily so it stays out of
+// the initial bundle.
+const AssistantChat = dynamic(
+  () => import("../../components/assistant-chat").then((m) => m.AssistantChat),
+  { ssr: false, loading: () => null },
+);
 
 const STATUS_HINT: Record<string, string> = {
   draft: "Not yet visible to candidates",

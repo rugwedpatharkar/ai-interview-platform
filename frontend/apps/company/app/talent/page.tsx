@@ -2,6 +2,7 @@
 
 import {
   Badge,
+  Button,
   EmptyState,
   ErrorState,
   PageHeader,
@@ -15,14 +16,20 @@ import { CandidateSearch } from "../../components/candidate-search";
 import { CompanyShell } from "../../components/company-shell";
 import { useAuth } from "../../lib/auth";
 
+// Render-bound: cap the pool view at PAGE rows, reveal the rest on demand so a large
+// talent pool never mounts every row at once.
+const PAGE = 30;
+
 export default function TalentPage() {
   const { api, token } = useAuth();
   const [searching, setSearching] = useState(false);
+  const [shown, setShown] = useState(PAGE);
   const pool = useAuthedQuery(token, {
     queryKey: ["talent"],
     queryFn: () => api.talent.getTalentPool({}),
   });
   const entries = pool.data?.entries ?? [];
+  const visible = entries.slice(0, shown);
 
   return (
     <CompanyShell>
@@ -57,7 +64,7 @@ export default function TalentPage() {
               <>
                 {/* Stacked cards on narrow viewports keep the id + count readable at ~375px. */}
                 <div className="flex flex-col gap-3 sm:hidden">
-                  {entries.map((e, i) => (
+                  {visible.map((e, i) => (
                     <div
                       key={e.candidateUserId}
                       className="flex animate-rise-in items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4"
@@ -86,7 +93,7 @@ export default function TalentPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {entries.map((e, i) => (
+                      {visible.map((e, i) => (
                         <tr
                           key={e.candidateUserId}
                           className="animate-rise-in border-b border-border transition-colors last:border-b-0 hover:bg-surface-muted"
@@ -106,6 +113,16 @@ export default function TalentPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {entries.length > shown && (
+                  <Button
+                    variant="outline"
+                    className="self-center"
+                    onClick={() => setShown((n) => n + PAGE)}
+                  >
+                    Show more ({entries.length - shown})
+                  </Button>
+                )}
               </>
             )}
           </>

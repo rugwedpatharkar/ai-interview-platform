@@ -34,6 +34,10 @@ const STAGES = [
   ["rejected", "Rejected"],
 ] as const;
 
+// Render-bound: cap the result rows, reveal more on demand so a broad search never
+// mounts every hit at once.
+const PAGE = 30;
+
 // Searches the company's OWN applicants only (the mock stands in until SourcingService
 // lands). The query fires only when non-empty; the parent hides the full pool while active.
 export function CandidateSearch({ onActive }: { onActive: (active: boolean) => void }) {
@@ -41,6 +45,7 @@ export function CandidateSearch({ onActive }: { onActive: (active: boolean) => v
   const client = makeMockSourcingClient();
   const [draft, setDraft] = useState("");
   const [params, setParams] = useState<SearchCandidatesParams>({ query: "" });
+  const [shown, setShown] = useState(PAGE);
   const active = params.query.trim().length > 0;
 
   const results = useQuery({
@@ -52,8 +57,11 @@ export function CandidateSearch({ onActive }: { onActive: (active: boolean) => v
   function submit(next: Partial<SearchCandidatesParams>) {
     const merged = { ...params, ...next, query: (next.query ?? draft).trim() };
     setParams(merged);
+    setShown(PAGE); // reset the render cap for each new search
     onActive(merged.query.length > 0);
   }
+
+  const hits = results.data?.hits ?? [];
 
   return (
     <Card>
@@ -108,14 +116,14 @@ export function CandidateSearch({ onActive }: { onActive: (active: boolean) => v
         {active && results.isError && (
           <ErrorState message={errorMessage(results.error)} retry={() => results.refetch()} />
         )}
-        {active && !results.isLoading && !results.isError && (results.data?.hits.length ?? 0) === 0 && (
+        {active && !results.isLoading && !results.isError && hits.length === 0 && (
           <EmptyState
             icon={SearchX}
             title="No candidates match"
             description="Try a different keyword, or widen the stage filter to see more applicants."
           />
         )}
-        {active && !results.isError && (results.data?.hits.length ?? 0) > 0 && (
+        {active && !results.isError && hits.length > 0 && (
           <div className="overflow-hidden rounded-xl border border-border bg-surface">
             <table className="w-full text-sm">
               <thead>
@@ -128,7 +136,7 @@ export function CandidateSearch({ onActive }: { onActive: (active: boolean) => v
                 </tr>
               </thead>
               <tbody>
-                {results.data!.hits.map((h, i) => {
+                {hits.slice(0, shown).map((h, i) => {
                   const stage = applicationStatus(h.topStage);
                   return (
                     <tr
@@ -165,6 +173,13 @@ export function CandidateSearch({ onActive }: { onActive: (active: boolean) => v
                 })}
               </tbody>
             </table>
+            {hits.length > shown && (
+              <div className="border-t border-border p-3 text-center">
+                <Button variant="outline" onClick={() => setShown((n) => n + PAGE)}>
+                  Show more ({hits.length - shown})
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

@@ -48,9 +48,9 @@
 
 - [x] D1. **Memoize** derived values + heavy maps (dashboard KPIs, funnel data, table row maps; stabilize
   callbacks) — zero memoization today.
-- [ ] D2. **List windowing** where a list can exceed ~50 rows (applicants, talent, notifications, messages)
+- [x] D2. **List windowing** where a list can exceed ~50 rows (applicants, talent, notifications, messages)
   — add `@tanstack/react-virtual` OR a pragmatic cap/"show more" if a dep is unwarranted.
-- [ ] D3. **Code-split** heavy/below-fold via `next/dynamic` (assistant chat, future editor/LiveKit/MediaPipe
+- [x] D3. **Code-split** heavy/below-fold via `next/dynamic` (assistant chat, future editor/LiveKit/MediaPipe
   stubs, charts).
 - [x] D4. **Onboarding fidelity** — `candidate-checklist`, `employer-firstrun`: remove raw `brand-*`, lay out
   to the card rhythm.

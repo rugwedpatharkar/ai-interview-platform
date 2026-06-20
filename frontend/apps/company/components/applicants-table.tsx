@@ -59,6 +59,10 @@ const ACTIONABLE = new Set(["scored", "shortlisted"]);
 // set so the row keeps polling until it transitions out of the queue.
 const REVIEW = new Set(["assessment_review"]);
 
+// Render-bound: cap how many rows mount at once. The cap is purely presentational —
+// selection, select-all, and stage counts all still reason over the full list.
+const RENDER_PAGE = 30;
+
 const POLL_MS = 10_000;
 // Cap background polling so a candidate stuck mid-funnel (e.g. an interview that never
 // completes) can't poll forever. ~20 min of 10s ticks, then the recruiter refreshes.
@@ -72,6 +76,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
   const queryClient = useQueryClient();
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [stage, setStage] = useState<Stage>("all");
+  const [shown, setShown] = useState(RENDER_PAGE);
 
   const applicants = useAuthedQuery(token, {
     queryKey: ["applicants", jobId],
@@ -161,6 +166,9 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
     );
 
   const allSelected = selectable.length > 0 && selectable.every((id) => sel.has(id));
+
+  // Capped render view — the cap bounds the DOM only; selection/counts use the full list.
+  const shownRows = visible.slice(0, shown);
 
   const stageCount = (key: Stage) => counts[key];
   const kpis = [
@@ -262,7 +270,10 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
               key={key}
               type="button"
               aria-pressed={active}
-              onClick={() => setStage(key)}
+              onClick={() => {
+                setStage(key);
+                setShown(RENDER_PAGE); // re-apply the render cap for the new stage
+              }}
               className={
                 active
                   ? "rounded-full border border-primary bg-primary/10 px-3 py-1 text-sm font-medium text-foreground"
@@ -291,7 +302,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
 
       {/* Stacked cards on narrow viewports — the table overflows at ~375px. */}
       <div className="flex flex-col gap-3 sm:hidden">
-        {visible.map((a, i) => {
+        {shownRows.map((a, i) => {
           const canSelect = selectable.includes(a.applicationId);
           return (
             <Card
@@ -338,7 +349,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {visible.map((a, i) => {
+            {shownRows.map((a, i) => {
               const canSelect = selectable.includes(a.applicationId);
               return (
                 <TableRow
@@ -373,6 +384,16 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
           </TableBody>
         </Table>
       </div>
+
+      {visible.length > shown && (
+        <Button
+          variant="outline"
+          className="self-center"
+          onClick={() => setShown((n) => n + RENDER_PAGE)}
+        >
+          Show more ({visible.length - shown})
+        </Button>
+      )}
     </div>
   );
 }

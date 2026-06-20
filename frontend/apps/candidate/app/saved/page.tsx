@@ -1,16 +1,21 @@
 "use client";
 
-import { EmptyState, ErrorState, Skeleton, buttonVariants, cn } from "@ip/ui";
+import { Button, EmptyState, ErrorState, Skeleton, buttonVariants, cn } from "@ip/ui";
 import { errorMessage, useRequireAuth } from "@ip/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Bookmark } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { CandidateShell } from "../../components/candidate-shell";
 import { JobCard } from "../../components/job-card";
 import { SaveJobButton } from "../../components/save-job-button";
 import { useAuth } from "../../lib/auth";
 import { savedJobsClient } from "../../lib/saved-jobs-client";
+
+// Render-bound: show the first batch, reveal more on demand so a large saved list
+// never mounts thousands of cards at once.
+const PAGE = 30;
 
 export default function SavedJobsPage() {
   const { token, ready } = useAuth();
@@ -20,6 +25,7 @@ export default function SavedJobsPage() {
     queryFn: () => savedJobsClient.list(),
     enabled: Boolean(token),
   });
+  const [shown, setShown] = useState(PAGE);
   if (!token) return null; // hydration guard
 
   const jobs = q.data ?? [];
@@ -63,9 +69,18 @@ export default function SavedJobsPage() {
             }
           />
         )}
-        {jobs.map((j) => (
+        {jobs.slice(0, shown).map((j) => (
           <JobCard key={j.jobId} job={j} action={<SaveJobButton jobId={j.jobId} />} />
         ))}
+        {jobs.length > shown && (
+          <Button
+            variant="outline"
+            className="self-center"
+            onClick={() => setShown((n) => n + PAGE)}
+          >
+            Show more ({jobs.length - shown})
+          </Button>
+        )}
       </div>
     </CandidateShell>
   );

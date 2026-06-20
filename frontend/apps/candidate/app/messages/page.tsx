@@ -1,7 +1,7 @@
 "use client";
 
 import { errorMessage, useRequireAuth } from "@ip/shared";
-import { Card, EmptyState, ErrorState, PageHeader, Skeleton, cn } from "@ip/ui";
+import { Button, Card, EmptyState, ErrorState, PageHeader, Skeleton, cn } from "@ip/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Mail } from "lucide-react";
 import Link from "next/link";
@@ -16,6 +16,10 @@ import {
   listQueryKey,
   makeMockMessagesClient,
 } from "./messages-client";
+
+// Render-bound: cap the conversation rail so a candidate with many threads never
+// mounts every row at once.
+const THREADS_PAGE = 30;
 
 export default function MessagesPage() {
   const { api, token, ready } = useAuth();
@@ -33,9 +37,13 @@ export default function MessagesPage() {
   });
   // Preview-pane selection (desktop only) — presentation state, no data effect.
   const [openId, setOpenId] = useState<string | null>(null);
+  // Render-bound for the conversation rail — reveal more on demand.
+  const [shown, setShown] = useState(THREADS_PAGE);
   if (!token) return null; // hydration guard
 
-  const openThread = q.data?.find((t) => t.applicationId === openId) ?? null;
+  const threads = q.data ?? [];
+  // openThread is resolved over the FULL thread list, not the capped rail.
+  const openThread = threads.find((t) => t.applicationId === openId) ?? null;
 
   return (
     <CandidateShell>
@@ -64,14 +72,14 @@ export default function MessagesPage() {
         </div>
       )}
       {q.isError && <ErrorState message={errorMessage(q.error)} retry={() => q.refetch()} />}
-      {q.data && q.data.length === 0 && (
+      {q.data && threads.length === 0 && (
         <EmptyState
           icon={Mail}
           title="No messages"
           description="When a recruiter messages you about an application, it'll show up here."
         />
       )}
-      {q.data && q.data.length > 0 && (
+      {q.data && threads.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
           {/* Conversation-list rail */}
           <nav
@@ -79,7 +87,7 @@ export default function MessagesPage() {
             className="flex flex-col gap-2 lg:max-h-[calc(100dvh-12rem)] lg:overflow-y-auto lg:pr-1"
           >
             {/* server sorts desc by last_message_at — do not re-sort */}
-            {q.data.map((t, i) => {
+            {threads.slice(0, shown).map((t, i) => {
               const active = t.applicationId === openId;
               return (
                 <Link
@@ -132,6 +140,15 @@ export default function MessagesPage() {
                 </Link>
               );
             })}
+            {threads.length > shown && (
+              <Button
+                variant="outline"
+                className="self-center"
+                onClick={() => setShown((n) => n + THREADS_PAGE)}
+              >
+                Show more ({threads.length - shown})
+              </Button>
+            )}
           </nav>
 
           {/* Preview pane — desktop only; collapses ≤1000px (rail routes instead) */}
