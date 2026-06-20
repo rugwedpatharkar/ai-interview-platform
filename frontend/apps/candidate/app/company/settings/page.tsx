@@ -5,28 +5,26 @@ import { useRequireAuth } from "@ip/shared";
 import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { CandidateShell } from "../../components/candidate-shell";
-import { AccountTab } from "../../components/settings/account-tab";
-import { AppearanceTab } from "../../components/settings/appearance-tab";
-import { NotificationsTab } from "../../components/settings/notifications-tab";
-import { PrivacyTab } from "../../components/settings/privacy-tab";
-import { SecurityTab } from "../../components/settings/security-tab";
-import { useAuth } from "../../lib/auth";
-import { makeSettingsClient } from "./settings-client";
+import { CompanyShell } from "../../../components/company-shell";
+import { AccountTab } from "../../../components/settings/account-tab";
+import { AppearanceTab } from "../../../components/settings/appearance-tab";
+import { NotificationsTab } from "../../../components/settings/notifications-tab";
+import { PrivacyTab } from "../../../components/settings/privacy-tab";
+import { SecurityTab } from "../../../components/settings/security-tab";
+import { useAuth } from "../../../lib/auth";
+import { makeSettingsClient } from "../../settings/settings-client";
 
-// v3 adds the "appearance" tab (per-user theme + base palette + accent). The order matches
-// the visual priority in the spec: identity → safety → preferences → privacy → looks.
+// Same five tabs as the candidate side. The underlying RPCs (account/security/notifications/
+// privacy) are token-scoped and role-agnostic — the company shell and routes here are the
+// only delta.
 const TABS = ["account", "security", "notifications", "privacy", "appearance"] as const;
 
-/** Reads ?tab= to pick the initial tab. Isolated so Next.js can Suspense-wrap the
- *  useSearchParams read without forcing the whole page into a fallback. */
-function SettingsTabs() {
+function CompanySettingsTabs() {
   const { api } = useAuth();
   const sp = useSearchParams();
   const requested = sp.get("tab") ?? "";
   const initial = (TABS as readonly string[]).includes(requested) ? requested : "account";
-  // Live by default; mock when NEXT_PUBLIC_MOCK=1. Memoized per `api` so the mock's store
-  // survives re-renders and the live client's request inflight cache is preserved.
+  // Live by default; mock when NEXT_PUBLIC_MOCK=1. Memoized per `api`.
   const client = useMemo(() => makeSettingsClient(api), [api]);
 
   return (
@@ -63,29 +61,29 @@ function SettingsTabs() {
         <PrivacyTab />
       </TabsContent>
       <TabsContent value="appearance">
-        {/* Shared verbatim with /company/settings — same `["preferences","appearance"]` key,
-            so a change in one role's settings instantly reflects when the user lands in the
-            other role's settings in the same session. */}
+        {/* Shared verbatim with /settings (candidate side). Same query key, same component,
+            same client seam — so a change made here propagates to the candidate view (and
+            vice versa) without an extra invalidation. */}
         <AppearanceTab />
       </TabsContent>
     </Tabs>
   );
 }
 
-export default function SettingsPage() {
+export default function CompanySettingsPage() {
   const { token, ready } = useAuth();
   useRequireAuth(token, ready);
   if (!token) return null;
 
   return (
-    <CandidateShell>
+    <CompanyShell>
       <PageHeader
-        title="Settings"
-        description="Manage your account, security, notifications, and how Aptura looks."
+        title="Workspace settings"
+        description="Manage your account, security, notifications, and how Aptura looks for your workspace."
       />
       <Suspense fallback={null}>
-        <SettingsTabs />
+        <CompanySettingsTabs />
       </Suspense>
-    </CandidateShell>
+    </CompanyShell>
   );
 }
