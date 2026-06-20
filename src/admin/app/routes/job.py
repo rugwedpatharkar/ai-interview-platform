@@ -21,8 +21,38 @@ _grpc_errors = counter(
 
 def _job_response(d):
     return job_pb2.JobResponse(
-        job_id=d["job_id"], comp_id=d["comp_id"], title=d["title"], status=d["status"]
+        job_id=d["job_id"],
+        comp_id=d["comp_id"],
+        title=d["title"],
+        status=d["status"],
+        city=d["city"],
+        region=d["region"],
+        country=d["country"],
+        remote_mode=d["remote_mode"],
+        employment_type=d["employment_type"],
+        salary_min=d["salary_min"],
+        salary_max=d["salary_max"],
+        salary_currency=d["salary_currency"],
+        skills=d["skills"],
+        gate_mode=d["gate_mode"],
+        posted_at=d["posted_at"],
     )
+
+
+def _marketplace(request):
+    """Optional marketplace fields off a Create/Update request (resource validates)."""
+    return {
+        "city": request.city,
+        "region": request.region,
+        "country": request.country,
+        "remote_mode": request.remote_mode,
+        "employment_type": request.employment_type,
+        "salary_min": request.salary_min,
+        "salary_max": request.salary_max,
+        "salary_currency": request.salary_currency,
+        "skills": list(request.skills),
+        "gate_mode": request.gate_mode,
+    }
 
 
 class JobServicer(job_pb2_grpc.JobServiceServicer):
@@ -47,11 +77,35 @@ class JobServicer(job_pb2_grpc.JobServiceServicer):
             try:
                 identity = await caller_identity(context, self._tokens)
                 out = await job_res.create_job(
-                    identity, request.title, request.jd_text, jobs=self._jobs
+                    identity,
+                    request.title,
+                    request.jd_text,
+                    jobs=self._jobs,
+                    marketplace=_marketplace(request),
                 )
                 return _job_response(out)
             except AuthDomainError as exc:
                 await self._abort(context, exc, "CreateJob")
+
+    async def UpdateJob(self, request, context):
+        _grpc_total.labels(method="UpdateJob").inc()
+        async with (
+            log_context(log, "job.UpdateJob", **bind_ids(job_id=request.job_id)),
+            span("job.UpdateJob", job_id=request.job_id),
+        ):
+            try:
+                identity = await caller_identity(context, self._tokens)
+                out = await job_res.update_job(
+                    identity,
+                    request.job_id,
+                    request.title,
+                    request.jd_text,
+                    jobs=self._jobs,
+                    marketplace=_marketplace(request),
+                )
+                return _job_response(out)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "UpdateJob")
 
     async def GetJob(self, request, context):
         _grpc_total.labels(method="GetJob").inc()

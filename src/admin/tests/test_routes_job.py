@@ -69,3 +69,77 @@ async def test_candidate_create_forbidden(fakes):
             _md(role="candidate", comp_id=""),
         )
     assert ei.value.code == grpc.StatusCode.PERMISSION_DENIED
+
+
+@pytest.mark.asyncio
+async def test_create_job_echoes_marketplace_fields(fakes):
+    svc = _servicer(fakes)
+    out = await svc.CreateJob(
+        job_pb2.CreateJobRequest(
+            title="Eng",
+            jd_text="x",
+            city="Berlin",
+            remote_mode="hybrid",
+            employment_type="full_time",
+            salary_min=80000,
+            salary_max=120000,
+            salary_currency="eur",
+            skills=["React", "react"],
+            gate_mode="advisory",
+        ),
+        _md(),
+    )
+    assert out.city == "Berlin" and out.remote_mode == "hybrid"
+    assert out.salary_min == 80000 and out.salary_max == 120000
+    assert list(out.skills) == ["react"]  # de-duped + lowercased
+    assert out.gate_mode == "advisory"
+
+
+@pytest.mark.asyncio
+async def test_update_job_rpc_changes_fields(fakes):
+    svc = _servicer(fakes)
+    created = await svc.CreateJob(
+        job_pb2.CreateJobRequest(title="Eng", jd_text="x"), _md()
+    )
+    out = await svc.UpdateJob(
+        job_pb2.UpdateJobRequest(
+            job_id=created.job_id,
+            title="Senior Eng",
+            jd_text="y",
+            remote_mode="remote",
+            gate_mode="advisory",
+        ),
+        _md(),
+    )
+    assert out.title == "Senior Eng" and out.remote_mode == "remote"
+    assert out.gate_mode == "advisory"
+
+
+@pytest.mark.asyncio
+async def test_update_job_rejects_off_enum(fakes):
+    svc = _servicer(fakes)
+    created = await svc.CreateJob(
+        job_pb2.CreateJobRequest(title="Eng", jd_text="x"), _md()
+    )
+    with pytest.raises(_Aborted) as ei:
+        await svc.UpdateJob(
+            job_pb2.UpdateJobRequest(
+                job_id=created.job_id, title="Eng", remote_mode="on-the-moon"
+            ),
+            _md(),
+        )
+    assert ei.value.code == grpc.StatusCode.INVALID_ARGUMENT
+
+
+@pytest.mark.asyncio
+async def test_update_job_cross_tenant_not_found(fakes):
+    svc = _servicer(fakes)
+    created = await svc.CreateJob(
+        job_pb2.CreateJobRequest(title="Eng", jd_text="x"), _md(comp_id="c1")
+    )
+    with pytest.raises(_Aborted) as ei:
+        await svc.UpdateJob(
+            job_pb2.UpdateJobRequest(job_id=created.job_id, title="Eng"),
+            _md(comp_id="c2"),
+        )
+    assert ei.value.code == grpc.StatusCode.NOT_FOUND
