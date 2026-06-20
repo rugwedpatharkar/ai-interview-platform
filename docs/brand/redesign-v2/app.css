@@ -1,0 +1,108 @@
+/* ============================================================================
+   Aptura — Redesign v2 APP component layer (depends on tokens.css)
+   The signed-in product shell + data primitives shared by every app screen:
+   sidebar/topbar shell, cards, data table, status pills, KPI tiles, score ring,
+   tabs, buttons, inputs, badges. Accent-agnostic (uses var(--accent)).
+   ============================================================================ */
+
+/* ---- App shell ---------------------------------------------------------- */
+.app { display: grid; grid-template-columns: 248px 1fr; min-height: 100dvh; position: relative; z-index: 2; }
+.side { border-right: 1px solid var(--line); padding: var(--sp-6) var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); position: sticky; top: 0; height: 100dvh; }
+.side .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; letter-spacing: -0.03em; color: var(--ink); padding: var(--sp-2) var(--sp-3) var(--sp-6); text-decoration: none; }
+.side .brand .mark { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); }
+.side .navlabel { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); padding: var(--sp-4) var(--sp-3) var(--sp-2); }
+.navitem { display: flex; align-items: center; gap: var(--sp-3); padding: 10px var(--sp-3); border-radius: var(--r-sm); color: var(--ink-2); text-decoration: none; font-weight: 500; font-size: var(--step-0); }
+.navitem:hover { background: var(--surface-2); color: var(--ink); }
+.navitem[aria-current="page"] { background: var(--surface-2); color: var(--ink); box-shadow: inset 3px 0 0 var(--accent); }
+.navitem .ic { width: 18px; text-align: center; opacity: 0.85; }
+.side .foot { margin-top: auto; display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3); border-top: 1px solid var(--line); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; font-weight: 600; font-size: 0.85rem; color: var(--ink); }
+
+.main { min-width: 0; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); height: 64px; padding-inline: var(--sp-8); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: var(--z-sticky); background: color-mix(in oklch, var(--bg) 82%, transparent); backdrop-filter: blur(10px); }
+.topbar h1 { font-family: var(--font-sans); font-weight: 600; font-size: var(--step-1); letter-spacing: -0.02em; }
+.crumb { color: var(--ink-3); font-size: var(--step--1); }
+.crumb b { color: var(--ink-2); font-weight: 500; }
+.content { padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-6); }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
+.page-head h2 { font-family: var(--font-display); font-size: var(--step-3); }
+.page-head .sub { color: var(--ink-2); margin-top: 4px; }
+
+/* ---- Buttons / inputs --------------------------------------------------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); height: 40px; padding-inline: var(--sp-4); border-radius: var(--r-sm); font: inherit; font-weight: 540; font-size: var(--step-0); cursor: pointer; border: 1px solid transparent; text-decoration: none; transition: transform var(--dur-1) var(--ease-out), background var(--dur-1); white-space: nowrap; }
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: var(--accent-strong); }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-2); }
+.btn-ghost:hover { background: var(--surface-2); }
+.btn-sm { height: 32px; padding-inline: var(--sp-3); font-size: var(--step--1); }
+.input { height: 40px; padding-inline: var(--sp-3); border-radius: var(--r-sm); border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); font: inherit; }
+.input::placeholder { color: var(--ink-3); }
+.input:focus { outline: none; border-color: var(--accent-strong); box-shadow: 0 0 0 3px var(--accent-soft); }
+.searchbox { display: flex; align-items: center; gap: var(--sp-2); height: 40px; padding-inline: var(--sp-3); border-radius: var(--r-sm); border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-3); }
+.searchbox input { border: 0; background: transparent; color: var(--ink); font: inherit; outline: none; min-width: 0; }
+
+/* ---- Card --------------------------------------------------------------- */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--sp-6); }
+.card.tight { padding: var(--sp-4); }
+.card > .card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.card h3 { font-family: var(--font-sans); font-weight: 600; font-size: var(--step-1); letter-spacing: -0.01em; }
+
+/* ---- KPI tile ----------------------------------------------------------- */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-4); }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--sp-6); }
+.kpi .k-label { color: var(--ink-2); font-size: var(--step--1); display: flex; align-items: center; gap: 8px; }
+.kpi .k-val { font-family: var(--font-display); font-size: var(--step-3); font-weight: 600; letter-spacing: -0.03em; margin-top: var(--sp-2); }
+.kpi .k-delta { font-size: var(--step--1); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.k-delta.up { color: oklch(0.72 0.14 150); } .k-delta.down { color: oklch(0.65 0.16 25); }
+
+/* ---- Status pill / badge ------------------------------------------------ */
+.pill { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding-inline: 11px; border-radius: var(--r-pill); font-size: var(--step--1); font-weight: 540; white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill-neutral { background: var(--surface-2); color: var(--ink-2); }
+.pill-accent  { background: var(--accent-soft); color: var(--accent-ink); }
+.pill-good    { background: oklch(0.92 0.06 150); color: oklch(0.32 0.09 150); }
+.pill-warn    { background: oklch(0.93 0.07 75);  color: oklch(0.38 0.09 70); }
+.pill-bad     { background: oklch(0.93 0.05 25);  color: oklch(0.42 0.12 25); }
+[data-theme="dark"] .pill-good { background: oklch(0.32 0.07 150); color: oklch(0.86 0.12 150); }
+[data-theme="dark"] .pill-warn { background: oklch(0.34 0.07 70);  color: oklch(0.88 0.1 80); }
+[data-theme="dark"] .pill-bad  { background: oklch(0.34 0.08 25);  color: oklch(0.85 0.1 25); }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line-2); font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em; color: var(--ink-2); }
+
+/* ---- Data table --------------------------------------------------------- */
+.table-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+table.data { width: 100%; border-collapse: collapse; font-size: var(--step-0); }
+table.data thead th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: var(--step--1); padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
+table.data tbody td { padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--line); vertical-align: middle; }
+table.data tbody tr:last-child td { border-bottom: 0; }
+table.data tbody tr:hover { background: var(--surface-2); }
+table.data .tnum { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+.who { display: flex; align-items: center; gap: var(--sp-3); }
+.who .nm { font-weight: 540; color: var(--ink); } .who .sub { color: var(--ink-3); font-size: var(--step--1); }
+
+/* ---- Score ring (SVG-friendly) ------------------------------------------ */
+.ring { --p: 72; --size: 92px; width: var(--size); height: var(--size); border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--accent) calc(var(--p) * 1%), var(--surface-2) 0); position: relative; }
+.ring::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: var(--surface); }
+.ring .v { position: relative; font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; letter-spacing: -0.03em; }
+
+/* ---- Bars / meters ------------------------------------------------------ */
+.bar { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+/* ---- Tabs --------------------------------------------------------------- */
+.tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); }
+.tabs button { border: 0; background: transparent; color: var(--ink-2); padding: 7px 14px; border-radius: var(--r-sm); font: inherit; font-weight: 540; font-size: var(--step--1); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+/* ---- Toolbar / filters -------------------------------------------------- */
+.toolbar { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.toolbar .spacer { flex: 1; }
+.chip-toggle { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding-inline: 13px; border-radius: var(--r-pill); border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-2); font-size: var(--step--1); font-weight: 500; cursor: pointer; }
+.chip-toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); }
+
+@media (max-width: 1000px) {
+  .app { grid-template-columns: 1fr; }
+  .side { display: none; }
+  .kpis { grid-template-columns: 1fr 1fr; }
+}

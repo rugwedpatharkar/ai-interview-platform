@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aptura — Applicants pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,540;9..144,600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="app.css" />
+<style>
+  .selbar { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--ink); color: var(--bg); }
+  .selbar .n { font-weight: 600; }
+  .selbar .spacer { flex: 1; }
+  .selbar .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .selbar .btn-ghost { color: var(--bg); border-color: color-mix(in oklch, var(--bg) 35%, transparent); }
+  td .check, th .check { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--line-2); display: inline-block; vertical-align: middle; }
+  td .check.on { background: var(--accent); border-color: var(--accent); }
+  .gate { display: inline-flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="side">
+    <a class="brand" href="#"><span class="mark">◐</span> Aptura</a>
+    <div class="navlabel">Hiring</div>
+    <a class="navitem" href="#"><span class="ic">▦</span> Dashboard</a>
+    <a class="navitem" aria-current="page" href="#"><span class="ic">▤</span> Jobs &amp; applicants</a>
+    <a class="navitem" href="#"><span class="ic">◎</span> Talent search</a>
+    <a class="navitem" href="#"><span class="ic">✦</span> Branding</a>
+    <div class="navlabel">Workspace</div>
+    <a class="navitem" href="#"><span class="ic">✉</span> Messages</a>
+    <a class="navitem" href="#"><span class="ic">◔</span> Team</a>
+    <a class="navitem" href="#"><span class="ic">⚙</span> Settings</a>
+    <div class="foot"><span class="avatar">NK</span><div><div style="font-weight:540;font-size:.9rem">Nadia Khan</div><div style="color:var(--ink-3);font-size:.78rem">Northwind Inc.</div></div></div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div><div class="crumb"><b>Jobs</b> / Senior Backend Engineer</div></div>
+      <div class="toolbar">
+        <div class="searchbox" style="width:200px">⌕ <input placeholder="Search applicants" /></div>
+        <button class="btn btn-ghost btn-sm">Export</button>
+        <span class="avatar">NK</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Page head -->
+      <div class="page-head">
+        <div>
+          <h2>Senior Backend Engineer</h2>
+          <div class="sub">Remote · Full-time · Published 6 days ago · <span class="badge">Advisory gate</span></div>
+        </div>
+        <div class="toolbar">
+          <div class="tabs" role="tablist">
+            <button role="tab" aria-selected="true">Pipeline</button>
+            <button role="tab" aria-selected="false">Report</button>
+            <button role="tab" aria-selected="false">Schedule</button>
+            <button role="tab" aria-selected="false">Messages</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpis">
+        <div class="kpi"><div class="k-label">◷ Applicants</div><div class="k-val tnum">128</div><div class="k-delta up">+18 this week</div></div>
+        <div class="kpi"><div class="k-label">◎ Interviewed</div><div class="k-val tnum">54</div><div class="k-delta up">42% of applicants</div></div>
+        <div class="kpi"><div class="k-label">★ Pass gate</div><div class="k-val tnum">31</div><div class="k-delta">advisory · you decide</div></div>
+        <div class="kpi"><div class="k-label">↩ Median response</div><div class="k-val tnum">2.4<span style="font-size:1rem;color:var(--ink-3)">d</span></div><div class="k-delta up">100% answered</div></div>
+      </div>
+
+      <!-- Filter toolbar -->
+      <div class="toolbar">
+        <button class="chip-toggle" aria-pressed="true">All · 128</button>
+        <button class="chip-toggle">Interviewed · 54</button>
+        <button class="chip-toggle">Passed gate · 31</button>
+        <button class="chip-toggle">Shortlisted · 12</button>
+        <span class="spacer"></span>
+        <button class="chip-toggle">Sort: Score ▾</button>
+      </div>
+
+      <!-- Selection bar -->
+      <div class="selbar">
+        <span class="check on"></span>
+        <span class="n">3 selected</span>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost btn-sm">Message</button>
+        <button class="btn btn-ghost btn-sm">Reject</button>
+        <button class="btn btn-primary btn-sm">Advance to shortlist →</button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr>
+            <th style="width:36px"><span class="check"></span></th>
+            <th>Candidate</th><th>Score</th><th>Integrity</th><th>Stage</th><th>Applied</th><th>Gate</th><th></th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="check on"></span></td>
+              <td><div class="who"><span class="avatar">AR</span><div><div class="nm">Aisha Rahman</div><div class="sub">Bengaluru · 6y exp</div></div></div></td>
+              <td><span class="tnum" style="font-weight:600">91</span></td>
+              <td><span class="pill pill-good">Clean</span></td>
+              <td><span class="pill pill-accent">Interviewed</span></td>
+              <td class="tnum" style="color:var(--ink-2)">2d ago</td>
+              <td><span class="gate"><span class="pill pill-good">Pass</span></span></td>
+              <td><button class="btn btn-ghost btn-sm">View</button></td>
+            </tr>
+            <tr>
+              <td><span class="check on"></span></td>
+              <td><div class="who"><span class="avatar">MO</span><div><div class="nm">Marcus Olsen</div><div class="sub">Remote · 8y exp</div></div></div></td>
+              <td><span class="tnum" style="font-weight:600">88</span></td>
+              <td><span class="pill pill-good">Clean</span></td>
+              <td><span class="pill pill-accent">Interviewed</span></td>
+              <td class="tnum" style="color:var(--ink-2)">3d ago</td>
+              <td><span class="pill pill-good">Pass</span></td>
+              <td><button class="btn btn-ghost btn-sm">View</button></td>
+            </tr>
+            <tr>
+              <td><span class="check on"></span></td>
+              <td><div class="who"><span class="avatar">JL</span><div><div class="nm">Jia Li</div><div class="sub">Singapore · 5y exp</div></div></div></td>
+              <td><span class="tnum" style="font-weight:600">84</span></td>
+              <td><span class="pill pill-warn">2 flags</span></td>
+              <td><span class="pill pill-accent">Interviewed</span></td>
+              <td class="tnum" style="color:var(--ink-2)">3d ago</td>
+              <td><span class="pill pill-good">Pass</span></td>
+              <td><button class="btn btn-ghost btn-sm">View</button></td>
+            </tr>
+            <tr>
+              <td><span class="check"></span></td>
+              <td><div class="who"><span class="avatar">TC</span><div><div class="nm">Tomás Costa</div><div class="sub">Lisbon · 4y exp</div></div></div></td>
+              <td><span class="tnum" style="font-weight:600">79</span></td>
+              <td><span class="pill pill-good">Clean</span></td>
+              <td><span class="pill pill-neutral">In review</span></td>
+              <td class="tnum" style="color:var(--ink-2)">4d ago</td>
+              <td><span class="pill pill-neutral">Borderline</span></td>
+              <td><button class="btn btn-ghost btn-sm">View</button></td>
+            </tr>
+            <tr>
+              <td><span class="check"></span></td>
+              <td><div class="who"><span class="avatar">RP</span><div><div class="nm">Ravi Patel</div><div class="sub">Pune · 7y exp</div></div></div></td>
+              <td><span class="tnum" style="font-weight:600">61</span></td>
+              <td><span class="pill pill-bad">Terminated</span></td>
+              <td><span class="pill pill-neutral">Flagged</span></td>
+              <td class="tnum" style="color:var(--ink-2)">5d ago</td>
+              <td><span class="pill pill-bad">Below bar</span></td>
+              <td><button class="btn btn-ghost btn-sm">View</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
