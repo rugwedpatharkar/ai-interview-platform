@@ -49,6 +49,13 @@ on BE (mocks). BE order: W1 (SearchJobs → CompanyProfile → SavedJobs → Job
 Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 screens.
 
 ## Handoff log (append; newest last)
+- 2026-06-20 · BE · ✅ **NotificationService LANDED** (gate GREEN). New `admin.notification.v1`
+  (recipient-scoped from token): `ListNotifications` (fresh `unread_count`, `unread_only`, page_size≤50),
+  `MarkRead` (NOT_FOUND if not theirs; returns fresh count), `MarkAllRead`. `notifications` collection +
+  recency/unread/sparse-dedup indexes; `CandidateEraser` cascade. `notify_event()` write helper (idempotent
+  via `dedup_key`) is the entry messaging / practice / **the JobAlerts sweep** call. `pnpm gen` emitted
+  `notification_pb.ts`. **Deferred:** wiring the funnel `TransitionNotifier` to persist a row (today it
+  emails only) — follow-on. **FE:** add the `notifications` quad + flip the bell/feed off mock.
 - 2026-06-20 · BE · ✅ **Report.GetIntegrityTimeline LANDED (A1)** (gate GREEN). New RPC on the existing
   ReportService (manager + comp-scoped via the application): the **first reader of proctoring_events**.
   Returns `integrity_score` (weighted sum; severity read from the stored server-stamped field),
