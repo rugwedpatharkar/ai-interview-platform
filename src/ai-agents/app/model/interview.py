@@ -1,45 +1,64 @@
+from typing import Annotated
+
 from pydantic import BaseModel, Field
+
+from app.model._caps import clip
+
+# Caps clip (not reject) LLM/candidate output so a hallucinated blueprint or a giant
+# answer can't bloat the stored interview doc — see app/model/_caps.py.
+_Label = Annotated[str, clip(200)]
+_Text = Annotated[str, clip(2000)]
 
 
 class SourceCitation(BaseModel):
-    url: str
-    topic: str = ""
-    snippet: str = ""
+    url: Annotated[str, clip(500)]
+    topic: _Label = ""
+    snippet: Annotated[str, clip(1000)] = ""
 
 
 class CompetencyArea(BaseModel):
-    name: str
-    why: str = ""  # why this competency matters for the role
-    seed_questions: list[str] = Field(default_factory=list)
-    source_citations: list[SourceCitation] = Field(default_factory=list)
+    name: _Label
+    why: Annotated[str, clip(500)] = ""  # why this competency matters for the role
+    seed_questions: Annotated[list[_Text], clip(10)] = Field(default_factory=list)
+    source_citations: Annotated[list[SourceCitation], clip(20)] = Field(
+        default_factory=list
+    )
 
 
 class InterviewBlueprint(BaseModel):
-    competencies: list[CompetencyArea] = Field(default_factory=list)
+    competencies: Annotated[list[CompetencyArea], clip(30)] = Field(
+        default_factory=list
+    )
     time_budget_min: int = 30
-    source_citations: list[SourceCitation] = Field(default_factory=list)
+    source_citations: Annotated[list[SourceCitation], clip(20)] = Field(
+        default_factory=list
+    )
 
 
 class JobQuestionPlan(BaseModel):
     """Job-level RAG-grounded plan built on job.published; the interview adapts it."""
 
     job_id: str = ""
-    competencies: list[CompetencyArea] = Field(default_factory=list)
-    source_citations: list[SourceCitation] = Field(default_factory=list)
+    competencies: Annotated[list[CompetencyArea], clip(30)] = Field(
+        default_factory=list
+    )
+    source_citations: Annotated[list[SourceCitation], clip(20)] = Field(
+        default_factory=list
+    )
 
 
 class TranscriptTurn(BaseModel):
-    question: str
-    answer: str
+    question: Annotated[str, clip(2000)]
+    answer: Annotated[str, clip(32000)]  # matches the route's _MAX_ANSWER_CHARS
 
 
 class Transcript(BaseModel):
-    turns: list[TranscriptTurn] = Field(default_factory=list)
+    turns: Annotated[list[TranscriptTurn], clip(100)] = Field(default_factory=list)
 
 
 class InterviewTurnDecision(BaseModel):
     done: bool = False
-    question: str = ""
+    question: Annotated[str, clip(2000)] = ""
 
 
 class InterviewSession(BaseModel):
