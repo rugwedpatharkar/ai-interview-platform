@@ -10,10 +10,12 @@ export function CompletenessMeter({ value }: { value: number }) {
         ? "Almost there — add any missing experience or skills."
         : "Add your experience, education and skills to improve your matches.";
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4">
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Profile completeness</span>
-        <span className="font-display text-sm font-semibold text-brand-600">{value}%</span>
+        <span className="font-display text-sm font-semibold tabular-nums text-primary">
+          {value}%
+        </span>
       </div>
       <Progress value={value} aria-label="Profile completeness" />
       <p className="text-xs text-muted-foreground">{hint}</p>

@@ -28,10 +28,10 @@ export function ParsedBanner({
 }: Props) {
   const label = filename || "Your résumé";
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+          <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <FileText className="size-4" aria-hidden />
           </span>
           <div className="flex flex-col">

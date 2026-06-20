@@ -46,7 +46,7 @@ export function JobMeta({
         </Badge>
       )}
       {salary && (
-        <Badge tone="success" variant="subtle">
+        <Badge tone="success" variant="subtle" className="tabular-nums">
           {salary}
         </Badge>
       )}

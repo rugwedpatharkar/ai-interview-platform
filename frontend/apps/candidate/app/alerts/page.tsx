@@ -45,12 +45,14 @@ export default function JobAlertsPage() {
 
   return (
     <CandidateShell>
-      <h1 className="font-display text-xl font-medium text-foreground">Job alerts</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Save a search and we'll notify you when new matching roles are posted.
-      </p>
+      <header className="mb-6">
+        <h1 className="font-display text-2xl font-semibold text-foreground">Job alerts</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Save a search and we'll notify you when new matching roles are posted.
+        </p>
+      </header>
 
-      <div className="mt-5 rounded-lg border border-border bg-surface p-4">
+      <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
         <AlertForm onCreate={(input) => create.mutate(input)} pending={create.isPending} />
       </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Input } from "@ip/ui";
-import { Search } from "lucide-react";
+import { MapPin, Search } from "lucide-react";
 import { useState } from "react";
 
 import type { SearchJobsParams } from "../app/jobs/types";
@@ -25,29 +25,35 @@ export function JobSearchBar({
         e.preventDefault();
         onSearch({ ...value, q: q.trim() || undefined, location: location.trim() || undefined, page: 1 });
       }}
-      className="flex flex-col gap-2 sm:flex-row"
+      className="flex flex-col gap-2 sm:flex-row sm:items-center"
     >
       <label className="sr-only" htmlFor="job-search-q">
         Search jobs
       </label>
-      <Input
-        id="job-search-q"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Job title, company, or keyword"
-        className="sm:flex-[2]"
-      />
+      <div className="flex items-center gap-2 rounded-lg border border-input bg-surface px-3 shadow-sm transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/40 sm:flex-[2]">
+        <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <Input
+          id="job-search-q"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Job title, skill, or company"
+          className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
+        />
+      </div>
       <label className="sr-only" htmlFor="job-search-location">
         Location
       </label>
-      <Input
-        id="job-search-location"
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-        placeholder="Location"
-        className="sm:flex-1"
-      />
-      <Button type="submit" className="shrink-0">
+      <div className="flex items-center gap-2 rounded-lg border border-input bg-surface px-3 shadow-sm transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/40 sm:flex-1">
+        <MapPin className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <Input
+          id="job-search-location"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="Location or remote"
+          className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
+        />
+      </div>
+      <Button type="submit" size="sm" className="shrink-0">
         <Search className="size-4" aria-hidden />
         Search
       </Button>

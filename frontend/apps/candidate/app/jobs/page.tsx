@@ -34,11 +34,11 @@ export default async function JobsPage({
   return (
     <AppShell title="Aptura" nav={<Link href="/jobs">Browse jobs</Link>}>
       <header className="mb-6">
-        <h1 className="font-display text-2xl font-semibold text-foreground">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
           Find your next role
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Search the live catalog of published roles.
+          Search the live catalog of published, proctored roles.
         </p>
       </header>
       <Marketplace initial={initial} initialParams={initialParams} />

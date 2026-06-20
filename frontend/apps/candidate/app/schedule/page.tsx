@@ -101,11 +101,13 @@ function ScheduleBody() {
               >
                 {grouped.map((group) => (
                   <div key={group.day} className="flex flex-col gap-2">
-                    <p className="text-sm font-medium text-foreground">{group.day}</p>
+                    <p className="font-display text-sm font-medium text-foreground">
+                      {group.day}
+                    </p>
                     {group.slots.map((s) => (
                       <label
                         key={s.startAt}
-                        className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground has-[:checked]:border-primary has-[:checked]:bg-surface-muted"
+                        className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 text-sm tabular-nums text-foreground transition-colors hover:bg-surface-muted has-[:checked]:border-primary has-[:checked]:bg-primary/10"
                       >
                         <RadioGroupItem value={s.startAt} />
                         <Clock className="size-4 text-muted-foreground" aria-hidden />
@@ -146,7 +148,7 @@ function ScheduleBody() {
             <p className="font-display text-lg font-semibold text-foreground">
               Interview confirmed
             </p>
-            <p className="text-sm text-foreground">
+            <p className="text-sm tabular-nums text-foreground">
               {formatLocal(schedule.chosenStartAt)} · {schedule.chosenDurationMinutes} min
             </p>
             {schedule.location && (

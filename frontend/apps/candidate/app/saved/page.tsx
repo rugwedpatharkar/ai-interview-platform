@@ -25,8 +25,20 @@ export default function SavedJobsPage() {
   const jobs = q.data ?? [];
   return (
     <CandidateShell>
-      <h1 className="font-display text-xl font-medium text-foreground">Saved jobs</h1>
-      <div className="mt-4 flex flex-col gap-3">
+      <header className="mb-6">
+        <h1 className="font-display text-2xl font-semibold text-foreground">Saved jobs</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {jobs.length > 0 ? (
+            <>
+              <span className="tabular-nums">{jobs.length}</span>{" "}
+              {jobs.length === 1 ? "role" : "roles"} bookmarked.
+            </>
+          ) : (
+            "Roles you bookmark as you browse show up here."
+          )}
+        </p>
+      </header>
+      <div className="flex flex-col gap-3">
         {q.isLoading && (
           <>
             <Skeleton className="h-24" />

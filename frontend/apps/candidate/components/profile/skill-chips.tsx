@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Input } from "@ip/ui";
+import { Input } from "@ip/ui";
 import { X } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
 
@@ -45,17 +45,20 @@ export function SkillChips({
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {value.map((s) => (
-            <Badge key={s} tone="info" variant="subtle" className="gap-1 pr-1">
+            <span
+              key={s}
+              className="inline-flex items-center gap-1 rounded-md bg-surface-muted py-1 pl-2.5 pr-1 text-xs font-medium text-foreground"
+            >
               {s}
               <button
                 type="button"
                 aria-label={`Remove ${s}`}
                 onClick={() => onChange(removeSkill(value, s))}
-                className="rounded-sm p-0.5 hover:bg-foreground/10"
+                className="rounded-sm p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-foreground"
               >
                 <X className="size-3" aria-hidden />
               </button>
-            </Badge>
+            </span>
           ))}
         </div>
       )}

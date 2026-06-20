@@ -95,10 +95,10 @@ export function MessageThreadView({
                 </span>
                 <div
                   className={cn(
-                    "rounded-2xl px-3.5 py-2 text-sm shadow-sm",
+                    "rounded-2xl px-3.5 py-2 text-sm",
                     isSelf
                       ? "rounded-tr-sm bg-primary text-primary-foreground"
-                      : "rounded-tl-sm bg-surface-muted text-foreground",
+                      : "rounded-tl-sm border border-border bg-surface-muted text-foreground",
                   )}
                 >
                   <p className="whitespace-pre-wrap break-words">{m.body}</p>

@@ -11,7 +11,6 @@ import {
   Field,
   Input,
   LoadingState,
-  PageHeader,
   Select,
   SelectContent,
   SelectItem,
@@ -21,10 +20,10 @@ import {
 } from "@ip/ui";
 import { errorMessage, isNotFound, useRequireAuth } from "@ip/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { Trash2 } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
 
+import { CandidateShell } from "../../components/candidate-shell";
 import { useAuth } from "../../lib/auth";
 import { CompletenessMeter } from "../../components/profile/completeness-meter";
 import { ExperienceRow } from "../../components/profile/experience-row";
@@ -239,25 +238,32 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
-      <PageHeader
-        title="Your profile"
-        description="Upload your resume and review the details we extract."
-        action={
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-            Back
-          </Link>
-        }
-      />
+    <CandidateShell>
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-semibold text-foreground">Your profile</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Upload your résumé and review the details we extract.
+          </p>
+        </div>
+        <Button
+          type="submit"
+          form="profile-form"
+          disabled={save.isPending}
+          loading={save.isPending}
+        >
+          {save.isPending ? "Saving…" : "Save changes"}
+        </Button>
+      </header>
 
       {profile.isLoading ? (
         <LoadingState label="Loading your profile…" />
       ) : (
-        <form onSubmit={onSubmit} className="flex flex-col gap-6">
+        <form
+          id="profile-form"
+          onSubmit={onSubmit}
+          className="mx-auto flex max-w-2xl flex-col gap-6"
+        >
           <ParsedBanner
             resumeUploaded={Boolean(profile.data?.resumeUploaded)}
             parsed={Boolean(profile.data?.parsed)}
@@ -475,10 +481,10 @@ export default function ProfilePage() {
             loading={save.isPending}
             className="self-end"
           >
-            {save.isPending ? "Saving…" : "Save profile"}
+            {save.isPending ? "Saving…" : "Save changes"}
           </Button>
         </form>
       )}
-    </main>
+    </CandidateShell>
   );
 }

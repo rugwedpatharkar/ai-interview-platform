@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Checkbox } from "@ip/ui";
+import { Button, Checkbox, cn } from "@ip/ui";
 import { useId } from "react";
 
 import type { FacetBucket, RemoteMode, SearchJobsParams } from "../app/jobs/types";
@@ -19,10 +19,66 @@ const TYPE_LABEL: Record<string, string> = {
 const labelFor = (map: Record<string, string>, v: string) =>
   map[v] ?? v.replace(/_/g, " ");
 
-/** A single facet group: a heading + a checkbox per bucket. Single-select per group
- * (clicking the active value clears it) — mirrors the scalar `remote`/`type`/`level`
- * params. Buckets with their count; empty groups render nothing. */
-function FacetGroup({
+/** Mono uppercase facet heading — matches the `.facet-h` label in the mockup. */
+function FacetHeading({ children }: { children: string }) {
+  return (
+    <span className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-muted-foreground">
+      {children}
+    </span>
+  );
+}
+
+/** A chip-toggle facet group (work mode, skills). Each bucket is an `aria-pressed`
+ * pill; pressed reads as `border-primary bg-primary/10 text-primary`. Single-select
+ * per group (clicking the active value clears it) — mirrors the scalar param. */
+function ChipFacetGroup({
+  heading,
+  buckets,
+  selected,
+  labels,
+  onToggle,
+}: {
+  heading: string;
+  buckets: FacetBucket[];
+  selected: string | undefined;
+  labels: Record<string, string>;
+  onToggle: (value: string) => void;
+}) {
+  if (buckets.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-3">
+      <FacetHeading>{heading}</FacetHeading>
+      <div className="flex flex-wrap gap-2">
+        {buckets.map((b) => {
+          const on = selected === b.value;
+          return (
+            <button
+              key={b.value}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onToggle(b.value)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                on
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-surface text-foreground hover:bg-surface-muted",
+              )}
+            >
+              {labelFor(labels, b.value)}
+              <span className="font-mono text-[0.72rem] tabular-nums text-muted-foreground">
+                {b.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** A single facet group rendered as checkbox rows (employment type, experience
+ * level). Single-select per group (clicking the active value clears it). */
+function CheckFacetGroup({
   heading,
   buckets,
   selected,
@@ -38,21 +94,27 @@ function FacetGroup({
   const groupId = useId();
   if (buckets.length === 0) return null;
   return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {heading}
+    <fieldset className="flex flex-col gap-3">
+      <legend>
+        <FacetHeading>{heading}</FacetHeading>
       </legend>
       {buckets.map((b) => {
         const id = `${groupId}-${b.value}`;
         return (
-          <label key={b.value} htmlFor={id} className="flex items-center gap-2 text-sm text-foreground">
+          <label
+            key={b.value}
+            htmlFor={id}
+            className="flex cursor-pointer items-center gap-3 text-sm text-foreground"
+          >
             <Checkbox
               id={id}
               checked={selected === b.value}
               onCheckedChange={() => onToggle(b.value)}
             />
             <span className="flex-1">{labelFor(labels, b.value)}</span>
-            <span className="text-xs text-muted-foreground">{b.count}</span>
+            <span className="font-mono text-[0.72rem] tabular-nums text-muted-foreground">
+              {b.count}
+            </span>
           </label>
         );
       })}
@@ -85,12 +147,15 @@ export function FilterSidebar({
   const active = value.remote || value.type || value.level;
 
   return (
-    <aside className="flex flex-col gap-5" aria-label="Filters">
+    <aside
+      className="flex flex-col gap-6 md:sticky md:top-6"
+      aria-label="Filters"
+    >
       {!hasAny ? (
         <p className="text-sm text-muted-foreground">No filters available.</p>
       ) : (
         <>
-          <FacetGroup
+          <ChipFacetGroup
             heading="Work mode"
             buckets={remote}
             selected={value.remote}
@@ -99,14 +164,14 @@ export function FilterSidebar({
               set("remote", value.remote === v ? undefined : (v as RemoteMode))
             }
           />
-          <FacetGroup
+          <CheckFacetGroup
             heading="Employment type"
             buckets={types}
             selected={value.type}
             labels={TYPE_LABEL}
             onToggle={(v) => set("type", value.type === v ? undefined : v)}
           />
-          <FacetGroup
+          <CheckFacetGroup
             heading="Experience level"
             buckets={levels}
             selected={value.level}
