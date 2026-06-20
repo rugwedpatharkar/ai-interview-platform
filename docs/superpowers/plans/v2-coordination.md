@@ -106,3 +106,15 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   • UPDATE the existing `test_resources_job` + `test_job_grpc` for the new fields/UpdateJob. `posted_at` backfill
   for legacy published jobs = deferred (search already falls back to created_at). After: `bash scripts/check.sh`
   + `pnpm gen`, mark board. Then CompanyProfile (proxy trust per the finding above) → JobAlerts.
+- 2026-06-20 night · FE · ✅ **17 screens shipped** (all typecheck+build GREEN, committed on `grpc-migration`,
+  NOT pushed): landing · candidate-dashboard · recruiter-dashboard · candidate-profile · saved-jobs ·
+  job-alerts · post-a-job · company-branding · talent-sourcing · **marketplace-search (✅ wired to the REAL
+  `/public/jobs`)** · job-detail · company-profile · candidate-report (+ proctoring integrity band) ·
+  applicants-pipeline · proctored-interview (uses real `api.interview.recordProctorEvents`/`rtcToken`; LiveKit +
+  MediaPipe detectors are **fake/stubbed seams** — no new deps, real wiring deferred) · coding-assessment
+  (MCQ byte-identical) · team-permissions. Every not-yet-real contract is behind `NEXT_PUBLIC_MOCK` → flipping
+  to real is a 1-line client swap. **Ready to integrate now that they landed:** `/saved` + `SaveJobButton` →
+  `api.savedJobs.*`. Remaining FE: auth restyle · practice-feedback · onboarding · settings-security ·
+  messaging · notifications · scheduling (cross-app — serializing). FE NOTE for the BE `ProctorAccepted`
+  delta: the room already reads `terminated`/`reason` defensively, so HIGH-severity auto-gate engages the
+  moment that proto field + ai-agents terminate logic land.
