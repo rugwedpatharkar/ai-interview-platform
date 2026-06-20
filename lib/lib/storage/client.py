@@ -67,7 +67,13 @@ class ObjectStorage:
             aws_secret_access_key=self._secret_access_key,
             config=self._config,
         )
-        self._client = await self._client_cm.__aenter__()
+        try:
+            self._client = await self._client_cm.__aenter__()
+        except Exception:
+            # __aenter__ failed (bad creds/endpoint): drop the half-open cm so a later
+            # close() doesn't re-enter it and mask the original error.
+            self._client_cm = None
+            raise
         log.info("storage.connected bucket={}", self._bucket)
 
     async def close(self) -> None:
@@ -75,6 +81,13 @@ class ObjectStorage:
             await self._client_cm.__aexit__(None, None, None)
             self._client = None
             self._client_cm = None
+
+    async def __aenter__(self) -> "ObjectStorage":
+        await self.connect()
+        return self
+
+    async def __aexit__(self, *exc) -> None:
+        await self.close()
 
     @staticmethod
     def _key(comp_id: str, category: str, key: str) -> str:

@@ -1,7 +1,47 @@
+from types import SimpleNamespace
+
 import pytest
 from botocore.exceptions import ClientError
 from lib.storage import ObjectStorage
 from lib.storage.client import StorageError
+
+
+class _FailingCM:
+    async def __aenter__(self):
+        raise RuntimeError("bad creds")
+
+    async def __aexit__(self, *exc):
+        return False
+
+
+class _OkCM:
+    def __init__(self, client):
+        self._client = client
+
+    async def __aenter__(self):
+        return self._client
+
+    async def __aexit__(self, *exc):
+        return False
+
+
+@pytest.mark.asyncio
+async def test_close_after_failed_connect_is_noop():
+    s = ObjectStorage(None, "auto", "ak", "sk", "bucket")
+    s._session = SimpleNamespace(client=lambda *a, **k: _FailingCM())
+    with pytest.raises(RuntimeError):
+        await s.connect()
+    await s.close()  # must NOT re-enter the half-open cm or raise
+
+
+@pytest.mark.asyncio
+async def test_async_context_manager_connects_and_closes():
+    fake = FakeS3Client()
+    s = ObjectStorage(None, "auto", "ak", "sk", "bucket")
+    s._session = SimpleNamespace(client=lambda *a, **k: _OkCM(fake))
+    async with s as opened:
+        assert opened is s and s._client is fake
+    assert s._client is None  # closed
 
 
 def test_key_builds_tenant_prefix():
