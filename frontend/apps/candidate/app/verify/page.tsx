@@ -4,6 +4,7 @@ import { VerifyCard, type VerifyStatus } from "@ip/ui";
 import { errorMessage } from "@ip/shared";
 import { useEffect, useRef, useState } from "react";
 
+import { AuthLayout } from "../../components/auth-layout";
 import { useAuth } from "../../lib/auth";
 
 export default function VerifyPage() {
@@ -31,11 +32,13 @@ export default function VerifyPage() {
   }, [api]);
 
   return (
-    <VerifyCard
-      status={status}
-      message={message}
-      continueHref="/"
-      onResend={(email) => api.auth.resendVerification({ email }).then(() => {})}
-    />
+    <AuthLayout selfFramed>
+      <VerifyCard
+        status={status}
+        message={message}
+        continueHref="/"
+        onResend={(email) => api.auth.resendVerification({ email }).then(() => {})}
+      />
+    </AuthLayout>
   );
 }

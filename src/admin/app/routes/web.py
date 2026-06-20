@@ -23,6 +23,7 @@ from app.infra.repositories.match_results import MatchResultRepository
 from app.infra.repositories.profiles import CandidateProfileRepository
 from app.infra.repositories.reports import ReportRepository
 from app.infra.repositories.rubrics import RubricRepository
+from app.infra.repositories.saved_jobs import SavedJobsRepository
 from app.infra.repositories.users import UserRepository
 from app.resources.compliance import CandidateEraser
 from app.routes.analytics import AnalyticsServicer
@@ -31,6 +32,7 @@ from app.routes.aptitude import AptitudeServicer
 from app.routes.auth import AuthServicer
 from app.routes.compliance import ComplianceServicer
 from app.routes.decision import DecisionServicer
+from app.routes.discovery import DiscoveryServicer
 from app.routes.job import JobServicer
 from app.routes.pb import (
     analytics_pb2_grpc,
@@ -39,17 +41,20 @@ from app.routes.pb import (
     auth_pb2_grpc,
     compliance_pb2_grpc,
     decision_pb2_grpc,
+    discovery_pb2_grpc,
     job_pb2_grpc,
     profile_pb2_grpc,
     recommendation_pb2_grpc,
     report_pb2_grpc,
     rubric_pb2_grpc,
+    saved_jobs_pb2_grpc,
     talent_pb2_grpc,
 )
 from app.routes.profile import ProfileServicer
 from app.routes.recommendation import RecommendationServicer
 from app.routes.report import ReportServicer
 from app.routes.rubric import RubricServicer
+from app.routes.saved_jobs import SavedJobsServicer
 from app.routes.talent import TalentServicer
 
 
@@ -187,6 +192,23 @@ def create_web_app(
         ComplianceServicer(
             consents=ConsentRepository(db),
             eraser=make_eraser(db, storage),
+            tokens=tokens,
+        ),
+        app,
+    )
+    discovery_pb2_grpc.add_DiscoveryServiceServicer_to_server(
+        DiscoveryServicer(
+            jobs=JobRepository(db),
+            companies=CompanyRepository(db),
+            tokens=tokens,
+        ),
+        app,
+    )
+    saved_jobs_pb2_grpc.add_SavedJobsServiceServicer_to_server(
+        SavedJobsServicer(
+            saved_jobs=SavedJobsRepository(db),
+            jobs=JobRepository(db),
+            companies=CompanyRepository(db),
             tokens=tokens,
         ),
         app,

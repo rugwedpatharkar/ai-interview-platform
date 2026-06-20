@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package admin.discovery.v1;
+
+// DiscoveryService — the candidate-facing job marketplace (search + browse the published
+// catalog with filters + facets). The authed gRPC SearchJobs and the public REST
+// GET /public/jobs (SSR/SEO surface) share one resources/discovery.py over the `jobs`
+// collection (Mongo $text + $facet); only published jobs are ever returned, and the DTO
+// is scrubbed of company/job internals.
+service DiscoveryService {
+  rpc SearchJobs(SearchJobsRequest) returns (SearchJobsResponse);
+}
+
+message SearchJobsRequest {
+  string q = 1;            // free-text over title/jd/skills
+  string location = 2;
+  string remote = 3;       // remote|hybrid|onsite
+  string type = 4;         // employment_type: full_time|part_time|contract|internship
+  string level = 5;        // experience_level
+  repeated string skills = 6;
+  string sort = 7;         // relevance|recent (default relevance when q, else recent)
+  int32 page = 8;          // 1-based
+  int32 page_size = 9;     // capped at 24
+}
+
+message JobCard {
+  string job_id = 1;
+  string title = 2;
+  string company_name = 3;
+  string company_id = 4;
+  string location = 5;          // "" when unset
+  string remote_mode = 6;       // remote|hybrid|onsite, "" when unset
+  string employment_type = 7;   // "" when unset
+  int32 salary_min = 8;         // 0 when unset
+  int32 salary_max = 9;         // 0 when unset
+  string salary_currency = 10;  // "" when unset
+  repeated string skills = 11;
+  string posted_at = 12;        // ISO 8601
+  string snippet = 13;          // first ~160 chars of the jd
+}
+
+message FacetBucket {
+  string value = 1;
+  int32 count = 2;
+}
+
+message Facets {
+  repeated FacetBucket remote_mode = 1;
+  repeated FacetBucket employment_type = 2;
+  repeated FacetBucket experience_level = 3;
+}
+
+message SearchJobsResponse {
+  repeated JobCard jobs = 1;
+  Facets facets = 2;
+  int32 total = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}

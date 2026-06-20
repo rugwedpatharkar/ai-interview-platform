@@ -20,11 +20,13 @@ from app.infra.oauth import HttpOAuthClient
 from app.infra.repositories.applications import ApplicationRepository
 from app.infra.repositories.aptitude_deliveries import AptitudeDeliveryRepository
 from app.infra.repositories.audit_logs import AuditLogRepository
+from app.infra.repositories.companies import CompanyRepository
 from app.infra.repositories.jobs import JobRepository
 from app.infra.repositories.users import UserRepository
 from app.resources import funnel, recommend, scheduler
 from app.resources.notification import TransitionNotifier
 from app.routes.oauth import create_oauth_app
+from app.routes.public_api import create_public_app
 from app.routes.web import create_web_app, make_eraser
 
 log = get_logger(component="admin.server")
@@ -51,17 +53,19 @@ def _token_service(s):
     )
 
 
-def _oauth_dispatcher(grpc_app, oauth_app):
-    """Route /auth/oauth/* to the Starlette OAuth app; all else to the gRPC-web app.
+def _dispatcher(grpc_app, oauth_app, public_app):
+    """Path-prefix ASGI router: /auth/oauth/* → OAuth, /public/* → REST, else gRPC-web.
 
-    gRPC method paths are /admin.*; OAuth routes all live under /auth/oauth/, so
-    the split is unambiguous. (Resend is now AuthService.ResendVerification.)
+    gRPC method paths are /admin.*; OAuth lives under /auth/oauth/ and the public
+    marketplace under /public/, so the three prefixes never collide.
     """
 
     async def dispatch(scope, receive, send):
         path = scope.get("path", "")
         if scope["type"] == "http" and path.startswith("/auth/oauth/"):
             await oauth_app(scope, receive, send)
+        elif scope["type"] == "http" and path.startswith("/public/"):
+            await public_app(scope, receive, send)
         else:
             await grpc_app(scope, receive, send)
 
@@ -137,10 +141,24 @@ async def serve() -> None:
             ],
         }
     )
-    # Bind a correlation_id per HTTP request (gRPC-web RPC or OAuth) so every servicer's
-    # logs + any events it publishes are traceable; the id is visible to the handler's
-    # async context and echoed on the response. Phase-4 corr-IDs.
-    app = CorrelationIdMiddleware(_oauth_dispatcher(grpc_app, oauth_app))
+    # Public marketplace (SSR/SEO): /public/* → unauthenticated REST over the shared
+    # discovery resource + jobs/companies repos; per-IP rate-limited.
+    public_app = create_public_app(
+        {
+            "jobs": JobRepository(mongo.db),
+            "companies": CompanyRepository(mongo.db),
+            "limiter": RateLimiter(redis),
+            "trusted_proxy": s.trusted_proxy,
+            "rate_limit": s.public_search_limit,
+            "rate_window": s.public_search_window_seconds,
+            "cors_origins": [
+                o.strip() for o in s.cors_allow_origin.split(",") if o.strip()
+            ],
+        }
+    )
+    # Bind a correlation_id per HTTP request (gRPC-web, OAuth, or public REST) so every
+    # handler's logs + any events it publishes are traceable. Phase-4 corr-IDs.
+    app = CorrelationIdMiddleware(_dispatcher(grpc_app, oauth_app, public_app))
 
     # Funnel consumer: advance application state on funnel events (audit-logged).
     funnel_apps = ApplicationRepository(mongo.db)

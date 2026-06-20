@@ -1,31 +1,32 @@
 "use client";
 
 import {
-  Badge,
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Checkbox,
-  ConfirmDialog,
   EmptyState,
   ErrorState,
   Field,
   Input,
   LoadingState,
-  applicationStatus,
+  buttonVariants,
+  cn,
   toast,
 } from "@ip/ui";
 import { TERMINAL_STATES, errorMessage, useAuthedQuery } from "@ip/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Briefcase, FileText, Send, Sparkles } from "lucide-react";
+import { ArrowRight, Briefcase, Dumbbell, Send, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 
 import { useAuth } from "../lib/auth";
+import { ApplicationCard } from "./application-card";
 import { AssistantChat } from "./assistant-chat";
 import { CandidateShell } from "./candidate-shell";
+import { CandidateChecklist } from "./onboarding/candidate-checklist";
 import { RecommendedRoles } from "./recommended-roles";
 
 export function Dashboard() {
@@ -98,6 +99,8 @@ export function Dashboard() {
           </p>
         </div>
 
+        <CandidateChecklist />
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -139,6 +142,30 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
+        <Card hoverable>
+          <CardContent className="flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center">
+            <div className="flex items-start gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+                <Dumbbell className="size-5" aria-hidden />
+              </span>
+              <div>
+                <p className="font-medium text-foreground">Practice for an interview</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  A private mock interview with growth feedback — no pressure, never shared
+                  with employers.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/practice"
+              className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}
+            >
+              Start practicing
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
+          </CardContent>
+        </Card>
+
         <section className="flex flex-col gap-4">
           <h2 className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight text-foreground">
             <Sparkles className="size-5 text-brand-500" aria-hidden />
@@ -168,55 +195,14 @@ export function Dashboard() {
                 icon={Briefcase}
               />
             )}
-          {list.map((a) => {
-            const status = applicationStatus(a.state);
-            return (
-              <Card key={a.applicationId} hoverable>
-                <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
-                      <FileText className="size-4" aria-hidden />
-                    </span>
-                    <div className="flex flex-col gap-1">
-                      <p className="font-medium text-foreground">Job {a.jobId}</p>
-                      <Badge tone={status.tone} className="w-fit">
-                        {status.label}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {a.state === "aptitude_pending" && (
-                      <Link href={`/aptitude/${a.applicationId}`}>
-                        <Button variant="secondary" size="sm">
-                          Take test
-                        </Button>
-                      </Link>
-                    )}
-                    {a.state === "interview_pending" && (
-                      <Link href={`/interview/${a.applicationId}`}>
-                        <Button size="sm">Start interview</Button>
-                      </Link>
-                    )}
-                    {!TERMINAL_STATES.has(a.state) && (
-                      <ConfirmDialog
-                        trigger={
-                          <Button variant="ghost" size="sm">
-                            Withdraw
-                          </Button>
-                        }
-                        title="Withdraw application?"
-                        description="This can't be undone — you'd need to re-apply."
-                        confirmLabel="Withdraw"
-                        destructive
-                        busy={withdraw.isPending}
-                        onConfirm={() => withdraw.mutate(a.applicationId)}
-                      />
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {list.map((a) => (
+            <ApplicationCard
+              key={a.applicationId}
+              app={a}
+              withdrawing={withdraw.isPending}
+              onWithdraw={(id) => withdraw.mutate(id)}
+            />
+          ))}
         </section>
 
         <AssistantChat />

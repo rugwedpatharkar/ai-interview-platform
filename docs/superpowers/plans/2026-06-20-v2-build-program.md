@@ -198,6 +198,7 @@ Per the user's choice, **all per-screen plans + contracts are authored first** (
 - **Frontend:** I execute each screen's Part B against the Part A mock (preview-verified), in wave order.
 - **Backend (parallel sessions):** each takes a screen's Part A contract → implements proto/servicer/resource/tests (TDD, `scripts/check.sh`), → `pnpm gen` integrates.
 - Use `superpowers:subagent-driven-development` for task-by-task execution with review checkpoints.
+- **Coordination (two sessions, auto-mode safe):** FE ↔ BE sync through [v2-coordination.md](v2-coordination.md) — a shared status board + handoff log both sessions read/update/commit. Live cross-session messaging needs a per-message approval and is off in auto mode, so the repo (contracts + board + commits) is the channel.
 
 ## 7. Status of this program
 - [x] Architecture + current-state baseline + contract model + build order (this doc)

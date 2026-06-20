@@ -17,19 +17,19 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Spinner,
-  Textarea,
-  buttonVariants,
-  cn,
   toast,
 } from "@ip/ui";
 import { errorMessage, isNotFound, useRequireAuth } from "@ip/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "../../lib/auth";
+import { CompletenessMeter } from "../../components/profile/completeness-meter";
+import { ExperienceRow } from "../../components/profile/experience-row";
+import { ParsedBanner } from "../../components/profile/parsed-banner";
+import { SkillChips } from "../../components/profile/skill-chips";
 
 interface Exp {
   _key: string;
@@ -49,7 +49,7 @@ interface Form {
   location: string;
   willingToRelocate: boolean;
   jobPreference: string;
-  skills: string; // comma-separated in the form
+  skills: string[];
   experience: Exp[];
   education: Edu[];
 }
@@ -60,13 +60,11 @@ const EMPTY: Form = {
   location: "",
   willingToRelocate: false,
   jobPreference: "",
-  skills: "",
+  skills: [],
   experience: [],
   education: [],
 };
 
-const RESUME_ACCEPT =
-  ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const ACCEPTED_MIME = new Set([
   "application/pdf",
   "application/msword",
@@ -127,7 +125,7 @@ export default function ProfilePage() {
       location: p.location,
       willingToRelocate: p.willingToRelocate,
       jobPreference: p.jobPreference,
-      skills: p.skills.join(", "),
+      skills: p.skills,
       experience: p.experience.map((e, i) => ({
         _key: `${e.company}-${e.title}-${i}`,
         company: e.company,
@@ -184,10 +182,7 @@ export default function ProfilePage() {
         jobPreference: form.jobPreference,
         experience: form.experience,
         education: form.education,
-        skills: form.skills
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        skills: form.skills,
       }),
     onSuccess: () => {
       touched.current = false;
@@ -263,58 +258,16 @@ export default function ProfilePage() {
         <LoadingState label="Loading your profile…" />
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Resume</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <div>
-                <input
-                  id="resume-file"
-                  type="file"
-                  aria-label="Upload resume"
-                  accept={RESUME_ACCEPT}
-                  onChange={onFile}
-                  disabled={upload.isPending}
-                  className="sr-only"
-                />
-                <label
-                  htmlFor="resume-file"
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "sm" }),
-                    "cursor-pointer",
-                    upload.isPending && "pointer-events-none opacity-50",
-                  )}
-                >
-                  <Upload className="size-4" aria-hidden />
-                  Choose resume (PDF or Word)
-                </label>
-              </div>
-              {upload.isPending && (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Spinner /> Uploading…
-                </p>
-              )}
-              {parsing && !parseStalled && (
-                <Alert tone="info">
-                  <span className="flex items-center gap-2">
-                    <Spinner /> Extracting your experience, education and skills…
-                  </span>
-                </Alert>
-              )}
-              {parseStalled && (
-                <Alert tone="warning">
-                  Extraction is taking longer than expected. You can continue filling in
-                  your details below, or re-upload your resume to try again.
-                </Alert>
-              )}
-              {profile.data?.parsed && (
-                <p className="text-sm text-muted-foreground">
-                  Profile completeness: <strong>{completeness}%</strong>
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <ParsedBanner
+            resumeUploaded={Boolean(profile.data?.resumeUploaded)}
+            parsed={Boolean(profile.data?.parsed)}
+            parsing={parsing && !parseStalled}
+            parseStalled={parseStalled}
+            uploading={upload.isPending}
+            onFile={onFile}
+          />
+
+          <CompletenessMeter value={completeness} />
 
           <Card>
             <CardHeader>
@@ -378,14 +331,10 @@ export default function ProfilePage() {
               <CardTitle>Skills</CardTitle>
             </CardHeader>
             <CardContent>
-              <Field label="Skills (comma-separated)" htmlFor="skills">
-                <Input
-                  id="skills"
-                  placeholder="python, sql, communication"
-                  value={form.skills}
-                  onChange={(e) => update({ skills: e.target.value })}
-                />
-              </Field>
+              <SkillChips
+                value={form.skills}
+                onChange={(skills) => update({ skills })}
+              />
             </CardContent>
           </Card>
 
@@ -395,66 +344,23 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               {form.experience.map((exp, i) => (
-                <fieldset
+                <ExperienceRow
                   key={exp._key}
-                  className="flex flex-col gap-3 rounded-md border border-border p-3"
-                >
-                  <legend className="px-1 text-xs font-medium text-muted-foreground">
-                    Experience {i + 1}
-                  </legend>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <Input
-                      aria-label="Company"
-                      placeholder="Company"
-                      value={exp.company}
-                      onChange={(e) =>
-                        update({
-                          experience: form.experience.map((x, j) =>
-                            j === i ? { ...x, company: e.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                    <Input
-                      aria-label="Job title"
-                      placeholder="Title"
-                      value={exp.title}
-                      onChange={(e) =>
-                        update({
-                          experience: form.experience.map((x, j) =>
-                            j === i ? { ...x, title: e.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                  </div>
-                  <Textarea
-                    aria-label="What you did"
-                    placeholder="What you did"
-                    value={exp.summary}
-                    onChange={(e) =>
-                      update({
-                        experience: form.experience.map((x, j) =>
-                          j === i ? { ...x, summary: e.target.value } : x,
-                        ),
-                      })
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    leadingIcon={Trash2}
-                    className="self-end text-danger hover:text-danger"
-                    onClick={() =>
-                      update({
-                        experience: form.experience.filter((_, j) => j !== i),
-                      })
-                    }
-                  >
-                    Remove
-                  </Button>
-                </fieldset>
+                  index={i}
+                  value={exp}
+                  onChange={(patch) =>
+                    update({
+                      experience: form.experience.map((x, j) =>
+                        j === i ? { ...x, ...patch } : x,
+                      ),
+                    })
+                  }
+                  onRemove={() =>
+                    update({
+                      experience: form.experience.filter((_, j) => j !== i),
+                    })
+                  }
+                />
               ))}
               <Button
                 type="button"

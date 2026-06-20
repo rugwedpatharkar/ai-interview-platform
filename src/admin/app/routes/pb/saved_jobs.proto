@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package admin.saved_jobs.v1;
+
+// SavedJobsService — a candidate's job bookmarks. Every RPC derives the candidate from
+// the bearer token (caller_identity); `candidate_user_id` is NEVER a request field. Save
+// is idempotent (unique (candidate_user_id, job_id)); a saved job that later unpublishes
+// is filtered out of the list (the bookmark row stays harmless).
+service SavedJobsService {
+  rpc SaveJob(SaveJobRequest) returns (SaveJobResponse);
+  rpc UnsaveJob(UnsaveJobRequest) returns (UnsaveJobResponse);
+  rpc ListSavedJobs(ListSavedJobsRequest) returns (ListSavedJobsResponse);
+}
+
+message SaveJobRequest {
+  string job_id = 1;
+}
+
+message SaveJobResponse {
+  bool saved = 1;  // true (idempotent)
+}
+
+message UnsaveJobRequest {
+  string job_id = 1;
+}
+
+message UnsaveJobResponse {
+  bool saved = 1;  // false
+}
+
+message ListSavedJobsRequest {}
+
+message SavedJob {
+  string job_id = 1;
+  string title = 2;
+  string company_name = 3;
+  string company_id = 4;
+  string location = 5;
+  string remote_mode = 6;
+  string employment_type = 7;
+  int64 salary_min = 8;
+  int64 salary_max = 9;
+  string salary_currency = 10;
+  repeated string skills = 11;
+  string posted_at = 12;  // ISO 8601
+  string snippet = 13;
+  string saved_at = 14;   // ISO 8601 — when the candidate bookmarked it
+}
+
+message ListSavedJobsResponse {
+  repeated SavedJob jobs = 1;
+}

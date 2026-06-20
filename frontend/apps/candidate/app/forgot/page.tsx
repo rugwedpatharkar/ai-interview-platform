@@ -15,6 +15,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
 
+import { AuthLayout } from "../../components/auth-layout";
 import { useAuth } from "../../lib/auth";
 
 export default function ForgotPage() {
@@ -40,7 +41,7 @@ export default function ForgotPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center p-6">
+    <AuthLayout>
       <Card>
         <CardHeader>
           <CardTitle>Reset your password</CardTitle>
@@ -88,6 +89,6 @@ export default function ForgotPage() {
           )}
         </CardContent>
       </Card>
-    </main>
+    </AuthLayout>
   );
 }

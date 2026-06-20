@@ -12,6 +12,7 @@ import {
   Input,
 } from "@ip/ui";
 import { errorMessage } from "@ip/shared";
+import { AuthLayout } from "./auth-layout";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, useState } from "react";
@@ -61,7 +62,7 @@ export function CredentialsForm({
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center p-6">
+    <AuthLayout>
       <Card>
         <CardHeader>
           <CardTitle>{title}</CardTitle>
@@ -113,6 +114,6 @@ export function CredentialsForm({
           {footer}
         </CardContent>
       </Card>
-    </main>
+    </AuthLayout>
   );
 }

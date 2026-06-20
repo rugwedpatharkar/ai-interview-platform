@@ -19,6 +19,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { useAuth } from "../lib/auth";
+import { NotificationBell } from "./notification-bell";
 
 const MANAGER_ROLES = ["company_admin", "recruiter"];
 
@@ -31,6 +32,7 @@ type NavLink = { href: string; label: string };
 
 const NAV: NavLink[] = [
   { href: "/jobs", label: "Jobs" },
+  { href: "/branding", label: "Branding" },
   { href: "/rubrics", label: "Rubrics" },
   { href: "/analytics", label: "Analytics" },
   { href: "/talent", label: "Talent" },
@@ -82,6 +84,7 @@ export function CompanyShell({ children }: { children: ReactNode }) {
       actions={
         <>
           <ThemeToggle />
+          <NotificationBell />
           <DropdownMenu>
             <DropdownMenuTrigger
               className="inline-flex items-center gap-1.5 rounded-lg p-1 pr-2 text-sm text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
