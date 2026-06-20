@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file job.proto.
  */
 export const file_job: GenFile = /*@__PURE__*/
-  fileDesc("Cglqb2IucHJvdG8SDGFkbWluLmpvYi52MSI7CglQdWJsaWNKb2ISDgoGam9iX2lkGAEgASgJEg0KBXRpdGxlGAIgASgJEg8KB2pkX3RleHQYAyABKAki8wEKEENyZWF0ZUpvYlJlcXVlc3QSDQoFdGl0bGUYASABKAkSDwoHamRfdGV4dBgCIAEoCRIMCgRjaXR5GAMgASgJEg4KBnJlZ2lvbhgEIAEoCRIPCgdjb3VudHJ5GAUgASgJEhMKC3JlbW90ZV9tb2RlGAYgASgJEhcKD2VtcGxveW1lbnRfdHlwZRgHIAEoCRISCgpzYWxhcnlfbWluGAggASgDEhIKCnNhbGFyeV9tYXgYCSABKAMSFwoPc2FsYXJ5X2N1cnJlbmN5GAogASgJEg4KBnNraWxscxgLIAMoCRIRCglnYXRlX21vZGUYDCABKAkigwIKEFVwZGF0ZUpvYlJlcXVlc3QSDgoGam9iX2lkGAEgASgJEg0KBXRpdGxlGAIgASgJEg8KB2pkX3RleHQYAyABKAkSDAoEY2l0eRgEIAEoCRIOCgZyZWdpb24YBSABKAkSDwoHY291bnRyeRgGIAEoCRITCgtyZW1vdGVfbW9kZRgHIAEoCRIXCg9lbXBsb3ltZW50X3R5cGUYCCABKAkSEgoKc2FsYXJ5X21pbhgJIAEoAxISCgpzYWxhcnlfbWF4GAogASgDEhcKD3NhbGFyeV9jdXJyZW5jeRgLIAEoCRIOCgZza2lsbHMYDCADKAkSEQoJZ2F0ZV9tb2RlGA0gASgJIh8KDUdldEpvYlJlcXVlc3QSDgoGam9iX2lkGAEgASgJIiMKEVB1Ymxpc2hKb2JSZXF1ZXN0Eg4KBmpvYl9pZBgBIAEoCSIRCg9MaXN0Sm9ic1JlcXVlc3QioQIKC0pvYlJlc3BvbnNlEg4KBmpvYl9pZBgBIAEoCRIPCgdjb21wX2lkGAIgASgJEg0KBXRpdGxlGAMgASgJEg4KBnN0YXR1cxgEIAEoCRIMCgRjaXR5GAUgASgJEg4KBnJlZ2lvbhgGIAEoCRIPCgdjb3VudHJ5GAcgASgJEhMKC3JlbW90ZV9tb2RlGAggASgJEhcKD2VtcGxveW1lbnRfdHlwZRgJIAEoCRISCgpzYWxhcnlfbWluGAogASgDEhIKCnNhbGFyeV9tYXgYCyABKAMSFwoPc2FsYXJ5X2N1cnJlbmN5GAwgASgJEg4KBnNraWxscxgNIAMoCRIRCglnYXRlX21vZGUYDiABKAkSEQoJcG9zdGVkX2F0GA8gASgJIjsKEExpc3RKb2JzUmVzcG9uc2USJwoEam9icxgBIAMoCzIZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZTK5AwoKSm9iU2VydmljZRJGCglDcmVhdGVKb2ISHi5hZG1pbi5qb2IudjEuQ3JlYXRlSm9iUmVxdWVzdBoZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZRJGCglVcGRhdGVKb2ISHi5hZG1pbi5qb2IudjEuVXBkYXRlSm9iUmVxdWVzdBoZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZRJACgZHZXRKb2ISGy5hZG1pbi5qb2IudjEuR2V0Sm9iUmVxdWVzdBoZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZRJJCghMaXN0Sm9icxIdLmFkbWluLmpvYi52MS5MaXN0Sm9ic1JlcXVlc3QaHi5hZG1pbi5qb2IudjEuTGlzdEpvYnNSZXNwb25zZRJICgpQdWJsaXNoSm9iEh8uYWRtaW4uam9iLnYxLlB1Ymxpc2hKb2JSZXF1ZXN0GhkuYWRtaW4uam9iLnYxLkpvYlJlc3BvbnNlEkQKDEdldFB1YmxpY0pvYhIbLmFkbWluLmpvYi52MS5HZXRKb2JSZXF1ZXN0GhcuYWRtaW4uam9iLnYxLlB1YmxpY0pvYmIGcHJvdG8z");
+  fileDesc("Cglqb2IucHJvdG8SDGFkbWluLmpvYi52MSKHAgoJUHVibGljSm9iEg4KBmpvYl9pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIPCgdqZF90ZXh0GAMgASgJEhAKCGxvY2F0aW9uGAQgASgJEhMKC3JlbW90ZV9tb2RlGAUgASgJEhcKD2VtcGxveW1lbnRfdHlwZRgGIAEoCRISCgpzYWxhcnlfbWluGAcgASgDEhIKCnNhbGFyeV9tYXgYCCABKAMSFwoPc2FsYXJ5X2N1cnJlbmN5GAkgASgJEg4KBnNraWxscxgKIAMoCRIRCglwb3N0ZWRfYXQYCyABKAkSJgoHY29tcGFueRgMIAEoCzIVLmFkbWluLmpvYi52MS5Db21wYW55IjEKB0NvbXBhbnkSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRsb2dvGAMgASgJIvMBChBDcmVhdGVKb2JSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEg8KB2pkX3RleHQYAiABKAkSDAoEY2l0eRgDIAEoCRIOCgZyZWdpb24YBCABKAkSDwoHY291bnRyeRgFIAEoCRITCgtyZW1vdGVfbW9kZRgGIAEoCRIXCg9lbXBsb3ltZW50X3R5cGUYByABKAkSEgoKc2FsYXJ5X21pbhgIIAEoAxISCgpzYWxhcnlfbWF4GAkgASgDEhcKD3NhbGFyeV9jdXJyZW5jeRgKIAEoCRIOCgZza2lsbHMYCyADKAkSEQoJZ2F0ZV9tb2RlGAwgASgJIoMCChBVcGRhdGVKb2JSZXF1ZXN0Eg4KBmpvYl9pZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIPCgdqZF90ZXh0GAMgASgJEgwKBGNpdHkYBCABKAkSDgoGcmVnaW9uGAUgASgJEg8KB2NvdW50cnkYBiABKAkSEwoLcmVtb3RlX21vZGUYByABKAkSFwoPZW1wbG95bWVudF90eXBlGAggASgJEhIKCnNhbGFyeV9taW4YCSABKAMSEgoKc2FsYXJ5X21heBgKIAEoAxIXCg9zYWxhcnlfY3VycmVuY3kYCyABKAkSDgoGc2tpbGxzGAwgAygJEhEKCWdhdGVfbW9kZRgNIAEoCSIfCg1HZXRKb2JSZXF1ZXN0Eg4KBmpvYl9pZBgBIAEoCSIjChFQdWJsaXNoSm9iUmVxdWVzdBIOCgZqb2JfaWQYASABKAkiEQoPTGlzdEpvYnNSZXF1ZXN0IqECCgtKb2JSZXNwb25zZRIOCgZqb2JfaWQYASABKAkSDwoHY29tcF9pZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIOCgZzdGF0dXMYBCABKAkSDAoEY2l0eRgFIAEoCRIOCgZyZWdpb24YBiABKAkSDwoHY291bnRyeRgHIAEoCRITCgtyZW1vdGVfbW9kZRgIIAEoCRIXCg9lbXBsb3ltZW50X3R5cGUYCSABKAkSEgoKc2FsYXJ5X21pbhgKIAEoAxISCgpzYWxhcnlfbWF4GAsgASgDEhcKD3NhbGFyeV9jdXJyZW5jeRgMIAEoCRIOCgZza2lsbHMYDSADKAkSEQoJZ2F0ZV9tb2RlGA4gASgJEhEKCXBvc3RlZF9hdBgPIAEoCSI7ChBMaXN0Sm9ic1Jlc3BvbnNlEicKBGpvYnMYASADKAsyGS5hZG1pbi5qb2IudjEuSm9iUmVzcG9uc2UyuQMKCkpvYlNlcnZpY2USRgoJQ3JlYXRlSm9iEh4uYWRtaW4uam9iLnYxLkNyZWF0ZUpvYlJlcXVlc3QaGS5hZG1pbi5qb2IudjEuSm9iUmVzcG9uc2USRgoJVXBkYXRlSm9iEh4uYWRtaW4uam9iLnYxLlVwZGF0ZUpvYlJlcXVlc3QaGS5hZG1pbi5qb2IudjEuSm9iUmVzcG9uc2USQAoGR2V0Sm9iEhsuYWRtaW4uam9iLnYxLkdldEpvYlJlcXVlc3QaGS5hZG1pbi5qb2IudjEuSm9iUmVzcG9uc2USSQoITGlzdEpvYnMSHS5hZG1pbi5qb2IudjEuTGlzdEpvYnNSZXF1ZXN0Gh4uYWRtaW4uam9iLnYxLkxpc3RKb2JzUmVzcG9uc2USSAoKUHVibGlzaEpvYhIfLmFkbWluLmpvYi52MS5QdWJsaXNoSm9iUmVxdWVzdBoZLmFkbWluLmpvYi52MS5Kb2JSZXNwb25zZRJECgxHZXRQdWJsaWNKb2ISGy5hZG1pbi5qb2IudjEuR2V0Sm9iUmVxdWVzdBoXLmFkbWluLmpvYi52MS5QdWJsaWNKb2JiBnByb3RvMw");
 
 /**
  * @generated from message admin.job.v1.PublicJob
@@ -30,6 +30,61 @@ export type PublicJob = Message<"admin.job.v1.PublicJob"> & {
    * @generated from field: string jd_text = 3;
    */
   jdText: string;
+
+  /**
+   * Additive public marketplace fields.
+   *
+   * "" when unset
+   *
+   * @generated from field: string location = 4;
+   */
+  location: string;
+
+  /**
+   * "remote" | "hybrid" | "onsite" | ""
+   *
+   * @generated from field: string remote_mode = 5;
+   */
+  remoteMode: string;
+
+  /**
+   * "full_time" | "contract" | "internship" | ""
+   *
+   * @generated from field: string employment_type = 6;
+   */
+  employmentType: string;
+
+  /**
+   * @generated from field: int64 salary_min = 7;
+   */
+  salaryMin: bigint;
+
+  /**
+   * @generated from field: int64 salary_max = 8;
+   */
+  salaryMax: bigint;
+
+  /**
+   * @generated from field: string salary_currency = 9;
+   */
+  salaryCurrency: string;
+
+  /**
+   * @generated from field: repeated string skills = 10;
+   */
+  skills: string[];
+
+  /**
+   * ISO-8601; "" for legacy jobs not yet backfilled
+   *
+   * @generated from field: string posted_at = 11;
+   */
+  postedAt: string;
+
+  /**
+   * @generated from field: admin.job.v1.Company company = 12;
+   */
+  company?: Company | undefined;
 };
 
 /**
@@ -38,6 +93,35 @@ export type PublicJob = Message<"admin.job.v1.PublicJob"> & {
  */
 export const PublicJobSchema: GenMessage<PublicJob> = /*@__PURE__*/
   messageDesc(file_job, 0);
+
+/**
+ * @generated from message admin.job.v1.Company
+ */
+export type Company = Message<"admin.job.v1.Company"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * logo URL or "" (links to /companies/{id})
+   *
+   * @generated from field: string logo = 3;
+   */
+  logo: string;
+};
+
+/**
+ * Describes the message admin.job.v1.Company.
+ * Use `create(CompanySchema)` to create a new message.
+ */
+export const CompanySchema: GenMessage<Company> = /*@__PURE__*/
+  messageDesc(file_job, 1);
 
 /**
  * @generated from message admin.job.v1.CreateJobRequest
@@ -121,7 +205,7 @@ export type CreateJobRequest = Message<"admin.job.v1.CreateJobRequest"> & {
  * Use `create(CreateJobRequestSchema)` to create a new message.
  */
 export const CreateJobRequestSchema: GenMessage<CreateJobRequest> = /*@__PURE__*/
-  messageDesc(file_job, 1);
+  messageDesc(file_job, 2);
 
 /**
  * @generated from message admin.job.v1.UpdateJobRequest
@@ -198,7 +282,7 @@ export type UpdateJobRequest = Message<"admin.job.v1.UpdateJobRequest"> & {
  * Use `create(UpdateJobRequestSchema)` to create a new message.
  */
 export const UpdateJobRequestSchema: GenMessage<UpdateJobRequest> = /*@__PURE__*/
-  messageDesc(file_job, 2);
+  messageDesc(file_job, 3);
 
 /**
  * @generated from message admin.job.v1.GetJobRequest
@@ -215,7 +299,7 @@ export type GetJobRequest = Message<"admin.job.v1.GetJobRequest"> & {
  * Use `create(GetJobRequestSchema)` to create a new message.
  */
 export const GetJobRequestSchema: GenMessage<GetJobRequest> = /*@__PURE__*/
-  messageDesc(file_job, 3);
+  messageDesc(file_job, 4);
 
 /**
  * @generated from message admin.job.v1.PublishJobRequest
@@ -232,7 +316,7 @@ export type PublishJobRequest = Message<"admin.job.v1.PublishJobRequest"> & {
  * Use `create(PublishJobRequestSchema)` to create a new message.
  */
 export const PublishJobRequestSchema: GenMessage<PublishJobRequest> = /*@__PURE__*/
-  messageDesc(file_job, 4);
+  messageDesc(file_job, 5);
 
 /**
  * @generated from message admin.job.v1.ListJobsRequest
@@ -245,7 +329,7 @@ export type ListJobsRequest = Message<"admin.job.v1.ListJobsRequest"> & {
  * Use `create(ListJobsRequestSchema)` to create a new message.
  */
 export const ListJobsRequestSchema: GenMessage<ListJobsRequest> = /*@__PURE__*/
-  messageDesc(file_job, 5);
+  messageDesc(file_job, 6);
 
 /**
  * @generated from message admin.job.v1.JobResponse
@@ -336,7 +420,7 @@ export type JobResponse = Message<"admin.job.v1.JobResponse"> & {
  * Use `create(JobResponseSchema)` to create a new message.
  */
 export const JobResponseSchema: GenMessage<JobResponse> = /*@__PURE__*/
-  messageDesc(file_job, 6);
+  messageDesc(file_job, 7);
 
 /**
  * @generated from message admin.job.v1.ListJobsResponse
@@ -353,7 +437,7 @@ export type ListJobsResponse = Message<"admin.job.v1.ListJobsResponse"> & {
  * Use `create(ListJobsResponseSchema)` to create a new message.
  */
 export const ListJobsResponseSchema: GenMessage<ListJobsResponse> = /*@__PURE__*/
-  messageDesc(file_job, 7);
+  messageDesc(file_job, 8);
 
 /**
  * JobService — company-side job posting + lifecycle. Auth via `authorization`

@@ -29,7 +29,7 @@
 | W0 candidate profile | existing `Profile.*` | ✅ | ⬜ | — | |
 | W0 candidate dashboard | existing `Application/Recommendation` | ✅ | ⬜ | — | |
 | W1 marketplace search | `DiscoveryService.SearchJobs` + `/public/jobs` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `api.discovery.searchJobs`; public `GET /public/jobs` (snake_case). FE: flip off mock |
-| W1 job detail | extend `GetPublicJobDetail` | ⬜ | ⬜ | ⬜ | |
+| W1 job detail | extend `GetPublicJobDetail` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` grew `PublicJob` (+ `Company`); public `GET /public/jobs/{id}` (snake_case, max-age=120). FE: flip job-detail off mock |
 | W1 company profile | `CompanyProfileService` | ⬜ | ⬜ | ⬜ | ⚠️ trust `responds_in_days` needs funnel transition timings (Application has none) — see log |
 | W1 saved jobs | `SavedJobsService` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `api.savedJobs` (save/unsave/listSavedJobs). FE: flip `/saved` off mock |
 | W1 job alerts | `JobAlertsService` | ⬜ | ⬜ | ⬜ | |
@@ -153,6 +153,16 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   FE wiring already in place: `ProctorAck` in `frontend/apps/candidate/app/interview/[applicationId]/types.ts`
   + the `sink` callback in `page.tsx` read `terminated`/`reason` via a defensive cast → engages the moment
   this lands. No FE change needed.
+- 2026-06-20 · BE · ✅ **GetPublicJobDetail LANDED** (gate GREEN: admin 272). The public job-detail
+  surface ships two ways onto one resource (`discovery.get_public_job_detail`, single source of truth with
+  search_jobs): (1) gRPC `JobService.GetPublicJob` now returns the **full** `PublicJob` (marketplace fields
+  4–11 + a `Company{id,name,logo}` at 12) instead of just title/JD; (2) **public REST `GET /public/jobs/{id}`**
+  (no-auth, per-IP rate-limited, snake_case, `Cache-Control: public, max-age=120`) returning the same DTO,
+  `404 {"error":"not_found"}` for missing/unpublished (opaque). DTO scrubbed of comp_id/aptitude_config/
+  required_topics/gate_mode; comp_id surfaces only as `company.id`; `logo` is "" until branding (Plan D /
+  company_profiles) lands. `pnpm gen` done → `job_pb.ts` grew `PublicJob`+`Company`. **FE:** flip job-detail
+  SSR off `NEXT_PUBLIC_MOCK` to `/public/jobs/{id}` (and authed deep-links get the same shape via
+  `api.jobs.getPublicJob`).
 - 2026-06-20 · BE · ✅ **extend-Job LANDED** (gate GREEN: admin 266). `JobService` now carries the full
   marketplace contract: `CreateJob`/`JobResponse` gain `city/region/country/remote_mode/employment_type/
   salary_min/salary_max/salary_currency/skills/gate_mode/posted_at` (additive field numbers 5–15) + a new
