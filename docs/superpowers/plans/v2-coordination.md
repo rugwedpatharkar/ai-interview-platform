@@ -30,7 +30,7 @@
 | W0 candidate dashboard | existing `Application/Recommendation` | ✅ | ⬜ | — | |
 | W1 marketplace search | `DiscoveryService.SearchJobs` + `/public/jobs` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `api.discovery.searchJobs`; public `GET /public/jobs` (snake_case). FE: flip off mock |
 | W1 job detail | extend `GetPublicJobDetail` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` grew `PublicJob` (+ `Company`); public `GET /public/jobs/{id}` (snake_case, max-age=120). FE: flip job-detail off mock |
-| W1 company profile | `CompanyProfileService` | ⬜ | ⬜ | ⬜ | ⚠️ trust `responds_in_days` needs funnel transition timings (Application has none) — see log |
+| W1 company profile | `CompanyProfileService` | ✅ | ⬜ | ⬜ | **landed with REAL trust** (transition-log shipped). `GetCompanyProfile` + public `GET /public/companies/{id}` + `/{id}/jobs`. FE: flip `/companies/[id]` off mock |
 | W1 saved jobs | `SavedJobsService` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `api.savedJobs` (save/unsave/listSavedJobs). FE: flip `/saved` off mock |
 | W1 talent sourcing | `SourcingService.SearchCandidates` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `sourcing_pb.ts`. FE: add `sourcing` quad + flip `candidate-search` off mock |
 | W1 job alerts | `JobAlertsService` | ⬜ | ⬜ | ⬜ | |
@@ -49,6 +49,15 @@ on BE (mocks). BE order: W1 (SearchJobs → CompanyProfile → SavedJobs → Job
 Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 screens.
 
 ## Handoff log (append; newest last)
+- 2026-06-20 · BE · ✅ **CompanyProfileService LANDED with REAL trust** (gate GREEN: admin 289). Now that
+  the transition-log ships (Plan I), `responds_in_days` is the genuine median(applied→first transition)
+  and `actively_reviewing` is real (not the earlier proxy). `admin.company_profile.v1.GetCompanyProfile`
+  (unauthenticated) + public REST `GET /public/companies/{id}` (max-age=300) and
+  `GET /public/companies/{id}/jobs?page&page_size≤24` (same `JobCardDTO` as `/public/jobs`). 404 for no
+  published presence (≥1 published job OR a branding doc). `company_profiles` collection (unique comp_id);
+  `about/website/logo/locations` are "" / [] until the branding editor (company-branding Upsert) lands.
+  `pnpm gen` emitted `company_profile_pb.ts`. **FE:** flip `/companies/[id]` SSR off the mock to
+  `/public/companies/{id}` + `/{id}/jobs`. **Branding Upsert + logo presign = separate (company-branding).**
 - 2026-06-20 · BE · ✅ **Application transition-log LANDED** (gate GREEN: admin 283; cross-cutting, no
   proto). The funnel CAS (`set_state_if`/`set_state`) now appends a `{state, at}` entry to
   `Application.transitions`, so per-stage timings are derivable from the application doc itself (no
