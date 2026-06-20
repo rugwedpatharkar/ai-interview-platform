@@ -31,6 +31,19 @@ class JobRepository(BaseRepository[Job]):
     async def list_published_capped(self, limit: int) -> list[dict]:
         return await self.find_capped({"status": "published"}, cap=limit)
 
+    async def count_published_by_comp(self, comp_id: str) -> int:
+        return await self.col.count_documents(
+            {"comp_id": comp_id, "status": "published"}
+        )
+
+    async def list_published_by_comp(
+        self, comp_id: str, *, skip: int = 0, limit: int = 24
+    ) -> list[dict]:
+        """A company's published jobs, newest first (company-profile job list)."""
+        return await self.find(
+            {"comp_id": comp_id, "status": "published"}, limit=limit, skip=skip
+        )
+
     async def find_published_by_ids(self, job_ids: list[str]) -> list[dict]:
         """Published jobs among `job_ids` (saved-jobs join; non-published dropped)."""
         oids = [oid for oid in (_oid(j) for j in job_ids) if oid is not None]

@@ -61,6 +61,8 @@ INDEXES: list[IndexSpec] = [
     IndexSpec("jobs", [("status", 1), ("posted_at", -1)]),
     IndexSpec("jobs", [("status", 1), ("remote_mode", 1), ("employment_type", 1)]),
     IndexSpec("jobs", [("status", 1), ("city", 1)]),
+    # company_profiles: employer branding; unique comp_id (one profile per company).
+    IndexSpec("company_profiles", "comp_id", {"unique": True}),
     # saved_jobs: candidate bookmarks; unique (candidate, job) makes Save idempotent.
     IndexSpec(
         "saved_jobs", [("candidate_user_id", 1), ("job_id", 1)], {"unique": True}

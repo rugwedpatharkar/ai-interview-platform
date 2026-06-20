@@ -15,6 +15,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
+from app.resources import company_profile as cp_res
 from app.resources import discovery as discovery_res
 
 
@@ -85,9 +86,54 @@ def make_public_routes(deps):
             return JSONResponse({"error": "not_found"}, status_code=404)
         return JSONResponse(job, headers={"Cache-Control": "public, max-age=120"})
 
+    async def company_profile(request):
+        ip = _client_ip(request, deps.get("trusted_proxy", False))
+        hit = await deps["limiter"].hit(
+            f"public_jobs:ip:{ip}", deps["rate_limit"], deps["rate_window"]
+        )
+        if not hit.allowed:
+            return JSONResponse(
+                {"error": "rate limited"},
+                status_code=429,
+                headers={"Retry-After": str(hit.retry_after)},
+            )
+        out = await cp_res.get_company_profile(
+            request.path_params["id"],
+            companies=deps["companies"],
+            profiles=deps["company_profiles"],
+            jobs=deps["jobs"],
+            applications=deps["applications"],
+        )
+        if out is None:
+            return JSONResponse({"error": "not_found"}, status_code=404)
+        return JSONResponse(out, headers={"Cache-Control": "public, max-age=300"})
+
+    async def company_jobs(request):
+        ip = _client_ip(request, deps.get("trusted_proxy", False))
+        hit = await deps["limiter"].hit(
+            f"public_jobs:ip:{ip}", deps["rate_limit"], deps["rate_window"]
+        )
+        if not hit.allowed:
+            return JSONResponse(
+                {"error": "rate limited"},
+                status_code=429,
+                headers={"Retry-After": str(hit.retry_after)},
+            )
+        qp = request.query_params
+        out = await cp_res.list_company_jobs(
+            request.path_params["id"],
+            jobs=deps["jobs"],
+            companies=deps["companies"],
+            page=_int(qp.get("page"), 1),
+            page_size=_int(qp.get("page_size"), 24),
+        )
+        return JSONResponse(out, headers={"Cache-Control": "public, max-age=120"})
+
     return [
         Route("/public/jobs", search_jobs),
         Route("/public/jobs/{id}", job_detail),
+        Route("/public/companies/{id}", company_profile),
+        Route("/public/companies/{id}/jobs", company_jobs),
     ]
 
 

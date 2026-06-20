@@ -21,6 +21,7 @@ from app.infra.repositories.applications import ApplicationRepository
 from app.infra.repositories.aptitude_deliveries import AptitudeDeliveryRepository
 from app.infra.repositories.audit_logs import AuditLogRepository
 from app.infra.repositories.companies import CompanyRepository
+from app.infra.repositories.company_profiles import CompanyProfileRepository
 from app.infra.repositories.jobs import JobRepository
 from app.infra.repositories.users import UserRepository
 from app.resources import funnel, recommend, scheduler
@@ -147,6 +148,8 @@ async def serve() -> None:
         {
             "jobs": JobRepository(mongo.db),
             "companies": CompanyRepository(mongo.db),
+            "company_profiles": CompanyProfileRepository(mongo.db),
+            "applications": ApplicationRepository(mongo.db),
             "limiter": RateLimiter(redis),
             "trusted_proxy": s.trusted_proxy,
             "rate_limit": s.public_search_limit,

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package admin.company_profile.v1;
+
+// CompanyProfileService — public read of an employer's branding + trust signals.
+// GetCompanyProfile is an UNAUTHENTICATED read of a published company (the public REST
+// mirror shares the resource). Upsert/logo-presign (company-branding) are out of scope.
+service CompanyProfileService {
+  rpc GetCompanyProfile(GetCompanyProfileRequest) returns (CompanyProfile);
+}
+
+message GetCompanyProfileRequest {
+  string comp_id = 1;
+}
+
+message CompanyProfile {
+  string id = 1;                  // public company id (maps from internal comp_id)
+  string name = 2;
+  string about = 3;               // "" when unset
+  string website = 4;             // "" when unset
+  string logo = 5;                // logo URL or ""
+  repeated string locations = 6;
+  TrustSignals trust = 7;
+}
+
+// Computed from funnel ground-truth (application transition timings) — never self-reported.
+message TrustSignals {
+  bool actively_reviewing = 1;
+  int32 responds_in_days = 2;   // 0 below min-sample -> FE hides the chip
+  int32 open_jobs = 3;
+}

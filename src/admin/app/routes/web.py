@@ -16,6 +16,7 @@ from app.infra.repositories.aptitude_banks import AptitudeBankRepository
 from app.infra.repositories.aptitude_deliveries import AptitudeDeliveryRepository
 from app.infra.repositories.audit_logs import AuditLogRepository
 from app.infra.repositories.companies import CompanyRepository
+from app.infra.repositories.company_profiles import CompanyProfileRepository
 from app.infra.repositories.consents import ConsentRepository
 from app.infra.repositories.interviews import InterviewRepository
 from app.infra.repositories.jobs import JobRepository
@@ -30,6 +31,7 @@ from app.routes.analytics import AnalyticsServicer
 from app.routes.application import ApplicationServicer
 from app.routes.aptitude import AptitudeServicer
 from app.routes.auth import AuthServicer
+from app.routes.company_profile import CompanyProfileServicer
 from app.routes.compliance import ComplianceServicer
 from app.routes.decision import DecisionServicer
 from app.routes.discovery import DiscoveryServicer
@@ -39,6 +41,7 @@ from app.routes.pb import (
     application_pb2_grpc,
     aptitude_pb2_grpc,
     auth_pb2_grpc,
+    company_profile_pb2_grpc,
     compliance_pb2_grpc,
     decision_pb2_grpc,
     discovery_pb2_grpc,
@@ -225,6 +228,15 @@ def create_web_app(
             applications=ApplicationRepository(db),
             profiles=CandidateProfileRepository(db),
             tokens=tokens,
+        ),
+        app,
+    )
+    company_profile_pb2_grpc.add_CompanyProfileServiceServicer_to_server(
+        CompanyProfileServicer(
+            companies=CompanyRepository(db),
+            profiles=CompanyProfileRepository(db),
+            jobs=JobRepository(db),
+            applications=ApplicationRepository(db),
         ),
         app,
     )

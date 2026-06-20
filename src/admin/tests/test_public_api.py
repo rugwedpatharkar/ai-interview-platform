@@ -25,17 +25,51 @@ class _FakeJobs:
     async def get_by_id(self, job_id):
         return self._detail
 
+    _published_count = 0
+
+    async def count_published_by_comp(self, comp_id):
+        return self._published_count
+
+    async def list_published_by_comp(self, comp_id, *, skip=0, limit=24):
+        return [{"_id": "j1", "comp_id": comp_id, "title": "Eng"}][skip : skip + limit]
+
 
 class _FakeCompanies:
     async def names_by_ids(self, comp_ids):
-        return {}
+        return {"c1": "Acme"}
 
 
-def _app(fakes, *, results=None, total=0, rate_limit=60, detail=None):
+class _FakeCompanyProfiles:
+    def __init__(self, doc=None):
+        self._doc = doc
+
+    async def get_by_comp(self, comp_id):
+        return self._doc
+
+
+class _FakeApps:
+    async def list_by_comp(self, comp_id):
+        return []
+
+
+def _app(
+    fakes,
+    *,
+    results=None,
+    total=0,
+    rate_limit=60,
+    detail=None,
+    published=0,
+    profile=None,
+):
+    jobs = _FakeJobs(results=results, total=total, detail=detail)
+    jobs._published_count = published
     return create_public_app(
         {
-            "jobs": _FakeJobs(results=results, total=total, detail=detail),
+            "jobs": jobs,
             "companies": _FakeCompanies(),
+            "company_profiles": _FakeCompanyProfiles(profile),
+            "applications": _FakeApps(),
             "limiter": RateLimiter(fakes["redis"]),
             "trusted_proxy": False,
             "rate_limit": rate_limit,
@@ -114,7 +148,7 @@ async def test_public_job_detail_returns_scrubbed_dto(fakes):
     body = resp.json()
     assert body["job_id"] == "j1" and body["jd_text"] == "full description"
     assert body["remote_mode"] == "remote" and body["skills"] == ["python"]
-    assert body["company"] == {"id": "c1", "name": "", "logo": ""}
+    assert body["company"] == {"id": "c1", "name": "Acme", "logo": ""}
     assert "aptitude_config" not in body and "comp_id" not in body
     assert "required_topics" not in body
 
@@ -131,3 +165,29 @@ async def test_public_job_detail_unpublished_is_404(fakes):
 async def test_public_job_detail_missing_is_404(fakes):
     resp = await _get(_app(fakes, detail=None), url="/public/jobs/nope")
     assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_public_company_profile_returns_dto(fakes):
+    resp = await _get(_app(fakes, published=3), url="/public/companies/c1")
+    assert resp.status_code == 200
+    assert resp.headers["cache-control"] == "public, max-age=300"
+    body = resp.json()
+    assert body["id"] == "c1" and body["name"] == "Acme"
+    assert body["trust"]["open_jobs"] == 3
+
+
+@pytest.mark.asyncio
+async def test_public_company_profile_unknown_is_404(fakes):
+    resp = await _get(_app(fakes, published=0), url="/public/companies/c1")
+    assert resp.status_code == 404
+    assert resp.json() == {"error": "not_found"}
+
+
+@pytest.mark.asyncio
+async def test_public_company_jobs_returns_cards(fakes):
+    resp = await _get(_app(fakes, published=1), url="/public/companies/c1/jobs")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 1 and body["jobs"][0]["company_name"] == "Acme"
+    assert "comp_id" not in body["jobs"][0]
