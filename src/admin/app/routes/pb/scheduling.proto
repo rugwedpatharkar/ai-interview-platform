@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package admin.scheduling.v1;
+
+// SchedulingService — coordinate the live human interview after the AI screen passes.
+// Funnel-adjacent: its own status + version CAS, never writes funnel state. All datetimes
+// are ISO-8601 UTC strings on the wire.
+service SchedulingService {
+  rpc ProposeSlots(ProposeSlotsRequest) returns (ScheduleDTO);
+  rpc Reschedule(ProposeSlotsRequest) returns (ScheduleDTO);
+  rpc GetSchedule(GetScheduleRequest) returns (ScheduleDTO);
+  rpc ChooseSlot(ChooseSlotRequest) returns (ScheduleDTO);
+  rpc Cancel(CancelRequest) returns (ScheduleDTO);
+  rpc GetIcs(GetIcsRequest) returns (IcsResponse);
+  rpc ListCandidateInterviews(ListCandidateRequest) returns (BookingListResponse);
+  rpc ListCompanyBookings(ListCompanyRequest) returns (BookingListResponse);
+}
+
+message ProposedSlot {
+  string start_at = 1;  // ISO-8601 UTC
+  int32 duration_minutes = 2;
+}
+
+message ProposeSlotsRequest {
+  string application_id = 1;
+  repeated ProposedSlot slots = 2;
+  string location = 3;
+  string note = 4;
+}
+
+message GetScheduleRequest {
+  string application_id = 1;
+}
+
+message ChooseSlotRequest {
+  string application_id = 1;
+  string start_at = 2;  // must be an offered slot
+}
+
+message CancelRequest {
+  string application_id = 1;
+}
+
+message GetIcsRequest {
+  string application_id = 1;
+}
+
+message IcsResponse {
+  string filename = 1;
+  string content = 2;
+}
+
+message ScheduleDTO {
+  string application_id = 1;
+  string status = 2;  // proposed | booked | completed | cancelled
+  repeated ProposedSlot slots = 3;
+  string chosen_start_at = 4;
+  int32 chosen_duration_minutes = 5;
+  string location = 6;
+  string note = 7;
+  string cancelled_by = 8;
+}
+
+message BookingDTO {
+  string application_id = 1;
+  string status = 2;
+  string chosen_start_at = 3;
+  int32 chosen_duration_minutes = 4;
+  string location = 5;
+}
+
+message ListCandidateRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListCompanyRequest {
+  string status = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message BookingListResponse {
+  repeated BookingDTO bookings = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total = 4;
+}

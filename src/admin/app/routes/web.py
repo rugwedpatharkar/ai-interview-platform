@@ -18,6 +18,8 @@ from app.infra.repositories.audit_logs import AuditLogRepository
 from app.infra.repositories.companies import CompanyRepository
 from app.infra.repositories.company_profiles import CompanyProfileRepository
 from app.infra.repositories.consents import ConsentRepository
+from app.infra.repositories.interview_bookings import InterviewBookingRepository
+from app.infra.repositories.interview_slots import InterviewSlotsRepository
 from app.infra.repositories.interviews import InterviewRepository
 from app.infra.repositories.job_alerts import JobAlertsRepository
 from app.infra.repositories.jobs import JobRepository
@@ -67,6 +69,7 @@ from app.routes.pb import (
     report_pb2_grpc,
     rubric_pb2_grpc,
     saved_jobs_pb2_grpc,
+    scheduling_pb2_grpc,
     settings_pb2_grpc,
     sourcing_pb2_grpc,
     talent_pb2_grpc,
@@ -76,6 +79,7 @@ from app.routes.recommendation import RecommendationServicer
 from app.routes.report import ReportServicer
 from app.routes.rubric import RubricServicer
 from app.routes.saved_jobs import SavedJobsServicer
+from app.routes.scheduling import SchedulingServicer
 from app.routes.settings import SettingsServicer
 from app.routes.sourcing import SourcingServicer
 from app.routes.talent import TalentServicer
@@ -292,6 +296,17 @@ def create_web_app(
             companies=CompanyRepository(db),
             tokens=tokens,
             notifications=NotificationRepository(db),
+        ),
+        app,
+    )
+    scheduling_pb2_grpc.add_SchedulingServiceServicer_to_server(
+        SchedulingServicer(
+            applications=ApplicationRepository(db),
+            slots=InterviewSlotsRepository(db),
+            bookings=InterviewBookingRepository(db),
+            tokens=tokens,
+            notifications=NotificationRepository(db),
+            limiter=RateLimiter(redis),
         ),
         app,
     )
