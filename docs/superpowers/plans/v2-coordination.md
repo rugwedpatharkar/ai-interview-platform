@@ -300,3 +300,12 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   rubric guards over `require_permission` (behavior-preserving cleanup — existing role-sets already deny
   `hiring_manager` correctly); `last_active_at` stamping (no login-touch); the existing-users `status=active`
   backfill (non-blocking, mirrors the `posted_at` backfill). **Remaining BE:** L1 Settings/2FA remainder.
+- 2026-06-20 · BE · ⏸️ **CHECKPOINT — 3/4 v2 contracts DONE + pushed** (origin/main `051e4cd`): L4 Practice,
+  L3 Scheduling, L2 Team — all TDD + full gate GREEN. **L1 (SettingsService remainder + AuthService MFA) is
+  the only BE left, and is deliberately queued for a FRESH session** — it's the auth-security-critical one
+  (touches core login, the shared `lib` RefreshSessionStore, and must keep the 2FA-off Login response
+  byte-for-byte). A complete, code-verified L1 plan + the non-obvious gotchas (no backend password min-length
+  exists; `decode_responses=True`; no fakeredis → hand-roll; the `sid`-claim approach for "keep current"; the
+  meta-cleanup-on-revoke requirement; the VerifyEmailChange replay-status nuance) live in the RESUME ledger
+  `.superpowers/sdd/progress.md` ("L1 EXPLORATION FINDINGS"). **FE:** the `settings`/2FA/sessions tabs await L1;
+  the `practice`/`scheduling`/`team` quads + screens are ready to flip off `NEXT_PUBLIC_MOCK` now.
