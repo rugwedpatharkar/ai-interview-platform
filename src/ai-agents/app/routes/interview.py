@@ -110,14 +110,17 @@ class InterviewServicer(interview_pb2_grpc.InterviewServiceServicer):
             **bind_ids(application_id=request.application_id, user_id=user_id),
         ):
             try:
-                accepted = await record_proctoring_events(
+                accepted, terminated, reason = await record_proctoring_events(
                     request.application_id,
                     events,
                     caller_user_id=user_id,
                     sessions=self._sessions,
                     data=self._data,
+                    publisher=self._publisher,
                 )
-                return interview_pb2.ProctorAccepted(accepted=accepted)
+                return interview_pb2.ProctorAccepted(
+                    accepted=accepted, terminated=terminated, reason=reason
+                )
             except (NotFoundError, ForbiddenError) as exc:
                 await abort_domain(context, exc)
 

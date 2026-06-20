@@ -9,12 +9,14 @@ from app.model.interview import (
     InterviewSession,
     InterviewTurnDecision,
 )
+from app.model.proctoring import ProctoringEvent
 from app.resources.interview_host import (
     abandon_stale,
     start_interview,
     submit_turn,
     terminate_for_proctor,
 )
+from app.resources.proctoring import record_proctoring_events
 
 
 def _setup():
@@ -366,3 +368,62 @@ async def test_terminate_for_proctor_persists_publishes_and_flips(
     assert saved.status == "terminated"
     assert saved.terminated_by_proctor == "second_face"
     assert saved.current_question == ""
+
+
+async def test_record_proctoring_high_severity_terminates(
+    fake_data, fake_sessions, fake_publisher
+):
+    data, sessions, pub = fake_data(), fake_sessions(), fake_publisher()
+    sessions.saved["a1"] = _session()
+    accepted, terminated, reason = await record_proctoring_events(
+        "a1",
+        [
+            ProctoringEvent(type="tab_hidden", at="t"),
+            ProctoringEvent(type="second_face", at="t"),
+        ],
+        caller_user_id="u1",
+        sessions=sessions,
+        data=data,
+        publisher=pub,
+    )
+    assert (accepted, terminated, reason) == (2, True, "second_face")
+    assert sessions.saved["a1"].status == "terminated"
+    assert any(k == "interview.proctor_terminated" for k, _ in pub.events)
+
+
+async def test_record_proctoring_medium_low_only_records(
+    fake_data, fake_sessions, fake_publisher
+):
+    data, sessions, pub = fake_data(), fake_sessions(), fake_publisher()
+    sessions.saved["a1"] = _session()
+    accepted, terminated, reason = await record_proctoring_events(
+        "a1",
+        [
+            ProctoringEvent(type="paste_large", at="t"),  # medium
+            ProctoringEvent(type="tab_hidden", at="t"),  # low
+        ],
+        caller_user_id="u1",
+        sessions=sessions,
+        data=data,
+        publisher=pub,
+    )
+    assert (accepted, terminated, reason) == (2, False, "")
+    assert sessions.saved["a1"].status == "in_progress"
+    assert pub.events == []
+
+
+async def test_record_proctoring_high_on_terminated_does_not_republish(
+    fake_data, fake_sessions, fake_publisher
+):
+    data, sessions, pub = fake_data(), fake_sessions(), fake_publisher()
+    sessions.saved["a1"] = _session(status="terminated")
+    accepted, terminated, reason = await record_proctoring_events(
+        "a1",
+        [ProctoringEvent(type="phone_detected", at="t")],
+        caller_user_id="u1",
+        sessions=sessions,
+        data=data,
+        publisher=pub,
+    )
+    assert accepted == 1  # still recorded for the audit trail
+    assert pub.events == []  # not re-terminated

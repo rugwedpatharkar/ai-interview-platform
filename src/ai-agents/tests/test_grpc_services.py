@@ -273,11 +273,15 @@ async def test_turn_rejects_oversized_answer(
 
 
 @pytest.mark.asyncio
-async def test_proctor_records_events(fake_data, fake_sessions, fake_llm):
+async def test_proctor_records_events(
+    fake_data, fake_sessions, fake_llm, fake_publisher
+):
     sessions = fake_sessions()
     sessions.saved["a1"] = _session()
     data = fake_data()
-    app = _app(data=data, sessions=sessions, llm=fake_llm(None))
+    app = _app(
+        data=data, sessions=sessions, llm=fake_llm(None), publisher=fake_publisher()
+    )
     resp = await _call(
         app,
         f"{_INTERVIEW}/RecordProctorEvents",
@@ -294,10 +298,17 @@ async def test_proctor_records_events(fake_data, fake_sessions, fake_llm):
 
 
 @pytest.mark.asyncio
-async def test_proctor_rejects_unknown_type(fake_data, fake_sessions, fake_llm):
+async def test_proctor_rejects_unknown_type(
+    fake_data, fake_sessions, fake_llm, fake_publisher
+):
     sessions = fake_sessions()
     sessions.saved["a1"] = _session()
-    app = _app(data=fake_data(), sessions=sessions, llm=fake_llm(None))
+    app = _app(
+        data=fake_data(),
+        sessions=sessions,
+        llm=fake_llm(None),
+        publisher=fake_publisher(),
+    )
     resp = await _call(
         app,
         f"{_INTERVIEW}/RecordProctorEvents",
@@ -309,6 +320,55 @@ async def test_proctor_rejects_unknown_type(fake_data, fake_sessions, fake_llm):
     )
     _, status = _data_and_status(resp.content)
     assert status == 3  # INVALID_ARGUMENT — unknown type fails pydantic Literal
+
+
+async def test_proctor_high_severity_terminates(
+    fake_data, fake_sessions, fake_llm, fake_publisher
+):
+    sessions = fake_sessions()
+    sessions.saved["a1"] = _session()
+    pub = fake_publisher()
+    app = _app(data=fake_data(), sessions=sessions, llm=fake_llm(None), publisher=pub)
+    resp = await _call(
+        app,
+        f"{_INTERVIEW}/RecordProctorEvents",
+        interview_pb2.ProctorEventsRequest(
+            application_id="a1",
+            events=[interview_pb2.ProctorEvent(type="second_face", at="t")],
+        ),
+        metadata=_auth("u1"),
+    )
+    data_bytes, status = _data_and_status(resp.content)
+    assert status == 0
+    ack = interview_pb2.ProctorAccepted.FromString(data_bytes)
+    assert ack.accepted == 1 and ack.terminated is True and ack.reason == "second_face"
+    assert sessions.saved["a1"].status == "terminated"
+    assert any(k == "interview.proctor_terminated" for k, _ in pub.events)
+
+
+async def test_proctor_low_severity_not_terminated(
+    fake_data, fake_sessions, fake_llm, fake_publisher
+):
+    sessions = fake_sessions()
+    sessions.saved["a1"] = _session()
+    app = _app(
+        data=fake_data(),
+        sessions=sessions,
+        llm=fake_llm(None),
+        publisher=fake_publisher(),
+    )
+    resp = await _call(
+        app,
+        f"{_INTERVIEW}/RecordProctorEvents",
+        interview_pb2.ProctorEventsRequest(
+            application_id="a1",
+            events=[interview_pb2.ProctorEvent(type="tab_hidden", at="t0")],
+        ),
+        metadata=_auth("u1"),
+    )
+    data_bytes, _ = _data_and_status(resp.content)
+    ack = interview_pb2.ProctorAccepted.FromString(data_bytes)
+    assert (ack.accepted, ack.terminated, ack.reason) == (1, False, "")
 
 
 @pytest.mark.asyncio
@@ -618,11 +678,15 @@ async def test_proctor_rejects_non_owner(fake_data, fake_sessions, fake_llm):
 
 
 @pytest.mark.asyncio
-async def test_proctor_assigns_canonical_severity(fake_data, fake_sessions, fake_llm):
+async def test_proctor_assigns_canonical_severity(
+    fake_data, fake_sessions, fake_llm, fake_publisher
+):
     sessions = fake_sessions()
     sessions.saved["a1"] = _session()
     data = fake_data()
-    app = _app(data=data, sessions=sessions, llm=fake_llm(None))
+    app = _app(
+        data=data, sessions=sessions, llm=fake_llm(None), publisher=fake_publisher()
+    )
     resp = await _call(
         app,
         f"{_INTERVIEW}/RecordProctorEvents",
