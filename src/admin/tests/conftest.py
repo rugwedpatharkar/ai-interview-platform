@@ -64,6 +64,9 @@ class FakeCompanyRepo:
     async def get(self, comp_id):
         return self._docs.get(comp_id)
 
+    async def names_by_ids(self, comp_ids):
+        return {c: self._docs[c].get("name", "") for c in comp_ids if c in self._docs}
+
 
 class FakeRedis:
     """In-memory async Redis stand-in for RateLimiter + RefreshSessionStore."""

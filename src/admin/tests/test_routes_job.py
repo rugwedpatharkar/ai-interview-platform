@@ -27,7 +27,10 @@ class FakeContext:
 
 def _servicer(fakes):
     return JobServicer(
-        jobs=fakes["jobs"], publisher=fakes["publisher"], tokens=TokenService(SECRET)
+        jobs=fakes["jobs"],
+        publisher=fakes["publisher"],
+        tokens=TokenService(SECRET),
+        companies=fakes["companies"],
     )
 
 
@@ -129,6 +132,34 @@ async def test_update_job_rejects_off_enum(fakes):
             _md(),
         )
     assert ei.value.code == grpc.StatusCode.INVALID_ARGUMENT
+
+
+@pytest.mark.asyncio
+async def test_get_public_job_returns_full_dto(fakes):
+    svc = _servicer(fakes)
+    created = await svc.CreateJob(
+        job_pb2.CreateJobRequest(
+            title="Eng", jd_text="Build APIs.", remote_mode="remote", skills=["python"]
+        ),
+        _md(),
+    )
+    await svc.PublishJob(job_pb2.PublishJobRequest(job_id=created.job_id), _md())
+    out = await svc.GetPublicJob(job_pb2.GetJobRequest(job_id=created.job_id), _md())
+    assert out.title == "Eng" and out.jd_text == "Build APIs."
+    assert out.remote_mode == "remote" and list(out.skills) == ["python"]
+    assert out.posted_at != ""  # stamped at publish
+    assert out.company.id == "c1"  # comp_id surfaces only as company.id
+
+
+@pytest.mark.asyncio
+async def test_get_public_job_draft_not_found(fakes):
+    svc = _servicer(fakes)
+    created = await svc.CreateJob(
+        job_pb2.CreateJobRequest(title="Draft", jd_text="x"), _md()
+    )
+    with pytest.raises(_Aborted) as ei:
+        await svc.GetPublicJob(job_pb2.GetJobRequest(job_id=created.job_id), _md())
+    assert ei.value.code == grpc.StatusCode.NOT_FOUND
 
 
 @pytest.mark.asyncio

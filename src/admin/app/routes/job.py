@@ -5,6 +5,7 @@ from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
+from app.resources import discovery as discovery_res
 from app.resources import job as job_res
 from app.routes.auth import _STATUS, caller_identity
 from app.routes.pb import job_pb2, job_pb2_grpc
@@ -39,6 +40,24 @@ def _job_response(d):
     )
 
 
+def _public_job(d):
+    c = d["company"]
+    return job_pb2.PublicJob(
+        job_id=d["job_id"],
+        title=d["title"],
+        jd_text=d["jd_text"],
+        location=d["location"],
+        remote_mode=d["remote_mode"],
+        employment_type=d["employment_type"],
+        salary_min=d["salary_min"],
+        salary_max=d["salary_max"],
+        salary_currency=d["salary_currency"],
+        skills=d["skills"],
+        posted_at=d["posted_at"],
+        company=job_pb2.Company(id=c["id"], name=c["name"], logo=c["logo"]),
+    )
+
+
 def _marketplace(request):
     """Optional marketplace fields off a Create/Update request (resource validates)."""
     return {
@@ -56,10 +75,11 @@ def _marketplace(request):
 
 
 class JobServicer(job_pb2_grpc.JobServiceServicer):
-    def __init__(self, *, jobs, publisher, tokens):
+    def __init__(self, *, jobs, publisher, tokens, companies=None):
         self._jobs = jobs
         self._publisher = publisher
         self._tokens = tokens
+        self._companies = companies
 
     async def _abort(self, context, exc, method="unknown"):
         log.warning(
@@ -156,9 +176,11 @@ class JobServicer(job_pb2_grpc.JobServiceServicer):
         ):
             try:
                 await caller_identity(context, self._tokens)  # any authenticated user
-                out = await job_res.get_public_job(request.job_id, jobs=self._jobs)
-                return job_pb2.PublicJob(
-                    job_id=out["job_id"], title=out["title"], jd_text=out["jd_text"]
+                out = await discovery_res.get_public_job_detail(
+                    request.job_id, jobs=self._jobs, companies=self._companies
                 )
+                if out is None:
+                    await context.abort(grpc.StatusCode.NOT_FOUND, "Job not found")
+                return _public_job(out)
             except AuthDomainError as exc:
                 await self._abort(context, exc, "GetPublicJob")

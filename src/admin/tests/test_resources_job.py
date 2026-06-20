@@ -30,25 +30,6 @@ async def test_candidate_cannot_manage_jobs(fakes):
         await job.create_job(CAND, "Eng", "x", jobs=fakes["jobs"])
 
 
-@pytest.mark.asyncio
-async def test_get_public_job_returns_published_fields(fakes):
-    created = await job.create_job(
-        ADMIN, "Backend Eng", "Build APIs.", jobs=fakes["jobs"]
-    )
-    await fakes["jobs"].set_status(created["job_id"], "c1", "published")
-    out = await job.get_public_job(created["job_id"], jobs=fakes["jobs"])
-    assert out["title"] == "Backend Eng"
-    assert out["jd_text"] == "Build APIs."
-
-
-@pytest.mark.asyncio
-async def test_get_public_job_draft_is_not_found(fakes):
-    # An unpublished (draft) job is not publicly discoverable.
-    created = await job.create_job(ADMIN, "Draft Role", "x", jobs=fakes["jobs"])
-    with pytest.raises(NotFoundError):
-        await job.get_public_job(created["job_id"], jobs=fakes["jobs"])
-
-
 _MARKET = {
     "city": "Berlin",
     "region": "BE",

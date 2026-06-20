@@ -121,7 +121,12 @@ def create_web_app(
         app,
     )
     job_pb2_grpc.add_JobServiceServicer_to_server(
-        JobServicer(jobs=JobRepository(db), publisher=publisher, tokens=tokens),
+        JobServicer(
+            jobs=JobRepository(db),
+            publisher=publisher,
+            tokens=tokens,
+            companies=CompanyRepository(db),
+        ),
         app,
     )
     application_pb2_grpc.add_ApplicationServiceServicer_to_server(

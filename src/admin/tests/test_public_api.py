@@ -8,9 +8,10 @@ from app.routes.public_api import create_public_app
 
 
 class _FakeJobs:
-    def __init__(self, results=None, total=0):
+    def __init__(self, results=None, total=0, detail=None):
         self._results = results or []
         self._total = total
+        self._detail = detail
 
     async def search_published(self, **kwargs):
         return {
@@ -21,16 +22,19 @@ class _FakeJobs:
             "experience_level": [],
         }
 
+    async def get_by_id(self, job_id):
+        return self._detail
+
 
 class _FakeCompanies:
     async def names_by_ids(self, comp_ids):
         return {}
 
 
-def _app(fakes, *, results=None, total=0, rate_limit=60):
+def _app(fakes, *, results=None, total=0, rate_limit=60, detail=None):
     return create_public_app(
         {
-            "jobs": _FakeJobs(results=results, total=total),
+            "jobs": _FakeJobs(results=results, total=total, detail=detail),
             "companies": _FakeCompanies(),
             "limiter": RateLimiter(fakes["redis"]),
             "trusted_proxy": False,
@@ -88,3 +92,42 @@ async def test_public_jobs_rate_limited(fakes):
     resp = await _get(app)
     assert resp.status_code == 429
     assert "Retry-After" in resp.headers
+
+
+@pytest.mark.asyncio
+async def test_public_job_detail_returns_scrubbed_dto(fakes):
+    raw = {
+        "_id": "j1",
+        "comp_id": "c1",
+        "title": "Eng",
+        "jd_text": "full description",
+        "status": "published",
+        "remote_mode": "remote",
+        "skills": ["python"],
+        "created_at": None,
+        "aptitude_config": {"gate_mode": "auto"},
+        "required_topics": ["a"],
+    }
+    resp = await _get(_app(fakes, detail=raw), url="/public/jobs/j1")
+    assert resp.status_code == 200
+    assert resp.headers["cache-control"] == "public, max-age=120"
+    body = resp.json()
+    assert body["job_id"] == "j1" and body["jd_text"] == "full description"
+    assert body["remote_mode"] == "remote" and body["skills"] == ["python"]
+    assert body["company"] == {"id": "c1", "name": "", "logo": ""}
+    assert "aptitude_config" not in body and "comp_id" not in body
+    assert "required_topics" not in body
+
+
+@pytest.mark.asyncio
+async def test_public_job_detail_unpublished_is_404(fakes):
+    raw = {"_id": "j1", "comp_id": "c1", "title": "Eng", "status": "draft"}
+    resp = await _get(_app(fakes, detail=raw), url="/public/jobs/j1")
+    assert resp.status_code == 404
+    assert resp.json() == {"error": "not_found"}
+
+
+@pytest.mark.asyncio
+async def test_public_job_detail_missing_is_404(fakes):
+    resp = await _get(_app(fakes, detail=None), url="/public/jobs/nope")
+    assert resp.status_code == 404

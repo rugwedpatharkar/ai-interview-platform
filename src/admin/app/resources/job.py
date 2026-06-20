@@ -140,19 +140,6 @@ async def list_jobs(identity, *, jobs):
     return [_to_response(j) for j in await jobs.list_by_company(identity["comp_id"])]
 
 
-async def get_public_job(job_id, *, jobs):
-    """A published job's public fields (title + JD) for any authenticated user; drafts
-    and unknown ids are NotFound; no comp-scope (published jobs are discoverable)."""
-    job = await jobs.get_by_id(job_id)
-    if job is None or job.get("status") != "published":
-        raise NotFoundError("Job not found")
-    return {
-        "job_id": str(job["_id"]),
-        "title": job["title"],
-        "jd_text": job.get("jd_text", ""),
-    }
-
-
 async def publish_job(identity, job_id, *, jobs, publisher):
     _require_manager(identity)
     job = await jobs.get_scoped(job_id, identity["comp_id"])

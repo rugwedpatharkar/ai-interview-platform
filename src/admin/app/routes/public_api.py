@@ -65,7 +65,30 @@ def make_public_routes(deps):
         )
         return JSONResponse(result, headers={"Cache-Control": "public, max-age=60"})
 
-    return [Route("/public/jobs", search_jobs)]
+    async def job_detail(request):
+        ip = _client_ip(request, deps.get("trusted_proxy", False))
+        hit = await deps["limiter"].hit(
+            f"public_jobs:ip:{ip}", deps["rate_limit"], deps["rate_window"]
+        )
+        if not hit.allowed:
+            return JSONResponse(
+                {"error": "rate limited"},
+                status_code=429,
+                headers={"Retry-After": str(hit.retry_after)},
+            )
+        job = await discovery_res.get_public_job_detail(
+            request.path_params["id"],
+            jobs=deps["jobs"],
+            companies=deps["companies"],
+        )
+        if job is None:  # missing/unpublished/draft — opaque (no draft-existence leak)
+            return JSONResponse({"error": "not_found"}, status_code=404)
+        return JSONResponse(job, headers={"Cache-Control": "public, max-age=120"})
+
+    return [
+        Route("/public/jobs", search_jobs),
+        Route("/public/jobs/{id}", job_detail),
+    ]
 
 
 def create_public_app(deps):
