@@ -1,9 +1,16 @@
 import grpc
 import pytest
 from lib.redis import RateLimiter
-from lib.security import RefreshSessionStore, TokenService
+from lib.schemas import Role
+from lib.security import (
+    RefreshSessionStore,
+    SingleUseTokenStore,
+    TokenService,
+    hash_password,
+)
 
 from app.infra.notifier import LoggingNotifier
+from app.model.auth import User
 from app.routes.auth import AuthServicer, _client_ip
 from app.routes.pb import auth_pb2
 
@@ -219,3 +226,90 @@ def test_client_ip_ignores_forwarded_for_by_default():
 def test_client_ip_falls_back_to_peer():
     # Native path / no proxy header: use the transport peer.
     assert _client_ip(FakeContext(peer="ipv4:1.2.3.4:1")) == "ipv4:1.2.3.4:1"
+
+
+# --- MFA over the servicer (L1.5) ---
+
+
+class _FakeTotp:
+    def verify(self, secret, code):
+        return secret == "S" and code == "123456"
+
+
+class _FakeBox:
+    def decrypt(self, token):
+        return token.removeprefix("enc:")
+
+
+def _servicer_2fa(fakes):
+    return AuthServicer(
+        users=fakes["users"],
+        companies=fakes["companies"],
+        tokens=TokenService(SECRET),
+        sessions=RefreshSessionStore(fakes["redis"]),
+        limiter=RateLimiter(fakes["redis"]),
+        notifier=LoggingNotifier(),
+        refresh_ttl_seconds=1209600,
+        nonces=SingleUseTokenStore(fakes["redis"]),
+        totp=_FakeTotp(),
+        secretbox=_FakeBox(),
+    )
+
+
+async def _seed_2fa(fakes):
+    await fakes["users"].insert(
+        User(
+            email="mfa@x.com",
+            password_hash=hash_password("pw123456"),
+            role=Role.candidate,
+            totp_enabled=True,
+            totp_secret="enc:S",
+        )
+    )
+
+
+@pytest.mark.asyncio
+async def test_2fa_off_login_returns_tokens_no_mfa_fields(fakes):
+    svc = _servicer(fakes)
+    ctx = FakeContext()
+    await svc.RegisterCompany(
+        auth_pb2.RegisterCompanyRequest(
+            company_name="A", email="x@x.com", password="pw123456"
+        ),
+        ctx,
+    )
+    tok = await svc.Login(
+        auth_pb2.LoginRequest(email="x@x.com", password="pw123456"), ctx
+    )
+    assert tok.access_token and tok.refresh_token
+    assert tok.mfa_required is False and tok.mfa_token == ""  # proto defaults
+
+
+@pytest.mark.asyncio
+async def test_2fa_login_challenge_then_verify_completes(fakes):
+    svc = _servicer_2fa(fakes)
+    ctx = FakeContext()
+    await _seed_2fa(fakes)
+    tok = await svc.Login(
+        auth_pb2.LoginRequest(email="mfa@x.com", password="pw123456"), ctx
+    )
+    assert tok.mfa_required is True and tok.mfa_token and tok.access_token == ""
+    final = await svc.VerifyTotpLogin(
+        auth_pb2.VerifyTotpLoginRequest(mfa_token=tok.mfa_token, code="123456"), ctx
+    )
+    assert final.access_token and final.refresh_token
+
+
+@pytest.mark.asyncio
+async def test_verify_totp_login_wrong_code_unauthenticated(fakes):
+    svc = _servicer_2fa(fakes)
+    ctx = FakeContext()
+    await _seed_2fa(fakes)
+    tok = await svc.Login(
+        auth_pb2.LoginRequest(email="mfa@x.com", password="pw123456"), ctx
+    )
+    with pytest.raises(_Aborted) as e:
+        await svc.VerifyTotpLogin(
+            auth_pb2.VerifyTotpLoginRequest(mfa_token=tok.mfa_token, code="000000"), ctx
+        )
+    assert e.value.code == grpc.StatusCode.UNAUTHENTICATED

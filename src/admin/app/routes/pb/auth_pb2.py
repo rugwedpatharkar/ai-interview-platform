@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18\x61pp/routes/pb/auth.proto\x12\radmin.auth.v1\"O\n\x16RegisterCompanyRequest\x12\x14\n\x0c\x63ompany_name\x18\x01 \x01(\t\x12\r\n\x05\x65mail\x18\x02 \x01(\t\x12\x10\n\x08password\x18\x03 \x01(\t\";\n\x18RegisterCandidateRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"\x1e\n\rVerifyRequest\x12\r\n\x05token\x18\x01 \x01(\t\"/\n\x0cLoginRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"\x0b\n\tMeRequest\"`\n\x0cUserResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12\r\n\x05\x65mail\x18\x02 \x01(\t\x12\x0c\n\x04role\x18\x03 \x01(\t\x12\x0f\n\x07\x63omp_id\x18\x04 \x01(\t\x12\x16\n\x0e\x65mail_verified\x18\x05 \x01(\x08\"P\n\rTokenResponse\x12\x14\n\x0c\x61\x63\x63\x65ss_token\x18\x01 \x01(\t\x12\x15\n\rrefresh_token\x18\x02 \x01(\t\x12\x12\n\ntoken_type\x18\x03 \x01(\t\"=\n\x10IdentityResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04role\x18\x02 \x01(\t\x12\x0f\n\x07\x63omp_id\x18\x03 \x01(\t\"\'\n\x0eRefreshRequest\x12\x15\n\rrefresh_token\x18\x01 \x01(\t\"&\n\rLogoutRequest\x12\x15\n\rrefresh_token\x18\x01 \x01(\t\"\x1c\n\x0eLogoutResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"9\n\x16InviteRecruiterRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"&\n\x15\x46orgotPasswordRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\";\n\x14ResetPasswordRequest\x12\r\n\x05token\x18\x01 \x01(\t\x12\x14\n\x0cnew_password\x18\x02 \x01(\t\"*\n\x19ResendVerificationRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\"\x1b\n\x19ListOAuthProvidersRequest\"+\n\x16OAuthProvidersResponse\x12\x11\n\tproviders\x18\x01 \x03(\t\"\x18\n\nOkResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x32\xd5\x07\n\x0b\x41uthService\x12U\n\x0fRegisterCompany\x12%.admin.auth.v1.RegisterCompanyRequest\x1a\x1b.admin.auth.v1.UserResponse\x12Y\n\x11RegisterCandidate\x12\'.admin.auth.v1.RegisterCandidateRequest\x1a\x1b.admin.auth.v1.UserResponse\x12\x43\n\x06Verify\x12\x1c.admin.auth.v1.VerifyRequest\x1a\x1b.admin.auth.v1.UserResponse\x12\x42\n\x05Login\x12\x1b.admin.auth.v1.LoginRequest\x1a\x1c.admin.auth.v1.TokenResponse\x12\x46\n\x07Refresh\x12\x1d.admin.auth.v1.RefreshRequest\x1a\x1c.admin.auth.v1.TokenResponse\x12\x45\n\x06Logout\x12\x1c.admin.auth.v1.LogoutRequest\x1a\x1d.admin.auth.v1.LogoutResponse\x12U\n\x0fInviteRecruiter\x12%.admin.auth.v1.InviteRecruiterRequest\x1a\x1b.admin.auth.v1.UserResponse\x12Q\n\x0e\x46orgotPassword\x12$.admin.auth.v1.ForgotPasswordRequest\x1a\x19.admin.auth.v1.OkResponse\x12O\n\rResetPassword\x12#.admin.auth.v1.ResetPasswordRequest\x1a\x19.admin.auth.v1.OkResponse\x12Y\n\x12ResendVerification\x12(.admin.auth.v1.ResendVerificationRequest\x1a\x19.admin.auth.v1.OkResponse\x12?\n\x02Me\x12\x18.admin.auth.v1.MeRequest\x1a\x1f.admin.auth.v1.IdentityResponse\x12\x65\n\x12ListOAuthProviders\x12(.admin.auth.v1.ListOAuthProvidersRequest\x1a%.admin.auth.v1.OAuthProvidersResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18\x61pp/routes/pb/auth.proto\x12\radmin.auth.v1\"O\n\x16RegisterCompanyRequest\x12\x14\n\x0c\x63ompany_name\x18\x01 \x01(\t\x12\r\n\x05\x65mail\x18\x02 \x01(\t\x12\x10\n\x08password\x18\x03 \x01(\t\";\n\x18RegisterCandidateRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"\x1e\n\rVerifyRequest\x12\r\n\x05token\x18\x01 \x01(\t\"/\n\x0cLoginRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"\x0b\n\tMeRequest\"`\n\x0cUserResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12\r\n\x05\x65mail\x18\x02 \x01(\t\x12\x0c\n\x04role\x18\x03 \x01(\t\x12\x0f\n\x07\x63omp_id\x18\x04 \x01(\t\x12\x16\n\x0e\x65mail_verified\x18\x05 \x01(\x08\"y\n\rTokenResponse\x12\x14\n\x0c\x61\x63\x63\x65ss_token\x18\x01 \x01(\t\x12\x15\n\rrefresh_token\x18\x02 \x01(\t\x12\x12\n\ntoken_type\x18\x03 \x01(\t\x12\x14\n\x0cmfa_required\x18\x04 \x01(\x08\x12\x11\n\tmfa_token\x18\x05 \x01(\t\"9\n\x16VerifyTotpLoginRequest\x12\x11\n\tmfa_token\x18\x01 \x01(\t\x12\x0c\n\x04\x63ode\x18\x02 \x01(\t\"=\n\x10IdentityResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04role\x18\x02 \x01(\t\x12\x0f\n\x07\x63omp_id\x18\x03 \x01(\t\"\'\n\x0eRefreshRequest\x12\x15\n\rrefresh_token\x18\x01 \x01(\t\"&\n\rLogoutRequest\x12\x15\n\rrefresh_token\x18\x01 \x01(\t\"\x1c\n\x0eLogoutResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"9\n\x16InviteRecruiterRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"&\n\x15\x46orgotPasswordRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\";\n\x14ResetPasswordRequest\x12\r\n\x05token\x18\x01 \x01(\t\x12\x14\n\x0cnew_password\x18\x02 \x01(\t\"*\n\x19ResendVerificationRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\"\x1b\n\x19ListOAuthProvidersRequest\"+\n\x16OAuthProvidersResponse\x12\x11\n\tproviders\x18\x01 \x03(\t\"\x18\n\nOkResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x32\xad\x08\n\x0b\x41uthService\x12U\n\x0fRegisterCompany\x12%.admin.auth.v1.RegisterCompanyRequest\x1a\x1b.admin.auth.v1.UserResponse\x12Y\n\x11RegisterCandidate\x12\'.admin.auth.v1.RegisterCandidateRequest\x1a\x1b.admin.auth.v1.UserResponse\x12\x43\n\x06Verify\x12\x1c.admin.auth.v1.VerifyRequest\x1a\x1b.admin.auth.v1.UserResponse\x12\x42\n\x05Login\x12\x1b.admin.auth.v1.LoginRequest\x1a\x1c.admin.auth.v1.TokenResponse\x12V\n\x0fVerifyTotpLogin\x12%.admin.auth.v1.VerifyTotpLoginRequest\x1a\x1c.admin.auth.v1.TokenResponse\x12\x46\n\x07Refresh\x12\x1d.admin.auth.v1.RefreshRequest\x1a\x1c.admin.auth.v1.TokenResponse\x12\x45\n\x06Logout\x12\x1c.admin.auth.v1.LogoutRequest\x1a\x1d.admin.auth.v1.LogoutResponse\x12U\n\x0fInviteRecruiter\x12%.admin.auth.v1.InviteRecruiterRequest\x1a\x1b.admin.auth.v1.UserResponse\x12Q\n\x0e\x46orgotPassword\x12$.admin.auth.v1.ForgotPasswordRequest\x1a\x19.admin.auth.v1.OkResponse\x12O\n\rResetPassword\x12#.admin.auth.v1.ResetPasswordRequest\x1a\x19.admin.auth.v1.OkResponse\x12Y\n\x12ResendVerification\x12(.admin.auth.v1.ResendVerificationRequest\x1a\x19.admin.auth.v1.OkResponse\x12?\n\x02Me\x12\x18.admin.auth.v1.MeRequest\x1a\x1f.admin.auth.v1.IdentityResponse\x12\x65\n\x12ListOAuthProviders\x12(.admin.auth.v1.ListOAuthProvidersRequest\x1a%.admin.auth.v1.OAuthProvidersResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -44,29 +44,31 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_USERRESPONSE']._serialized_start=279
   _globals['_USERRESPONSE']._serialized_end=375
   _globals['_TOKENRESPONSE']._serialized_start=377
-  _globals['_TOKENRESPONSE']._serialized_end=457
-  _globals['_IDENTITYRESPONSE']._serialized_start=459
-  _globals['_IDENTITYRESPONSE']._serialized_end=520
-  _globals['_REFRESHREQUEST']._serialized_start=522
-  _globals['_REFRESHREQUEST']._serialized_end=561
-  _globals['_LOGOUTREQUEST']._serialized_start=563
-  _globals['_LOGOUTREQUEST']._serialized_end=601
-  _globals['_LOGOUTRESPONSE']._serialized_start=603
-  _globals['_LOGOUTRESPONSE']._serialized_end=631
-  _globals['_INVITERECRUITERREQUEST']._serialized_start=633
-  _globals['_INVITERECRUITERREQUEST']._serialized_end=690
-  _globals['_FORGOTPASSWORDREQUEST']._serialized_start=692
-  _globals['_FORGOTPASSWORDREQUEST']._serialized_end=730
-  _globals['_RESETPASSWORDREQUEST']._serialized_start=732
-  _globals['_RESETPASSWORDREQUEST']._serialized_end=791
-  _globals['_RESENDVERIFICATIONREQUEST']._serialized_start=793
-  _globals['_RESENDVERIFICATIONREQUEST']._serialized_end=835
-  _globals['_LISTOAUTHPROVIDERSREQUEST']._serialized_start=837
-  _globals['_LISTOAUTHPROVIDERSREQUEST']._serialized_end=864
-  _globals['_OAUTHPROVIDERSRESPONSE']._serialized_start=866
-  _globals['_OAUTHPROVIDERSRESPONSE']._serialized_end=909
-  _globals['_OKRESPONSE']._serialized_start=911
-  _globals['_OKRESPONSE']._serialized_end=935
-  _globals['_AUTHSERVICE']._serialized_start=938
-  _globals['_AUTHSERVICE']._serialized_end=1919
+  _globals['_TOKENRESPONSE']._serialized_end=498
+  _globals['_VERIFYTOTPLOGINREQUEST']._serialized_start=500
+  _globals['_VERIFYTOTPLOGINREQUEST']._serialized_end=557
+  _globals['_IDENTITYRESPONSE']._serialized_start=559
+  _globals['_IDENTITYRESPONSE']._serialized_end=620
+  _globals['_REFRESHREQUEST']._serialized_start=622
+  _globals['_REFRESHREQUEST']._serialized_end=661
+  _globals['_LOGOUTREQUEST']._serialized_start=663
+  _globals['_LOGOUTREQUEST']._serialized_end=701
+  _globals['_LOGOUTRESPONSE']._serialized_start=703
+  _globals['_LOGOUTRESPONSE']._serialized_end=731
+  _globals['_INVITERECRUITERREQUEST']._serialized_start=733
+  _globals['_INVITERECRUITERREQUEST']._serialized_end=790
+  _globals['_FORGOTPASSWORDREQUEST']._serialized_start=792
+  _globals['_FORGOTPASSWORDREQUEST']._serialized_end=830
+  _globals['_RESETPASSWORDREQUEST']._serialized_start=832
+  _globals['_RESETPASSWORDREQUEST']._serialized_end=891
+  _globals['_RESENDVERIFICATIONREQUEST']._serialized_start=893
+  _globals['_RESENDVERIFICATIONREQUEST']._serialized_end=935
+  _globals['_LISTOAUTHPROVIDERSREQUEST']._serialized_start=937
+  _globals['_LISTOAUTHPROVIDERSREQUEST']._serialized_end=964
+  _globals['_OAUTHPROVIDERSRESPONSE']._serialized_start=966
+  _globals['_OAUTHPROVIDERSRESPONSE']._serialized_end=1009
+  _globals['_OKRESPONSE']._serialized_start=1011
+  _globals['_OKRESPONSE']._serialized_end=1035
+  _globals['_AUTHSERVICE']._serialized_start=1038
+  _globals['_AUTHSERVICE']._serialized_end=2107
 # @@protoc_insertion_point(module_scope)

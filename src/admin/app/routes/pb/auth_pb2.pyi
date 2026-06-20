@@ -57,14 +57,26 @@ class UserResponse(_message.Message):
     def __init__(self, id: _Optional[str] = ..., email: _Optional[str] = ..., role: _Optional[str] = ..., comp_id: _Optional[str] = ..., email_verified: _Optional[bool] = ...) -> None: ...
 
 class TokenResponse(_message.Message):
-    __slots__ = ("access_token", "refresh_token", "token_type")
+    __slots__ = ("access_token", "refresh_token", "token_type", "mfa_required", "mfa_token")
     ACCESS_TOKEN_FIELD_NUMBER: _ClassVar[int]
     REFRESH_TOKEN_FIELD_NUMBER: _ClassVar[int]
     TOKEN_TYPE_FIELD_NUMBER: _ClassVar[int]
+    MFA_REQUIRED_FIELD_NUMBER: _ClassVar[int]
+    MFA_TOKEN_FIELD_NUMBER: _ClassVar[int]
     access_token: str
     refresh_token: str
     token_type: str
-    def __init__(self, access_token: _Optional[str] = ..., refresh_token: _Optional[str] = ..., token_type: _Optional[str] = ...) -> None: ...
+    mfa_required: bool
+    mfa_token: str
+    def __init__(self, access_token: _Optional[str] = ..., refresh_token: _Optional[str] = ..., token_type: _Optional[str] = ..., mfa_required: _Optional[bool] = ..., mfa_token: _Optional[str] = ...) -> None: ...
+
+class VerifyTotpLoginRequest(_message.Message):
+    __slots__ = ("mfa_token", "code")
+    MFA_TOKEN_FIELD_NUMBER: _ClassVar[int]
+    CODE_FIELD_NUMBER: _ClassVar[int]
+    mfa_token: str
+    code: str
+    def __init__(self, mfa_token: _Optional[str] = ..., code: _Optional[str] = ...) -> None: ...
 
 class IdentityResponse(_message.Message):
     __slots__ = ("id", "role", "comp_id")

@@ -34,6 +34,7 @@ class TokenService:
         refresh_minutes: int = 20160,
         verification_minutes: int = 1440,
         reset_minutes: int = 60,
+        mfa_minutes: int = 5,
     ) -> None:
         if not secret:
             raise ValueError("TokenService requires a non-empty secret")
@@ -43,6 +44,7 @@ class TokenService:
         self._refresh_minutes = refresh_minutes
         self._verification_minutes = verification_minutes
         self._reset_minutes = reset_minutes
+        self._mfa_minutes = mfa_minutes
 
     def _encode(self, claims: dict, minutes: int) -> str:
         now = datetime.now(UTC)
@@ -90,6 +92,13 @@ class TokenService:
         if jti is not None:
             claims["jti"] = jti
         return self._encode(claims, self._reset_minutes)
+
+    def mfa_token(self, sub: str, jti: str) -> str:
+        # Short-lived single-use challenge between Login (2FA required) and
+        # VerifyTotpLogin. Carries no role/comp_id — it is not an access token.
+        return self._encode(
+            {"sub": sub, "jti": jti, "purpose": "mfa"}, self._mfa_minutes
+        )
 
     def decode(self, token: str, expected_type: str | None = None) -> dict:
         try:

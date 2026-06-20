@@ -144,6 +144,8 @@ def create_web_app(
             nonces=SingleUseTokenStore(redis),
             audit=AuditLogRepository(db),
             oauth_providers=oauth_providers,
+            totp=PyotpProvider(),
+            secretbox=FernetSecretBox(tokens._secret),
         ),
         app,
     )

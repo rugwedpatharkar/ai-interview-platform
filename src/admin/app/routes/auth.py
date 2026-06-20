@@ -109,6 +109,8 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
         nonces=None,
         audit=None,
         oauth_providers=None,
+        totp=None,
+        secretbox=None,
     ):
         self._users = users
         self._companies = companies
@@ -121,6 +123,8 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
         self._nonces = nonces
         self._audit = audit
         self._oauth_providers = oauth_providers or {}
+        self._totp = totp
+        self._secretbox = secretbox
 
     async def _abort(self, context, exc, method="unknown"):
         code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
@@ -197,6 +201,40 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                     limiter=self._limiter,
                     refresh_ttl_seconds=self._refresh_ttl,
                     audit=self._audit,
+                    nonces=self._nonces,
+                )
+                # mfa_required/mfa_token default to False/"" for a 2FA-off login, so the
+                # wire response is byte-for-byte unchanged.
+                return auth_pb2.TokenResponse(
+                    access_token=out["access_token"],
+                    refresh_token=out["refresh_token"],
+                    token_type=out["token_type"],
+                    mfa_required=out.get("mfa_required", False),
+                    mfa_token=out.get("mfa_token", ""),
+                )
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "Login")
+
+    async def VerifyTotpLogin(self, request, context):
+        # Pre-auth: the single-use mfa_token from Login is the proof (no caller id).
+        _grpc_total.labels(method="VerifyTotpLogin").inc()
+        async with (
+            log_context(log, "auth.VerifyTotpLogin"),
+            span("auth.VerifyTotpLogin"),
+        ):
+            try:
+                out = await auth_res.verify_totp_login(
+                    request.mfa_token,
+                    request.code,
+                    ip=_client_ip(context, self._trusted_proxy),
+                    user_agent=_user_agent(context),
+                    users=self._users,
+                    tokens=self._tokens,
+                    sessions=self._sessions,
+                    nonces=self._nonces,
+                    totp=self._totp,
+                    secretbox=self._secretbox,
+                    refresh_ttl_seconds=self._refresh_ttl,
                 )
                 return auth_pb2.TokenResponse(
                     access_token=out["access_token"],
@@ -204,7 +242,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                     token_type=out["token_type"],
                 )
             except AuthDomainError as exc:
-                await self._abort(context, exc, "Login")
+                await self._abort(context, exc, "VerifyTotpLogin")
 
     async def Me(self, request, context):
         # Route through caller_identity so an expired/invalid access token aborts

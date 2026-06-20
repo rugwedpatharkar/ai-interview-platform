@@ -1,7 +1,12 @@
 import pytest
 from lib.redis import RateLimiter
 from lib.schemas import Role
-from lib.security import RefreshSessionStore, SingleUseTokenStore, TokenService
+from lib.security import (
+    RefreshSessionStore,
+    SingleUseTokenStore,
+    TokenService,
+    hash_password,
+)
 
 from app.config import get_settings
 from app.errors import (
@@ -665,3 +670,197 @@ async def test_resend_verification_rate_limited(fakes):
         await auth.resend_verification("rl@x.com", **kw)
     with pytest.raises(RateLimitedError):
         await auth.resend_verification("rl@x.com", **kw)
+
+
+# --- Login MFA branch + VerifyTotpLogin (L1.5) ---
+
+
+class _FakeTotp:
+    """Deterministic: the only valid code for secret 'S' is '123456'."""
+
+    def verify(self, secret, code):
+        return secret == "S" and code == "123456"
+
+
+class _FakeBox:
+    def decrypt(self, token):
+        return token.removeprefix("enc:")
+
+
+async def _seed_2fa_user(fakes, *, recovery=None):
+    return await fakes["users"].insert(
+        User(
+            email="mfa@x.com",
+            password_hash=hash_password("pw123456"),
+            role=Role.candidate,
+            totp_enabled=True,
+            totp_secret="enc:S",
+            recovery_codes=recovery or [],
+        )
+    )
+
+
+@pytest.mark.asyncio
+async def test_login_2fa_off_returns_tokens_byte_for_byte(fakes):
+    s = _services(fakes)
+    await auth.register_candidate(
+        "plain@x.com",
+        "pw123456",
+        users=s["users"],
+        tokens=s["tokens"],
+        notifier=s["notifier"],
+    )
+    out = await auth.login(
+        "plain@x.com",
+        "pw123456",
+        ip="1.1.1.1",
+        users=s["users"],
+        tokens=s["tokens"],
+        sessions=s["sessions"],
+        limiter=s["limiter"],
+        refresh_ttl_seconds=100,
+    )
+    # The 2FA-off response is unchanged: tokens, no mfa fields.
+    assert set(out) == {"access_token", "refresh_token", "token_type"}
+    assert out["access_token"] and out["token_type"] == "bearer"
+
+
+@pytest.mark.asyncio
+async def test_login_2fa_on_returns_mfa_challenge_not_tokens(fakes):
+    s = _services(fakes)
+    await _seed_2fa_user(fakes)
+    nonces = SingleUseTokenStore(fakes["redis"])
+    out = await auth.login(
+        "mfa@x.com",
+        "pw123456",
+        ip="1.1.1.1",
+        users=s["users"],
+        tokens=s["tokens"],
+        sessions=s["sessions"],
+        limiter=s["limiter"],
+        refresh_ttl_seconds=100,
+        nonces=nonces,
+    )
+    assert out["mfa_required"] is True and out["mfa_token"]
+    assert out["access_token"] == "" and out["refresh_token"] == ""
+
+
+@pytest.mark.asyncio
+async def test_verify_totp_login_completes_with_code(fakes):
+    s = _services(fakes)
+    await _seed_2fa_user(fakes)
+    nonces = SingleUseTokenStore(fakes["redis"])
+    challenge = await auth.login(
+        "mfa@x.com",
+        "pw123456",
+        ip="1.1.1.1",
+        users=s["users"],
+        tokens=s["tokens"],
+        sessions=s["sessions"],
+        limiter=s["limiter"],
+        refresh_ttl_seconds=100,
+        nonces=nonces,
+    )
+    out = await auth.verify_totp_login(
+        challenge["mfa_token"],
+        "123456",
+        users=s["users"],
+        tokens=s["tokens"],
+        sessions=s["sessions"],
+        nonces=nonces,
+        totp=_FakeTotp(),
+        secretbox=_FakeBox(),
+        refresh_ttl_seconds=100,
+    )
+    assert out["access_token"] and out["token_type"] == "bearer"
+
+
+@pytest.mark.asyncio
+async def test_verify_totp_login_wrong_code_rejected(fakes):
+    s = _services(fakes)
+    await _seed_2fa_user(fakes)
+    nonces = SingleUseTokenStore(fakes["redis"])
+    challenge = await auth.login(
+        "mfa@x.com",
+        "pw123456",
+        ip="1.1.1.1",
+        users=s["users"],
+        tokens=s["tokens"],
+        sessions=s["sessions"],
+        limiter=s["limiter"],
+        refresh_ttl_seconds=100,
+        nonces=nonces,
+    )
+    with pytest.raises(InvalidCredentialsError):
+        await auth.verify_totp_login(
+            challenge["mfa_token"],
+            "000000",
+            users=s["users"],
+            tokens=s["tokens"],
+            sessions=s["sessions"],
+            nonces=nonces,
+            totp=_FakeTotp(),
+            secretbox=_FakeBox(),
+            refresh_ttl_seconds=100,
+        )
+
+
+@pytest.mark.asyncio
+async def test_verify_totp_login_replayed_challenge_rejected(fakes):
+    s = _services(fakes)
+    await _seed_2fa_user(fakes)
+    nonces = SingleUseTokenStore(fakes["redis"])
+    challenge = await auth.login(
+        "mfa@x.com",
+        "pw123456",
+        ip="1.1.1.1",
+        users=s["users"],
+        tokens=s["tokens"],
+        sessions=s["sessions"],
+        limiter=s["limiter"],
+        refresh_ttl_seconds=100,
+        nonces=nonces,
+    )
+    kw = {
+        "users": s["users"],
+        "tokens": s["tokens"],
+        "sessions": s["sessions"],
+        "nonces": nonces,
+        "totp": _FakeTotp(),
+        "secretbox": _FakeBox(),
+        "refresh_ttl_seconds": 100,
+    }
+    await auth.verify_totp_login(challenge["mfa_token"], "123456", **kw)
+    with pytest.raises(InvalidTokenError):  # nonce already consumed
+        await auth.verify_totp_login(challenge["mfa_token"], "123456", **kw)
+
+
+@pytest.mark.asyncio
+async def test_verify_totp_login_recovery_code_consumed(fakes):
+    s = _services(fakes)
+    uid = await _seed_2fa_user(fakes, recovery=[hash_password("rescue1")])
+    nonces = SingleUseTokenStore(fakes["redis"])
+    challenge = await auth.login(
+        "mfa@x.com",
+        "pw123456",
+        ip="1.1.1.1",
+        users=s["users"],
+        tokens=s["tokens"],
+        sessions=s["sessions"],
+        limiter=s["limiter"],
+        refresh_ttl_seconds=100,
+        nonces=nonces,
+    )
+    out = await auth.verify_totp_login(
+        challenge["mfa_token"],
+        "rescue1",
+        users=s["users"],
+        tokens=s["tokens"],
+        sessions=s["sessions"],
+        nonces=nonces,
+        totp=_FakeTotp(),
+        secretbox=_FakeBox(),
+        refresh_ttl_seconds=100,
+    )
+    assert out["access_token"]  # logged in via the recovery code
+    assert (await fakes["users"].get(uid))["recovery_codes"] == []  # one-time, consumed

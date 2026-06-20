@@ -53,3 +53,15 @@ def test_reset_token_expires_sooner_than_verify_token():
     verify = svc.decode(svc.verification_token("u1"))
     reset = svc.decode(svc.reset_token("u1"))
     assert reset["exp"] < verify["exp"]
+
+
+def test_mfa_token_carries_purpose_and_is_short_lived():
+    svc = TokenService(SECRET)
+    claims = svc.decode(svc.mfa_token("u1", "j1"))
+    assert claims["purpose"] == "mfa"
+    assert claims["sub"] == "u1" and claims["jti"] == "j1"
+    # The MFA challenge is shorter-lived than a normal access token.
+    access = svc.decode(
+        svc.access_token("u1", "candidate", None, "j2"), expected_type="access"
+    )
+    assert claims["exp"] < access["exp"]

@@ -56,6 +56,11 @@ class AuthServiceStub:
                 request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.LoginRequest.SerializeToString,
                 response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.FromString,
                 _registered_method=True)
+        self.VerifyTotpLogin = channel.unary_unary(
+                '/admin.auth.v1.AuthService/VerifyTotpLogin',
+                request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.VerifyTotpLoginRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.FromString,
+                _registered_method=True)
         self.Refresh = channel.unary_unary(
                 '/admin.auth.v1.AuthService/Refresh',
                 request_serializer=app_dot_routes_dot_pb_dot_auth__pb2.RefreshRequest.SerializeToString,
@@ -123,6 +128,14 @@ class AuthServiceServicer:
 
     def Login(self, request, context):
         """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def VerifyTotpLogin(self, request, context):
+        """When the account has 2FA on, Login returns mfa_required + a single-use mfa_token
+        (no access/refresh); the client completes via VerifyTotpLogin (TOTP or recovery).
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -196,6 +209,11 @@ def add_AuthServiceServicer_to_server(servicer, server):
             'Login': grpc.unary_unary_rpc_method_handler(
                     servicer.Login,
                     request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.LoginRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.SerializeToString,
+            ),
+            'VerifyTotpLogin': grpc.unary_unary_rpc_method_handler(
+                    servicer.VerifyTotpLogin,
+                    request_deserializer=app_dot_routes_dot_pb_dot_auth__pb2.VerifyTotpLoginRequest.FromString,
                     response_serializer=app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.SerializeToString,
             ),
             'Refresh': grpc.unary_unary_rpc_method_handler(
@@ -348,6 +366,33 @@ class AuthService:
             target,
             '/admin.auth.v1.AuthService/Login',
             app_dot_routes_dot_pb_dot_auth__pb2.LoginRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def VerifyTotpLogin(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.auth.v1.AuthService/VerifyTotpLogin',
+            app_dot_routes_dot_pb_dot_auth__pb2.VerifyTotpLoginRequest.SerializeToString,
             app_dot_routes_dot_pb_dot_auth__pb2.TokenResponse.FromString,
             options,
             channel_credentials,

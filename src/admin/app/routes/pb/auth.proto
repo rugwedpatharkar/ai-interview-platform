@@ -9,6 +9,9 @@ service AuthService {
   rpc RegisterCandidate(RegisterCandidateRequest) returns (UserResponse);
   rpc Verify(VerifyRequest) returns (UserResponse);
   rpc Login(LoginRequest) returns (TokenResponse);
+  // When the account has 2FA on, Login returns mfa_required + a single-use mfa_token
+  // (no access/refresh); the client completes via VerifyTotpLogin (TOTP or recovery).
+  rpc VerifyTotpLogin(VerifyTotpLoginRequest) returns (TokenResponse);
   rpc Refresh(RefreshRequest) returns (TokenResponse);
   rpc Logout(LogoutRequest) returns (LogoutResponse);
   rpc InviteRecruiter(InviteRecruiterRequest) returns (UserResponse);
@@ -53,6 +56,15 @@ message TokenResponse {
   string access_token = 1;
   string refresh_token = 2;
   string token_type = 3;
+  // Additive: false/"" (proto defaults) for a normal 2FA-off login — the wire
+  // response stays byte-for-byte identical. Set only when 2FA is required.
+  bool mfa_required = 4;
+  string mfa_token = 5;
+}
+
+message VerifyTotpLoginRequest {
+  string mfa_token = 1;
+  string code = 2;  // a TOTP code or an unused recovery code
 }
 
 message IdentityResponse {

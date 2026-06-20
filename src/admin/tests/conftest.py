@@ -39,6 +39,10 @@ class FakeUserRepo:
         if user_id in self._docs:
             self._docs[user_id].update(fields)
 
+    async def update_fields(self, user_id, fields):
+        if user_id in self._docs:
+            self._docs[user_id].update(fields)
+
     async def anonymize(self, user_id):
         if user_id in self._docs:
             self._docs[user_id].update(

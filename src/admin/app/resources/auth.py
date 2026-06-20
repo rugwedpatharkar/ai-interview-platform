@@ -30,6 +30,7 @@ log = get_logger(component="auth.resources")
 
 VERIFY_NONCE_TTL = 86400  # 24h, matches the verification token
 RESET_NONCE_TTL = 3600  # 1h, matches the reset token
+_MFA_NONCE_TTL = 300  # 5m, matches the mfa_token TTL
 
 
 async def _send_verification(notifier, tokens, user_id, email, nonces=None):
@@ -142,6 +143,7 @@ async def login(
     limiter,
     refresh_ttl_seconds,
     audit=None,
+    nonces=None,
 ):
     email = email.strip().lower()  # normalize so the lockout key + lookup always agree
     s = get_settings()
@@ -167,6 +169,21 @@ async def login(
         raise InvalidCredentialsError("Invalid credentials")
     await limiter.reset(acct_key)
     user_id = str(user["_id"])
+    if user.get("totp_enabled"):
+        # 2FA on: hand back a short-lived single-use challenge instead of tokens; the
+        # caller completes via VerifyTotpLogin. The 2FA-off path below is unchanged.
+        mfa_jti = uuid4().hex
+        mfa_token = tokens.mfa_token(sub=user_id, jti=mfa_jti)
+        if nonces is not None:
+            await nonces.allow(mfa_jti, _MFA_NONCE_TTL)
+        log.info("login: 2FA required for user_id={}", user_id)
+        return {
+            "mfa_required": True,
+            "mfa_token": mfa_token,
+            "access_token": "",
+            "refresh_token": "",
+            "token_type": "",
+        }
     refresh_jti = uuid4().hex
     access = tokens.access_token(
         sub=user_id,
@@ -182,6 +199,62 @@ async def login(
     if audit is not None:
         await audit.insert(AuditLog(entity="user", entity_id=user_id, action="login"))
     log.info("login ok: user_id={}", user_id)
+    return {"access_token": access, "refresh_token": refresh, "token_type": "bearer"}
+
+
+async def verify_totp_login(
+    mfa_token,
+    code,
+    *,
+    users,
+    tokens,
+    sessions,
+    nonces,
+    totp,
+    secretbox,
+    refresh_ttl_seconds,
+    ip="",
+    user_agent="",
+):
+    """Complete a 2FA login: validate the single-use mfa challenge, verify a TOTP code
+    OR consume an unused recovery code, then mint access + refresh. Pre-auth (no caller
+    identity) — the mfa_token from Login is the proof."""
+    try:
+        claims = tokens.decode(mfa_token)
+    except JWTError as exc:
+        raise InvalidTokenError("Invalid token") from exc
+    if claims.get("purpose") != "mfa":
+        raise InvalidTokenError("Wrong token purpose")
+    if nonces is not None and not await nonces.consume(claims.get("jti", "")):
+        raise InvalidTokenError("MFA challenge already used or expired")
+    user = await users.get(claims["sub"])
+    if not user or not user.get("totp_enabled"):
+        raise InvalidCredentialsError("2FA is not available")
+    user_id = str(user["_id"])
+    secret = secretbox.decrypt(user.get("totp_secret", ""))
+    code = (code or "").strip()
+    if not totp.verify(secret, code):
+        matched = next(
+            (h for h in user.get("recovery_codes", []) if verify_password(code, h)),
+            None,
+        )
+        if matched is None:
+            raise InvalidCredentialsError("invalid code")
+        remaining = [h for h in user["recovery_codes"] if h != matched]
+        await users.update_fields(user_id, {"recovery_codes": remaining})
+    refresh_jti = uuid4().hex
+    access = tokens.access_token(
+        sub=user_id,
+        role=str(user["role"]),
+        comp_id=user.get("comp_id"),
+        jti=uuid4().hex,
+        sid=refresh_jti,
+    )
+    refresh = tokens.refresh_token(sub=user_id, jti=refresh_jti)
+    await sessions.allow(
+        user_id, refresh_jti, refresh_ttl_seconds, ip=ip, user_agent=user_agent
+    )
+    log.info("2FA login completed: user_id={}", user_id)
     return {"access_token": access, "refresh_token": refresh, "token_type": "bearer"}
 
 
