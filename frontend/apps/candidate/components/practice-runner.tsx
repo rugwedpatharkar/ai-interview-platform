@@ -5,7 +5,7 @@ import { errorMessage, refetchUntil } from "@ip/shared";
 import { useQuery } from "@tanstack/react-query";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 
-import { isStillFinalizing, practiceClient } from "../lib/practice-client";
+import { isStillFinalizing, usePracticeClient } from "../lib/practice-client";
 import { GrowthFeedbackPanel } from "./growth-feedback-panel";
 
 const isMac =
@@ -22,6 +22,7 @@ export function PracticeRunner({
   practiceId: string;
   firstQuestion: string;
 }) {
+  const practiceClient = usePracticeClient();
   const [turns, setTurns] = useState<{ question: string; answer: string }[]>([]);
   const [current, setCurrent] = useState(firstQuestion);
   const [answer, setAnswer] = useState("");
