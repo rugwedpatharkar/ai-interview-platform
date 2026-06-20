@@ -5,6 +5,7 @@ from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
+from app.resources import integrity as integrity_res
 from app.resources import report as report_res
 from app.routes.auth import _STATUS, caller_identity
 from app.routes.pb import report_pb2, report_pb2_grpc
@@ -32,11 +33,30 @@ def _to_proto(r):
     )
 
 
+def _timeline_proto(t):
+    return report_pb2.IntegrityTimeline(
+        integrity_score=t["integrity_score"],
+        flags=[
+            report_pb2.ProctorFlag(
+                type=f["type"], severity=f["severity"], at=f["at"], meta=f["meta"]
+            )
+            for f in t["flags"]
+        ],
+        recording_url=t["recording_url"],
+        auto_terminated=t["auto_terminated"],
+        terminated_reason=t["terminated_reason"],
+    )
+
+
 class ReportServicer(report_pb2_grpc.ReportServiceServicer):
-    def __init__(self, *, applications, reports, tokens):
+    def __init__(
+        self, *, applications, reports, tokens, proctoring_events=None, interviews=None
+    ):
         self._applications = applications
         self._reports = reports
         self._tokens = tokens
+        self._proctoring_events = proctoring_events
+        self._interviews = interviews
 
     async def _abort(self, context, exc, method="unknown"):
         log.warning(
@@ -107,3 +127,26 @@ class ReportServicer(report_pb2_grpc.ReportServiceServicer):
                 )
             except AuthDomainError as exc:
                 await self._abort(context, exc, "ExportReports")
+
+    async def GetIntegrityTimeline(self, request, context):
+        _grpc_total.labels(method="GetIntegrityTimeline").inc()
+        async with (
+            log_context(
+                log,
+                "report.GetIntegrityTimeline",
+                **bind_ids(application_id=request.application_id),
+            ),
+            span("report.GetIntegrityTimeline", application_id=request.application_id),
+        ):
+            try:
+                identity = await caller_identity(context, self._tokens)
+                timeline = await integrity_res.get_integrity_timeline(
+                    identity,
+                    request.application_id,
+                    applications=self._applications,
+                    proctoring_events=self._proctoring_events,
+                    interviews=self._interviews,
+                )
+                return _timeline_proto(timeline)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "GetIntegrityTimeline")

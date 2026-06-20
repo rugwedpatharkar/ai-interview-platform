@@ -22,6 +22,7 @@ from app.infra.repositories.interviews import InterviewRepository
 from app.infra.repositories.job_alerts import JobAlertsRepository
 from app.infra.repositories.jobs import JobRepository
 from app.infra.repositories.match_results import MatchResultRepository
+from app.infra.repositories.proctoring_events import ProctorEventsRepository
 from app.infra.repositories.profiles import CandidateProfileRepository
 from app.infra.repositories.reports import ReportRepository
 from app.infra.repositories.rubrics import RubricRepository
@@ -174,6 +175,8 @@ def create_web_app(
             applications=ApplicationRepository(db),
             reports=ReportRepository(db),
             tokens=tokens,
+            proctoring_events=ProctorEventsRepository(db),
+            interviews=InterviewRepository(db),
         ),
         app,
     )

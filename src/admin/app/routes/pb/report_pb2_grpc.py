@@ -52,6 +52,11 @@ class ReportServiceStub:
                 request_serializer=app_dot_routes_dot_pb_dot_report__pb2.ListReportsRequest.SerializeToString,
                 response_deserializer=app_dot_routes_dot_pb_dot_report__pb2.ReportExport.FromString,
                 _registered_method=True)
+        self.GetIntegrityTimeline = channel.unary_unary(
+                '/admin.report.v1.ReportService/GetIntegrityTimeline',
+                request_serializer=app_dot_routes_dot_pb_dot_report__pb2.GetIntegrityTimelineRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_report__pb2.IntegrityTimeline.FromString,
+                _registered_method=True)
 
 
 class ReportServiceServicer:
@@ -78,6 +83,13 @@ class ReportServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetIntegrityTimeline(self, request, context):
+        """Recruiter integrity timeline — the first reader of proctoring_events (comp-scoped).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ReportServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -95,6 +107,11 @@ def add_ReportServiceServicer_to_server(servicer, server):
                     servicer.ExportReports,
                     request_deserializer=app_dot_routes_dot_pb_dot_report__pb2.ListReportsRequest.FromString,
                     response_serializer=app_dot_routes_dot_pb_dot_report__pb2.ReportExport.SerializeToString,
+            ),
+            'GetIntegrityTimeline': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetIntegrityTimeline,
+                    request_deserializer=app_dot_routes_dot_pb_dot_report__pb2.GetIntegrityTimelineRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_report__pb2.IntegrityTimeline.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -181,6 +198,33 @@ class ReportService:
             '/admin.report.v1.ReportService/ExportReports',
             app_dot_routes_dot_pb_dot_report__pb2.ListReportsRequest.SerializeToString,
             app_dot_routes_dot_pb_dot_report__pb2.ReportExport.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetIntegrityTimeline(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.report.v1.ReportService/GetIntegrityTimeline',
+            app_dot_routes_dot_pb_dot_report__pb2.GetIntegrityTimelineRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_report__pb2.IntegrityTimeline.FromString,
             options,
             channel_credentials,
             insecure,

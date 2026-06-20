@@ -97,3 +97,53 @@ async def test_export_reports_rpc(fakes):
     )
     assert resp.filename == "reports_j1.xlsx"
     assert load_workbook(io.BytesIO(resp.content)).active["A1"].value == "Candidate"
+
+
+class _Events:
+    async def find_by_application(self, comp_id, application_id):
+        return [{"type": "second_face", "severity": "high", "at": "t", "meta": {}}]
+
+
+class _Interviews:
+    def __init__(self, doc=None):
+        self._doc = doc
+
+    async def get_by_application(self, application_id):
+        return self._doc
+
+
+def _integrity_servicer(fakes, interview_doc=None):
+    return ReportServicer(
+        applications=fakes["applications"],
+        reports=fakes["reports"],
+        tokens=TokenService(SECRET),
+        proctoring_events=_Events(),
+        interviews=_Interviews(interview_doc),
+    )
+
+
+@pytest.mark.asyncio
+async def test_integrity_timeline_rpc(fakes):
+    aid = await fakes["applications"].insert(
+        Application(comp_id="c1", job_id="j1", candidate_user_id="cand", state="scored")
+    )
+    svc = _integrity_servicer(fakes, {"terminated_by_proctor": "second_face"})
+    out = await svc.GetIntegrityTimeline(
+        report_pb2.GetIntegrityTimelineRequest(application_id=aid), _md()
+    )
+    assert out.integrity_score == 8
+    assert out.flags[0].type == "second_face" and out.flags[0].severity == "high"
+    assert out.auto_terminated is True and out.terminated_reason == "second_face"
+
+
+@pytest.mark.asyncio
+async def test_integrity_timeline_cross_tenant_not_found(fakes):
+    aid = await fakes["applications"].insert(
+        Application(comp_id="other", job_id="j1", candidate_user_id="x", state="scored")
+    )
+    with pytest.raises(_Aborted) as ei:
+        await _integrity_servicer(fakes).GetIntegrityTimeline(
+            report_pb2.GetIntegrityTimelineRequest(application_id=aid),
+            _md(comp_id="c1"),
+        )
+    assert ei.value.code == grpc.StatusCode.NOT_FOUND

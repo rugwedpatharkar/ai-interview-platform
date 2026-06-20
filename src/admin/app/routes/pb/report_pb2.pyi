@@ -6,6 +6,45 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
+class GetIntegrityTimelineRequest(_message.Message):
+    __slots__ = ("application_id",)
+    APPLICATION_ID_FIELD_NUMBER: _ClassVar[int]
+    application_id: str
+    def __init__(self, application_id: _Optional[str] = ...) -> None: ...
+
+class ProctorFlag(_message.Message):
+    __slots__ = ("type", "severity", "at", "meta")
+    class MetaEntry(_message.Message):
+        __slots__ = ("key", "value")
+        KEY_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        key: str
+        value: str
+        def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    SEVERITY_FIELD_NUMBER: _ClassVar[int]
+    AT_FIELD_NUMBER: _ClassVar[int]
+    META_FIELD_NUMBER: _ClassVar[int]
+    type: str
+    severity: str
+    at: str
+    meta: _containers.ScalarMap[str, str]
+    def __init__(self, type: _Optional[str] = ..., severity: _Optional[str] = ..., at: _Optional[str] = ..., meta: _Optional[_Mapping[str, str]] = ...) -> None: ...
+
+class IntegrityTimeline(_message.Message):
+    __slots__ = ("integrity_score", "flags", "recording_url", "auto_terminated", "terminated_reason")
+    INTEGRITY_SCORE_FIELD_NUMBER: _ClassVar[int]
+    FLAGS_FIELD_NUMBER: _ClassVar[int]
+    RECORDING_URL_FIELD_NUMBER: _ClassVar[int]
+    AUTO_TERMINATED_FIELD_NUMBER: _ClassVar[int]
+    TERMINATED_REASON_FIELD_NUMBER: _ClassVar[int]
+    integrity_score: int
+    flags: _containers.RepeatedCompositeFieldContainer[ProctorFlag]
+    recording_url: str
+    auto_terminated: bool
+    terminated_reason: str
+    def __init__(self, integrity_score: _Optional[int] = ..., flags: _Optional[_Iterable[_Union[ProctorFlag, _Mapping]]] = ..., recording_url: _Optional[str] = ..., auto_terminated: _Optional[bool] = ..., terminated_reason: _Optional[str] = ...) -> None: ...
+
 class GetReportRequest(_message.Message):
     __slots__ = ("application_id",)
     APPLICATION_ID_FIELD_NUMBER: _ClassVar[int]

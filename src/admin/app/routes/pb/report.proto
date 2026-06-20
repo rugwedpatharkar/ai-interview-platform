@@ -9,6 +9,27 @@ service ReportService {
   rpc GetReport(GetReportRequest) returns (InterviewReport);
   rpc ListReports(ListReportsRequest) returns (ReportList);
   rpc ExportReports(ListReportsRequest) returns (ReportExport);
+  // Recruiter integrity timeline — the first reader of proctoring_events (comp-scoped).
+  rpc GetIntegrityTimeline(GetIntegrityTimelineRequest) returns (IntegrityTimeline);
+}
+
+message GetIntegrityTimelineRequest {
+  string application_id = 1;
+}
+
+message ProctorFlag {
+  string type = 1;                 // ProctoringEventType
+  string severity = 2;             // "low" | "medium" | "high" (server-authoritative)
+  string at = 3;                   // ISO timestamp
+  map<string, string> meta = 4;    // small typed context (never raw media)
+}
+
+message IntegrityTimeline {
+  int32 integrity_score = 1;       // weighted sum — higher = more concerning
+  repeated ProctorFlag flags = 2;  // chronological
+  string recording_url = 3;        // tenant-scoped playback URL; "" when none
+  bool auto_terminated = 4;        // a HIGH-severity signal ended the interview
+  string terminated_reason = 5;    // e.g. "second_face"; set iff auto_terminated
 }
 
 message GetReportRequest {
