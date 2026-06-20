@@ -1,0 +1,23 @@
+{
+  "comment": "Deny the socket syscall family so candidate code cannot open any network connection — syscall-level network denial with NO privilege (strictly better than privileged network namespaces). Targeted denylist over the runtime default; a full default-deny allowlist for a Python interpreter is the stronger long-term option. Load on nodes and reference via the Pod securityContext seccompProfile.localhostProfile.",
+  "defaultAction": "SCMP_ACT_ALLOW",
+  "syscalls": [
+    {
+      "names": [
+        "socket",
+        "socketcall",
+        "connect",
+        "bind",
+        "listen",
+        "accept",
+        "accept4",
+        "sendto",
+        "recvfrom",
+        "sendmsg",
+        "recvmsg"
+      ],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 1
+    }
+  ]
+}
