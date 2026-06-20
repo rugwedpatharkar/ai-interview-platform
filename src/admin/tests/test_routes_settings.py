@@ -43,8 +43,44 @@ def _md(uid="u1", role="candidate"):
     return FakeContext(metadata=[("authorization", f"Bearer {token}")])
 
 
-def _servicer():
-    return SettingsServicer(prefs=_FakePrefs(), tokens=TokenService(SECRET))
+class _FakeUsers:
+    def __init__(self):
+        self.doc = {"email": "a@b.co", "totp_enabled": False}
+
+    async def get(self, user_id):
+        return self.doc
+
+    async def update_fields(self, user_id, fields):
+        self.doc.update(fields)
+
+
+class _FakeTotp:
+    def new_secret(self):
+        return "S"
+
+    def provisioning_uri(self, secret, *, account):
+        return f"otpauth://totp/{account}"
+
+    def verify(self, secret, code):
+        return code == "123456"
+
+
+class _FakeBox:
+    def encrypt(self, plain):
+        return f"enc:{plain}"
+
+    def decrypt(self, token):
+        return token.removeprefix("enc:")
+
+
+def _servicer(users=None):
+    return SettingsServicer(
+        prefs=_FakePrefs(),
+        tokens=TokenService(SECRET),
+        users=users or _FakeUsers(),
+        totp=_FakeTotp(),
+        secretbox=_FakeBox(),
+    )
 
 
 @pytest.mark.asyncio
@@ -71,5 +107,26 @@ async def test_set_bad_digest_invalid_argument():
     with pytest.raises(_Aborted) as ei:
         await _servicer().SetNotificationPrefs(
             settings_pb2.NotificationPrefs(digest="hourly"), _md()
+        )
+    assert ei.value.code == grpc.StatusCode.INVALID_ARGUMENT
+
+
+@pytest.mark.asyncio
+async def test_totp_setup_then_verify_roundtrip():
+    users = _FakeUsers()
+    svc = _servicer(users)
+    setup = await svc.SetupTotp(settings_pb2.SetupTotpRequest(), _md())
+    assert setup.secret == "S" and "otpauth://" in setup.provisioning_uri
+    out = await svc.VerifyTotp(settings_pb2.VerifyTotpRequest(code="123456"), _md())
+    assert out.enabled is True and len(out.recovery_codes) == 10
+
+
+@pytest.mark.asyncio
+async def test_totp_verify_bad_code_invalid_argument():
+    users = _FakeUsers()
+    users.doc["totp_secret"] = "enc:S"
+    with pytest.raises(_Aborted) as ei:
+        await _servicer(users).VerifyTotp(
+            settings_pb2.VerifyTotpRequest(code="000000"), _md()
         )
     assert ei.value.code == grpc.StatusCode.INVALID_ARGUMENT

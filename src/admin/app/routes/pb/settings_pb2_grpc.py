@@ -47,6 +47,21 @@ class SettingsServiceStub:
                 request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.NotificationPrefs.SerializeToString,
                 response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.NotificationPrefs.FromString,
                 _registered_method=True)
+        self.SetupTotp = channel.unary_unary(
+                '/admin.settings.v1.SettingsService/SetupTotp',
+                request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.SetupTotpRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.SetupTotpResponse.FromString,
+                _registered_method=True)
+        self.VerifyTotp = channel.unary_unary(
+                '/admin.settings.v1.SettingsService/VerifyTotp',
+                request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.VerifyTotpRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.VerifyTotpResponse.FromString,
+                _registered_method=True)
+        self.DisableTotp = channel.unary_unary(
+                '/admin.settings.v1.SettingsService/DisableTotp',
+                request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.DisableTotpRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
+                _registered_method=True)
 
 
 class SettingsServiceServicer:
@@ -67,6 +82,26 @@ class SettingsServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SetupTotp(self, request, context):
+        """2FA (TOTP). SetupTotp stages an encrypted secret; VerifyTotp enables + returns
+        one-time recovery codes; DisableTotp takes a TOTP code OR a recovery code.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def VerifyTotp(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DisableTotp(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SettingsServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -79,6 +114,21 @@ def add_SettingsServiceServicer_to_server(servicer, server):
                     servicer.SetNotificationPrefs,
                     request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.NotificationPrefs.FromString,
                     response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.NotificationPrefs.SerializeToString,
+            ),
+            'SetupTotp': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetupTotp,
+                    request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.SetupTotpRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.SetupTotpResponse.SerializeToString,
+            ),
+            'VerifyTotp': grpc.unary_unary_rpc_method_handler(
+                    servicer.VerifyTotp,
+                    request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.VerifyTotpRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.VerifyTotpResponse.SerializeToString,
+            ),
+            'DisableTotp': grpc.unary_unary_rpc_method_handler(
+                    servicer.DisableTotp,
+                    request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.DisableTotpRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -138,6 +188,87 @@ class SettingsService:
             '/admin.settings.v1.SettingsService/SetNotificationPrefs',
             app_dot_routes_dot_pb_dot_settings__pb2.NotificationPrefs.SerializeToString,
             app_dot_routes_dot_pb_dot_settings__pb2.NotificationPrefs.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetupTotp(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.settings.v1.SettingsService/SetupTotp',
+            app_dot_routes_dot_pb_dot_settings__pb2.SetupTotpRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_settings__pb2.SetupTotpResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def VerifyTotp(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.settings.v1.SettingsService/VerifyTotp',
+            app_dot_routes_dot_pb_dot_settings__pb2.VerifyTotpRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_settings__pb2.VerifyTotpResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DisableTotp(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.settings.v1.SettingsService/DisableTotp',
+            app_dot_routes_dot_pb_dot_settings__pb2.DisableTotpRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
             options,
             channel_credentials,
             insecure,

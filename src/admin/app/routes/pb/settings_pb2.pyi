@@ -1,10 +1,48 @@
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Mapping as _Mapping
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
 from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
+
+class SetupTotpRequest(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class SetupTotpResponse(_message.Message):
+    __slots__ = ("provisioning_uri", "secret")
+    PROVISIONING_URI_FIELD_NUMBER: _ClassVar[int]
+    SECRET_FIELD_NUMBER: _ClassVar[int]
+    provisioning_uri: str
+    secret: str
+    def __init__(self, provisioning_uri: _Optional[str] = ..., secret: _Optional[str] = ...) -> None: ...
+
+class VerifyTotpRequest(_message.Message):
+    __slots__ = ("code",)
+    CODE_FIELD_NUMBER: _ClassVar[int]
+    code: str
+    def __init__(self, code: _Optional[str] = ...) -> None: ...
+
+class VerifyTotpResponse(_message.Message):
+    __slots__ = ("enabled", "recovery_codes")
+    ENABLED_FIELD_NUMBER: _ClassVar[int]
+    RECOVERY_CODES_FIELD_NUMBER: _ClassVar[int]
+    enabled: bool
+    recovery_codes: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, enabled: _Optional[bool] = ..., recovery_codes: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class DisableTotpRequest(_message.Message):
+    __slots__ = ("code",)
+    CODE_FIELD_NUMBER: _ClassVar[int]
+    code: str
+    def __init__(self, code: _Optional[str] = ...) -> None: ...
+
+class OkResponse(_message.Message):
+    __slots__ = ("ok",)
+    OK_FIELD_NUMBER: _ClassVar[int]
+    ok: bool
+    def __init__(self, ok: _Optional[bool] = ...) -> None: ...
 
 class QuietHours(_message.Message):
     __slots__ = ("start", "end", "tz")

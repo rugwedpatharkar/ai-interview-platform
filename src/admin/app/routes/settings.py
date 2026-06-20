@@ -38,9 +38,12 @@ def _prefs_proto(d):
 
 
 class SettingsServicer(settings_pb2_grpc.SettingsServiceServicer):
-    def __init__(self, *, prefs, tokens):
+    def __init__(self, *, prefs, tokens, users=None, totp=None, secretbox=None):
         self._prefs = prefs
         self._tokens = tokens
+        self._users = users
+        self._totp = totp
+        self._secretbox = secretbox
 
     async def _abort(self, context, exc, method):
         code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
@@ -82,3 +85,51 @@ class SettingsServicer(settings_pb2_grpc.SettingsServiceServicer):
                 return _prefs_proto(out)
             except AuthDomainError as exc:
                 await self._abort(context, exc, "SetNotificationPrefs")
+
+    async def SetupTotp(self, request, context):
+        _grpc_total.labels(method="SetupTotp").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with log_context(log, "settings.SetupTotp"):
+            out = await settings_res.setup_totp(
+                ident["id"],
+                users=self._users,
+                totp=self._totp,
+                secretbox=self._secretbox,
+            )
+            return settings_pb2.SetupTotpResponse(
+                provisioning_uri=out["provisioning_uri"], secret=out["secret"]
+            )
+
+    async def VerifyTotp(self, request, context):
+        _grpc_total.labels(method="VerifyTotp").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with log_context(log, "settings.VerifyTotp"):
+            try:
+                out = await settings_res.verify_totp(
+                    ident["id"],
+                    request.code,
+                    users=self._users,
+                    totp=self._totp,
+                    secretbox=self._secretbox,
+                )
+                return settings_pb2.VerifyTotpResponse(
+                    enabled=out["enabled"], recovery_codes=out["recovery_codes"]
+                )
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "VerifyTotp")
+
+    async def DisableTotp(self, request, context):
+        _grpc_total.labels(method="DisableTotp").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with log_context(log, "settings.DisableTotp"):
+            try:
+                await settings_res.disable_totp(
+                    ident["id"],
+                    request.code,
+                    users=self._users,
+                    totp=self._totp,
+                    secretbox=self._secretbox,
+                )
+                return settings_pb2.OkResponse(ok=True)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "DisableTotp")

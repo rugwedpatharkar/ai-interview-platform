@@ -34,6 +34,7 @@ from app.infra.repositories.reports import ReportRepository
 from app.infra.repositories.rubrics import RubricRepository
 from app.infra.repositories.saved_jobs import SavedJobsRepository
 from app.infra.repositories.users import UserRepository
+from app.infra.totp import FernetSecretBox, PyotpProvider
 from app.resources.compliance import CandidateEraser
 from app.routes.analytics import AnalyticsServicer
 from app.routes.application import ApplicationServicer
@@ -271,7 +272,13 @@ def create_web_app(
         app,
     )
     settings_pb2_grpc.add_SettingsServiceServicer_to_server(
-        SettingsServicer(prefs=NotificationPrefsRepository(db), tokens=tokens),
+        SettingsServicer(
+            prefs=NotificationPrefsRepository(db),
+            tokens=tokens,
+            users=UserRepository(db),
+            totp=PyotpProvider(),
+            secretbox=FernetSecretBox(tokens._secret),
+        ),
         app,
     )
     messaging_pb2_grpc.add_MessagingServiceServicer_to_server(

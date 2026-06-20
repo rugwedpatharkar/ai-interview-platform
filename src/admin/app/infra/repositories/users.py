@@ -10,6 +10,12 @@ class UserRepository(BaseRepository[User]):
     async def get_by_email(self, email: str) -> dict | None:
         return await self.find_one({"email": email})
 
+    async def get(self, user_id: str) -> dict | None:
+        return await self.find_one({"_id": ObjectId(user_id)})
+
+    async def update_fields(self, user_id: str, fields: dict) -> None:
+        await self.col.update_one({"_id": ObjectId(user_id)}, {"$set": fields})
+
     async def set_email_verified(self, user_id: str) -> None:
         await self.col.update_one(
             {"_id": ObjectId(user_id)}, {"$set": {"email_verified": True}}
@@ -26,6 +32,10 @@ class UserRepository(BaseRepository[User]):
                     "password_hash": "",
                     "email_verified": False,
                     "erased": True,
+                    "totp_secret": "",
+                    "totp_enabled": False,
+                    "recovery_codes": [],
+                    "pending_email": "",
                 }
             },
         )

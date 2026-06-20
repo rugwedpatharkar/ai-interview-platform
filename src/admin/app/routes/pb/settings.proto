@@ -8,6 +8,30 @@ package admin.settings.v1;
 service SettingsService {
   rpc GetNotificationPrefs(GetNotificationPrefsRequest) returns (NotificationPrefs);
   rpc SetNotificationPrefs(NotificationPrefs) returns (NotificationPrefs);
+  // 2FA (TOTP). SetupTotp stages an encrypted secret; VerifyTotp enables + returns
+  // one-time recovery codes; DisableTotp takes a TOTP code OR a recovery code.
+  rpc SetupTotp(SetupTotpRequest) returns (SetupTotpResponse);
+  rpc VerifyTotp(VerifyTotpRequest) returns (VerifyTotpResponse);
+  rpc DisableTotp(DisableTotpRequest) returns (OkResponse);
+}
+
+message SetupTotpRequest {}
+message SetupTotpResponse {
+  string provisioning_uri = 1;  // otpauth:// for the authenticator QR
+  string secret = 2;            // raw base32, shown once
+}
+message VerifyTotpRequest {
+  string code = 1;
+}
+message VerifyTotpResponse {
+  bool enabled = 1;
+  repeated string recovery_codes = 2;  // plaintext, shown once
+}
+message DisableTotpRequest {
+  string code = 1;  // a current TOTP code or an unused recovery code
+}
+message OkResponse {
+  bool ok = 1;
 }
 
 message QuietHours {
