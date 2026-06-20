@@ -370,3 +370,47 @@ async def test_list_oauth_providers(fakes):
     assert status == 0
     providers = auth_pb2.OAuthProvidersResponse.FromString(data).providers
     assert list(providers) == ["google", "microsoft"]
+
+
+# --- transient infra errors → UNAVAILABLE (single egress boundary) -------
+def _unary_app(behavior, **kwargs):
+    app = GrpcWebASGI(**kwargs)
+    handler = grpc.unary_unary_rpc_method_handler(
+        behavior, request_deserializer=lambda b: b, response_serializer=lambda r: r
+    )
+    app.add_registered_method_handlers(_STREAM_SVC, {"Op": handler})
+    return app
+
+
+async def _unary_infra_call(app):
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://t") as client:
+        return await client.post(
+            f"/{_STREAM_SVC}/Op",
+            content=_frame(b"go"),
+            headers={"content-type": "application/grpc-web+proto"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_storage_error_becomes_unavailable():
+    from lib.storage.client import StorageError
+
+    async def behavior(request, context):
+        raise StorageError("s3 down", op="put")
+
+    resp = await _unary_infra_call(_unary_app(behavior))
+    _, status = _data_and_status(resp.content)
+    assert status == 14  # UNAVAILABLE — transient infra, client should retry
+
+
+@pytest.mark.asyncio
+async def test_pymongo_error_becomes_unavailable():
+    from pymongo.errors import PyMongoError
+
+    async def behavior(request, context):
+        raise PyMongoError("connection lost")
+
+    resp = await _unary_infra_call(_unary_app(behavior))
+    _, status = _data_and_status(resp.content)
+    assert status == 14  # UNAVAILABLE, not INTERNAL

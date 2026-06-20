@@ -23,10 +23,18 @@ import struct
 from urllib.parse import quote
 
 import grpc
+from pymongo.errors import PyMongoError
 
 from lib.logging import get_logger
+from lib.resilience import OperationTimeout
+from lib.storage.client import StorageError
 
 log = get_logger(component="grpcweb")
+
+# Transient infra failures (DB down, storage hiccup, op timeout) map to UNAVAILABLE so a
+# client retries — this translator is the single egress boundary for every service's
+# RPCs, so the mapping is centralised here instead of in all ~23 servicers.
+_UNAVAILABLE_ERRORS = (PyMongoError, StorageError, OperationTimeout)
 
 _ALLOW_HEADERS = "content-type,x-grpc-web,x-user-agent,authorization,grpc-timeout"
 _EXPOSE_HEADERS = "grpc-status,grpc-message,grpc-status-details-bin"
@@ -203,6 +211,14 @@ class GrpcWebASGI:
         except TimeoutError:
             context.code = grpc.StatusCode.DEADLINE_EXCEEDED
             context.details = "Deadline exceeded"
+        except _UNAVAILABLE_ERRORS as exc:
+            log.warning(
+                "grpc-web infra unavailable on {}: {}",
+                scope["path"],
+                type(exc).__name__,
+            )
+            context.code = grpc.StatusCode.UNAVAILABLE
+            context.details = "Service temporarily unavailable"
         except Exception:  # servicer/parse bug — clean INTERNAL, never leak a traceback
             log.exception("grpc-web handler failed on {}", scope["path"])
             context.code, context.details = grpc.StatusCode.INTERNAL, "Internal error"
@@ -307,6 +323,12 @@ class GrpcWebASGI:
         except TimeoutError:
             context.code = grpc.StatusCode.DEADLINE_EXCEEDED
             context.details = "Deadline exceeded"
+        except _UNAVAILABLE_ERRORS as exc:
+            log.warning(
+                "grpc-web stream infra unavailable on {}: {}", path, type(exc).__name__
+            )
+            context.code = grpc.StatusCode.UNAVAILABLE
+            context.details = "Service temporarily unavailable"
         except (
             Exception
         ):  # servicer bug — clean INTERNAL trailer, never leak a traceback
