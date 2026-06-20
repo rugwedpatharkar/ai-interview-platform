@@ -2,6 +2,7 @@
 
 import {
   Alert,
+  Badge,
   ErrorState,
   LoadingState,
   Spinner,
@@ -12,14 +13,23 @@ import {
   buttonVariants,
 } from "@ip/ui";
 import { errorMessage, isNotFound, isTransient, useAuthedQuery } from "@ip/shared";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useMemo } from "react";
 
 import { CompanyShell } from "../../../../../components/company-shell";
+import { MessageThreadView } from "../../../../../components/message-thread-view";
 import { ReportView } from "../../../../../components/report-view";
 import { SchedulePanel } from "../../../../../components/schedule-panel";
 import { useAuth } from "../../../../../lib/auth";
+import {
+  USE_MOCK as MESSAGES_USE_MOCK,
+  createMessagesClient,
+  listQueryKey as messagesListQueryKey,
+  makeMockMessagesClient,
+} from "../../../../messages/messages-client";
 import { USE_MOCK, makeMockIntegrityClient } from "./integrity-client";
 import type { ReportDTO } from "./types";
 
@@ -83,6 +93,25 @@ export default function ReportPage() {
 
   const notReady = report.isError && isNotFound(report.error);
 
+  // Recruiter-side unread for the Messages tab badge — a single cheap source the view already
+  // polls (not a second per-tab query). Resilient: on error the badge simply doesn't render.
+  const messagesClient = useMemo(
+    () =>
+      MESSAGES_USE_MOCK
+        ? makeMockMessagesClient(appId, "recruiter")
+        : createMessagesClient(api),
+    [api, appId],
+  );
+  const threadUnread = useQuery({
+    queryKey: messagesListQueryKey(),
+    queryFn: () => messagesClient.listThreads(),
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+    enabled: Boolean(token),
+  });
+  const unreadForApp =
+    threadUnread.data?.find((t) => t.applicationId === appId)?.unread ?? 0;
+
   return (
     <CompanyShell>
       <div className="mb-4">
@@ -98,6 +127,16 @@ export default function ReportPage() {
         <TabsList>
           <TabsTrigger value="report">Report</TabsTrigger>
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="messages">
+            <span className="inline-flex items-center gap-1.5">
+              Messages
+              {unreadForApp > 0 && (
+                <Badge tone="info" className="min-w-4 px-1 text-[10px]">
+                  {unreadForApp > 9 ? "9+" : unreadForApp}
+                </Badge>
+              )}
+            </span>
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="report">
           {report.isLoading && <LoadingState />}
@@ -126,6 +165,9 @@ export default function ReportPage() {
         </TabsContent>
         <TabsContent value="schedule">
           <SchedulePanel applicationId={appId} />
+        </TabsContent>
+        <TabsContent value="messages">
+          <MessageThreadView applicationId={appId} side="recruiter" />
         </TabsContent>
       </Tabs>
     </CompanyShell>
