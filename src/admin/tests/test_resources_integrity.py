@@ -98,6 +98,46 @@ async def test_no_events_is_clean_zero_not_404():
     assert out["auto_terminated"] is False and out["terminated_reason"] == ""
 
 
+class _FakeStorage:
+    def __init__(self):
+        self.presigned = []
+
+    async def presigned_get_url_raw(self, object_key, ttl=None):
+        self.presigned.append(object_key)
+        return f"https://rec/{object_key}"
+
+
+@pytest.mark.asyncio
+async def test_recording_url_presigned_when_key_present():
+    storage = _FakeStorage()
+    out = await integrity.get_integrity_timeline(
+        MGR,
+        "a1",
+        applications=_Apps(_app()),
+        proctoring_events=_Events([]),
+        interviews=_Interviews({"recording_key": "c1/recordings/a1.mp4"}),
+        storage=storage,
+    )
+    assert out["recording_url"] == "https://rec/c1/recordings/a1.mp4"
+    assert storage.presigned == ["c1/recordings/a1.mp4"]
+
+
+@pytest.mark.asyncio
+async def test_recording_url_empty_without_key():
+    # No recording_key on the interview doc → no presign attempt, empty URL.
+    storage = _FakeStorage()
+    out = await integrity.get_integrity_timeline(
+        MGR,
+        "a1",
+        applications=_Apps(_app()),
+        proctoring_events=_Events([]),
+        interviews=_Interviews({"terminated_by_proctor": "second_face"}),
+        storage=storage,
+    )
+    assert out["recording_url"] == ""
+    assert storage.presigned == []
+
+
 @pytest.mark.asyncio
 async def test_events_queried_comp_scoped():
     events = _Events([])

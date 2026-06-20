@@ -28,7 +28,13 @@ def _flag(e: dict) -> dict:
 
 
 async def get_integrity_timeline(
-    identity, application_id, *, applications, proctoring_events, interviews
+    identity,
+    application_id,
+    *,
+    applications,
+    proctoring_events,
+    interviews,
+    storage=None,
 ):
     if identity["role"] not in _MANAGER_ROLES:
         raise ForbiddenError("Only company users can read integrity timelines")
@@ -39,12 +45,21 @@ async def get_integrity_timeline(
         identity["comp_id"], application_id
     )
     score = sum(_WEIGHT.get(e.get("severity", "low"), 1) for e in events)
-    interview = await interviews.get_by_application(application_id)
-    reason = (interview or {}).get("terminated_by_proctor", "") or ""
+    interview = await interviews.get_by_application(application_id) or {}
+    reason = interview.get("terminated_by_proctor", "") or ""
+    # The recording_key carries the tenant prefix and is presigned verbatim; tenant
+    # authz already happened above (the application's comp_id == the caller's). Empty
+    # until interview capture (LiveKit egress) lands the key — C1.
+    recording_key = interview.get("recording_key", "")
+    recording_url = (
+        await storage.presigned_get_url_raw(recording_key)
+        if recording_key and storage
+        else ""
+    )
     return {
         "integrity_score": score,
         "flags": [_flag(e) for e in events],
-        "recording_url": "",  # presigned session-recording URL deferred (Tier C)
+        "recording_url": recording_url,
         "auto_terminated": bool(reason),
         "terminated_reason": reason,
     }

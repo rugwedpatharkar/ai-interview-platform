@@ -112,13 +112,19 @@ class _Interviews:
         return self._doc
 
 
-def _integrity_servicer(fakes, interview_doc=None):
+class _FakeStorage:
+    async def presigned_get_url_raw(self, object_key, ttl=None):
+        return f"https://rec/{object_key}"
+
+
+def _integrity_servicer(fakes, interview_doc=None, storage=None):
     return ReportServicer(
         applications=fakes["applications"],
         reports=fakes["reports"],
         tokens=TokenService(SECRET),
         proctoring_events=_Events(),
         interviews=_Interviews(interview_doc),
+        storage=storage,
     )
 
 
@@ -134,6 +140,20 @@ async def test_integrity_timeline_rpc(fakes):
     assert out.integrity_score == 8
     assert out.flags[0].type == "second_face" and out.flags[0].severity == "high"
     assert out.auto_terminated is True and out.terminated_reason == "second_face"
+
+
+@pytest.mark.asyncio
+async def test_integrity_timeline_rpc_presigns_recording(fakes):
+    aid = await fakes["applications"].insert(
+        Application(comp_id="c1", job_id="j1", candidate_user_id="cand", state="scored")
+    )
+    svc = _integrity_servicer(
+        fakes, {"recording_key": "c1/recordings/x.mp4"}, storage=_FakeStorage()
+    )
+    out = await svc.GetIntegrityTimeline(
+        report_pb2.GetIntegrityTimelineRequest(application_id=aid), _md()
+    )
+    assert out.recording_url == "https://rec/c1/recordings/x.mp4"
 
 
 @pytest.mark.asyncio

@@ -75,13 +75,21 @@ def _timeline_proto(t):
 
 class ReportServicer(report_pb2_grpc.ReportServiceServicer):
     def __init__(
-        self, *, applications, reports, tokens, proctoring_events=None, interviews=None
+        self,
+        *,
+        applications,
+        reports,
+        tokens,
+        proctoring_events=None,
+        interviews=None,
+        storage=None,
     ):
         self._applications = applications
         self._reports = reports
         self._tokens = tokens
         self._proctoring_events = proctoring_events
         self._interviews = interviews
+        self._storage = storage
 
     async def _abort(self, context, exc, method="unknown"):
         log.warning(
@@ -171,6 +179,7 @@ class ReportServicer(report_pb2_grpc.ReportServiceServicer):
                     applications=self._applications,
                     proctoring_events=self._proctoring_events,
                     interviews=self._interviews,
+                    storage=self._storage,
                 )
                 return _timeline_proto(timeline)
             except AuthDomainError as exc:

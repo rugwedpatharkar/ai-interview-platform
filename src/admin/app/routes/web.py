@@ -206,6 +206,7 @@ def create_web_app(
             tokens=tokens,
             proctoring_events=ProctorEventsRepository(db),
             interviews=InterviewRepository(db),
+            storage=storage,
         ),
         app,
     )
