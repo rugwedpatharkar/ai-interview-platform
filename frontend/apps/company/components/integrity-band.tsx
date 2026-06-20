@@ -118,9 +118,9 @@ export function IntegrityBand({
 
             {flags.length > 0 && (
               <ul className="relative flex flex-col before:absolute before:bottom-2 before:left-[6px] before:top-2 before:w-px before:bg-border">
-                {flags.map((f, i) => (
+                {flags.map((f) => (
                   <li
-                    key={i}
+                    key={`${f.at}-${f.type}`}
                     className="relative grid grid-cols-[auto_1fr_auto] items-center gap-3 py-2.5 pl-6"
                   >
                     <span

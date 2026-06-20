@@ -4,9 +4,8 @@ import {
   EmptyState,
   ErrorState,
   Skeleton,
-  cn,
+  StatusPill,
   jobStatus,
-  statusToneClasses,
 } from "@ip/ui";
 import { errorMessage, useAuthedQuery } from "@ip/shared";
 import { Briefcase } from "lucide-react";
@@ -56,33 +55,23 @@ export function RecentJobs() {
         </div>
       ) : (
         <ul className="mt-3">
-          {rows.map((job, i) => {
-            const status = jobStatus(job.status);
-            return (
-              <li
-                key={job.jobId}
-                className="animate-rise-in"
-                style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+          {rows.map((job, i) => (
+            <li
+              key={job.jobId}
+              className="animate-rise-in"
+              style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+            >
+              <Link
+                href={`/jobs/${job.jobId}`}
+                className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 transition-colors last:border-b-0 hover:bg-surface-muted"
               >
-                <Link
-                  href={`/jobs/${job.jobId}`}
-                  className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 transition-colors last:border-b-0 hover:bg-surface-muted"
-                >
-                  <span className="truncate text-sm font-medium text-foreground">
-                    {job.title}
-                  </span>
-                  <span
-                    className={cn(
-                      "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium before:size-1.5 before:rounded-full before:bg-current",
-                      statusToneClasses(status.tone),
-                    )}
-                  >
-                    {status.label}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
+                <span className="truncate text-sm font-medium text-foreground">
+                  {job.title}
+                </span>
+                <StatusPill token={jobStatus(job.status)} />
+              </Link>
+            </li>
+          ))}
         </ul>
       )}
     </div>

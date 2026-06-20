@@ -138,7 +138,7 @@ export function ReportView({
           </CardHeader>
           <CardContent>
             {report.competencies.map((c, i) => (
-              <CompetencyCard key={c.competency} c={c} index={i} />
+              <CompetencyCard key={`${i}-${c.competency}`} c={c} index={i} />
             ))}
           </CardContent>
         </Card>

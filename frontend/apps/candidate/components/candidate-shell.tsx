@@ -31,14 +31,15 @@ import {
   User,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useMemo, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { decodeJwtPayload } from "@ip/shared";
 
 import { useAuth } from "../lib/auth";
 import { NotificationBell } from "./notification-bell";
+import { OfflineBanner } from "./offline-banner";
 import {
   USE_MOCK,
   createMessagesClient,
@@ -66,6 +67,8 @@ const NAV_PREPARE: NavEntry[] = [
 export function CandidateShell({ children }: { children: ReactNode }) {
   const { api, token, identity, logout } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
+  const [search, setSearch] = useState("");
   const email = token ? (decodeJwtPayload(token)?.email as string | undefined) ?? null : null;
   const label = email ?? identity?.id ?? "Account";
 
@@ -151,18 +154,31 @@ export function CandidateShell({ children }: { children: ReactNode }) {
       }
       topbar={
         <>
+          <OfflineBanner />
           <div className="hidden text-sm text-muted-foreground lg:block">
             <span className="font-medium text-foreground">Home</span> / Dashboard
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-sm text-muted-foreground sm:flex">
+            <form
+              role="search"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const q = search.trim();
+                router.push(q ? `/jobs?q=${encodeURIComponent(q)}` : "/jobs");
+              }}
+              className="hidden items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-sm text-muted-foreground focus-within:ring-2 focus-within:ring-ring sm:flex"
+            >
               <Search className="size-4" aria-hidden />
               <input
+                type="search"
+                aria-label="Search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search jobs & companies"
                 className="w-40 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
               />
-            </div>
+            </form>
             <ThemeToggle />
             <NotificationBell />
             <DropdownMenu>

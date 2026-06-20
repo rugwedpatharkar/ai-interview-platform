@@ -37,6 +37,19 @@ export function jobStatus(state: string): StatusToken {
   return JOB[state] ?? { label: state, tone: "neutral" };
 }
 
+// App-local label/tone overrides for funnel states the shared `APPLICATION` map doesn't
+// yet carry (e.g. the advisory-gate `assessment_review` hold). Layered over
+// `applicationStatus` inside `StatusPill` so every screen renders the same label/tone for
+// a given state. Collapses to `{}` once these states land in `APPLICATION` above.
+const APPLICATION_OVERRIDES: Record<string, StatusToken> = {
+  assessment_review: { label: "Under review", tone: "warning" },
+};
+
+/** Resolve an application state to its display token, applying the local overrides. */
+export function applicationPillStatus(state: string): StatusToken {
+  return APPLICATION_OVERRIDES[state] ?? applicationStatus(state);
+}
+
 // Midnight `.pill`-style token classes per badge tone (tinted surface + matching
 // foreground). The leading dot is `before:bg-current`, so a pill that wraps these
 // classes inherits its dot color from the text color. Single source for the dotted

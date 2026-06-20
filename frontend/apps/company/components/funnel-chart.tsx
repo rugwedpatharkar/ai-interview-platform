@@ -1,6 +1,6 @@
 "use client";
 
-import { applicationStatus } from "@ip/ui";
+import { applicationPillStatus } from "@ip/ui";
 import type { FunnelAnalytics } from "@ip/api-client";
 import { useMemo } from "react";
 
@@ -12,7 +12,7 @@ export function FunnelChart({ data }: { data: FunnelAnalytics }) {
   const rows = useMemo(() => {
     const widened = data.states.map((s) => ({
       state: s.state,
-      status: applicationStatus(s.state),
+      status: applicationPillStatus(s.state),
       count: Number(s.count),
     }));
     const max = Math.max(1, ...widened.map((r) => r.count));

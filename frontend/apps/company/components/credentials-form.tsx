@@ -63,6 +63,8 @@ export function CredentialsForm({
 
   return (
     <AuthLayout>
+      {/* Single page-level h1 for landmark/heading order; the visible CardTitle is the h2. */}
+      <h1 className="sr-only">{title}</h1>
       <Card>
         <CardHeader>
           <CardTitle>{title}</CardTitle>

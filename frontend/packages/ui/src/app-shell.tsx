@@ -87,6 +87,13 @@ export function SidebarShell({
   const mobileItems = navGroups.flatMap((g) => g.items);
   return (
     <div className="min-h-screen bg-background lg:grid lg:grid-cols-[248px_1fr]">
+      {/* Skip link — first focusable element; visually hidden until focused. */}
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        Skip to content
+      </a>
       {/* Sidebar */}
       <aside className="sticky top-0 hidden h-screen flex-col gap-1 border-r border-border bg-surface px-4 py-5 lg:flex">
         {brand}
@@ -121,7 +128,9 @@ export function SidebarShell({
           {mobileItems.map((item) => renderMobileLink(item))}
         </nav>
 
-        <main className="mx-auto w-full max-w-6xl px-6 py-8">{children}</main>
+        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-6xl px-6 py-8 focus:outline-none">
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -47,6 +47,10 @@ export default async function JobDetailPage({
 
   return (
     <AppShell title="Aptura" nav={<Link href="/jobs">Browse jobs</Link>}>
+      {/* Single page-level h1 for the entity; the visible CardTitle is the h2. */}
+      <h1 className="sr-only">
+        {job.title} · {job.company.name}
+      </h1>
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-3">
           <div className="flex items-start gap-3">

@@ -55,6 +55,8 @@ export default async function CompanyPage({
 
   return (
     <AppShell title="Aptura" nav={<Link href="/jobs">Browse jobs</Link>}>
+      {/* Single page-level h1 for the entity; the visible CardTitle is the h2. */}
+      <h1 className="sr-only">{company.name}</h1>
       <Card>
         <CardHeader className="flex flex-col items-start gap-4 sm:flex-row">
           <Avatar name={company.name} src={company.logo} size="lg" />

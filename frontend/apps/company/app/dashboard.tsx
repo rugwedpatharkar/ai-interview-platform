@@ -119,9 +119,9 @@ export function RecruiterDashboard() {
 
             <div className="rounded-xl border border-border bg-surface p-4">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="text-xl font-semibold tracking-tight text-foreground">
+                <h2 className="text-xl font-semibold tracking-tight text-foreground">
                   Needs your decision
-                </h3>
+                </h2>
                 <span className="inline-flex items-center rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium tabular-nums text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
                   {DECISIONS.length}
                 </span>

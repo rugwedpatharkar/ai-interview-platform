@@ -69,20 +69,11 @@ export { Toaster, toast } from "./toast.js";
 export {
   DropdownMenu,
   DropdownMenuTrigger,
-  DropdownMenuGroup,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "./dropdown-menu.js";
-export {
-  Tooltip,
-  TooltipProvider,
-  TooltipRoot,
-  TooltipTrigger,
-  TooltipContent,
-} from "./tooltip.js";
 
 // Error boundary
 export { ErrorBoundary } from "./error-boundary.js";
@@ -91,7 +82,6 @@ export { ErrorBoundary } from "./error-boundary.js";
 export {
   ThemeProvider,
   ThemeToggle,
-  useTheme,
   themeScript,
   type Theme,
 } from "./theme.js";
@@ -114,7 +104,9 @@ export {
 } from "./app-shell.js";
 export {
   applicationStatus,
+  applicationPillStatus,
   jobStatus,
   statusToneClasses,
   type StatusToken,
 } from "./status.js";
+export { StatusPill, type StatusPillProps } from "./status-pill.js";

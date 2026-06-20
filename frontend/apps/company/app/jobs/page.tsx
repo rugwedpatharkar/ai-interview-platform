@@ -5,10 +5,10 @@ import {
   ErrorState,
   LoadingState,
   PageHeader,
+  StatusPill,
   buttonVariants,
   cn,
   jobStatus,
-  statusToneClasses,
 } from "@ip/ui";
 import { errorMessage, useAuthedQuery } from "@ip/shared";
 import { ArrowRight, FileText, Plus } from "lucide-react";
@@ -31,20 +31,6 @@ const STATUS_HINT: Record<string, string> = {
   paused: "Applications paused",
   closed: "No longer accepting applications",
 };
-
-function StatusPill({ status }: { status: string }) {
-  const tone = jobStatus(status);
-  return (
-    <span
-      className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium before:size-1.5 before:rounded-full before:bg-current",
-        statusToneClasses(tone.tone),
-      )}
-    >
-      {tone.label}
-    </span>
-  );
-}
 
 function postedLabel(postedAt: string): string {
   if (!postedAt) return "—";
@@ -122,7 +108,7 @@ export default function JobsPage() {
                       </p>
                     </td>
                     <td className="px-4 py-3">
-                      <StatusPill status={job.status} />
+                      <StatusPill token={jobStatus(job.status)} />
                     </td>
                     <td className="px-4 py-3 tabular-nums text-muted-foreground">
                       {postedLabel(job.postedAt)}
@@ -166,7 +152,7 @@ export default function JobsPage() {
                   {STATUS_HINT[job.status] ?? "Job posting"}
                 </p>
                 <div className="mt-3 flex items-center justify-between gap-2">
-                  <StatusPill status={job.status} />
+                  <StatusPill token={jobStatus(job.status)} />
                   <span className="tabular-nums text-xs text-muted-foreground">
                     {postedLabel(job.postedAt)}
                   </span>

@@ -54,7 +54,8 @@ export function SchedulePanel({ applicationId }: { applicationId: string }) {
     queryKey: scheduleQueryKey(applicationId),
     retry: false,
     queryFn: () => sched.getSchedule(applicationId),
-    refetchInterval: 15_000,
+    // Stop polling once the interview is booked — the slot is settled.
+    refetchInterval: (query) => (query.state.data?.status === "booked" ? false : 15_000),
     refetchIntervalInBackground: false,
   });
 

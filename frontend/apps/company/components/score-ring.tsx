@@ -1,7 +1,7 @@
 import { cn } from "@ip/ui";
 
-/** Pure geometry for the donut — exported so it stays trivially reasoned-about. */
-export function ringGeometry(value: number, size: number, stroke: number) {
+/** Pure geometry for the donut. */
+function ringGeometry(value: number, size: number, stroke: number) {
   const v = Math.min(1, Math.max(0, value));
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;

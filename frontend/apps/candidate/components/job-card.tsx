@@ -17,13 +17,18 @@ const TYPE_LABEL: Record<string, string> = {
   internship: "Internship",
 };
 
-/** Compact salary range, e.g. "$120k–160k". Omitted when both bounds are 0. */
-function formatSalary(min: number, max: number, currency: string): string | null {
-  if (!min && !max) return null;
+/** Compact salary range, e.g. "$120k–160k". Only null/undefined counts as "no bound" —
+ * a legitimate 0 is a real value and renders. Omitted only when both bounds are absent. */
+function formatSalary(
+  min: number | null | undefined,
+  max: number | null | undefined,
+  currency: string,
+): string | null {
+  if (min == null && max == null) return null;
   const sym = currency === "USD" ? "$" : currency === "EUR" ? "€" : `${currency} `;
   const k = (n: number) => `${Math.round(n / 1000)}k`;
-  if (min && max) return `${sym}${k(min)}–${k(max)}`;
-  return `${sym}${k(min || max)}`;
+  if (min != null && max != null) return `${sym}${k(min)}–${k(max)}`;
+  return `${sym}${k(min ?? max!)}`;
 }
 
 /** Relative posted date, e.g. "posted 2d ago". Falls back to the raw string. */

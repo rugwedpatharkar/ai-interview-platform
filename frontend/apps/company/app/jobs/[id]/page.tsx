@@ -9,6 +9,7 @@ import {
   ConfirmDialog,
   ErrorState,
   LoadingState,
+  StatusPill,
   Tabs,
   TabsContent,
   TabsList,
@@ -96,9 +97,7 @@ export default function JobDetailPage() {
                 <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
                   {job.data.title}
                 </h1>
-                <Badge tone={jobStatus(job.data.status).tone}>
-                  {jobStatus(job.data.status).label}
-                </Badge>
+                <StatusPill token={jobStatus(job.data.status)} />
                 {gateMode === "advisory" && <Badge tone="info">Advisory gate</Badge>}
               </div>
               {(() => {

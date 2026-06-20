@@ -26,8 +26,9 @@ export function useSchedule(applicationId: string) {
     retry: false,
     queryFn: () => sched.getSchedule(applicationId),
     // Poll so a recruiter-proposed/rescheduled set appears without a manual refresh; pause on
-    // a hidden tab so a backgrounded page doesn't poll forever.
-    refetchInterval: 15_000,
+    // a hidden tab so a backgrounded page doesn't poll forever. Stop once the booking is
+    // terminal (booked) — there's nothing left to wait for.
+    refetchInterval: (query) => (query.state.data?.status === "booked" ? false : 15_000),
     refetchIntervalInBackground: false,
   });
 

@@ -322,7 +322,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
                     )}
                     {candidateCell(a)}
                   </div>
-                  <StatusPill state={a.state} />
+                  <StatusPill state={a.state} dot={false} />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">{actions(a)}</div>
               </CardContent>

@@ -24,13 +24,21 @@ export function Field({
   const uid = useId();
   const errorId = error ? `${uid}-error` : undefined;
 
-  // Wire aria-describedby onto the direct child input when there's an error, so screen
-  // readers announce the error without consumers needing manual wiring.
+  // Wire aria-describedby + aria-invalid onto the direct child input when there's an
+  // error, so screen readers announce the error and invalid state without consumers
+  // needing manual wiring.
   const input =
     errorId && isValidElement(children)
-      ? cloneElement(children as ReactElement<{ "aria-describedby"?: string }>, {
-          "aria-describedby": errorId,
-        })
+      ? cloneElement(
+          children as ReactElement<{
+            "aria-describedby"?: string;
+            "aria-invalid"?: boolean;
+          }>,
+          {
+            "aria-describedby": errorId,
+            "aria-invalid": true,
+          },
+        )
       : children;
 
   return (

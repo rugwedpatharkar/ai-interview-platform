@@ -61,6 +61,8 @@ export function CredentialsForm({
 
   return (
     <AuthLayout>
+      {/* Single page-level h1 for landmark/heading order; the visible CardTitle is the h2. */}
+      <h1 className="sr-only">{title}</h1>
       <Link href="/" className="mb-6 inline-flex" aria-label="Aptura home">
         <Logo size="lg" />
       </Link>

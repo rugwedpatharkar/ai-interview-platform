@@ -1,5 +1,5 @@
 export { makeTokenStore, type TokenStore, type Tokens } from "./tokens.js";
-export { createAuthedTransport, createClients } from "./transport.js";
+export { createClients } from "./transport.js";
 export {
   makeAuth,
   type AuthState,

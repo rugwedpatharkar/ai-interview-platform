@@ -149,7 +149,9 @@ function ScheduleBody() {
               Interview confirmed
             </p>
             <p className="text-sm tabular-nums text-foreground">
-              {formatLocal(schedule.chosenStartAt)} · {schedule.chosenDurationMinutes} min
+              {schedule.chosenStartAt
+                ? `${formatLocal(schedule.chosenStartAt)} · ${schedule.chosenDurationMinutes} min`
+                : "Time to be confirmed"}
             </p>
             {schedule.location && (
               <p className="whitespace-pre-wrap text-sm text-muted-foreground">

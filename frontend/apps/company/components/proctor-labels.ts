@@ -1,8 +1,6 @@
 // Proctoring signal → human label + severity helpers, app-local (labels are a UI concern,
 // not a wire contract). Severity is server-authoritative; these are presentation only.
 
-export const SEVERITY_ORDER = ["high", "medium", "low"] as const;
-
 const LABELS: Record<string, string> = {
   second_face: "Second person detected",
   second_voice: "Second voice detected",

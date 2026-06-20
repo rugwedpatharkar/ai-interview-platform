@@ -31,11 +31,12 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, type ReactNode } from "react";
 
 import { useAuth } from "../lib/auth";
 import { NotificationBell } from "./notification-bell";
+import { OfflineBanner } from "./offline-banner";
 
 const MANAGER_ROLES = ["company_admin", "recruiter"];
 
@@ -69,6 +70,8 @@ export function CompanyShell({ children }: { children: ReactNode }) {
   useRequireAuth(token, ready);
   useRequireRole(identity?.role, MANAGER_ROLES, ready);
   const pathname = usePathname();
+  const router = useRouter();
+  const [search, setSearch] = useState("");
 
   if (!token) return null;
 
@@ -144,18 +147,31 @@ export function CompanyShell({ children }: { children: ReactNode }) {
       }
       topbar={
         <>
+          <OfflineBanner />
           <div className="hidden text-sm text-muted-foreground lg:block">
             <span className="font-medium text-foreground">Recruiter</span> / Workspace
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-sm text-muted-foreground sm:flex">
+            <form
+              role="search"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const q = search.trim();
+                router.push(q ? `/jobs?q=${encodeURIComponent(q)}` : "/jobs");
+              }}
+              className="hidden items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-sm text-muted-foreground focus-within:ring-2 focus-within:ring-ring sm:flex"
+            >
               <Search className="size-4" aria-hidden />
               <input
+                type="search"
+                aria-label="Search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search applicants"
                 className="w-40 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
               />
-            </div>
+            </form>
             <ThemeToggle />
             <NotificationBell />
             <DropdownMenu>

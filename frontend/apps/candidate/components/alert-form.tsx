@@ -51,7 +51,7 @@ export function AlertForm({
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-muted-foreground">Remote</span>
         <Select value={remote} onValueChange={setRemote}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-36" aria-label="Remote">
             <SelectValue placeholder="Any" />
           </SelectTrigger>
           <SelectContent>
@@ -66,7 +66,7 @@ export function AlertForm({
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-muted-foreground">Frequency</span>
         <Select value={frequency} onValueChange={(v) => setFrequency(v as AlertFrequency)}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="w-32" aria-label="Frequency">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

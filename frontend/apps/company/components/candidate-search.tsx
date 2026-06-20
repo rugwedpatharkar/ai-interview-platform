@@ -15,7 +15,7 @@ import {
   SelectValue,
   ErrorState,
   Skeleton,
-  applicationStatus,
+  StatusPill,
 } from "@ip/ui";
 import { errorMessage } from "@ip/shared";
 import { useQuery } from "@tanstack/react-query";
@@ -136,9 +136,7 @@ export function CandidateSearch({ onActive }: { onActive: (active: boolean) => v
                 </tr>
               </thead>
               <tbody>
-                {hits.slice(0, shown).map((h, i) => {
-                  const stage = applicationStatus(h.topStage);
-                  return (
+                {hits.slice(0, shown).map((h, i) => (
                     <tr
                       key={h.candidateUserId}
                       className="animate-rise-in border-b border-border transition-colors last:border-b-0 hover:bg-surface-muted"
@@ -154,7 +152,7 @@ export function CandidateSearch({ onActive }: { onActive: (active: boolean) => v
                         <FitBadge score={h.fitScore} />
                       </td>
                       <td className="px-4 py-3">
-                        <Badge tone={stage.tone}>{stage.label}</Badge>
+                        <StatusPill state={h.topStage} dot={false} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
@@ -169,8 +167,7 @@ export function CandidateSearch({ onActive }: { onActive: (active: boolean) => v
                         {Number(h.applicationCount)}
                       </td>
                     </tr>
-                  );
-                })}
+                ))}
               </tbody>
             </table>
             {hits.length > shown && (

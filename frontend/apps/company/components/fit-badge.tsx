@@ -1,6 +1,6 @@
 import { Badge } from "@ip/ui";
 
-export function fitTone(score: number): "success" | "warning" | "neutral" {
+function fitTone(score: number): "success" | "warning" | "neutral" {
   return score >= 0.8 ? "success" : score >= 0.5 ? "warning" : "neutral";
 }
 

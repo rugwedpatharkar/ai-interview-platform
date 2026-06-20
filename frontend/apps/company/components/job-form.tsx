@@ -23,7 +23,7 @@ import { EMPTY_JOB_FORM, type JobFormValues } from "../app/jobs/job-form-types";
 import { AiSuggestPanel } from "./ai-suggest-panel";
 import { GateModeToggle } from "./gate-mode-toggle";
 
-export function parseSkills(raw: string): string[] {
+function parseSkills(raw: string): string[] {
   const seen = new Set<string>();
   for (const s of raw
     .split(",")
