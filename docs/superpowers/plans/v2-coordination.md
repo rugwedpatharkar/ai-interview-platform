@@ -49,6 +49,14 @@ on BE (mocks). BE order: W1 (SearchJobs → CompanyProfile → SavedJobs → Job
 Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 screens.
 
 ## Handoff log (append; newest last)
+- 2026-06-20 · BE · ✅ **MessagingService LANDED** (gate GREEN; admin 19 services). New
+  `admin.messaging.v1` (Send/ListThreads/ListMessages/MarkRead). Thread 1:1 with the application →
+  authz reuses `aptitude._owned` (candidate) / `decision._scoped` (recruiter); sender identity from the
+  token (no impersonation); body validated ≤4096. Recipient unread counter is the badge truth (read_at
+  advisory); best-effort `new_message` notify (via `notify_event`) after the durable write.
+  `message_threads`/`messages` collections + inbox indexes + CandidateEraser cascade (by application_id).
+  `pnpm gen` emitted `messaging_pb.ts`. **FE:** add `messaging` quad + flip the inbox/conversation/applicant
+  Messages tab off mock.
 - 2026-06-20 · BE · ✅ **NotificationService LANDED** (gate GREEN). New `admin.notification.v1`
   (recipient-scoped from token): `ListNotifications` (fresh `unread_count`, `unread_only`, page_size≤50),
   `MarkRead` (NOT_FOUND if not theirs; returns fresh count), `MarkAllRead`. `notifications` collection +
