@@ -49,6 +49,11 @@ on BE (mocks). BE order: W1 (SearchJobs → CompanyProfile → SavedJobs → Job
 Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 screens.
 
 ## Handoff log (append; newest last)
+- 2026-06-20 · BE · ✅ **Application transition-log LANDED** (gate GREEN: admin 283; cross-cutting, no
+  proto). The funnel CAS (`set_state_if`/`set_state`) now appends a `{state, at}` entry to
+  `Application.transitions`, so per-stage timings are derivable from the application doc itself (no
+  audit_logs join). This unblocks **CompanyProfile** `responds_in_days` (median applied→first decision) +
+  `actively_reviewing` (real, not proxy) and the Analytics no-ghosting KPIs. No FE/contract change.
 - 2026-06-20 · BE · ✅ **SourcingService.SearchCandidates LANDED** (gate GREEN: admin 281). New
   `admin.sourcing.v1` (manager + comp-scoped): keyword search over the company's **own applicants only**
   (seed = its `applications`; universe is application-existence, **never** funnel-filtered, so
