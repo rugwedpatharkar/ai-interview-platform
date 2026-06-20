@@ -17,6 +17,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { AuthLayout } from "../../components/auth-layout";
 import { useAuth } from "../../lib/auth";
 
 export default function RegisterPage() {
@@ -54,7 +55,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center p-6">
+    <AuthLayout>
       <Card>
         <CardHeader>
           <CardTitle>Create your company</CardTitle>
@@ -110,6 +111,6 @@ export default function RegisterPage() {
           </form>
         </CardContent>
       </Card>
-    </main>
+    </AuthLayout>
   );
 }
