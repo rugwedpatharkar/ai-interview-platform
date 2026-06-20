@@ -26,6 +26,7 @@ from app.infra.repositories.messaging import (
     MessageRepository,
     MessageThreadRepository,
 )
+from app.infra.repositories.notification_prefs import NotificationPrefsRepository
 from app.infra.repositories.notifications import NotificationRepository
 from app.infra.repositories.proctoring_events import ProctorEventsRepository
 from app.infra.repositories.profiles import CandidateProfileRepository
@@ -64,6 +65,7 @@ from app.routes.pb import (
     report_pb2_grpc,
     rubric_pb2_grpc,
     saved_jobs_pb2_grpc,
+    settings_pb2_grpc,
     sourcing_pb2_grpc,
     talent_pb2_grpc,
 )
@@ -72,6 +74,7 @@ from app.routes.recommendation import RecommendationServicer
 from app.routes.report import ReportServicer
 from app.routes.rubric import RubricServicer
 from app.routes.saved_jobs import SavedJobsServicer
+from app.routes.settings import SettingsServicer
 from app.routes.sourcing import SourcingServicer
 from app.routes.talent import TalentServicer
 
@@ -91,6 +94,7 @@ def make_eraser(db, storage):
         notifications=NotificationRepository(db),
         message_threads=MessageThreadRepository(db),
         messages=MessageRepository(db),
+        notification_prefs=NotificationPrefsRepository(db),
     )
 
 
@@ -264,6 +268,10 @@ def create_web_app(
     )
     notification_pb2_grpc.add_NotificationServiceServicer_to_server(
         NotificationServicer(notifications=NotificationRepository(db), tokens=tokens),
+        app,
+    )
+    settings_pb2_grpc.add_SettingsServiceServicer_to_server(
+        SettingsServicer(prefs=NotificationPrefsRepository(db), tokens=tokens),
         app,
     )
     messaging_pb2_grpc.add_MessagingServiceServicer_to_server(

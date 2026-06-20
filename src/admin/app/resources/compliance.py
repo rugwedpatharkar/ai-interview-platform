@@ -61,6 +61,7 @@ class CandidateEraser:
         notifications=None,
         message_threads=None,
         messages=None,
+        notification_prefs=None,
     ):
         self._users = users
         self._profiles = profiles
@@ -74,6 +75,7 @@ class CandidateEraser:
         self._notifications = notifications
         self._message_threads = message_threads
         self._messages = messages
+        self._notification_prefs = notification_prefs
 
     async def erase(self, user_id):
         applications = await self._applications.list_by_candidate(user_id)
@@ -94,6 +96,8 @@ class CandidateEraser:
         await self._consents.delete_by_user(user_id)
         if self._notifications is not None:
             await self._notifications.delete_by_user(user_id)
+        if self._notification_prefs is not None:
+            await self._notification_prefs.delete_by_user(user_id)
         profile = await self._profiles.get_by_user(user_id)
         await self._profiles.delete_by_user(user_id)
         if profile and profile.get("resume_key"):

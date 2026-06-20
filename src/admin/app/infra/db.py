@@ -81,6 +81,8 @@ INDEXES: list[IndexSpec] = [
     IndexSpec("message_threads", [("comp_id", 1), ("last_message_at", -1)]),
     IndexSpec("messages", [("thread_id", 1), ("created_at", 1)]),
     IndexSpec("messages", "application_id"),
+    # notification_prefs: one settings doc per user.
+    IndexSpec("notification_prefs", "user_id", {"unique": True}),
     # saved_jobs: candidate bookmarks; unique (candidate, job) makes Save idempotent.
     IndexSpec(
         "saved_jobs", [("candidate_user_id", 1), ("job_id", 1)], {"unique": True}

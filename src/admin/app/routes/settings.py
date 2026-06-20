@@ -1,0 +1,84 @@
+"""gRPC SettingsService — self-scoped account settings over resources/settings.
+
+The caller is the token (caller_identity -> identity["id"]); no request carries a target
+user_id. This slice serves notification preferences.
+"""
+
+import grpc
+from lib.logging import get_logger, log_context
+from lib.observability import counter, span
+
+from app.errors import AuthDomainError
+from app.resources import settings as settings_res
+from app.routes.auth import _STATUS, caller_identity
+from app.routes.pb import settings_pb2, settings_pb2_grpc
+
+log = get_logger(component="settings.routes")
+
+_grpc_total = counter("admin_grpc_requests_total", "gRPC requests received", ["method"])
+_grpc_errors = counter(
+    "admin_grpc_errors_total",
+    "gRPC requests that resulted in a domain error",
+    ["method"],
+)
+
+
+def _prefs_proto(d):
+    msg = settings_pb2.NotificationPrefs(
+        sms_critical=d["sms_critical"], digest=d["digest"]
+    )
+    for key, enabled in d["email_categories"].items():
+        msg.email_categories[key] = enabled
+    if d["quiet_hours"] is not None:
+        qh = d["quiet_hours"]
+        msg.quiet_hours.start = qh["start"]
+        msg.quiet_hours.end = qh["end"]
+        msg.quiet_hours.tz = qh["tz"]
+    return msg
+
+
+class SettingsServicer(settings_pb2_grpc.SettingsServiceServicer):
+    def __init__(self, *, prefs, tokens):
+        self._prefs = prefs
+        self._tokens = tokens
+
+    async def _abort(self, context, exc, method):
+        code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
+        log.warning("settings.routes.{}: {} code={}", method, exc, code.name)
+        _grpc_errors.labels(method=method).inc()
+        await context.abort(code, str(exc))
+
+    async def GetNotificationPrefs(self, request, context):
+        _grpc_total.labels(method="GetNotificationPrefs").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with log_context(log, "settings.GetPrefs"), span("settings.GetPrefs"):
+            out = await settings_res.get_notification_prefs(
+                ident["id"], prefs=self._prefs
+            )
+            return _prefs_proto(out)
+
+    async def SetNotificationPrefs(self, request, context):
+        _grpc_total.labels(method="SetNotificationPrefs").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with log_context(log, "settings.SetPrefs"), span("settings.SetPrefs"):
+            payload = {
+                "email_categories": dict(request.email_categories),
+                "sms_critical": request.sms_critical,
+                "digest": request.digest,
+                "quiet_hours": (
+                    {
+                        "start": request.quiet_hours.start,
+                        "end": request.quiet_hours.end,
+                        "tz": request.quiet_hours.tz,
+                    }
+                    if request.HasField("quiet_hours")
+                    else None
+                ),
+            }
+            try:
+                out = await settings_res.set_notification_prefs(
+                    ident["id"], payload, prefs=self._prefs
+                )
+                return _prefs_proto(out)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "SetNotificationPrefs")

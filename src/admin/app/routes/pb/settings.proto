@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package admin.settings.v1;
+
+// SettingsService — self-scoped account settings (the caller is the token; no request
+// carries a target user_id). This slice ships notification preferences; sessions / 2FA /
+// password+email change land additively on the same service.
+service SettingsService {
+  rpc GetNotificationPrefs(GetNotificationPrefsRequest) returns (NotificationPrefs);
+  rpc SetNotificationPrefs(NotificationPrefs) returns (NotificationPrefs);
+}
+
+message QuietHours {
+  string start = 1;  // "HH:MM"
+  string end = 2;    // "HH:MM"
+  string tz = 3;     // IANA tz, e.g. "Europe/Berlin"
+}
+
+message GetNotificationPrefsRequest {}
+
+message NotificationPrefs {
+  map<string, bool> email_categories = 1;  // category -> enabled
+  bool sms_critical = 2;
+  string digest = 3;                        // off | daily | weekly
+  QuietHours quiet_hours = 4;               // absent = no quiet hours
+}
