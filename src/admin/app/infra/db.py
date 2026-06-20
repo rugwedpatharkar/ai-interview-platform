@@ -57,6 +57,10 @@ INDEXES: list[IndexSpec] = [
     # Full-text marketplace search (SearchJobs + /public/jobs). One text index per
     # collection; covers title + jd + skills (skills lands with extend-Job).
     IndexSpec("jobs", [("title", "text"), ("jd_text", "text"), ("skills", "text")]),
+    # saved_jobs: candidate bookmarks; unique (candidate, job) makes Save idempotent.
+    IndexSpec(
+        "saved_jobs", [("candidate_user_id", 1), ("job_id", 1)], {"unique": True}
+    ),
     # audit_logs: entity+entity_id is the primary lookup pattern; comp_id backs scans.
     IndexSpec("audit_logs", [("entity", 1), ("entity_id", 1)]),
     IndexSpec("audit_logs", "comp_id"),

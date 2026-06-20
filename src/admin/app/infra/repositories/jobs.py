@@ -31,6 +31,13 @@ class JobRepository(BaseRepository[Job]):
     async def list_published_capped(self, limit: int) -> list[dict]:
         return await self.find_capped({"status": "published"}, cap=limit)
 
+    async def find_published_by_ids(self, job_ids: list[str]) -> list[dict]:
+        """Published jobs among `job_ids` (saved-jobs join; non-published dropped)."""
+        oids = [oid for oid in (_oid(j) for j in job_ids) if oid is not None]
+        if not oids:
+            return []
+        return await self.find({"_id": {"$in": oids}, "status": "published"}, limit=200)
+
     async def set_status(self, job_id: str, comp_id: str, status: str) -> int:
         oid = _oid(job_id)
         if oid is None:

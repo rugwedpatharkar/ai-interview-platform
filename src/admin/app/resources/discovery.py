@@ -16,7 +16,7 @@ MAX_PAGE_SIZE = 24
 _VALID_SORT = {"relevance", "recent"}
 
 
-def _iso(value) -> str:
+def iso(value) -> str:  # shared by saved_jobs (datetime -> ISO 8601 or "")
     if value is None:
         return ""
     return value.isoformat() if hasattr(value, "isoformat") else str(value)
@@ -26,7 +26,7 @@ def _snippet(jd_text: str, limit: int = 160) -> str:
     return (jd_text or "")[:limit]
 
 
-def _job_card(doc: dict, company_names: dict[str, str]) -> dict:
+def job_card(doc: dict, company_names: dict[str, str]) -> dict:
     """Map a raw job doc to the public JobCard DTO (internals intentionally dropped)."""
     comp_id = doc.get("comp_id", "")
     return {
@@ -41,7 +41,7 @@ def _job_card(doc: dict, company_names: dict[str, str]) -> dict:
         "salary_max": doc.get("salary_max") or 0,
         "salary_currency": doc.get("salary_currency") or "",
         "skills": doc.get("skills") or [],
-        "posted_at": _iso(doc.get("posted_at") or doc.get("created_at")),
+        "posted_at": iso(doc.get("posted_at") or doc.get("created_at")),
         "snippet": _snippet(doc.get("jd_text", "")),
     }
 
@@ -89,7 +89,7 @@ async def search_jobs(params: dict, *, jobs, companies) -> dict:
     total = total_facet[0].get("n", 0) if total_facet else 0
 
     return {
-        "jobs": [_job_card(d, company_names) for d in results],
+        "jobs": [job_card(d, company_names) for d in results],
         "facets": {
             "remote_mode": _buckets(raw.get("remote_mode", [])),
             "employment_type": _buckets(raw.get("employment_type", [])),
