@@ -12,6 +12,7 @@ import {
   Input,
   Logo,
 } from "@ip/ui";
+import { AuthLayout } from "./auth-layout";
 import { errorMessage } from "@ip/shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -59,8 +60,8 @@ export function CredentialsForm({
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 p-6">
-      <Link href="/" className="self-center" aria-label="Interview Platform home">
+    <AuthLayout>
+      <Link href="/" className="mb-6 inline-flex" aria-label="Interview Platform home">
         <Logo size="lg" />
       </Link>
       <Card>
@@ -121,6 +122,6 @@ export function CredentialsForm({
           {footer}
         </CardContent>
       </Card>
-    </main>
+    </AuthLayout>
   );
 }
