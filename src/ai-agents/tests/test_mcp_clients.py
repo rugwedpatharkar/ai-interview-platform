@@ -17,7 +17,6 @@ class _Result:
 class _NoStructured:
     is_error = False
     structured_content = None
-    content = []
 
 
 def test_unwrap_raises_on_missing_structured_content():

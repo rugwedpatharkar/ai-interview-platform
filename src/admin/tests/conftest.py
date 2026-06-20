@@ -141,9 +141,16 @@ class FakeRedis:
         return dict(self.hashes.get(key, {}))
 
     async def eval(self, script, numkeys, *keys_and_args):
-        # Model Redis's atomic EVAL for revoke_user: delete each jti key in the user's
-        # set, then the set itself — one indivisible step (the only script we run).
+        # Model Redis's atomic EVAL for the two scripts we run (dispatch by content).
         keys, args = keys_and_args[:numkeys], keys_and_args[numkeys:]
+        if "INCR" in script:
+            # RateLimiter.hit: INCR + EXPIRE + return [count, ttl] atomically.
+            key, window = keys[0], int(args[0])
+            val = int(self.kv.get(key, 0)) + 1
+            self.kv[key] = str(val)
+            self.ttls[key] = window
+            return [val, window]
+        # revoke_user: delete each jti key in the user's set, then the set itself.
         user_key, prefix = keys[0], args[0]
         for jti in self.sets.get(user_key, set()):
             self.kv.pop(prefix + jti, None)
