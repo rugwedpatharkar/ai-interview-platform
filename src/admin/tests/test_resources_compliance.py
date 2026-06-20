@@ -190,3 +190,30 @@ async def test_retention_sweep_erases_only_expired(fakes):
     assert count == 1
     assert (await fakes["users"].get(old))["erased"] is True
     assert (await fakes["users"].get(recent)).get("erased") is not True
+
+
+async def test_retention_sweep_isolates_per_candidate_failure(fakes):
+    # One poison candidate must NOT abort the whole sweep — healthy ones still erase.
+    expired = datetime(2020, 1, 1, tzinfo=UTC)
+    good = await fakes["users"].insert(
+        User(
+            email="g@x.com", password_hash="h", role=Role.candidate, created_at=expired
+        )
+    )
+    bad = await fakes["users"].insert(
+        User(
+            email="b@x.com", password_hash="h", role=Role.candidate, created_at=expired
+        )
+    )
+    eraser = _eraser(fakes)
+    real_erase = eraser.erase
+
+    async def _flaky(user_id):
+        if user_id == bad:
+            raise RuntimeError("erase blew up")
+        await real_erase(user_id)
+
+    eraser.erase = _flaky
+    count = await eraser.sweep(datetime(2021, 1, 1, tzinfo=UTC))
+    assert count == 1  # good erased; bad logged + skipped, sweep not aborted
+    assert (await fakes["users"].get(good))["erased"] is True

@@ -138,11 +138,20 @@ class CandidateEraser:
             log.info("retention sweep erased 0 candidates")
             return 0
         sem = asyncio.Semaphore(self._SWEEP_CONCURRENCY)
+        erased = 0
 
         async def _erase_one(user):
+            nonlocal erased
             async with sem:
-                await self.erase(str(user["_id"]))
+                # Per-candidate isolation: one poison record (e.g. a transient repo
+                # failure) must not abort the whole sweep + block every other candidate.
+                # erase() is idempotent, so the next sweep retries this one.
+                try:
+                    await self.erase(str(user["_id"]))
+                    erased += 1
+                except Exception:
+                    log.exception("retention erase failed for {}", user["_id"])
 
         await asyncio.gather(*(_erase_one(u) for u in users))
-        log.info("retention sweep erased {} candidates", len(users))
-        return len(users)
+        log.info("retention sweep erased {}/{} candidates", erased, len(users))
+        return erased
