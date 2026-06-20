@@ -57,6 +57,27 @@ class AnalyticsServicer(analytics_pb2_grpc.AnalyticsServiceServicer):
             except AuthDomainError as exc:
                 await self._abort(context, exc, "GetFunnelAnalytics")
 
+    async def GetNoGhostingKpis(self, request, context):
+        _grpc_total.labels(method="GetNoGhostingKpis").inc()
+        async with (
+            log_context(log, "analytics.GetNoGhostingKpis"),
+            span("analytics.GetNoGhostingKpis"),
+        ):
+            try:
+                identity = await caller_identity(context, self._tokens)
+                data = await analytics_res.get_no_ghosting_kpis(
+                    identity, applications=self._applications
+                )
+                return analytics_pb2.NoGhostingKpis(
+                    pending_review=data["pending_review"],
+                    stale_over_sla=data["stale_over_sla"],
+                    median_response_hours=data["median_response_hours"],
+                    response_rate=data["response_rate"],
+                    decided_last_7d=data["decided_last_7d"],
+                )
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "GetNoGhostingKpis")
+
     async def GetJobScoreDistribution(self, request, context):
         _grpc_total.labels(method="GetJobScoreDistribution").inc()
         async with (

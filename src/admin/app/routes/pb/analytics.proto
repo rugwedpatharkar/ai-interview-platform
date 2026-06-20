@@ -9,6 +9,18 @@ service AnalyticsService {
   // Bias view: the distribution of overall scores across a job's scored candidates.
   // v1 reports score-spread stats only (no protected attributes — P1 collects none).
   rpc GetJobScoreDistribution(JobScoreRequest) returns (ScoreDistribution);
+  // No-ghosting responsiveness KPIs, derived from the application transition-log.
+  rpc GetNoGhostingKpis(NoGhostingKpisRequest) returns (NoGhostingKpis);
+}
+
+message NoGhostingKpisRequest {}
+
+message NoGhostingKpis {
+  int32 pending_review = 1;          // candidates awaiting a first action
+  int32 stale_over_sla = 2;          // pending past the response SLA (7 days)
+  double median_response_hours = 3;  // median(applied -> first transition)
+  double response_rate = 4;          // share of applications the company moved
+  int32 decided_last_7d = 5;
 }
 
 message FunnelAnalyticsRequest {}

@@ -1,5 +1,7 @@
 """Funnel analytics: per-state counts + hired/total conversion, comp-scoped."""
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
 from app.errors import ForbiddenError
@@ -115,3 +117,70 @@ async def test_score_distribution_empty_is_zeros():
     )
     assert out["count"] == 0
     assert out["p50"] == 0.0
+
+
+# --- No-ghosting KPIs (A3) — derived from the application transition-log ---
+
+_NOW = datetime(2026, 6, 20, 12, 0, tzinfo=UTC)
+
+
+def _clock():
+    return lambda: _NOW
+
+
+def _ng_app(created_days_ago, transitions=None, state="applied", comp_id="c1"):
+    return {
+        "comp_id": comp_id,
+        "state": state,
+        "created_at": _NOW - timedelta(days=created_days_ago),
+        "transitions": transitions or [],
+    }
+
+
+@pytest.mark.asyncio
+async def test_no_ghosting_kpis_from_transitions():
+    rows = [
+        # responded in 24h (applied 2d ago, first transition 1d ago)
+        _ng_app(
+            2,
+            transitions=[{"state": "aptitude_pending", "at": _NOW - timedelta(days=1)}],
+            state="aptitude_pending",
+        ),
+        # decided in the last 7d (shortlisted 3d ago); first transition at 48h
+        _ng_app(
+            10,
+            transitions=[
+                {"state": "interview_pending", "at": _NOW - timedelta(days=8)},
+                {"state": "shortlisted", "at": _NOW - timedelta(days=3)},
+            ],
+            state="shortlisted",
+        ),
+        _ng_app(10, state="applied"),  # pending + stale (10d, no movement)
+        _ng_app(1, state="applied"),  # pending, not stale
+        _ng_app(1, comp_id="c2"),  # other tenant — excluded
+    ]
+    out = await analytics.get_no_ghosting_kpis(
+        MGR, applications=_FakeApps(rows), clock=_clock()
+    )
+    assert out["pending_review"] == 2  # the two no-movement, non-terminal c1 apps
+    assert out["stale_over_sla"] == 1  # only the 10-day-old one
+    assert out["response_rate"] == 0.5  # 2 of 4 c1 apps moved
+    assert out["decided_last_7d"] == 1  # the shortlist 3d ago
+    assert out["median_response_hours"] == 36.0  # median(24, 48)
+
+
+@pytest.mark.asyncio
+async def test_no_ghosting_kpis_manager_only():
+    with pytest.raises(ForbiddenError):
+        await analytics.get_no_ghosting_kpis(
+            CAND, applications=_FakeApps([]), clock=_clock()
+        )
+
+
+@pytest.mark.asyncio
+async def test_no_ghosting_kpis_empty_is_zeros():
+    out = await analytics.get_no_ghosting_kpis(
+        MGR, applications=_FakeApps([]), clock=_clock()
+    )
+    assert out["pending_review"] == 0 and out["response_rate"] == 0.0
+    assert out["median_response_hours"] == 0.0

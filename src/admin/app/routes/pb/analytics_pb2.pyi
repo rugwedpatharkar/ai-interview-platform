@@ -6,6 +6,24 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
+class NoGhostingKpisRequest(_message.Message):
+    __slots__ = ()
+    def __init__(self) -> None: ...
+
+class NoGhostingKpis(_message.Message):
+    __slots__ = ("pending_review", "stale_over_sla", "median_response_hours", "response_rate", "decided_last_7d")
+    PENDING_REVIEW_FIELD_NUMBER: _ClassVar[int]
+    STALE_OVER_SLA_FIELD_NUMBER: _ClassVar[int]
+    MEDIAN_RESPONSE_HOURS_FIELD_NUMBER: _ClassVar[int]
+    RESPONSE_RATE_FIELD_NUMBER: _ClassVar[int]
+    DECIDED_LAST_7D_FIELD_NUMBER: _ClassVar[int]
+    pending_review: int
+    stale_over_sla: int
+    median_response_hours: float
+    response_rate: float
+    decided_last_7d: int
+    def __init__(self, pending_review: _Optional[int] = ..., stale_over_sla: _Optional[int] = ..., median_response_hours: _Optional[float] = ..., response_rate: _Optional[float] = ..., decided_last_7d: _Optional[int] = ...) -> None: ...
+
 class FunnelAnalyticsRequest(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...

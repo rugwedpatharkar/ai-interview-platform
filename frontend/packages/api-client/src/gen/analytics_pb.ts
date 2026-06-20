@@ -10,7 +10,65 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file analytics.proto.
  */
 export const file_analytics: GenFile = /*@__PURE__*/
-  fileDesc("Cg9hbmFseXRpY3MucHJvdG8SEmFkbWluLmFuYWx5dGljcy52MSIYChZGdW5uZWxBbmFseXRpY3NSZXF1ZXN0IiEKD0pvYlNjb3JlUmVxdWVzdBIOCgZqb2JfaWQYASABKAkicQoRU2NvcmVEaXN0cmlidXRpb24SDQoFY291bnQYASABKAMSCwoDbWluGAIgASgBEgsKA21heBgDIAEoARIMCgRtZWFuGAQgASgBEgsKA3AyNRgFIAEoARILCgNwNTAYBiABKAESCwoDcDc1GAcgASgBIioKClN0YXRlQ291bnQSDQoFc3RhdGUYASABKAkSDQoFY291bnQYAiABKAMiaQoPRnVubmVsQW5hbHl0aWNzEi4KBnN0YXRlcxgBIAMoCzIeLmFkbWluLmFuYWx5dGljcy52MS5TdGF0ZUNvdW50Eg0KBXRvdGFsGAIgASgDEhcKD2NvbnZlcnNpb25fcmF0ZRgDIAEoATLgAQoQQW5hbHl0aWNzU2VydmljZRJlChJHZXRGdW5uZWxBbmFseXRpY3MSKi5hZG1pbi5hbmFseXRpY3MudjEuRnVubmVsQW5hbHl0aWNzUmVxdWVzdBojLmFkbWluLmFuYWx5dGljcy52MS5GdW5uZWxBbmFseXRpY3MSZQoXR2V0Sm9iU2NvcmVEaXN0cmlidXRpb24SIy5hZG1pbi5hbmFseXRpY3MudjEuSm9iU2NvcmVSZXF1ZXN0GiUuYWRtaW4uYW5hbHl0aWNzLnYxLlNjb3JlRGlzdHJpYnV0aW9uYgZwcm90bzM");
+  fileDesc("Cg9hbmFseXRpY3MucHJvdG8SEmFkbWluLmFuYWx5dGljcy52MSIXChVOb0dob3N0aW5nS3Bpc1JlcXVlc3QijwEKDk5vR2hvc3RpbmdLcGlzEhYKDnBlbmRpbmdfcmV2aWV3GAEgASgFEhYKDnN0YWxlX292ZXJfc2xhGAIgASgFEh0KFW1lZGlhbl9yZXNwb25zZV9ob3VycxgDIAEoARIVCg1yZXNwb25zZV9yYXRlGAQgASgBEhcKD2RlY2lkZWRfbGFzdF83ZBgFIAEoBSIYChZGdW5uZWxBbmFseXRpY3NSZXF1ZXN0IiEKD0pvYlNjb3JlUmVxdWVzdBIOCgZqb2JfaWQYASABKAkicQoRU2NvcmVEaXN0cmlidXRpb24SDQoFY291bnQYASABKAMSCwoDbWluGAIgASgBEgsKA21heBgDIAEoARIMCgRtZWFuGAQgASgBEgsKA3AyNRgFIAEoARILCgNwNTAYBiABKAESCwoDcDc1GAcgASgBIioKClN0YXRlQ291bnQSDQoFc3RhdGUYASABKAkSDQoFY291bnQYAiABKAMiaQoPRnVubmVsQW5hbHl0aWNzEi4KBnN0YXRlcxgBIAMoCzIeLmFkbWluLmFuYWx5dGljcy52MS5TdGF0ZUNvdW50Eg0KBXRvdGFsGAIgASgDEhcKD2NvbnZlcnNpb25fcmF0ZRgDIAEoATLEAgoQQW5hbHl0aWNzU2VydmljZRJlChJHZXRGdW5uZWxBbmFseXRpY3MSKi5hZG1pbi5hbmFseXRpY3MudjEuRnVubmVsQW5hbHl0aWNzUmVxdWVzdBojLmFkbWluLmFuYWx5dGljcy52MS5GdW5uZWxBbmFseXRpY3MSZQoXR2V0Sm9iU2NvcmVEaXN0cmlidXRpb24SIy5hZG1pbi5hbmFseXRpY3MudjEuSm9iU2NvcmVSZXF1ZXN0GiUuYWRtaW4uYW5hbHl0aWNzLnYxLlNjb3JlRGlzdHJpYnV0aW9uEmIKEUdldE5vR2hvc3RpbmdLcGlzEikuYWRtaW4uYW5hbHl0aWNzLnYxLk5vR2hvc3RpbmdLcGlzUmVxdWVzdBoiLmFkbWluLmFuYWx5dGljcy52MS5Ob0dob3N0aW5nS3Bpc2IGcHJvdG8z");
+
+/**
+ * @generated from message admin.analytics.v1.NoGhostingKpisRequest
+ */
+export type NoGhostingKpisRequest = Message<"admin.analytics.v1.NoGhostingKpisRequest"> & {
+};
+
+/**
+ * Describes the message admin.analytics.v1.NoGhostingKpisRequest.
+ * Use `create(NoGhostingKpisRequestSchema)` to create a new message.
+ */
+export const NoGhostingKpisRequestSchema: GenMessage<NoGhostingKpisRequest> = /*@__PURE__*/
+  messageDesc(file_analytics, 0);
+
+/**
+ * @generated from message admin.analytics.v1.NoGhostingKpis
+ */
+export type NoGhostingKpis = Message<"admin.analytics.v1.NoGhostingKpis"> & {
+  /**
+   * candidates awaiting a first action
+   *
+   * @generated from field: int32 pending_review = 1;
+   */
+  pendingReview: number;
+
+  /**
+   * pending past the response SLA (7 days)
+   *
+   * @generated from field: int32 stale_over_sla = 2;
+   */
+  staleOverSla: number;
+
+  /**
+   * median(applied -> first transition)
+   *
+   * @generated from field: double median_response_hours = 3;
+   */
+  medianResponseHours: number;
+
+  /**
+   * share of applications the company moved
+   *
+   * @generated from field: double response_rate = 4;
+   */
+  responseRate: number;
+
+  /**
+   * @generated from field: int32 decided_last_7d = 5;
+   */
+  decidedLast7d: number;
+};
+
+/**
+ * Describes the message admin.analytics.v1.NoGhostingKpis.
+ * Use `create(NoGhostingKpisSchema)` to create a new message.
+ */
+export const NoGhostingKpisSchema: GenMessage<NoGhostingKpis> = /*@__PURE__*/
+  messageDesc(file_analytics, 1);
 
 /**
  * @generated from message admin.analytics.v1.FunnelAnalyticsRequest
@@ -23,7 +81,7 @@ export type FunnelAnalyticsRequest = Message<"admin.analytics.v1.FunnelAnalytics
  * Use `create(FunnelAnalyticsRequestSchema)` to create a new message.
  */
 export const FunnelAnalyticsRequestSchema: GenMessage<FunnelAnalyticsRequest> = /*@__PURE__*/
-  messageDesc(file_analytics, 0);
+  messageDesc(file_analytics, 2);
 
 /**
  * @generated from message admin.analytics.v1.JobScoreRequest
@@ -40,7 +98,7 @@ export type JobScoreRequest = Message<"admin.analytics.v1.JobScoreRequest"> & {
  * Use `create(JobScoreRequestSchema)` to create a new message.
  */
 export const JobScoreRequestSchema: GenMessage<JobScoreRequest> = /*@__PURE__*/
-  messageDesc(file_analytics, 1);
+  messageDesc(file_analytics, 3);
 
 /**
  * @generated from message admin.analytics.v1.ScoreDistribution
@@ -89,7 +147,7 @@ export type ScoreDistribution = Message<"admin.analytics.v1.ScoreDistribution"> 
  * Use `create(ScoreDistributionSchema)` to create a new message.
  */
 export const ScoreDistributionSchema: GenMessage<ScoreDistribution> = /*@__PURE__*/
-  messageDesc(file_analytics, 2);
+  messageDesc(file_analytics, 4);
 
 /**
  * @generated from message admin.analytics.v1.StateCount
@@ -111,7 +169,7 @@ export type StateCount = Message<"admin.analytics.v1.StateCount"> & {
  * Use `create(StateCountSchema)` to create a new message.
  */
 export const StateCountSchema: GenMessage<StateCount> = /*@__PURE__*/
-  messageDesc(file_analytics, 3);
+  messageDesc(file_analytics, 5);
 
 /**
  * @generated from message admin.analytics.v1.FunnelAnalytics
@@ -140,7 +198,7 @@ export type FunnelAnalytics = Message<"admin.analytics.v1.FunnelAnalytics"> & {
  * Use `create(FunnelAnalyticsSchema)` to create a new message.
  */
 export const FunnelAnalyticsSchema: GenMessage<FunnelAnalytics> = /*@__PURE__*/
-  messageDesc(file_analytics, 4);
+  messageDesc(file_analytics, 6);
 
 /**
  * AnalyticsService — recruiters see funnel metrics for their company: per-state counts
@@ -167,6 +225,16 @@ export const AnalyticsService: GenService<{
     methodKind: "unary";
     input: typeof JobScoreRequestSchema;
     output: typeof ScoreDistributionSchema;
+  },
+  /**
+   * No-ghosting responsiveness KPIs, derived from the application transition-log.
+   *
+   * @generated from rpc admin.analytics.v1.AnalyticsService.GetNoGhostingKpis
+   */
+  getNoGhostingKpis: {
+    methodKind: "unary";
+    input: typeof NoGhostingKpisRequestSchema;
+    output: typeof NoGhostingKpisSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_analytics, 0);

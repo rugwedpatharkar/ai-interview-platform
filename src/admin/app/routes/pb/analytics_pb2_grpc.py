@@ -46,6 +46,11 @@ class AnalyticsServiceStub:
                 request_serializer=app_dot_routes_dot_pb_dot_analytics__pb2.JobScoreRequest.SerializeToString,
                 response_deserializer=app_dot_routes_dot_pb_dot_analytics__pb2.ScoreDistribution.FromString,
                 _registered_method=True)
+        self.GetNoGhostingKpis = channel.unary_unary(
+                '/admin.analytics.v1.AnalyticsService/GetNoGhostingKpis',
+                request_serializer=app_dot_routes_dot_pb_dot_analytics__pb2.NoGhostingKpisRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_analytics__pb2.NoGhostingKpis.FromString,
+                _registered_method=True)
 
 
 class AnalyticsServiceServicer:
@@ -67,6 +72,13 @@ class AnalyticsServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetNoGhostingKpis(self, request, context):
+        """No-ghosting responsiveness KPIs, derived from the application transition-log.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_AnalyticsServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -79,6 +91,11 @@ def add_AnalyticsServiceServicer_to_server(servicer, server):
                     servicer.GetJobScoreDistribution,
                     request_deserializer=app_dot_routes_dot_pb_dot_analytics__pb2.JobScoreRequest.FromString,
                     response_serializer=app_dot_routes_dot_pb_dot_analytics__pb2.ScoreDistribution.SerializeToString,
+            ),
+            'GetNoGhostingKpis': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetNoGhostingKpis,
+                    request_deserializer=app_dot_routes_dot_pb_dot_analytics__pb2.NoGhostingKpisRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_analytics__pb2.NoGhostingKpis.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -137,6 +154,33 @@ class AnalyticsService:
             '/admin.analytics.v1.AnalyticsService/GetJobScoreDistribution',
             app_dot_routes_dot_pb_dot_analytics__pb2.JobScoreRequest.SerializeToString,
             app_dot_routes_dot_pb_dot_analytics__pb2.ScoreDistribution.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetNoGhostingKpis(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.analytics.v1.AnalyticsService/GetNoGhostingKpis',
+            app_dot_routes_dot_pb_dot_analytics__pb2.NoGhostingKpisRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_analytics__pb2.NoGhostingKpis.FromString,
             options,
             channel_credentials,
             insecure,

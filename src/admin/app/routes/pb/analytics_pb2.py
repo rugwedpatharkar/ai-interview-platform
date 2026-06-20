@@ -24,23 +24,27 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1d\x61pp/routes/pb/analytics.proto\x12\x12\x61\x64min.analytics.v1\"\x18\n\x16\x46unnelAnalyticsRequest\"!\n\x0fJobScoreRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"q\n\x11ScoreDistribution\x12\r\n\x05\x63ount\x18\x01 \x01(\x03\x12\x0b\n\x03min\x18\x02 \x01(\x01\x12\x0b\n\x03max\x18\x03 \x01(\x01\x12\x0c\n\x04mean\x18\x04 \x01(\x01\x12\x0b\n\x03p25\x18\x05 \x01(\x01\x12\x0b\n\x03p50\x18\x06 \x01(\x01\x12\x0b\n\x03p75\x18\x07 \x01(\x01\"*\n\nStateCount\x12\r\n\x05state\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x03\"i\n\x0f\x46unnelAnalytics\x12.\n\x06states\x18\x01 \x03(\x0b\x32\x1e.admin.analytics.v1.StateCount\x12\r\n\x05total\x18\x02 \x01(\x03\x12\x17\n\x0f\x63onversion_rate\x18\x03 \x01(\x01\x32\xe0\x01\n\x10\x41nalyticsService\x12\x65\n\x12GetFunnelAnalytics\x12*.admin.analytics.v1.FunnelAnalyticsRequest\x1a#.admin.analytics.v1.FunnelAnalytics\x12\x65\n\x17GetJobScoreDistribution\x12#.admin.analytics.v1.JobScoreRequest\x1a%.admin.analytics.v1.ScoreDistributionb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1d\x61pp/routes/pb/analytics.proto\x12\x12\x61\x64min.analytics.v1\"\x17\n\x15NoGhostingKpisRequest\"\x8f\x01\n\x0eNoGhostingKpis\x12\x16\n\x0epending_review\x18\x01 \x01(\x05\x12\x16\n\x0estale_over_sla\x18\x02 \x01(\x05\x12\x1d\n\x15median_response_hours\x18\x03 \x01(\x01\x12\x15\n\rresponse_rate\x18\x04 \x01(\x01\x12\x17\n\x0f\x64\x65\x63ided_last_7d\x18\x05 \x01(\x05\"\x18\n\x16\x46unnelAnalyticsRequest\"!\n\x0fJobScoreRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"q\n\x11ScoreDistribution\x12\r\n\x05\x63ount\x18\x01 \x01(\x03\x12\x0b\n\x03min\x18\x02 \x01(\x01\x12\x0b\n\x03max\x18\x03 \x01(\x01\x12\x0c\n\x04mean\x18\x04 \x01(\x01\x12\x0b\n\x03p25\x18\x05 \x01(\x01\x12\x0b\n\x03p50\x18\x06 \x01(\x01\x12\x0b\n\x03p75\x18\x07 \x01(\x01\"*\n\nStateCount\x12\r\n\x05state\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x03\"i\n\x0f\x46unnelAnalytics\x12.\n\x06states\x18\x01 \x03(\x0b\x32\x1e.admin.analytics.v1.StateCount\x12\r\n\x05total\x18\x02 \x01(\x03\x12\x17\n\x0f\x63onversion_rate\x18\x03 \x01(\x01\x32\xc4\x02\n\x10\x41nalyticsService\x12\x65\n\x12GetFunnelAnalytics\x12*.admin.analytics.v1.FunnelAnalyticsRequest\x1a#.admin.analytics.v1.FunnelAnalytics\x12\x65\n\x17GetJobScoreDistribution\x12#.admin.analytics.v1.JobScoreRequest\x1a%.admin.analytics.v1.ScoreDistribution\x12\x62\n\x11GetNoGhostingKpis\x12).admin.analytics.v1.NoGhostingKpisRequest\x1a\".admin.analytics.v1.NoGhostingKpisb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'app.routes.pb.analytics_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_FUNNELANALYTICSREQUEST']._serialized_start=53
-  _globals['_FUNNELANALYTICSREQUEST']._serialized_end=77
-  _globals['_JOBSCOREREQUEST']._serialized_start=79
-  _globals['_JOBSCOREREQUEST']._serialized_end=112
-  _globals['_SCOREDISTRIBUTION']._serialized_start=114
-  _globals['_SCOREDISTRIBUTION']._serialized_end=227
-  _globals['_STATECOUNT']._serialized_start=229
-  _globals['_STATECOUNT']._serialized_end=271
-  _globals['_FUNNELANALYTICS']._serialized_start=273
-  _globals['_FUNNELANALYTICS']._serialized_end=378
-  _globals['_ANALYTICSSERVICE']._serialized_start=381
-  _globals['_ANALYTICSSERVICE']._serialized_end=605
+  _globals['_NOGHOSTINGKPISREQUEST']._serialized_start=53
+  _globals['_NOGHOSTINGKPISREQUEST']._serialized_end=76
+  _globals['_NOGHOSTINGKPIS']._serialized_start=79
+  _globals['_NOGHOSTINGKPIS']._serialized_end=222
+  _globals['_FUNNELANALYTICSREQUEST']._serialized_start=224
+  _globals['_FUNNELANALYTICSREQUEST']._serialized_end=248
+  _globals['_JOBSCOREREQUEST']._serialized_start=250
+  _globals['_JOBSCOREREQUEST']._serialized_end=283
+  _globals['_SCOREDISTRIBUTION']._serialized_start=285
+  _globals['_SCOREDISTRIBUTION']._serialized_end=398
+  _globals['_STATECOUNT']._serialized_start=400
+  _globals['_STATECOUNT']._serialized_end=442
+  _globals['_FUNNELANALYTICS']._serialized_start=444
+  _globals['_FUNNELANALYTICS']._serialized_end=549
+  _globals['_ANALYTICSSERVICE']._serialized_start=552
+  _globals['_ANALYTICSSERVICE']._serialized_end=876
 # @@protoc_insertion_point(module_scope)
