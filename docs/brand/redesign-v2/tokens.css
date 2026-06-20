@@ -1,23 +1,11 @@
 /* ============================================================================
-   Aptura — Redesign v2 design tokens (fresh visual language)
-   Standalone mockup system. OKLCH throughout. Light + dark first-class.
-   Anti-"AI-default": no violet gradient; ONE desaturated signal accent;
-   warm-tinted graphite neutrals; tinted shadows; editorial serif + grotesk.
-   Accent is a single variable (--accent-h/s/l) — swap to retune the whole brand.
+   Aptura — Redesign v2 design tokens. LOCKED SCHEME: Midnight Intelligence.
+   Deep cool indigo base · electric-cyan signal · luminous glow.
+   OKLCH throughout. Dark-first; light included. Reads: AI, precise, advanced, trusted.
+   Palette values are FINAL per theme (no seed re-derivation → no resolve gotchas).
    ============================================================================ */
 
 :root {
-  /* ---- Accent seed (signal lime). Swap these 3 to re-skin the brand. ------ */
-  --accent-l: 0.84;   /* lightness */
-  --accent-c: 0.185;  /* chroma    */
-  --accent-h: 128;    /* hue (lime-green). amber≈85, emerald≈155, coral≈35 */
-
-  /* ---- Brand accent ramp (derived) -------------------------------------- */
-  --accent:        oklch(var(--accent-l) var(--accent-c) var(--accent-h));
-  --accent-strong: oklch(0.74 var(--accent-c) var(--accent-h));
-  --accent-soft:   oklch(0.92 0.06 var(--accent-h));
-  --accent-ink:    oklch(0.27 0.07 var(--accent-h));   /* text ON accent fills */
-
   /* ---- Type ------------------------------------------------------------- */
   --font-display: "Fraunces", "Times New Roman", serif;
   --font-sans: "Geist", "Inter", system-ui, sans-serif;
@@ -48,40 +36,40 @@
   --dur-1: 150ms; --dur-2: 240ms; --dur-3: 360ms;
 }
 
-/* ---- Light theme (default) — warm "bone" ------------------------------- */
+/* ---- Light theme — cool off-white -------------------------------------- */
 :root, [data-theme="light"] {
-  --bg:        oklch(0.975 0.006 95);   /* warm bone, not #fff */
-  --surface:   oklch(0.995 0.004 95);
-  --surface-2: oklch(0.945 0.008 95);
-  --ink:       oklch(0.22 0.012 75);    /* warm near-black text */
-  --ink-2:     oklch(0.44 0.012 75);    /* secondary (≥4.5:1 on bg) */
-  --ink-3:     oklch(0.56 0.012 75);    /* tertiary/labels */
-  --line:      oklch(0.89 0.008 95);    /* hairline borders */
-  --line-2:    oklch(0.83 0.01 95);
-  --shadow: 0 1px 2px oklch(0.22 0.02 75 / 0.06), 0 8px 24px oklch(0.22 0.03 75 / 0.08);
-  --grain-opacity: 0.035;
+  --bg:        oklch(0.975 0.006 255);
+  --surface:   oklch(0.995 0.004 255);
+  --surface-2: oklch(0.945 0.01 255);
+  --ink:       oklch(0.22 0.025 260);
+  --ink-2:     oklch(0.44 0.02 258);
+  --ink-3:     oklch(0.56 0.018 258);
+  --line:      oklch(0.9 0.01 255);
+  --line-2:    oklch(0.84 0.012 255);
+  --accent:        oklch(0.58 0.13 218);
+  --accent-strong: oklch(0.5 0.13 220);
+  --accent-soft:   oklch(0.93 0.05 210);
+  --accent-ink:    oklch(0.99 0.01 215);
+  --shadow: 0 1px 2px oklch(0.4 0.05 260 / 0.06), 0 10px 28px oklch(0.4 0.06 260 / 0.1);
+  --grain-opacity: 0.03;
 }
 
-/* ---- Dark theme — warm graphite ink ------------------------------------ */
+/* ---- Dark theme (hero) — deep indigo + electric cyan ------------------- */
 [data-theme="dark"] {
-  --bg:        oklch(0.19 0.012 95);    /* warm graphite, not #000 */
-  --surface:   oklch(0.225 0.013 95);
-  --surface-2: oklch(0.265 0.014 95);
-  --ink:       oklch(0.96 0.008 95);
-  --ink-2:     oklch(0.78 0.01 95);     /* secondary (≥4.5:1 on bg) */
-  --ink-3:     oklch(0.64 0.01 95);
-  --line:      oklch(0.32 0.012 95);
-  --line-2:    oklch(0.4 0.014 95);
-  --shadow: 0 1px 2px oklch(0 0 0 / 0.3), 0 12px 32px oklch(0 0 0 / 0.4);
-  --grain-opacity: 0.05;
-  --accent-l: 0.86;  /* lift accent slightly for dark surfaces */
-  /* Re-derive: custom props that reference other custom props resolve at their
-     declaring scope, so the accent ramp must be re-declared here to pick up the
-     dark --accent-l (and any --accent-h/-c override below it). */
-  --accent:        oklch(var(--accent-l) var(--accent-c) var(--accent-h));
-  --accent-strong: oklch(0.74 var(--accent-c) var(--accent-h));
-  --accent-soft:   oklch(0.92 0.06 var(--accent-h));
-  --accent-ink:    oklch(0.27 0.07 var(--accent-h));
+  --bg:        oklch(0.17 0.028 264);
+  --surface:   oklch(0.215 0.03 264);
+  --surface-2: oklch(0.27 0.035 264);
+  --ink:       oklch(0.97 0.012 250);
+  --ink-2:     oklch(0.74 0.025 255);
+  --ink-3:     oklch(0.6 0.025 255);
+  --line:      oklch(0.31 0.03 264);
+  --line-2:    oklch(0.4 0.035 264);
+  --accent:        oklch(0.82 0.135 205);
+  --accent-strong: oklch(0.86 0.13 200);
+  --accent-soft:   oklch(0.9 0.06 205);
+  --accent-ink:    oklch(0.2 0.04 240);
+  --shadow: 0 1px 2px oklch(0.1 0.04 264 / 0.4), 0 16px 40px oklch(0.05 0.05 264 / 0.5);
+  --grain-opacity: 0.045;
 }
 
 * { box-sizing: border-box; }
