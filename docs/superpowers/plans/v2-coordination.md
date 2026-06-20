@@ -283,3 +283,20 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   `/schedule` page + the company applicant **Schedule** tab off `NEXT_PUBLIC_MOCK` (per `scheduling.md`).
   ICS job-title/attendee enrichment + recruiter-side notifications (no single recruiter user_id on the
   application) are best-effort follow-ons. **Remaining BE:** L2 Team → L1 Settings/2FA remainder.
+- 2026-06-20 · BE · ✅ **L2 TeamService LANDED** (full gate GREEN; admin = **22** services). New
+  `admin.team.v1.TeamService` (ListMembers/InviteMember/ResendInvite/RevokeInvite/RemoveMember/ChangeRole).
+  **RBAC matrix is the single authority in lib** (`lib/schemas/permissions.py`: `PERMISSIONS` +
+  `has_permission`; `Role.hiring_manager` added). Every mutation `team:manage`-gated (only `company_admin`
+  holds it) via `require_permission` (`src/admin/app/resources/permissions.py`) + `comp_id`-scoped
+  (`_member_scoped`, cross-tenant → NOT_FOUND) + audited. **Last-admin guard:** can't remove/demote the
+  only active `company_admin` → INVALID_ARGUMENT; lifts once a 2nd active admin exists. Invite reuses the
+  shared `auth._invite_company_user` (legacy `InviteRecruiter` RPC + `recruiter_invited` audit byte-for-byte
+  unchanged); a `pending` seat → `active` on `verify_email`; founder is `active` from `register_company`.
+  Demotion revokes sessions, promotion doesn't. `users` gains `status/last_active_at/invited_by` + index
+  `(comp_id,role,status)`; `MemberJobAssignment` model + index ship (per-job enforcement deferred). **Team
+  seats are employees — NOT in CandidateEraser.** `pnpm gen` → `team_pb.ts`. **FE:** add the `team` quad +
+  rebuild `/team` (roster + invite dialog + permission matrix) off `NEXT_PUBLIC_MOCK` (per `team-permissions.md`;
+  FE `can()` matrix mirrors lib — server is authority). **Deferred:** re-expressing existing decision/job/
+  rubric guards over `require_permission` (behavior-preserving cleanup — existing role-sets already deny
+  `hiring_manager` correctly); `last_active_at` stamping (no login-touch); the existing-users `status=active`
+  backfill (non-blocking, mirrors the `posted_at` backfill). **Remaining BE:** L1 Settings/2FA remainder.
