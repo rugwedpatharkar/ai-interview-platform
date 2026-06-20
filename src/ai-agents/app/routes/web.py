@@ -11,7 +11,13 @@ from lib.grpcweb import GrpcWebASGI
 from app.routes.chat import ChatServicer
 from app.routes.interview import InterviewServicer
 from app.routes.jd import JdServicer
-from app.routes.pb import chat_pb2_grpc, interview_pb2_grpc, jd_pb2_grpc
+from app.routes.pb import (
+    chat_pb2_grpc,
+    interview_pb2_grpc,
+    jd_pb2_grpc,
+    practice_pb2_grpc,
+)
+from app.routes.practice import PracticeServicer
 
 
 def create_grpc_app(
@@ -46,6 +52,15 @@ def create_grpc_app(
     )
     jd_pb2_grpc.add_JdServiceServicer_to_server(
         JdServicer(tokens=deps["tokens"], llm=deps["llm"]),
+        app,
+    )
+    practice_pb2_grpc.add_PracticeServiceServicer_to_server(
+        PracticeServicer(
+            tokens=deps["tokens"],
+            data=deps["data"],
+            sessions=deps["practice_sessions"],
+            llm=deps["llm"],
+        ),
         app,
     )
     return app

@@ -56,6 +56,7 @@ def _app(*, data, sessions, llm, settings=None, capability=None, publisher=None)
         "tokens": TokenService(secret=_SECRET),
         "data": data,
         "sessions": sessions,
+        "practice_sessions": sessions,  # PracticeServicer dep (save/get only)
         "llm": llm,
         "publisher": publisher,
         "capability": capability,

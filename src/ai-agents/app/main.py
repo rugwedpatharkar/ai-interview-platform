@@ -16,7 +16,6 @@ from app.infra.mcp_session import McpSessionManager
 from app.infra.practice_sessions import RedisPracticeStore
 from app.infra.sessions import RedisInterviewStore
 from app.resources.interview_host import abandon_stale
-from app.routes.practice_api import create_practice_app
 from app.routes.web import create_grpc_app
 from app.routes.worker import EVENTS, make_dispatch
 
@@ -33,21 +32,18 @@ def _token_service(s):
     )
 
 
-def _dispatcher(grpc_app, practice_app, health):
-    """Route by path prefix: gRPC-web (/aiagents.*), practice REST (/practice...),
-    else the liveness probe.
+def _dispatcher(grpc_app, health):
+    """Route by path prefix: gRPC-web (/aiagents.*) else the liveness probe.
 
     gRPC-web RPC paths are /<pkg>.<Service>/<Method> with package `aiagents.*`, so the
-    prefix is unambiguous; the gRPC app serves its own CORS preflight. Practice is the
-    one REST surface left after G6 (the rest of ai-agents is gRPC).
+    prefix is unambiguous; the gRPC app serves its own CORS preflight. ai-agents is now
+    fully gRPC (practice moved onto PracticeService) — no REST surface remains.
     """
 
     async def dispatch(scope, receive, send):
         path = scope.get("path", "") if scope["type"] == "http" else ""
         if path.startswith("/aiagents."):
             await grpc_app(scope, receive, send)
-        elif path.startswith("/practice"):
-            await practice_app(scope, receive, send)
         else:
             await health(scope, receive, send)
 
@@ -129,12 +125,10 @@ async def serve() -> None:
         "publisher": publisher,
         "llm": llm,
         "settings": s,
-        "cors_origins": s.cors_allow_origin.split(","),
     }
-    # Application traffic is gRPC-web (interview/chat/jd/proctor/rtc) on /aiagents.*,
-    # wrapped in CorrelationIdMiddleware so each RPC carries a correlation_id. Practice
-    # is the one REST surface (/practice...; its own CORS + correlation middleware).
-    # Everything else is /health. lifespan="off": deps are wired here directly.
+    # Application traffic is gRPC-web (interview/chat/jd/practice/proctor/rtc) on
+    # /aiagents.*, wrapped in CorrelationIdMiddleware so each RPC carries a
+    # correlation_id. Everything else is /health. lifespan="off": deps wired here.
     grpc_app = CorrelationIdMiddleware(
         create_grpc_app(
             deps,
@@ -142,8 +136,7 @@ async def serve() -> None:
             timeout_seconds=s.grpc_timeout_seconds,
         )
     )
-    practice_app = create_practice_app(deps)
-    api = _dispatcher(grpc_app, practice_app, _health_app)
+    api = _dispatcher(grpc_app, _health_app)
     config = uvicorn.Config(
         api,
         host=s.http_host,
