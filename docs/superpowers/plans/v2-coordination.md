@@ -33,7 +33,7 @@
 | W1 company profile | `CompanyProfileService` | ✅ | ⬜ | ⬜ | **landed with REAL trust** (transition-log shipped). `GetCompanyProfile` + public `GET /public/companies/{id}` + `/{id}/jobs`. FE: flip `/companies/[id]` off mock |
 | W1 saved jobs | `SavedJobsService` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `api.savedJobs` (save/unsave/listSavedJobs). FE: flip `/saved` off mock |
 | W1 talent sourcing | `SourcingService.SearchCandidates` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `sourcing_pb.ts`. FE: add `sourcing` quad + flip `candidate-search` off mock |
-| W1 job alerts | `JobAlertsService` | ⬜ | ⬜ | ⬜ | |
+| W1 job alerts | `JobAlertsService` | ✅ | ⬜ | ⬜ | **landed** (create/list/delete; cap 20; sweep deferred to NotificationService). `pnpm gen` has `job_alerts_pb.ts`. FE: add `jobAlerts` quad + flip `/alerts` off mock |
 | W1 post-a-job | extend `Job` + `UpdateJob` + `gate_mode` | ✅ | ✅ | ⬜ | **landed** — `pnpm gen` has marketplace fields + `api.jobs.updateJob`; SearchJobs facets now populate. FE: flip post-a-job + `/jobs/[id]` off mock |
 | W2 proctored interview | proctoring auto-gate + rtc (video) | 🟦 | ✅ | ⬜ | **auto-gate ✅ landed** (`ProctorAccepted.terminated`/`reason`); rtc video still on fake seams (Plan H) |
 | W2 candidate report | `Report.GetIntegrityTimeline` | ⬜ | ⬜ | ⬜ | first reader of proctoring_events |
@@ -49,6 +49,14 @@ on BE (mocks). BE order: W1 (SearchJobs → CompanyProfile → SavedJobs → Job
 Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 screens.
 
 ## Handoff log (append; newest last)
+- 2026-06-20 · BE · ✅ **JobAlertsService LANDED** (gate GREEN). New `admin.job_alerts.v1` (candidate-
+  scoped from token): `CreateAlert`/`ListAlerts`/`DeleteAlert` over the `job_alerts` collection (saved
+  search = keyword + AlertFilters + frequency). frequency ∈ {daily,weekly} or INVALID_ARGUMENT; per-
+  candidate cap 20 → FAILED_PRECONDITION (new `LimitExceededError`); cross-tenant/missing delete →
+  NotFound. Indexes `(candidate_user_id, created_at desc)` + `(frequency, last_run_at)` (sweep scan).
+  `last_run_at` is sweep-written; **the run-and-notify sweep is deferred** — it lands with
+  NotificationService (next: Wave 3 K). `pnpm gen` emitted `job_alerts_pb.ts`. **FE:** add the `jobAlerts`
+  quad to `index.ts` + flip `/alerts` off mock.
 - 2026-06-20 · BE · ✅ **CompanyProfileService LANDED with REAL trust** (gate GREEN: admin 289). Now that
   the transition-log ships (Plan I), `responds_in_days` is the genuine median(applied→first transition)
   and `actively_reviewing` is real (not the earlier proxy). `admin.company_profile.v1.GetCompanyProfile`
