@@ -12,11 +12,14 @@ import {
   Field,
   Input,
   LoadingState,
+  buttonVariants,
+  cn,
   toast,
 } from "@ip/ui";
 import { TERMINAL_STATES, errorMessage, useAuthedQuery } from "@ip/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Briefcase, Send, Sparkles } from "lucide-react";
+import { ArrowRight, Briefcase, Dumbbell, Send, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useRef, useState } from "react";
 
 import { useAuth } from "../lib/auth";
@@ -133,6 +136,30 @@ export function Dashboard() {
             >
               {apply.isPending ? "Applying…" : "Apply"}
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card hoverable>
+          <CardContent className="flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center">
+            <div className="flex items-start gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+                <Dumbbell className="size-5" aria-hidden />
+              </span>
+              <div>
+                <p className="font-medium text-foreground">Practice for an interview</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  A private mock interview with growth feedback — no pressure, never shared
+                  with employers.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/practice"
+              className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}
+            >
+              Start practicing
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
           </CardContent>
         </Card>
 
