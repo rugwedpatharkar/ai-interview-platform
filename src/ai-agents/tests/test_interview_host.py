@@ -9,7 +9,12 @@ from app.model.interview import (
     InterviewSession,
     InterviewTurnDecision,
 )
-from app.resources.interview_host import abandon_stale, start_interview, submit_turn
+from app.resources.interview_host import (
+    abandon_stale,
+    start_interview,
+    submit_turn,
+    terminate_for_proctor,
+)
 
 
 def _setup():
@@ -341,3 +346,23 @@ def test_session_has_proctor_termination_marker():
     assert s.terminated_by_proctor == ""
     s.status = "terminated"  # the new terminal value is assignable
     assert s.status == "terminated"
+
+
+async def test_terminate_for_proctor_persists_publishes_and_flips(
+    fake_data, fake_sessions, fake_publisher
+):
+    data, sessions, publisher = fake_data(), fake_sessions(), fake_publisher()
+    s = _session(current_question="Q1")
+    sessions.saved["a1"] = s
+    await terminate_for_proctor(
+        s, "a1", "second_face", sessions=sessions, data=data, publisher=publisher
+    )
+    assert data.saved_interviews["a1"]["terminated_by_proctor"] == "second_face"
+    assert (
+        "interview.proctor_terminated",
+        {"application_id": "a1", "comp_id": "c1", "reason": "second_face"},
+    ) in publisher.events
+    saved = sessions.saved["a1"]
+    assert saved.status == "terminated"
+    assert saved.terminated_by_proctor == "second_face"
+    assert saved.current_question == ""

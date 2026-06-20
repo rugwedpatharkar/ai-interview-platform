@@ -63,6 +63,35 @@ async def _finalize(session, application_id, *, sessions, data, publisher):
     return InterviewTurnDecision(done=True)
 
 
+async def terminate_for_proctor(
+    session, application_id, reason, *, sessions, data, publisher
+):
+    """End the interview on a HIGH-severity proctoring flag: persist the partial transcript
+    with the termination marker and emit interview.proctor_terminated (distinct from
+    interview.completed so the funnel/report can route an integrity stop differently)."""
+    await data.save_interview(
+        application_id,
+        {
+            "transcript": session.transcript.model_dump(),
+            "blueprint": session.blueprint.model_dump(),
+            "job_id": session.job_id,
+            "user_id": session.candidate_user_id,
+            "terminated_by_proctor": reason,
+        },
+    )
+    await publisher.publish(
+        "interview.proctor_terminated",
+        {"application_id": application_id, "comp_id": session.comp_id, "reason": reason},
+    )
+    # Flip status LAST (mirrors _finalize): a failed save/publish leaves the session
+    # in-progress so the next HIGH event retries — save_interview is an idempotent upsert.
+    session.status = "terminated"
+    session.terminated_by_proctor = reason
+    session.current_question = ""
+    await sessions.save(session)
+    log.info("interview proctor-terminated ({}) for {}", reason, application_id)
+
+
 _ABANDON_CONCURRENCY = 10
 
 
