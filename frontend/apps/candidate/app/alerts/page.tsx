@@ -1,6 +1,6 @@
 "use client";
 
-import { EmptyState, ErrorState, Skeleton, toast } from "@ip/ui";
+import { EmptyState, ErrorState, PageHeader, Skeleton, toast } from "@ip/ui";
 import { errorMessage, useRequireAuth } from "@ip/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -45,12 +45,10 @@ export default function JobAlertsPage() {
 
   return (
     <CandidateShell>
-      <header className="mb-6">
-        <h1 className="font-display text-2xl font-semibold text-foreground">Job alerts</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Save a search and we'll notify you when new matching roles are posted.
-        </p>
-      </header>
+      <PageHeader
+        title="Job alerts"
+        description="Save a search and we'll notify you when new matching roles are posted."
+      />
 
       <div className="rounded-xl border border-border bg-surface p-4 sm:p-5">
         <AlertForm onCreate={(input) => create.mutate(input)} pending={create.isPending} />

@@ -9,8 +9,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  type SidebarNavEntry,
+  SidebarShell,
   ThemeToggle,
-  cn,
+  sidebarMobileLinkClass,
+  sidebarNavItemClass,
 } from "@ip/ui";
 import {
   Bell,
@@ -57,34 +60,6 @@ const NAV_PREPARE: NavEntry[] = [
   { href: "/account", label: "Settings", icon: Settings },
 ];
 
-function NavItem({
-  href,
-  label,
-  icon: Icon,
-  active,
-  badge,
-}: NavEntry & { active: boolean; badge?: number }) {
-  return (
-    <Link
-      href={href}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:bg-surface-muted hover:text-foreground active:scale-[0.99]",
-        active &&
-          "bg-surface-muted font-medium text-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary before:content-['']",
-      )}
-    >
-      <Icon className="size-4 shrink-0" aria-hidden />
-      <span className="flex-1 truncate">{label}</span>
-      {badge !== undefined && badge > 0 && (
-        <Badge tone="info" className="min-w-4 px-1 text-[10px]">
-          {badge > 9 ? "9+" : badge}
-        </Badge>
-      )}
-    </Link>
-  );
-}
-
 /** Shared signed-in chrome for the candidate app: Midnight sidebar + topbar shell,
  * active-state nav, theme toggle, notifications, and a user menu. */
 export function CandidateShell({ children }: { children: ReactNode }) {
@@ -111,10 +86,46 @@ export function CandidateShell({ children }: { children: ReactNode }) {
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
+  const entry = (item: NavEntry): SidebarNavEntry => ({
+    ...item,
+    active: isActive(item.href),
+    badge: item.href === "/messages" ? totalUnread : undefined,
+  });
+
+  const navGroups = [
+    { title: "For you", items: NAV_FOR_YOU.map(entry) },
+    { title: "Prepare", items: NAV_PREPARE.map(entry) },
+  ];
+
+  const renderNavItem = ({ href, label, icon: Icon, active, badge }: SidebarNavEntry) => (
+    <Link key={href} href={href} aria-current={active ? "page" : undefined} className={sidebarNavItemClass(active)}>
+      <Icon className="size-4 shrink-0" aria-hidden />
+      <span className="flex-1 truncate">{label}</span>
+      {badge !== undefined && badge > 0 && (
+        <Badge tone="info" className="min-w-4 px-1 text-[10px]">
+          {badge > 9 ? "9+" : badge}
+        </Badge>
+      )}
+    </Link>
+  );
+
+  const renderMobileLink = ({ href, label, active }: SidebarNavEntry) => (
+    <Link
+      key={href}
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={sidebarMobileLinkClass(active)}
+    >
+      {label}
+    </Link>
+  );
+
   return (
-    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[248px_1fr]">
-      {/* Sidebar */}
-      <aside className="sticky top-0 hidden h-screen flex-col gap-1 border-r border-border bg-surface px-4 py-5 lg:flex">
+    <SidebarShell
+      navGroups={navGroups}
+      renderNavItem={renderNavItem}
+      renderMobileLink={renderMobileLink}
+      brand={
         <Link
           href="/"
           className="mb-4 flex items-center gap-2 px-2 font-display text-lg font-semibold tracking-tight text-foreground"
@@ -124,27 +135,20 @@ export function CandidateShell({ children }: { children: ReactNode }) {
           </span>
           Aptura
         </Link>
-
-        <p className="px-3 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          For you
-        </p>
-        {NAV_FOR_YOU.map((item) => (
-          <NavItem key={item.href} {...item} active={isActive(item.href)} />
-        ))}
-
-        <p className="px-3 pb-1 pt-4 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          Prepare
-        </p>
-        {NAV_PREPARE.map((item) => (
-          <NavItem
-            key={item.href}
-            {...item}
-            active={isActive(item.href)}
-            badge={item.href === "/messages" ? totalUnread : undefined}
-          />
-        ))}
-
-        <div className="mt-auto flex items-center gap-3 border-t border-border px-2 pt-4">
+      }
+      mobileBrand={
+        <Link
+          href="/"
+          className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-foreground lg:hidden"
+        >
+          <span className="text-primary" aria-hidden>
+            ◐
+          </span>
+          Aptura
+        </Link>
+      }
+      sidebarFooter={
+        <>
           <Avatar name={label} size="sm" />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">{label}</p>
@@ -154,22 +158,10 @@ export function CandidateShell({ children }: { children: ReactNode }) {
               </p>
             )}
           </div>
-        </div>
-      </aside>
-
-      {/* Main column */}
-      <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-border bg-surface/80 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
-          {/* Brand shows on mobile where the sidebar is hidden; crumb on desktop. */}
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-foreground lg:hidden"
-          >
-            <span className="text-primary" aria-hidden>
-              ◐
-            </span>
-            Aptura
-          </Link>
+        </>
+      }
+      topbar={
+        <>
           <div className="hidden text-sm text-muted-foreground lg:block">
             <span className="font-medium text-foreground">Home</span> / Dashboard
           </div>
@@ -218,28 +210,10 @@ export function CandidateShell({ children }: { children: ReactNode }) {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </header>
-
-        {/* Mobile nav row — sidebar is hidden < lg, so surface the key links here. */}
-        <nav className="flex items-center gap-1 overflow-x-auto border-b border-border bg-surface px-4 py-2 text-sm text-muted-foreground lg:hidden">
-          {[...NAV_FOR_YOU, ...NAV_PREPARE].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActive(item.href) ? "page" : undefined}
-              className={cn(
-                "shrink-0 rounded-md px-3 py-1.5 transition-colors duration-150 hover:bg-surface-muted hover:text-foreground active:scale-[0.99]",
-                isActive(item.href) &&
-                  "border-b-2 border-primary bg-surface-muted font-medium text-foreground",
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <main className="mx-auto w-full max-w-6xl px-6 py-8">{children}</main>
-      </div>
-    </div>
+        </>
+      }
+    >
+      {children}
+    </SidebarShell>
   );
 }

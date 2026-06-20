@@ -1,6 +1,5 @@
+import { AuthSplitPanel } from "@ip/ui";
 import type { ReactNode } from "react";
-
-import { AuthSplitPanel } from "./auth-split-panel";
 
 /**
  * Split auth layout: the form pane (children) on the left, the brand panel on

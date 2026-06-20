@@ -1,4 +1,4 @@
-import { LogoMark } from "@ip/ui";
+import { LogoMark } from "./logo.js";
 
 /**
  * The right-hand brand panel of the split auth layout. A `--gradient-brand`

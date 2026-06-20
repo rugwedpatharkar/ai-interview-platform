@@ -1,23 +1,18 @@
 "use client";
 
-import { EmptyState, ErrorState, Skeleton, cn, jobStatus } from "@ip/ui";
+import {
+  EmptyState,
+  ErrorState,
+  Skeleton,
+  cn,
+  jobStatus,
+  statusToneClasses,
+} from "@ip/ui";
 import { errorMessage, useAuthedQuery } from "@ip/shared";
 import { Briefcase } from "lucide-react";
 import Link from "next/link";
 
 import { useAuth } from "../lib/auth";
-
-// Maps the shared jobStatus tone onto the Midnight `.pill-*` palette.
-const PILL: Record<string, string> = {
-  success:
-    "bg-success-surface text-success-foreground",
-  warning:
-    "bg-warning-surface text-warning-foreground",
-  danger:
-    "bg-danger-surface text-danger-foreground",
-  info: "bg-info-surface text-info-foreground",
-  neutral: "bg-surface-muted text-muted-foreground",
-};
 
 export function RecentJobs() {
   const { api, token } = useAuth();
@@ -79,7 +74,7 @@ export function RecentJobs() {
                   <span
                     className={cn(
                       "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium before:size-1.5 before:rounded-full before:bg-current",
-                      PILL[status.tone] ?? PILL.neutral,
+                      statusToneClasses(status.tone),
                     )}
                   >
                     {status.label}

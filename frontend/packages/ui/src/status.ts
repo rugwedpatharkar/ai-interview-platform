@@ -36,3 +36,19 @@ const JOB: Record<string, StatusToken> = {
 export function jobStatus(state: string): StatusToken {
   return JOB[state] ?? { label: state, tone: "neutral" };
 }
+
+// Midnight `.pill`-style token classes per badge tone (tinted surface + matching
+// foreground). The leading dot is `before:bg-current`, so a pill that wraps these
+// classes inherits its dot color from the text color. Single source for the dotted
+// status pills used across the company funnel screens.
+const PILL_TONE: Record<BadgeTone, string> = {
+  neutral: "bg-surface-muted text-muted-foreground",
+  info: "bg-info-surface text-info-foreground",
+  success: "bg-success-surface text-success-foreground",
+  warning: "bg-warning-surface text-warning-foreground",
+  danger: "bg-danger-surface text-danger-foreground",
+};
+
+export function statusToneClasses(tone: BadgeTone): string {
+  return PILL_TONE[tone];
+}

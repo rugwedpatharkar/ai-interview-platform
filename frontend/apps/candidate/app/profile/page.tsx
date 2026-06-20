@@ -12,6 +12,7 @@ import {
   Field,
   Input,
   LoadingState,
+  PageHeader,
   Select,
   SelectContent,
   SelectItem,
@@ -240,22 +241,20 @@ export default function ProfilePage() {
 
   return (
     <CandidateShell>
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold text-foreground">Your profile</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Upload your résumé and review the details we extract.
-          </p>
-        </div>
-        <Button
-          type="submit"
-          form="profile-form"
-          disabled={save.isPending}
-          loading={save.isPending}
-        >
-          {save.isPending ? "Saving…" : "Save changes"}
-        </Button>
-      </header>
+      <PageHeader
+        title="Your profile"
+        description="Upload your résumé and review the details we extract."
+        action={
+          <Button
+            type="submit"
+            form="profile-form"
+            disabled={save.isPending}
+            loading={save.isPending}
+          >
+            {save.isPending ? "Saving…" : "Save changes"}
+          </Button>
+        }
+      />
 
       {profile.isLoading ? (
         <LoadingState label="Loading your profile…" />

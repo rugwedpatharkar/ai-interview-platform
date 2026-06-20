@@ -8,6 +8,7 @@ import {
   buttonVariants,
   cn,
   jobStatus,
+  statusToneClasses,
 } from "@ip/ui";
 import { errorMessage, useAuthedQuery } from "@ip/shared";
 import { ArrowRight, FileText, Plus } from "lucide-react";
@@ -24,22 +25,13 @@ const STATUS_HINT: Record<string, string> = {
   closed: "No longer accepting applications",
 };
 
-// Maps the shared jobStatus tone onto the Midnight `.pill-*` palette (dot + tinted surface).
-const PILL: Record<string, string> = {
-  success: "bg-success-surface text-success-foreground",
-  warning: "bg-warning-surface text-warning-foreground",
-  danger: "bg-danger-surface text-danger-foreground",
-  info: "bg-info-surface text-info-foreground",
-  neutral: "bg-surface-muted text-muted-foreground",
-};
-
 function StatusPill({ status }: { status: string }) {
   const tone = jobStatus(status);
   return (
     <span
       className={cn(
         "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium before:size-1.5 before:rounded-full before:bg-current",
-        PILL[tone.tone] ?? PILL.neutral,
+        statusToneClasses(tone.tone),
       )}
     >
       {tone.label}

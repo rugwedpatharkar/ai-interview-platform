@@ -29,6 +29,7 @@ export { Field } from "./field.js";
 export { Icon, type IconProps } from "./icon.js";
 export { Logo, LogoMark } from "./logo.js";
 export { Avatar, type AvatarProps } from "./avatar.js";
+export { AuthSplitPanel } from "./auth-split-panel.js";
 export { Progress, type ProgressProps } from "./progress.js";
 
 // Radix-backed interactive components
@@ -105,7 +106,16 @@ export {
   LoadingState,
 } from "./layout.js";
 export {
+  SidebarShell,
+  sidebarNavItemClass,
+  sidebarMobileLinkClass,
+  type SidebarNavEntry,
+  type SidebarNavGroup,
+  type SidebarNavAccent,
+} from "./app-shell.js";
+export {
   applicationStatus,
   jobStatus,
+  statusToneClasses,
   type StatusToken,
 } from "./status.js";

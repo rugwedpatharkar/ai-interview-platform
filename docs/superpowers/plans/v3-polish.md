@@ -38,11 +38,11 @@
 
 ## Wave C — Simplifications (DRY; less code, fewer bugs)
 
-- [ ] C1. **Shared `AppShell` sidebar** in `@ip/ui` — collapse candidate-shell (243) + company-shell (224)
+- [x] C1. **Shared `AppShell` sidebar** in `@ip/ui` — collapse candidate-shell (243) + company-shell (224)
   (~80% identical) into one config-driven shell. Preserve per-role nav + gates.
-- [ ] C2. **Lift `auth-split-panel`, `credentials-form`, `sso-buttons` into `@ip/ui`** (duplicated across apps).
-- [ ] C3. **Shared status-pill helper** (the `PILL`/`jobStatus`/`STATUS_*` map redefined in 3 files).
-- [ ] C4. **Shared `PageHeader`/section primitive** (serif page-head boilerplate copy-pasted per page).
+- [x] C2. **Lift `auth-split-panel`, `credentials-form`, `sso-buttons` into `@ip/ui`** (duplicated across apps).
+- [x] C3. **Shared status-pill helper** (the `PILL`/`jobStatus`/`STATUS_*` map redefined in 3 files).
+- [x] C4. **Shared `PageHeader`/section primitive** (serif page-head boilerplate copy-pasted per page).
 
 ## Wave D — Optimizations + remaining fidelity/enhancements
 
