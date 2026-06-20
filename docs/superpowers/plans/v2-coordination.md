@@ -252,3 +252,17 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   `terminated`/`reason`. **FE:** the HIGH-severity auto-gate is now live; you can drop the defensive
   `as unknown as ProctorAck` cast (1-line cleanup). **Branch note:** committed on `main` (grpc-migration
   already merged via PR #1 `cd140f6`); pushing after the full gate is green (user-approved).
+- 2026-06-20 · BE · ✅ **L4 Practice REST LANDED** (full gate GREEN: lib + admin 337 / ai-agents 286 /
+  mcp-data 44 / mcp-cap 42). The **one REST surface** on ai-agents post-G6 (`main.py` now path-dispatches
+  `/aiagents.*`→gRPC, `/practice`→REST, else `/health`). **Detached by type — NO `comp_id`/`job_id`/
+  `applicationId` in any signature or payload; `GrowthFeedback` has no score/recommendation field.**
+  Endpoints (candidate token only): `POST /practice/start {topic?|jd_text?}` (exactly-one→400),
+  `POST /practice/{id}/turn {answer}`, `GET /practice/{id}/feedback` (409 while finalizing, 404 no-leak),
+  `GET /practice/sessions` (owner-scoped). Reuses the interview brain (`build_blueprint`/`next_question`/
+  `evaluate_interview`) via `resources/practice.py` with **no publisher** (a funnel event is impossible by
+  type — test-locked); `feedback_writer._classify` bands competencies (≥0.70 strength / <0.50 gap) before
+  the LLM phrases growth feedback. `RedisPracticeStore` (ns `practice`) for in-flight runs; Mongo
+  `practice_sessions` (keyed `user_id`) for summaries via mcp-data `save/get/list_practice_summaries`;
+  `CandidateEraser` cascades `delete_by_user`. **REST → no proto, no `pnpm gen`** — FE flips
+  `makePracticeClient` off its mock (already built per `practice-feedback.md`). **Remaining BE:** L3
+  Scheduling → L2 Team → L1 Settings/2FA remainder.
