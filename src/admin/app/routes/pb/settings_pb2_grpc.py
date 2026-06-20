@@ -62,6 +62,21 @@ class SettingsServiceStub:
                 request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.DisableTotpRequest.SerializeToString,
                 response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
                 _registered_method=True)
+        self.ChangePassword = channel.unary_unary(
+                '/admin.settings.v1.SettingsService/ChangePassword',
+                request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.ChangePasswordRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
+                _registered_method=True)
+        self.RequestEmailChange = channel.unary_unary(
+                '/admin.settings.v1.SettingsService/RequestEmailChange',
+                request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.RequestEmailChangeRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
+                _registered_method=True)
+        self.VerifyEmailChange = channel.unary_unary(
+                '/admin.settings.v1.SettingsService/VerifyEmailChange',
+                request_serializer=app_dot_routes_dot_pb_dot_settings__pb2.VerifyEmailChangeRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
+                _registered_method=True)
 
 
 class SettingsServiceServicer:
@@ -102,6 +117,26 @@ class SettingsServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ChangePassword(self, request, context):
+        """Password + email change (self-scoped). VerifyEmailChange is pre-auth (the link is
+        the proof); a single-use nonce blocks replay.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RequestEmailChange(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def VerifyEmailChange(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SettingsServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -128,6 +163,21 @@ def add_SettingsServiceServicer_to_server(servicer, server):
             'DisableTotp': grpc.unary_unary_rpc_method_handler(
                     servicer.DisableTotp,
                     request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.DisableTotpRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.SerializeToString,
+            ),
+            'ChangePassword': grpc.unary_unary_rpc_method_handler(
+                    servicer.ChangePassword,
+                    request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.ChangePasswordRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.SerializeToString,
+            ),
+            'RequestEmailChange': grpc.unary_unary_rpc_method_handler(
+                    servicer.RequestEmailChange,
+                    request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.RequestEmailChangeRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.SerializeToString,
+            ),
+            'VerifyEmailChange': grpc.unary_unary_rpc_method_handler(
+                    servicer.VerifyEmailChange,
+                    request_deserializer=app_dot_routes_dot_pb_dot_settings__pb2.VerifyEmailChangeRequest.FromString,
                     response_serializer=app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.SerializeToString,
             ),
     }
@@ -268,6 +318,87 @@ class SettingsService:
             target,
             '/admin.settings.v1.SettingsService/DisableTotp',
             app_dot_routes_dot_pb_dot_settings__pb2.DisableTotpRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ChangePassword(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.settings.v1.SettingsService/ChangePassword',
+            app_dot_routes_dot_pb_dot_settings__pb2.ChangePasswordRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RequestEmailChange(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.settings.v1.SettingsService/RequestEmailChange',
+            app_dot_routes_dot_pb_dot_settings__pb2.RequestEmailChangeRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def VerifyEmailChange(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.settings.v1.SettingsService/VerifyEmailChange',
+            app_dot_routes_dot_pb_dot_settings__pb2.VerifyEmailChangeRequest.SerializeToString,
             app_dot_routes_dot_pb_dot_settings__pb2.OkResponse.FromString,
             options,
             channel_credentials,

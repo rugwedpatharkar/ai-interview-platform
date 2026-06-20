@@ -38,12 +38,30 @@ def _prefs_proto(d):
 
 
 class SettingsServicer(settings_pb2_grpc.SettingsServiceServicer):
-    def __init__(self, *, prefs, tokens, users=None, totp=None, secretbox=None):
+    def __init__(
+        self,
+        *,
+        prefs,
+        tokens,
+        users=None,
+        totp=None,
+        secretbox=None,
+        sessions=None,
+        limiter=None,
+        nonces=None,
+        notifier=None,
+        audit=None,
+    ):
         self._prefs = prefs
         self._tokens = tokens
         self._users = users
         self._totp = totp
         self._secretbox = secretbox
+        self._sessions = sessions
+        self._limiter = limiter
+        self._nonces = nonces
+        self._notifier = notifier
+        self._audit = audit
 
     async def _abort(self, context, exc, method):
         code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
@@ -133,3 +151,56 @@ class SettingsServicer(settings_pb2_grpc.SettingsServiceServicer):
                 return settings_pb2.OkResponse(ok=True)
             except AuthDomainError as exc:
                 await self._abort(context, exc, "DisableTotp")
+
+    async def ChangePassword(self, request, context):
+        _grpc_total.labels(method="ChangePassword").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with log_context(log, "settings.ChangePassword"):
+            try:
+                await settings_res.change_password(
+                    ident["id"],
+                    request.current_password,
+                    request.new_password,
+                    ident.get("sid"),
+                    users=self._users,
+                    sessions=self._sessions,
+                    limiter=self._limiter,
+                    audit=self._audit,
+                )
+                return settings_pb2.OkResponse(ok=True)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "ChangePassword")
+
+    async def RequestEmailChange(self, request, context):
+        _grpc_total.labels(method="RequestEmailChange").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with log_context(log, "settings.RequestEmailChange"):
+            try:
+                await settings_res.request_email_change(
+                    ident["id"],
+                    request.new_email,
+                    users=self._users,
+                    tokens=self._tokens,
+                    notifier=self._notifier,
+                    nonces=self._nonces,
+                    audit=self._audit,
+                )
+                return settings_pb2.OkResponse(ok=True)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "RequestEmailChange")
+
+    async def VerifyEmailChange(self, request, context):
+        # Pre-auth: the single-use link is the proof (no caller_identity).
+        _grpc_total.labels(method="VerifyEmailChange").inc()
+        async with log_context(log, "settings.VerifyEmailChange"):
+            try:
+                await settings_res.verify_email_change(
+                    request.token,
+                    users=self._users,
+                    tokens=self._tokens,
+                    nonces=self._nonces,
+                    audit=self._audit,
+                )
+                return settings_pb2.OkResponse(ok=True)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "VerifyEmailChange")

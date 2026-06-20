@@ -288,6 +288,11 @@ def create_web_app(
             users=UserRepository(db),
             totp=PyotpProvider(),
             secretbox=FernetSecretBox(tokens._secret),
+            sessions=RefreshSessionStore(redis),
+            limiter=RateLimiter(redis),
+            nonces=SingleUseTokenStore(redis),
+            notifier=notifier,
+            audit=AuditLogRepository(db),
         ),
         app,
     )

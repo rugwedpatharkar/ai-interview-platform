@@ -7,16 +7,31 @@ real IANA `tz` are validated at the boundary; absent prefs read as safe defaults
 
 import re
 import secrets
+from uuid import uuid4
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from jose import JWTError
 from lib.security import hash_password, verify_password
+from pydantic import EmailStr, TypeAdapter
+from pydantic import ValidationError as PydanticValidationError
 
-from app.errors import ValidationError
+from app.errors import (
+    ConflictError,
+    InvalidTokenError,
+    NotFoundError,
+    RateLimitedError,
+    ValidationError,
+)
+from app.model.audit import AuditLog
 from app.model.notification_prefs import _default_categories
 
 _DIGESTS = {"off", "daily", "weekly"}
 _HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 _RECOVERY_CODE_COUNT = 10
+_MIN_PASSWORD = 8  # there is no backend register min-length today; this defines it
+_CHPW_LIMIT = 5
+_CHPW_WINDOW = 300  # seconds
+_EMAIL_CHANGE_TTL = 86400  # 24h, matches the verification token
 
 
 def _valid_tz(tz: str) -> bool:
@@ -121,4 +136,100 @@ async def disable_totp(user_id, code, *, users, totp, secretbox):
     await users.update_fields(
         user_id, {"totp_secret": "", "totp_enabled": False, "recovery_codes": []}
     )
+    return {"ok": True}
+
+
+async def change_password(
+    user_id,
+    current_password,
+    new_password,
+    current_sid,
+    *,
+    users,
+    sessions,
+    limiter=None,
+    audit=None,
+):
+    """Self-service password change. SSO-only accounts (blank hash) can't; the current
+    password must verify; the new one meets the min length; then OTHER sessions are
+    revoked (keep-current via the caller's sid)."""
+    if limiter is not None:
+        hit = await limiter.hit(f"chpw:{user_id}", _CHPW_LIMIT, _CHPW_WINDOW)
+        if not hit.allowed:
+            raise RateLimitedError(hit.retry_after)
+    user = await users.get(user_id)
+    if not user or not user.get("password_hash"):
+        raise ValidationError("password change is unavailable for SSO accounts")
+    if not verify_password(current_password, user["password_hash"]):
+        raise ValidationError("current password is incorrect")
+    if len(new_password) < _MIN_PASSWORD:
+        raise ValidationError(f"password must be at least {_MIN_PASSWORD} characters")
+    await users.update_fields(user_id, {"password_hash": hash_password(new_password)})
+    if current_sid:
+        await sessions.revoke_all_except(user_id, current_sid)
+    else:
+        await sessions.revoke_user(user_id)
+    if audit is not None:
+        await audit.insert(
+            AuditLog(entity="user", entity_id=user_id, action="password_changed")
+        )
+    return {"ok": True}
+
+
+async def request_email_change(
+    user_id, new_email, *, users, tokens, notifier, nonces=None, audit=None
+):
+    """Stage a new email + send a single-use confirm link to it. The address is only
+    swapped in once VerifyEmailChange consumes the link (the new email is never trusted
+    from the token — it's read back from the staged `pending_email`)."""
+    new_email = (new_email or "").strip().lower()
+    try:
+        TypeAdapter(EmailStr).validate_python(new_email)
+    except PydanticValidationError as exc:
+        raise ValidationError("invalid email address") from exc
+    if await users.get_by_email(new_email):
+        raise ConflictError("Email already registered")
+    await users.update_fields(user_id, {"pending_email": new_email})
+    jti = uuid4().hex
+    token = tokens.verification_token(sub=user_id, jti=jti)
+    if nonces is not None:
+        await nonces.allow(jti, _EMAIL_CHANGE_TTL)
+    await notifier.send_email(
+        new_email, "Confirm your new email", f"/verify-email?token={token}"
+    )
+    if audit is not None:
+        await audit.insert(
+            AuditLog(entity="user", entity_id=user_id, action="email_change_requested")
+        )
+    return {"ok": True}
+
+
+async def verify_email_change(token, *, users, tokens, nonces=None, audit=None):
+    """Confirm a staged email change. NOT caller-gated (the link is the proof); the
+    single-use nonce blocks replay. Swaps `email = pending_email` from the DB."""
+    try:
+        claims = tokens.decode(token)
+    except JWTError as exc:
+        raise InvalidTokenError("Invalid token") from exc
+    if claims.get("purpose") != "email_verify":
+        raise InvalidTokenError("Wrong token purpose")
+    if nonces is not None and not await nonces.consume(claims.get("jti", "")):
+        raise InvalidTokenError("Token already used or expired")
+    user = await users.get(claims["sub"])
+    if not user or user.get("erased"):
+        raise NotFoundError("User not found")
+    pending = user.get("pending_email", "")
+    if not pending:
+        raise ValidationError("no pending email change")
+    other = await users.get_by_email(pending)
+    if other and str(other["_id"]) != claims["sub"]:
+        raise ConflictError("Email already registered")
+    await users.update_fields(
+        claims["sub"],
+        {"email": pending, "pending_email": "", "email_verified": True},
+    )
+    if audit is not None:
+        await audit.insert(
+            AuditLog(entity="user", entity_id=claims["sub"], action="email_changed")
+        )
     return {"ok": True}

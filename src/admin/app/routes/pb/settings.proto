@@ -13,6 +13,22 @@ service SettingsService {
   rpc SetupTotp(SetupTotpRequest) returns (SetupTotpResponse);
   rpc VerifyTotp(VerifyTotpRequest) returns (VerifyTotpResponse);
   rpc DisableTotp(DisableTotpRequest) returns (OkResponse);
+  // Password + email change (self-scoped). VerifyEmailChange is pre-auth (the link is
+  // the proof); a single-use nonce blocks replay.
+  rpc ChangePassword(ChangePasswordRequest) returns (OkResponse);
+  rpc RequestEmailChange(RequestEmailChangeRequest) returns (OkResponse);
+  rpc VerifyEmailChange(VerifyEmailChangeRequest) returns (OkResponse);
+}
+
+message ChangePasswordRequest {
+  string current_password = 1;
+  string new_password = 2;
+}
+message RequestEmailChangeRequest {
+  string new_email = 1;
+}
+message VerifyEmailChangeRequest {
+  string token = 1;
 }
 
 message SetupTotpRequest {}

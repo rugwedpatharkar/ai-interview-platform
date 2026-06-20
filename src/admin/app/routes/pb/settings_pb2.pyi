@@ -6,6 +6,26 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
+class ChangePasswordRequest(_message.Message):
+    __slots__ = ("current_password", "new_password")
+    CURRENT_PASSWORD_FIELD_NUMBER: _ClassVar[int]
+    NEW_PASSWORD_FIELD_NUMBER: _ClassVar[int]
+    current_password: str
+    new_password: str
+    def __init__(self, current_password: _Optional[str] = ..., new_password: _Optional[str] = ...) -> None: ...
+
+class RequestEmailChangeRequest(_message.Message):
+    __slots__ = ("new_email",)
+    NEW_EMAIL_FIELD_NUMBER: _ClassVar[int]
+    new_email: str
+    def __init__(self, new_email: _Optional[str] = ...) -> None: ...
+
+class VerifyEmailChangeRequest(_message.Message):
+    __slots__ = ("token",)
+    TOKEN_FIELD_NUMBER: _ClassVar[int]
+    token: str
+    def __init__(self, token: _Optional[str] = ...) -> None: ...
+
 class SetupTotpRequest(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...

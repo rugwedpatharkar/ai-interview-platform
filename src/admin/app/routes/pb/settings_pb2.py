@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1c\x61pp/routes/pb/settings.proto\x12\x11\x61\x64min.settings.v1\"\x12\n\x10SetupTotpRequest\"=\n\x11SetupTotpResponse\x12\x18\n\x10provisioning_uri\x18\x01 \x01(\t\x12\x0e\n\x06secret\x18\x02 \x01(\t\"!\n\x11VerifyTotpRequest\x12\x0c\n\x04\x63ode\x18\x01 \x01(\t\"=\n\x12VerifyTotpResponse\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\x12\x16\n\x0erecovery_codes\x18\x02 \x03(\t\"\"\n\x12\x44isableTotpRequest\x12\x0c\n\x04\x63ode\x18\x01 \x01(\t\"\x18\n\nOkResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"4\n\nQuietHours\x12\r\n\x05start\x18\x01 \x01(\t\x12\x0b\n\x03\x65nd\x18\x02 \x01(\t\x12\n\n\x02tz\x18\x03 \x01(\t\"\x1d\n\x1bGetNotificationPrefsRequest\"\xfa\x01\n\x11NotificationPrefs\x12S\n\x10\x65mail_categories\x18\x01 \x03(\x0b\x32\x39.admin.settings.v1.NotificationPrefs.EmailCategoriesEntry\x12\x14\n\x0csms_critical\x18\x02 \x01(\x08\x12\x0e\n\x06\x64igest\x18\x03 \x01(\t\x12\x32\n\x0bquiet_hours\x18\x04 \x01(\x0b\x32\x1d.admin.settings.v1.QuietHours\x1a\x36\n\x14\x45mailCategoriesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x08:\x02\x38\x01\x32\xeb\x03\n\x0fSettingsService\x12l\n\x14GetNotificationPrefs\x12..admin.settings.v1.GetNotificationPrefsRequest\x1a$.admin.settings.v1.NotificationPrefs\x12\x62\n\x14SetNotificationPrefs\x12$.admin.settings.v1.NotificationPrefs\x1a$.admin.settings.v1.NotificationPrefs\x12V\n\tSetupTotp\x12#.admin.settings.v1.SetupTotpRequest\x1a$.admin.settings.v1.SetupTotpResponse\x12Y\n\nVerifyTotp\x12$.admin.settings.v1.VerifyTotpRequest\x1a%.admin.settings.v1.VerifyTotpResponse\x12S\n\x0b\x44isableTotp\x12%.admin.settings.v1.DisableTotpRequest\x1a\x1d.admin.settings.v1.OkResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1c\x61pp/routes/pb/settings.proto\x12\x11\x61\x64min.settings.v1\"G\n\x15\x43hangePasswordRequest\x12\x18\n\x10\x63urrent_password\x18\x01 \x01(\t\x12\x14\n\x0cnew_password\x18\x02 \x01(\t\".\n\x19RequestEmailChangeRequest\x12\x11\n\tnew_email\x18\x01 \x01(\t\")\n\x18VerifyEmailChangeRequest\x12\r\n\x05token\x18\x01 \x01(\t\"\x12\n\x10SetupTotpRequest\"=\n\x11SetupTotpResponse\x12\x18\n\x10provisioning_uri\x18\x01 \x01(\t\x12\x0e\n\x06secret\x18\x02 \x01(\t\"!\n\x11VerifyTotpRequest\x12\x0c\n\x04\x63ode\x18\x01 \x01(\t\"=\n\x12VerifyTotpResponse\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\x12\x16\n\x0erecovery_codes\x18\x02 \x03(\t\"\"\n\x12\x44isableTotpRequest\x12\x0c\n\x04\x63ode\x18\x01 \x01(\t\"\x18\n\nOkResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"4\n\nQuietHours\x12\r\n\x05start\x18\x01 \x01(\t\x12\x0b\n\x03\x65nd\x18\x02 \x01(\t\x12\n\n\x02tz\x18\x03 \x01(\t\"\x1d\n\x1bGetNotificationPrefsRequest\"\xfa\x01\n\x11NotificationPrefs\x12S\n\x10\x65mail_categories\x18\x01 \x03(\x0b\x32\x39.admin.settings.v1.NotificationPrefs.EmailCategoriesEntry\x12\x14\n\x0csms_critical\x18\x02 \x01(\x08\x12\x0e\n\x06\x64igest\x18\x03 \x01(\t\x12\x32\n\x0bquiet_hours\x18\x04 \x01(\x0b\x32\x1d.admin.settings.v1.QuietHours\x1a\x36\n\x14\x45mailCategoriesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x08:\x02\x38\x01\x32\x8a\x06\n\x0fSettingsService\x12l\n\x14GetNotificationPrefs\x12..admin.settings.v1.GetNotificationPrefsRequest\x1a$.admin.settings.v1.NotificationPrefs\x12\x62\n\x14SetNotificationPrefs\x12$.admin.settings.v1.NotificationPrefs\x1a$.admin.settings.v1.NotificationPrefs\x12V\n\tSetupTotp\x12#.admin.settings.v1.SetupTotpRequest\x1a$.admin.settings.v1.SetupTotpResponse\x12Y\n\nVerifyTotp\x12$.admin.settings.v1.VerifyTotpRequest\x1a%.admin.settings.v1.VerifyTotpResponse\x12S\n\x0b\x44isableTotp\x12%.admin.settings.v1.DisableTotpRequest\x1a\x1d.admin.settings.v1.OkResponse\x12Y\n\x0e\x43hangePassword\x12(.admin.settings.v1.ChangePasswordRequest\x1a\x1d.admin.settings.v1.OkResponse\x12\x61\n\x12RequestEmailChange\x12,.admin.settings.v1.RequestEmailChangeRequest\x1a\x1d.admin.settings.v1.OkResponse\x12_\n\x11VerifyEmailChange\x12+.admin.settings.v1.VerifyEmailChangeRequest\x1a\x1d.admin.settings.v1.OkResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,26 +33,32 @@ if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_NOTIFICATIONPREFS_EMAILCATEGORIESENTRY']._loaded_options = None
   _globals['_NOTIFICATIONPREFS_EMAILCATEGORIESENTRY']._serialized_options = b'8\001'
-  _globals['_SETUPTOTPREQUEST']._serialized_start=51
-  _globals['_SETUPTOTPREQUEST']._serialized_end=69
-  _globals['_SETUPTOTPRESPONSE']._serialized_start=71
-  _globals['_SETUPTOTPRESPONSE']._serialized_end=132
-  _globals['_VERIFYTOTPREQUEST']._serialized_start=134
-  _globals['_VERIFYTOTPREQUEST']._serialized_end=167
-  _globals['_VERIFYTOTPRESPONSE']._serialized_start=169
-  _globals['_VERIFYTOTPRESPONSE']._serialized_end=230
-  _globals['_DISABLETOTPREQUEST']._serialized_start=232
-  _globals['_DISABLETOTPREQUEST']._serialized_end=266
-  _globals['_OKRESPONSE']._serialized_start=268
-  _globals['_OKRESPONSE']._serialized_end=292
-  _globals['_QUIETHOURS']._serialized_start=294
-  _globals['_QUIETHOURS']._serialized_end=346
-  _globals['_GETNOTIFICATIONPREFSREQUEST']._serialized_start=348
-  _globals['_GETNOTIFICATIONPREFSREQUEST']._serialized_end=377
-  _globals['_NOTIFICATIONPREFS']._serialized_start=380
-  _globals['_NOTIFICATIONPREFS']._serialized_end=630
-  _globals['_NOTIFICATIONPREFS_EMAILCATEGORIESENTRY']._serialized_start=576
-  _globals['_NOTIFICATIONPREFS_EMAILCATEGORIESENTRY']._serialized_end=630
-  _globals['_SETTINGSSERVICE']._serialized_start=633
-  _globals['_SETTINGSSERVICE']._serialized_end=1124
+  _globals['_CHANGEPASSWORDREQUEST']._serialized_start=51
+  _globals['_CHANGEPASSWORDREQUEST']._serialized_end=122
+  _globals['_REQUESTEMAILCHANGEREQUEST']._serialized_start=124
+  _globals['_REQUESTEMAILCHANGEREQUEST']._serialized_end=170
+  _globals['_VERIFYEMAILCHANGEREQUEST']._serialized_start=172
+  _globals['_VERIFYEMAILCHANGEREQUEST']._serialized_end=213
+  _globals['_SETUPTOTPREQUEST']._serialized_start=215
+  _globals['_SETUPTOTPREQUEST']._serialized_end=233
+  _globals['_SETUPTOTPRESPONSE']._serialized_start=235
+  _globals['_SETUPTOTPRESPONSE']._serialized_end=296
+  _globals['_VERIFYTOTPREQUEST']._serialized_start=298
+  _globals['_VERIFYTOTPREQUEST']._serialized_end=331
+  _globals['_VERIFYTOTPRESPONSE']._serialized_start=333
+  _globals['_VERIFYTOTPRESPONSE']._serialized_end=394
+  _globals['_DISABLETOTPREQUEST']._serialized_start=396
+  _globals['_DISABLETOTPREQUEST']._serialized_end=430
+  _globals['_OKRESPONSE']._serialized_start=432
+  _globals['_OKRESPONSE']._serialized_end=456
+  _globals['_QUIETHOURS']._serialized_start=458
+  _globals['_QUIETHOURS']._serialized_end=510
+  _globals['_GETNOTIFICATIONPREFSREQUEST']._serialized_start=512
+  _globals['_GETNOTIFICATIONPREFSREQUEST']._serialized_end=541
+  _globals['_NOTIFICATIONPREFS']._serialized_start=544
+  _globals['_NOTIFICATIONPREFS']._serialized_end=794
+  _globals['_NOTIFICATIONPREFS_EMAILCATEGORIESENTRY']._serialized_start=740
+  _globals['_NOTIFICATIONPREFS_EMAILCATEGORIESENTRY']._serialized_end=794
+  _globals['_SETTINGSSERVICE']._serialized_start=797
+  _globals['_SETTINGSSERVICE']._serialized_end=1575
 # @@protoc_insertion_point(module_scope)
