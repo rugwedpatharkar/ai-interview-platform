@@ -52,4 +52,4 @@ class InterviewSession(BaseModel):
     current_question: str = ""
     started_at: str = ""  # ISO; anchors the time-budget clock
     status: str = "in_progress"  # in_progress | completed | abandoned | terminated
-    terminated_by_proctor: str = ""  # triggering HIGH event type when proctor-terminated
+    terminated_by_proctor: str = ""  # HIGH event type when proctor-terminated
