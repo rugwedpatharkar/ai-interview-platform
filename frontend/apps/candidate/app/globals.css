@@ -35,7 +35,7 @@
   --border: oklch(0.9 0.01 255);
   --input: oklch(0.84 0.012 255); /* control borders read a touch stronger */
   --foreground: oklch(0.22 0.025 260);
-  --muted-foreground: oklch(0.5 0.02 258);
+  --muted-foreground: oklch(0.44 0.02 258); /* ≥4.5:1 on the near-white bg */
   --primary: oklch(0.58 0.13 218); /* deep cyan — white text on top */
   --primary-hover: oklch(0.5 0.13 220);
   --primary-foreground: oklch(0.99 0.01 215);
@@ -153,6 +153,11 @@
   --animate-slide-down: slide-down 200ms ease-out;
   --animate-overlay-in: fade-in 150ms ease-out;
   --animate-overlay-out: fade-out 120ms ease-in;
+  /* v3 polish: origin-aware menu pop, control check-in, skeleton shimmer, list reveal. */
+  --animate-scale-in: scale-in 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-check-pop: check-pop 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+  --animate-rise-in: rise-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes fade-in {
@@ -209,6 +214,48 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+/* Origin-aware menu/popover pop (pairs with Radix --radix-*-transform-origin). */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* Checkbox/radio indicator check-in. */
+@keyframes check-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* List-item reveal on mount (used with a capped per-item animation-delay). */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* Skeleton shimmer sweep (transform-only; freezes off-screen under reduced-motion). */
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
   }
 }
 

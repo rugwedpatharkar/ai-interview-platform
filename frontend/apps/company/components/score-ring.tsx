@@ -63,7 +63,7 @@ export function ScoreRing({
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           className={cn(
-            "transition-[stroke-dashoffset] duration-500",
+            "transition-[stroke-dashoffset] duration-[350ms] ease-out",
             TONE[tone],
             "stroke-current",
           )}

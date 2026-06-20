@@ -13,7 +13,7 @@ export function Card({ className, hoverable, ...props }: CardProps) {
       className={cn(
         "rounded-xl border border-border bg-surface shadow-sm",
         hoverable &&
-          "transition-[box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:shadow-md",
+          "transition-[box-shadow,transform] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] active:shadow-sm",
         className,
       )}
       {...props}
@@ -29,7 +29,9 @@ export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingEle
   return (
     <h2
       className={cn(
-        "font-display text-xl font-semibold tracking-tight text-foreground",
+        // Product register: card headings are sans (Geist), not the editorial serif.
+        // Page-level titles/greetings opt into font-display explicitly where they want character.
+        "text-lg font-semibold tracking-tight text-foreground",
         className,
       )}
       {...props}

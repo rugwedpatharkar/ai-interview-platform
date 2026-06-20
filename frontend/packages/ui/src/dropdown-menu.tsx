@@ -23,7 +23,7 @@ export function DropdownMenuContent({
         align={align}
         className={cn(
           "z-50 min-w-44 overflow-hidden rounded-lg border border-border bg-surface p-1 text-foreground shadow-lg",
-          "data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
+          "origin-[var(--radix-dropdown-menu-content-transform-origin)] data-[state=open]:animate-scale-in data-[state=closed]:animate-fade-out",
           className,
         )}
         {...props}

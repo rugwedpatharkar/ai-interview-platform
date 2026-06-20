@@ -18,23 +18,23 @@
   landing only). Verify/normalize heading sizes to a fixed Tailwind scale.
 - [ ] A3. **Skeletons, not spinners/blank** — add skeleton loaders to: candidate dashboard, recruiter
   dashboard, applicants table, talent, marketplace results, applicant report, messages, notifications.
-- [ ] A4. **Light-mode contrast** — bump `--muted-foreground` (and verify accent-on-white) to ≥4.5:1.
+- [x] A4. **Light-mode contrast** — bump `--muted-foreground` (and verify accent-on-white) to ≥4.5:1.
 - [ ] A5. **Browser-verify the authed sidebar shells** structurally (no backend here → verify render/overflow
   with a forced session or shell-only render; flag anything off).
 
 ## Wave B — Micro-interactions (minimal · optimal · beautiful; mostly CSS)
 
-- [ ] B1. **Card press** state on clickable cards (`active:scale-[0.99]`) — JobCard, ApplicationCard via Card.
+- [x] B1. **Card press** state on clickable cards (`active:scale-[0.99]`) — JobCard, ApplicationCard via Card.
 - [ ] B2. **Nav-item** hover/press polish; unify candidate↔company active state (left cyan accent + transition).
 - [ ] B3. **List stagger on mount** (job cards, applicants, notifications, messages) — reuse `slide-up`
   keyframe + capped `animationDelay` (≤6 items, total <250ms).
-- [ ] B4. **Tab indicator slide** (animated active indicator instead of snap).
+- [x] B4. **Tab indicator slide** (animated active indicator instead of snap).
 - [ ] B5. **KPI count-up** on dashboard stats (rAF hook + `matchMedia` reduced-motion guard + `tabular-nums`).
-- [ ] B6. **Fix existing motion** — `competency-card` linear → `ease-out`; trim `score-ring` 500ms→350ms.
-- [ ] B7. **Origin-aware dropdown zoom** (`scale-in` keyframe + Radix transform-origin).
+- [x] B6. **Fix existing motion** — `competency-card` linear → `ease-out`; trim `score-ring` 500ms→350ms.
+- [x] B7. **Origin-aware dropdown zoom** (`scale-in` keyframe + Radix transform-origin).
 - [ ] B8. **Route cross-fade** via `template.tsx` (CSS opacity, not framer).
-- [ ] B9. **Checkbox/radio check-pop** (short scale+fade on the indicator).
-- [ ] B10. **Skeleton shimmer** upgrade (directional sweep; pulse as reduced-motion fallback).
+- [x] B9. **Checkbox/radio check-pop** (short scale+fade on the indicator).
+- [x] B10. **Skeleton shimmer** upgrade (directional sweep; pulse as reduced-motion fallback).
 
 ## Wave C — Simplifications (DRY; less code, fewer bugs)
 

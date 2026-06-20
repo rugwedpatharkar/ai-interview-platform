@@ -21,7 +21,7 @@ export function Checkbox({
       )}
       {...props}
     >
-      <CheckboxPrimitive.Indicator className="flex items-center justify-center">
+      <CheckboxPrimitive.Indicator className="flex animate-check-pop items-center justify-center">
         <Check className="size-3 stroke-[3]" aria-hidden />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>

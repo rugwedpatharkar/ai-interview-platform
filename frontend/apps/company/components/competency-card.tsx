@@ -22,7 +22,7 @@ export function CompetencyCard({ c }: { c: Competency }) {
         aria-label={`${c.competency} score ${pct} out of 100`}
       >
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-500"
+          className="h-full rounded-full bg-primary transition-[width] duration-[450ms] ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>
