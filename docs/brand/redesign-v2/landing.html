@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aptura — Get seen. Get interviewed. Get hired.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,540;9..144,600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+<style>
+  .wrap { max-width: 1200px; margin-inline: auto; padding-inline: var(--sp-6); position: relative; z-index: 2; }
+  .eyebrow { font-family: var(--font-mono); font-size: var(--step--1); letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-strong); }
+  .btn { display: inline-flex; align-items: center; gap: var(--sp-2); height: 46px; padding-inline: var(--sp-6); border-radius: var(--r-pill); font-weight: 540; font-size: var(--step-0); text-decoration: none; cursor: pointer; border: 1px solid transparent; transition: transform var(--dur-1) var(--ease-out), background var(--dur-1); }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover { background: var(--accent-strong); }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-2); }
+  .btn-ghost:hover { background: var(--surface-2); }
+
+  /* Nav */
+  nav.top { position: sticky; top: 0; z-index: var(--z-nav); backdrop-filter: blur(12px); background: color-mix(in oklch, var(--bg) 78%, transparent); border-bottom: 1px solid var(--line); }
+  nav.top .row { display: flex; align-items: center; justify-content: space-between; height: 68px; }
+  .brand { display: flex; align-items: center; gap: var(--sp-3); font-family: var(--font-display); font-weight: 600; font-size: 1.3rem; letter-spacing: -0.03em; color: var(--ink); text-decoration: none; }
+  .brand .mark { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); }
+  .navlinks { display: flex; align-items: center; gap: var(--sp-6); }
+  .navlinks a { color: var(--ink-2); text-decoration: none; font-size: var(--step-0); }
+  .navlinks a:hover { color: var(--ink); }
+  .icon-btn { width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--r-sm); border: 1px solid var(--line-2); background: transparent; color: var(--ink-2); cursor: pointer; }
+
+  /* Hero */
+  .hero { position: relative; padding-block: clamp(var(--sp-16), 9vw, var(--sp-32)) var(--sp-16); overflow: hidden; }
+  .hero h1 { font-size: var(--step-5); max-width: 14ch; }
+  .hero .lede { font-size: var(--step-1); color: var(--ink-2); margin-top: var(--sp-6); max-width: 46ch; }
+  .aperture { position: absolute; top: -12%; right: -8%; width: 620px; height: 620px; border-radius: 50%; border: 1px solid var(--line-2); pointer-events: none; }
+  .aperture::after { content: ""; position: absolute; inset: 80px; border-radius: 50%; border: 1px solid var(--line); }
+  .glow { position: absolute; top: -20%; right: -5%; width: 560px; height: 560px; border-radius: 50%; pointer-events: none; filter: blur(80px); opacity: 0.5;
+    background: radial-gradient(circle at 50% 50%, var(--accent-soft), transparent 62%); }
+
+  /* Role fork + search */
+  .fork { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-pill); margin-top: var(--sp-8); }
+  .fork button { border: 0; background: transparent; color: var(--ink-2); padding: 9px 18px; border-radius: var(--r-pill); font: inherit; font-weight: 540; cursor: pointer; }
+  .fork button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+  .search { display: flex; gap: var(--sp-2); margin-top: var(--sp-4); max-width: 620px; background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-lg); padding: var(--sp-2); box-shadow: var(--shadow); }
+  .search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; padding: 10px 12px; }
+  .search input::placeholder { color: var(--ink-3); }
+  .search input:focus { outline: none; }
+  .search .sep { width: 1px; background: var(--line); margin-block: 6px; }
+  .pills { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-6); margin-top: var(--sp-6); color: var(--ink-2); font-size: var(--step--1); }
+  .pills span { display: inline-flex; align-items: center; gap: 8px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-6); padding-block: var(--sp-12); border-block: 1px solid var(--line); }
+  .stat .n { font-family: var(--font-display); font-size: var(--step-3); font-weight: 600; letter-spacing: -0.03em; }
+  .stat .l { color: var(--ink-2); font-size: var(--step--1); margin-top: 4px; }
+
+  /* Section heading */
+  .sec { padding-block: var(--sp-24); }
+  .sec > h2 { font-size: var(--step-3); max-width: 20ch; }
+  .sec .kicker { margin-bottom: var(--sp-4); }
+
+  /* Differentiators */
+  .diffs { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-6); margin-top: var(--sp-12); }
+  .diff { padding: var(--sp-8); border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--surface); }
+  .diff .ic { width: 44px; height: 44px; border-radius: var(--r-md); display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); margin-bottom: var(--sp-4); }
+  .diff h3 { font-size: var(--step-1); margin-bottom: var(--sp-2); }
+  .diff p { color: var(--ink-2); font-size: var(--step-0); margin: 0; }
+
+  /* Steps */
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-6); margin-top: var(--sp-12); counter-reset: s; }
+  .step { position: relative; padding-top: var(--sp-8); border-top: 2px solid var(--line-2); }
+  .step::before { counter-increment: s; content: counter(s); position: absolute; top: -0.1em; left: 0; font-family: var(--font-mono); font-size: var(--step--1); color: var(--accent-strong); }
+  .step h3 { font-family: var(--font-sans); font-weight: 600; font-size: var(--step-1); letter-spacing: -0.01em; margin-bottom: var(--sp-2); }
+  .step p { color: var(--ink-2); font-size: var(--step--1); margin: 0; }
+
+  /* Merit flow */
+  .flow { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-8); }
+  .flow .node { display: inline-flex; align-items: center; gap: var(--sp-3); padding: 12px 18px; border-radius: var(--r-pill); border: 1px solid var(--line-2); background: var(--surface); font-weight: 500; }
+  .flow .arrow { align-self: center; color: var(--ink-3); }
+
+  /* Value pills (two cards) */
+  .audience { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-12); }
+  .acard { padding: var(--sp-12); border-radius: var(--r-xl); border: 1px solid var(--line); }
+  .acard.cand { background: var(--surface); }
+  .acard.comp { background: var(--ink); color: var(--bg); }
+  .acard.comp h3, .acard.comp li { color: var(--bg); }
+  .acard h3 { font-family: var(--font-sans); font-weight: 600; font-size: var(--step-2); letter-spacing: -0.02em; margin-bottom: var(--sp-6); }
+  .acard ul { list-style: none; padding: 0; margin: 0 0 var(--sp-8); display: grid; gap: var(--sp-3); }
+  .acard li { display: flex; gap: var(--sp-3); color: var(--ink-2); }
+  .acard li::before { content: "—"; color: var(--accent-strong); }
+  .acard.comp li::before { color: var(--accent); }
+
+  /* Trust */
+  .trust { padding-block: var(--sp-16); text-align: center; border-top: 1px solid var(--line); }
+  .badges { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-3); margin-top: var(--sp-8); }
+  .badge { font-family: var(--font-mono); font-size: var(--step--1); letter-spacing: 0.06em; padding: 8px 16px; border-radius: var(--r-pill); border: 1px solid var(--line-2); color: var(--ink-2); }
+
+  footer { border-top: 1px solid var(--line); padding-block: var(--sp-12); color: var(--ink-3); font-size: var(--step--1); }
+
+  @media (max-width: 880px) {
+    .stats, .diffs, .steps, .audience { grid-template-columns: 1fr 1fr; }
+    .navlinks .hide-sm { display: none; }
+  }
+  @media (max-width: 560px) { .stats, .diffs, .steps, .audience { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<nav class="top">
+  <div class="wrap row">
+    <a class="brand" href="#"><span class="mark">◐</span> Aptura</a>
+    <div class="navlinks">
+      <a class="hide-sm" href="#">For companies</a>
+      <a class="hide-sm" href="#">How it works</a>
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle theme">☾</button>
+      <a href="#" style="color:var(--ink)">Sign in</a>
+      <a class="btn btn-primary" href="#">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="glow"></div><div class="aperture"></div>
+  <div class="wrap">
+    <p class="eyebrow">Unified hiring platform</p>
+    <h1>Get seen. Get interviewed. Get hired.</h1>
+    <p class="lede">One place to apply, interview, and hear back — on a result you can trust.</p>
+
+    <div class="fork" role="tablist" aria-label="What brings you here">
+      <button role="tab" aria-selected="true">I'm looking for a job</button>
+      <button role="tab" aria-selected="false">I'm hiring</button>
+    </div>
+    <div class="search">
+      <input placeholder="Job title or skill" aria-label="Job title or skill" />
+      <div class="sep"></div>
+      <input placeholder="Location" aria-label="Location" />
+      <button class="btn btn-primary">Search</button>
+    </div>
+    <div class="pills">
+      <span><i class="dot"></i> Free for candidates</span>
+      <span><i class="dot"></i> Proctored &amp; fair — same rules for everyone</span>
+      <span><i class="dot"></i> Every application gets an answer</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="stats">
+    <div class="stat"><div class="n tnum">100%</div><div class="l">of applications answered</div></div>
+    <div class="stat"><div class="n tnum">12,400+</div><div class="l">interviews completed</div></div>
+    <div class="stat"><div class="n">1</div><div class="l">fair interview — live video + voice</div></div>
+    <div class="stat"><div class="n tnum">3-day</div><div class="l">average feedback</div></div>
+  </section>
+
+  <section class="sec">
+    <p class="eyebrow kicker">Why Aptura</p>
+    <h2>The hiring platform that doesn't ghost you — and gives a result you can trust.</h2>
+    <div class="diffs">
+      <div class="diff"><div class="ic">✓</div><h3>Answered, always</h3><p>Every application gets a real response — no ghosting, ever.</p></div>
+      <div class="diff"><div class="ic">◎</div><h3>Cheat-proof</h3><p>A rigorously proctored interview — same rules for everyone — so a pass means something.</p></div>
+      <div class="diff"><div class="ic">★</div><h3>On merit</h3><p>Judged on evidence from the interview, not pedigree or who you know.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <p class="eyebrow kicker">For candidates</p>
+    <h2>From “apply” to “you're hired” — in four steps.</h2>
+    <div class="steps">
+      <div class="step"><h3>Search &amp; apply</h3><p>Find roles that fit and apply in a click.</p></div>
+      <div class="step"><h3>Take your live interview</h3><p>A single proctored live video + voice interview — same for everyone.</p></div>
+      <div class="step"><h3>Get evidence-based feedback</h3><p>See how you did, grounded in what you actually said.</p></div>
+      <div class="step"><h3>Hear back, always</h3><p>A real answer on every application.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <p class="eyebrow kicker">Merit, made visible</p>
+    <h2>A fair shot you can actually see.</h2>
+    <p style="color:var(--ink-2); margin-top:var(--sp-4)">No black-box verdicts — here is exactly how a decision gets made.</p>
+    <div class="flow">
+      <span class="node">Evidence captured</span><span class="arrow">→</span>
+      <span class="node">AI structures it</span><span class="arrow">→</span>
+      <span class="node">A human decides</span><span class="arrow">→</span>
+      <span class="node">You're notified</span>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="audience">
+      <div class="acard cand">
+        <h3>For candidates</h3>
+        <ul><li>Live video + voice interview</li><li>Private practice runs</li><li>Skill-gap feedback</li><li>Real-time application status</li></ul>
+        <a class="btn btn-ghost" href="#">Find your next job →</a>
+      </div>
+      <div class="acard comp">
+        <h3>For companies</h3>
+        <ul><li>Merit-based screening</li><li>Advisory gate — you decide</li><li>Evidence-based reports</li><li>No-ghosting analytics</li></ul>
+        <a class="btn btn-primary" href="#">Start hiring on merit →</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<section class="trust">
+  <div class="wrap">
+    <h2 style="font-size:var(--step-2)">Built to be trusted.</h2>
+    <div class="badges">
+      <span class="badge">SOC 2</span><span class="badge">GDPR-ready</span><span class="badge">EEOC-aligned</span>
+      <span class="badge">Bias-tested</span><span class="badge">Proctored integrity</span>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap">Get seen. Get interviewed. Get hired. &nbsp;·&nbsp; © Aptura</div></footer>
+
+<script>
+  const t = document.getElementById('themeToggle');
+  t.addEventListener('click', () => {
+    const el = document.documentElement;
+    const dark = el.getAttribute('data-theme') === 'dark';
+    el.setAttribute('data-theme', dark ? 'light' : 'dark');
+    t.textContent = dark ? '☀' : '☾';
+  });
+  document.querySelectorAll('.fork button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.fork button').forEach(x => x.setAttribute('aria-selected', 'false'));
+    b.setAttribute('aria-selected', 'true');
+  }));
+</script>
+</body>
+</html>

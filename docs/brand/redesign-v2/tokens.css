@@ -1,0 +1,109 @@
+/* ============================================================================
+   Aptura — Redesign v2 design tokens (fresh visual language)
+   Standalone mockup system. OKLCH throughout. Light + dark first-class.
+   Anti-"AI-default": no violet gradient; ONE desaturated signal accent;
+   warm-tinted graphite neutrals; tinted shadows; editorial serif + grotesk.
+   Accent is a single variable (--accent-h/s/l) — swap to retune the whole brand.
+   ============================================================================ */
+
+:root {
+  /* ---- Accent seed (signal lime). Swap these 3 to re-skin the brand. ------ */
+  --accent-l: 0.84;   /* lightness */
+  --accent-c: 0.185;  /* chroma    */
+  --accent-h: 128;    /* hue (lime-green). amber≈85, emerald≈155, coral≈35 */
+
+  /* ---- Brand accent ramp (derived) -------------------------------------- */
+  --accent:        oklch(var(--accent-l) var(--accent-c) var(--accent-h));
+  --accent-strong: oklch(0.74 var(--accent-c) var(--accent-h));
+  --accent-soft:   oklch(0.92 0.06 var(--accent-h));
+  --accent-ink:    oklch(0.27 0.07 var(--accent-h));   /* text ON accent fills */
+
+  /* ---- Type ------------------------------------------------------------- */
+  --font-display: "Fraunces", "Times New Roman", serif;
+  --font-sans: "Geist", "Inter", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "SF Mono", ui-monospace, monospace;
+
+  --step--1: clamp(0.83rem, 0.81rem + 0.1vw, 0.88rem);
+  --step-0:  clamp(1rem, 0.96rem + 0.2vw, 1.08rem);
+  --step-1:  clamp(1.2rem, 1.12rem + 0.4vw, 1.45rem);
+  --step-2:  clamp(1.5rem, 1.35rem + 0.75vw, 2rem);
+  --step-3:  clamp(1.95rem, 1.65rem + 1.5vw, 2.95rem);
+  --step-4:  clamp(2.6rem, 2rem + 3vw, 4.5rem);
+  --step-5:  clamp(3.4rem, 2.4rem + 5vw, 6rem);   /* display ceiling ~96px */
+
+  /* ---- Spacing (4/8 rhythm) --------------------------------------------- */
+  --sp-1: 0.25rem; --sp-2: 0.5rem; --sp-3: 0.75rem; --sp-4: 1rem;
+  --sp-6: 1.5rem; --sp-8: 2rem; --sp-12: 3rem; --sp-16: 4rem;
+  --sp-24: 6rem; --sp-32: 8rem;
+
+  /* ---- Radii ------------------------------------------------------------ */
+  --r-sm: 0.5rem; --r-md: 0.875rem; --r-lg: 1.25rem; --r-xl: 1.75rem; --r-pill: 999px;
+
+  /* ---- Semantic z-scale ------------------------------------------------- */
+  --z-base: 0; --z-sticky: 20; --z-nav: 40; --z-backdrop: 50; --z-modal: 60; --z-toast: 70;
+
+  /* ---- Motion ----------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --dur-1: 150ms; --dur-2: 240ms; --dur-3: 360ms;
+}
+
+/* ---- Light theme (default) — warm "bone" ------------------------------- */
+:root, [data-theme="light"] {
+  --bg:        oklch(0.975 0.006 95);   /* warm bone, not #fff */
+  --surface:   oklch(0.995 0.004 95);
+  --surface-2: oklch(0.945 0.008 95);
+  --ink:       oklch(0.22 0.012 75);    /* warm near-black text */
+  --ink-2:     oklch(0.44 0.012 75);    /* secondary (≥4.5:1 on bg) */
+  --ink-3:     oklch(0.56 0.012 75);    /* tertiary/labels */
+  --line:      oklch(0.89 0.008 95);    /* hairline borders */
+  --line-2:    oklch(0.83 0.01 95);
+  --shadow: 0 1px 2px oklch(0.22 0.02 75 / 0.06), 0 8px 24px oklch(0.22 0.03 75 / 0.08);
+  --grain-opacity: 0.035;
+}
+
+/* ---- Dark theme — warm graphite ink ------------------------------------ */
+[data-theme="dark"] {
+  --bg:        oklch(0.19 0.012 95);    /* warm graphite, not #000 */
+  --surface:   oklch(0.225 0.013 95);
+  --surface-2: oklch(0.265 0.014 95);
+  --ink:       oklch(0.96 0.008 95);
+  --ink-2:     oklch(0.78 0.01 95);     /* secondary (≥4.5:1 on bg) */
+  --ink-3:     oklch(0.64 0.01 95);
+  --line:      oklch(0.32 0.012 95);
+  --line-2:    oklch(0.4 0.014 95);
+  --shadow: 0 1px 2px oklch(0 0 0 / 0.3), 0 12px 32px oklch(0 0 0 / 0.4);
+  --grain-opacity: 0.05;
+  --accent-l: 0.86;  /* lift accent slightly for dark surfaces */
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  font-feature-settings: "ss01", "cv01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle film grain over the whole page — kills the "flat sterile" feel. */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+h1, h2, h3 { font-family: var(--font-display); font-weight: 540; letter-spacing: -0.025em; line-height: 1.04; text-wrap: balance; margin: 0; }
+p { text-wrap: pretty; max-width: 68ch; }
+:focus-visible { outline: 2.5px solid var(--accent-strong); outline-offset: 3px; border-radius: 4px; }
+.tnum { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
