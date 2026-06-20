@@ -161,6 +161,39 @@ class ObjectStorage:
                 op="presigned_get_url",
             ) from exc
 
+    async def presigned_put_url(
+        self,
+        comp_id: str,
+        category: str,
+        key: str,
+        content_type: str,
+        ttl: int | None = None,
+    ) -> str:
+        # Presigned PUT so the browser uploads directly (e.g. a company logo) without
+        # proxying bytes through the service. The lifetime is clamped like the GET URL.
+        expires_in = min(ttl or self._presign_ttl, self._presign_ttl_max)
+        object_key = self._key(comp_id, category, key)
+        try:
+            return await with_timeout(
+                self._client.generate_presigned_url(
+                    "put_object",
+                    Params={
+                        "Bucket": self._bucket,
+                        "Key": object_key,
+                        "ContentType": content_type,
+                    },
+                    ExpiresIn=expires_in,
+                ),
+                seconds=self._op_timeout_seconds,
+                op="storage.presigned_put_url",
+            )
+        except (ClientError, BotoCoreError, OperationTimeout) as exc:
+            log.error("storage.presign_put_error key={} error={}", object_key, exc)
+            raise StorageError(
+                f"Failed to generate presigned PUT for {object_key}: {exc}",
+                op="presigned_put_url",
+            ) from exc
+
     async def delete(self, comp_id: str, category: str, key: str) -> None:
         object_key = self._key(comp_id, category, key)
         try:

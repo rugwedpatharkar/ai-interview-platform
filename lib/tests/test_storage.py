@@ -38,6 +38,7 @@ class FakeS3Client:
         self.objects: dict[str, dict] = {}
         self.deleted: list[str] = []
         self._presign_fail = presign_fail
+        self.last_presign: dict | None = None
 
     async def put_object(self, **kw):
         self.objects[kw["Key"]] = kw
@@ -56,6 +57,7 @@ class FakeS3Client:
                 {"Error": {"Code": "NoSuchKey", "Message": "Not found"}},
                 "GeneratePresignedUrl",
             )
+        self.last_presign = {"method": client_method, "params": Params}
         return f"https://example/{Params['Key']}?exp={ExpiresIn}"
 
 
@@ -106,6 +108,32 @@ async def test_presigned_get_url_clamps_excessive_ttl():
     s = _storage_with_fake()
     url = await s.presigned_get_url("c1", "resumes", "u1.pdf", ttl=999_999)
     assert "exp=3600" in url  # clamped to the max lifetime
+
+
+@pytest.mark.asyncio
+async def test_presigned_put_url_scopes_key_and_passes_content_type():
+    s = _storage_with_fake()
+    url = await s.presigned_put_url("c1", "branding", "logo.png", "image/png")
+    assert "c1/branding/logo.png" in url and "exp=900" in url
+    assert s._client.last_presign["method"] == "put_object"
+    assert s._client.last_presign["params"]["ContentType"] == "image/png"
+
+
+@pytest.mark.asyncio
+async def test_presigned_put_url_clamps_excessive_ttl():
+    s = _storage_with_fake()
+    url = await s.presigned_put_url(
+        "c1", "branding", "logo.png", "image/png", ttl=99999
+    )
+    assert "exp=3600" in url
+
+
+@pytest.mark.asyncio
+async def test_presigned_put_url_raises_storage_error_on_s3_failure():
+    s = _storage_with_fake(presign_fail=True)
+    with pytest.raises(StorageError) as exc_info:
+        await s.presigned_put_url("c1", "branding", "logo.png", "image/png")
+    assert exc_info.value.op == "presigned_put_url"
 
 
 @pytest.mark.asyncio
