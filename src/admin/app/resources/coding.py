@@ -8,6 +8,7 @@ subprocess). Candidate-owned via the application (the tenant source of truth).
 
 from lib.execution import ExecLimits, run_code
 from lib.logging import get_logger
+from pymongo.errors import DuplicateKeyError
 
 from app.errors import NotFoundError, RateLimitedError, ValidationError
 from app.model.coding import CodingAttempt
@@ -127,6 +128,26 @@ def _grade_typed(task, typed_answers):
     return correct, len(questions)
 
 
+_RESULT_FIELDS = (
+    "passed",
+    "cases_passed",
+    "cases_total",
+    "typed_correct",
+    "typed_total",
+)
+
+
+async def _replay_coding(existing, application_id, publisher):
+    """Re-emit coding.graded for an already-graded application and return its recorded
+    result — recovers a lost publish + makes a resubmit idempotent (funnel CAS dedupes).
+    """
+    await publisher.publish(
+        "coding.graded",
+        {"application_id": application_id, "passed": existing["passed"]},
+    )
+    return {field: existing[field] for field in _RESULT_FIELDS}
+
+
 async def submit_coding(
     identity,
     application_id,
@@ -144,6 +165,12 @@ async def submit_coding(
     application, task = await _owned_task(identity, application_id, applications, tasks)
     _validate(task, language, source)
     await _rate_limit(limiter, identity, application_id)
+    # Single-attempt: a resubmit returns the recorded result without re-running the
+    # candidate's code. The upfront read is the fast path; the insert's unique-conflict
+    # below closes the concurrent-submit race.
+    existing = await attempts.get_by_application(application_id)
+    if existing is not None:
+        return await _replay_coding(existing, application_id, publisher)
     limits = _limits(task)
     hidden = task.get("hidden_cases", [])
     cases_passed = 0
@@ -154,19 +181,24 @@ async def submit_coding(
     typed_correct, typed_total = _grade_typed(task, typed_answers)
     cases_total = len(hidden)
     passed = cases_passed == cases_total and typed_correct == typed_total
-    await attempts.insert(
-        CodingAttempt(
-            application_id=application_id,
-            comp_id=application["comp_id"],
-            candidate_user_id=identity["id"],
-            job_id=application["job_id"],
-            cases_passed=cases_passed,
-            cases_total=cases_total,
-            typed_correct=typed_correct,
-            typed_total=typed_total,
-            passed=passed,
+    try:
+        await attempts.insert(
+            CodingAttempt(
+                application_id=application_id,
+                comp_id=application["comp_id"],
+                candidate_user_id=identity["id"],
+                job_id=application["job_id"],
+                cases_passed=cases_passed,
+                cases_total=cases_total,
+                typed_correct=typed_correct,
+                typed_total=typed_total,
+                passed=passed,
+            )
         )
-    )
+    except DuplicateKeyError:
+        return await _replay_coding(
+            await attempts.get_by_application(application_id), application_id, publisher
+        )
     await publisher.publish(
         "coding.graded", {"application_id": application_id, "passed": passed}
     )

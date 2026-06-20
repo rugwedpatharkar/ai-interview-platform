@@ -52,6 +52,9 @@ class _FakeAttempts:
     async def insert(self, attempt):
         self.inserted.append(attempt)
 
+    async def get_by_application(self, application_id):
+        return None
+
 
 class _FakePub:
     def __init__(self):

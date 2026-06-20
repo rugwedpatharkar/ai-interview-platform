@@ -1,4 +1,6 @@
 import pytest
+from lib.execution import ExecResult
+from pymongo.errors import DuplicateKeyError
 
 from app.errors import (
     ForbiddenError,
@@ -82,7 +84,6 @@ def test_normalize_strips_trailing_ws_and_newlines():
 
 
 def test_grade_case_requires_clean_exit_and_match():
-    from lib.execution import ExecResult
 
     ok = ExecResult(stdout="9\n", stderr="", exit_code=0, time_ms=1, timed_out=False)
     assert _grade_case(ok, "9") is True
@@ -113,7 +114,15 @@ class _Attempts:
         self.inserted = []
 
     async def insert(self, attempt):
-        self.inserted.append(attempt)
+        doc = attempt.model_dump()
+        if any(r["application_id"] == doc["application_id"] for r in self.inserted):
+            raise DuplicateKeyError("duplicate application_id")
+        self.inserted.append(doc)
+
+    async def get_by_application(self, application_id):
+        return next(
+            (r for r in self.inserted if r["application_id"] == application_id), None
+        )
 
 
 class _Pub:
@@ -125,7 +134,6 @@ class _Pub:
 
 
 def _exec_returning(stdout, exit_code=0, timed_out=False):
-    from lib.execution import ExecResult
 
     async def _fake(language, source, stdin="", *, limits=None):
         return ExecResult(
@@ -221,3 +229,54 @@ async def test_submit_fails_when_case_mismatches():
         executor=_exec_returning("0\n"),  # expected "9" → mismatch
     )
     assert out["cases_passed"] == 0 and out["passed"] is False
+
+
+async def test_submit_is_idempotent_on_resubmit():
+    # A resubmit returns the RECORDED result, re-emits coding.graded, and does NOT
+    # re-execute the candidate code (recovers a lost publish + ignores double-submit).
+    attempts, pub = _Attempts(), _Pub()
+    runs = []
+
+    def _counting_exec(stdout):
+        async def _fake(language, source, stdin="", *, limits=None):
+            runs.append(1)
+            return ExecResult(
+                stdout=stdout, stderr="", exit_code=0, time_ms=1, timed_out=False
+            )
+
+        return _fake
+
+    deps = {
+        "applications": _Apps(_app()),
+        "tasks": _Tasks(_task()),
+        "attempts": attempts,
+        "publisher": pub,
+        "limiter": _Limiter(),
+    }
+    first = await coding.submit_coding(
+        _identity(),
+        "a1",
+        "python",
+        "print(9)",
+        [{"id": "t1", "answer": "O(1)"}],
+        executor=_counting_exec("9\n"),
+        **deps,
+    )
+    runs_after_first = len(runs)
+    second = await coding.submit_coding(
+        _identity(),
+        "a1",
+        "python",
+        "print(0)",
+        [],
+        executor=_counting_exec("0\n"),
+        **deps,
+    )
+    assert second == first  # recorded result, not a re-grade
+    assert len(runs) == runs_after_first  # executor NOT re-run on resubmit
+    assert (
+        pub.events.count(
+            ("coding.graded", {"application_id": "a1", "passed": first["passed"]})
+        )
+        == 2
+    )
