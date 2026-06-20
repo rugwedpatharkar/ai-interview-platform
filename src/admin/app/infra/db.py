@@ -63,6 +63,9 @@ INDEXES: list[IndexSpec] = [
     IndexSpec("jobs", [("status", 1), ("city", 1)]),
     # company_profiles: employer branding; unique comp_id (one profile per company).
     IndexSpec("company_profiles", "comp_id", {"unique": True}),
+    # job_alerts: a candidate's saved searches; list by recency + a sweep scan index.
+    IndexSpec("job_alerts", [("candidate_user_id", 1), ("created_at", -1)]),
+    IndexSpec("job_alerts", [("frequency", 1), ("last_run_at", 1)]),
     # saved_jobs: candidate bookmarks; unique (candidate, job) makes Save idempotent.
     IndexSpec(
         "saved_jobs", [("candidate_user_id", 1), ("job_id", 1)], {"unique": True}

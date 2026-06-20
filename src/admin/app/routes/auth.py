@@ -16,6 +16,7 @@ from app.errors import (
     InvalidCredentialsError,
     InvalidTokenError,
     InvalidTransition,
+    LimitExceededError,
     NotFoundError,
     RateLimitedError,
     ValidationError,
@@ -41,6 +42,7 @@ _STATUS = {
     ForbiddenError: grpc.StatusCode.PERMISSION_DENIED,
     ValidationError: grpc.StatusCode.INVALID_ARGUMENT,
     InvalidTransition: grpc.StatusCode.FAILED_PRECONDITION,
+    LimitExceededError: grpc.StatusCode.FAILED_PRECONDITION,
 }
 
 

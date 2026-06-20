@@ -37,3 +37,8 @@ class ValidationError(AuthDomainError):
 class InvalidTransition(AuthDomainError):
     """An illegal application-state transition (funnel state machine). The funnel
     consumer logs+acks it; a route maps it to FAILED_PRECONDITION."""
+
+
+class LimitExceededError(AuthDomainError):
+    """A per-caller resource cap was exceeded (e.g. max active job alerts).
+    Routes map it to FAILED_PRECONDITION."""

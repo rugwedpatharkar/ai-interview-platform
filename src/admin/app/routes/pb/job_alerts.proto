@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package admin.job_alerts.v1;
+
+// JobAlertsService — a candidate's saved searches. Owner is derived from the bearer
+// token (caller_identity); candidate_user_id is NEVER a request field. Running the
+// searches + emitting notifications is a SCHEDULED BACKEND SWEEP, not this request path.
+service JobAlertsService {
+  rpc CreateAlert(CreateAlertRequest) returns (JobAlert);
+  rpc ListAlerts(ListAlertsRequest) returns (ListAlertsResponse);
+  rpc DeleteAlert(DeleteAlertRequest) returns (DeleteAlertResponse);
+}
+
+message AlertFilters {
+  string location = 1;
+  string remote_mode = 2;        // "remote" | "hybrid" | "onsite" | ""
+  string employment_type = 3;
+  string experience_level = 4;
+  repeated string skills = 5;
+}
+
+message CreateAlertRequest {
+  string keyword = 1;            // "" allowed -> filter-only alert
+  AlertFilters filters = 2;
+  string frequency = 3;          // "daily" | "weekly"
+}
+
+message JobAlert {
+  string alert_id = 1;
+  string keyword = 2;
+  AlertFilters filters = 3;
+  string frequency = 4;
+  string created_at = 5;         // ISO
+  string last_run_at = 6;        // ISO or "" (sweep-written)
+}
+
+message ListAlertsRequest {}
+message ListAlertsResponse {
+  repeated JobAlert alerts = 1;
+}
+
+message DeleteAlertRequest {
+  string alert_id = 1;
+}
+message DeleteAlertResponse {
+  bool deleted = 1;
+}

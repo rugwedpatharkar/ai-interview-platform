@@ -19,6 +19,7 @@ from app.infra.repositories.companies import CompanyRepository
 from app.infra.repositories.company_profiles import CompanyProfileRepository
 from app.infra.repositories.consents import ConsentRepository
 from app.infra.repositories.interviews import InterviewRepository
+from app.infra.repositories.job_alerts import JobAlertsRepository
 from app.infra.repositories.jobs import JobRepository
 from app.infra.repositories.match_results import MatchResultRepository
 from app.infra.repositories.profiles import CandidateProfileRepository
@@ -36,6 +37,7 @@ from app.routes.compliance import ComplianceServicer
 from app.routes.decision import DecisionServicer
 from app.routes.discovery import DiscoveryServicer
 from app.routes.job import JobServicer
+from app.routes.job_alerts import JobAlertsServicer
 from app.routes.pb import (
     analytics_pb2_grpc,
     application_pb2_grpc,
@@ -45,6 +47,7 @@ from app.routes.pb import (
     compliance_pb2_grpc,
     decision_pb2_grpc,
     discovery_pb2_grpc,
+    job_alerts_pb2_grpc,
     job_pb2_grpc,
     profile_pb2_grpc,
     recommendation_pb2_grpc,
@@ -238,6 +241,10 @@ def create_web_app(
             jobs=JobRepository(db),
             applications=ApplicationRepository(db),
         ),
+        app,
+    )
+    job_alerts_pb2_grpc.add_JobAlertsServiceServicer_to_server(
+        JobAlertsServicer(alerts=JobAlertsRepository(db), tokens=tokens),
         app,
     )
     return app
