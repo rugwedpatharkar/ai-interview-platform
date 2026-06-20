@@ -44,6 +44,32 @@ async def aptitude_expiry_pass(
     return expired
 
 
+async def reconcile_pass(*, applications, attempts, publisher):
+    """Re-emit funnel events for applications stranded by a lost publish — the write
+    succeeded but the follow-on event's publish failed and the client never retried.
+
+    Today: an application still in `aptitude_pending` that already has a graded attempt
+    means its `aptitude.graded` was lost; re-emit it (the funnel CAS dedupes, and once
+    the transition lands the application leaves `aptitude_pending`, so this self-stops).
+    The per-writer idempotent re-emit covers the retried case; this the never-retried.
+    """
+    recovered = 0
+    for application in await applications.list_by_state("aptitude_pending"):
+        attempt = await attempts.get_by_application(str(application["_id"]))
+        if attempt is not None:
+            await publisher.publish(
+                "aptitude.graded",
+                {
+                    "application_id": str(application["_id"]),
+                    "passed": attempt["passed"],
+                },
+            )
+            recovered += 1
+    if recovered:
+        log.info("reconcile pass re-emitted {} aptitude.graded", recovered)
+    return recovered
+
+
 async def reminder_sweep(*, bookings, notifications, now):
     """Complete past interview bookings + send T-24h / T-1h reminders (each once).
 

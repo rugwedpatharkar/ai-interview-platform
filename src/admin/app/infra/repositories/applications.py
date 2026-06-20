@@ -42,6 +42,9 @@ class ApplicationRepository(BaseRepository[Application]):
     async def list_by_comp(self, comp_id: str) -> list[dict]:
         return await self.find_capped({"comp_id": comp_id})
 
+    async def list_by_state(self, state: str) -> list[dict]:
+        return await self.find_capped({"state": state})
+
     async def set_state(self, application_id: str, state: str) -> None:
         oid = _oid(application_id)
         if oid is None:

@@ -287,6 +287,9 @@ class FakeApplicationRepo:
     async def get(self, application_id):
         return self._docs.get(application_id)
 
+    async def list_by_state(self, state):
+        return [d for d in self._docs.values() if d.get("state") == state]
+
     async def set_state(self, application_id, state):
         doc = self._docs.get(application_id)
         if doc is not None:

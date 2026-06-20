@@ -18,6 +18,7 @@ from app.infra.db import INDEXES
 from app.infra.notifier import LoggingNotifier, NotificationRequestPublisher
 from app.infra.oauth import HttpOAuthClient
 from app.infra.repositories.applications import ApplicationRepository
+from app.infra.repositories.aptitude_attempts import AptitudeAttemptRepository
 from app.infra.repositories.aptitude_deliveries import AptitudeDeliveryRepository
 from app.infra.repositories.audit_logs import AuditLogRepository
 from app.infra.repositories.companies import CompanyRepository
@@ -227,6 +228,7 @@ async def serve() -> None:
     # Liveness reapers: purge past-retention candidates + expire abandoned aptitude.
     eraser = make_eraser(mongo.db, storage)
     deliveries = AptitudeDeliveryRepository(mongo.db)
+    reconcile_attempts = AptitudeAttemptRepository(mongo.db)
     bookings = InterviewBookingRepository(mongo.db)
     reminder_notifications = NotificationRepository(mongo.db)
 
@@ -249,6 +251,13 @@ async def serve() -> None:
                     bookings=bookings,
                     notifications=reminder_notifications,
                     now=now,
+                )
+                # Recover applications stranded by a lost event publish (funnel CAS
+                # dedupes the re-emit) — backstop to the per-writer re-emit.
+                await scheduler.reconcile_pass(
+                    applications=funnel_apps,
+                    attempts=reconcile_attempts,
+                    publisher=publisher,
                 )
             except Exception:
                 log.exception("scheduler pass failed")
