@@ -75,7 +75,7 @@ export function VerifyCard({
           )}
 
           {showResend && (
-            <div className="flex flex-col gap-2 rounded-md border border-border p-3">
+            <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface-muted p-3">
               <p className="text-sm font-medium text-foreground">Resend verification email</p>
               {resendState === "sent" ? (
                 <Alert tone="success">

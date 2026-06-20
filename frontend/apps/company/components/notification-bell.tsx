@@ -84,8 +84,7 @@ export function NotificationBell() {
         <Bell className="size-5" aria-hidden />
         {count > 0 && (
           <Badge
-            tone="info"
-            className="absolute -right-0.5 -top-0.5 min-w-4 px-1 text-[10px]"
+            className="absolute -right-0.5 -top-0.5 min-w-4 bg-primary px-1 text-[10px] font-semibold tabular-nums text-primary-foreground"
           >
             {count > 9 ? "9+" : count}
           </Badge>

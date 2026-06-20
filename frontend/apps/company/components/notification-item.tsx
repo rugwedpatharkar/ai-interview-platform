@@ -34,20 +34,20 @@ export function NotificationItem({ notification: n, icon: Icon, onClick }: Notif
         unread && "bg-surface-muted/40",
       )}
     >
-      <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+      <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
         <Icon className="size-4" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-2">
           <span className="truncate text-sm font-medium text-foreground">{n.subject}</span>
-          <span className="shrink-0 text-xs text-muted-foreground">
+          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
             {formatRelative(n.createdAt)}
           </span>
         </span>
         <span className="mt-0.5 line-clamp-2 block text-sm text-muted-foreground">{n.body}</span>
       </span>
       {unread && (
-        <span className="mt-1.5 size-2 shrink-0 rounded-full bg-brand-500" aria-hidden />
+        <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" aria-hidden />
       )}
     </button>
   );

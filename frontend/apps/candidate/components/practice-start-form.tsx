@@ -61,8 +61,8 @@ export function PracticeStartForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Sparkles className="size-5 text-brand-500" aria-hidden />
+        <CardTitle className="flex items-center gap-2 font-display">
+          <Sparkles className="size-5 text-primary" aria-hidden />
           Practice interview
         </CardTitle>
       </CardHeader>

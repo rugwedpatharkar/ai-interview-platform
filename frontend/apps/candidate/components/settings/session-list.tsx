@@ -82,8 +82,8 @@ export function SessionList({ client }: { client: SettingsClient }) {
                     )}
                   </span>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{s.ip}</TableCell>
-                <TableCell className="text-muted-foreground">{rel(s.lastSeenAt)}</TableCell>
+                <TableCell className="tabular-nums text-muted-foreground">{s.ip}</TableCell>
+                <TableCell className="tabular-nums text-muted-foreground">{rel(s.lastSeenAt)}</TableCell>
                 <TableCell className="text-right">
                   <Button
                     variant="outline"

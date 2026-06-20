@@ -2,18 +2,10 @@
 
 import {
   Badge,
-  Card,
-  CardContent,
   EmptyState,
   ErrorState,
   LoadingState,
   PageHeader,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
 } from "@ip/ui";
 import { Users } from "lucide-react";
 import { errorMessage, useAuthedQuery } from "@ip/shared";
@@ -35,7 +27,7 @@ export default function TalentPage() {
   return (
     <CompanyShell>
       <PageHeader
-        title="Talent pool"
+        title="Talent search"
         description="Search and browse candidates who have applied to your jobs."
       />
       <div className="flex flex-col gap-6">
@@ -60,50 +52,52 @@ export default function TalentPage() {
                 {/* Stacked cards on narrow viewports keep the id + count readable at ~375px. */}
                 <div className="flex flex-col gap-3 sm:hidden">
                   {entries.map((e) => (
-                    <Card key={e.candidateUserId}>
-                      <CardContent className="flex items-center justify-between gap-3 p-4">
-                        <span
-                          className="truncate font-mono text-xs text-muted-foreground"
-                          aria-label={`Candidate ${e.candidateUserId}`}
-                        >
-                          {e.candidateUserId.slice(0, 12)}…
-                        </span>
-                        <Badge tone="neutral">
-                          {Number(e.applicationCount)} application
-                          {Number(e.applicationCount) === 1 ? "" : "s"}
-                        </Badge>
-                      </CardContent>
-                    </Card>
+                    <div
+                      key={e.candidateUserId}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4"
+                    >
+                      <span
+                        className="truncate font-mono text-xs text-muted-foreground"
+                        aria-label={`Candidate ${e.candidateUserId}`}
+                      >
+                        {e.candidateUserId.slice(0, 12)}…
+                      </span>
+                      <Badge tone="neutral">
+                        {Number(e.applicationCount)} application
+                        {Number(e.applicationCount) === 1 ? "" : "s"}
+                      </Badge>
+                    </div>
                   ))}
                 </div>
 
-                <Card className="hidden sm:block">
-                  <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Candidate</TableHead>
-                          <TableHead>Applications</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {entries.map((e) => (
-                          <TableRow key={e.candidateUserId}>
-                            <TableCell
-                              className="font-mono text-xs"
-                              aria-label={`Candidate ${e.candidateUserId}`}
-                            >
-                              {e.candidateUserId.slice(0, 12)}…
-                            </TableCell>
-                            <TableCell className="tabular-nums">
-                              {Number(e.applicationCount)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
+                <div className="hidden overflow-hidden rounded-xl border border-border bg-surface sm:block">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-surface-muted text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        <th className="px-4 py-3">Candidate</th>
+                        <th className="px-4 py-3">Applications</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {entries.map((e) => (
+                        <tr
+                          key={e.candidateUserId}
+                          className="border-b border-border transition-colors last:border-b-0 hover:bg-surface-muted"
+                        >
+                          <td
+                            className="px-4 py-3 font-mono text-xs text-muted-foreground"
+                            aria-label={`Candidate ${e.candidateUserId}`}
+                          >
+                            {e.candidateUserId.slice(0, 12)}…
+                          </td>
+                          <td className="px-4 py-3 tabular-nums text-foreground">
+                            {Number(e.applicationCount)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </>
             )}
           </>

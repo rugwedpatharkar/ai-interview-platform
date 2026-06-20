@@ -24,10 +24,10 @@ export function PermissionMatrix() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">What each role can do</CardTitle>
+        <CardTitle className="font-display text-base">What each role can do</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg border border-border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -46,7 +46,10 @@ export function PermissionMatrix() {
                   {ROLES.map((r) => (
                     <TableCell key={r} className="text-center">
                       {can(r, s.scope) ? (
-                        <Check className="mx-auto size-4 text-success" aria-label="allowed" />
+                        <Check
+                          className="mx-auto size-4 text-primary accent-primary"
+                          aria-label="allowed"
+                        />
                       ) : (
                         <span className="text-muted-foreground" aria-label="not allowed">
                           —

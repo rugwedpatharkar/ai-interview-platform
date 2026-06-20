@@ -14,12 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   applicationStatus,
 } from "@ip/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -103,46 +97,55 @@ export function CandidateSearch({ onActive }: { onActive: (active: boolean) => v
           <EmptyState title="No candidates match" description="Try a different keyword or stage." />
         )}
         {active && (results.data?.hits.length ?? 0) > 0 && (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Candidate</TableHead>
-                <TableHead>Fit</TableHead>
-                <TableHead>Stage</TableHead>
-                <TableHead>Skills</TableHead>
-                <TableHead>Apps</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {results.data!.hits.map((h) => {
-                const stage = applicationStatus(h.topStage);
-                return (
-                  <TableRow key={h.candidateUserId}>
-                    <TableCell
-                      className="font-mono text-xs"
-                      aria-label={`Candidate ${h.candidateUserId}`}
+          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-surface-muted text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <th className="px-4 py-3">Candidate</th>
+                  <th className="px-4 py-3">Fit</th>
+                  <th className="px-4 py-3">Stage</th>
+                  <th className="px-4 py-3">Skills</th>
+                  <th className="px-4 py-3">Apps</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.data!.hits.map((h) => {
+                  const stage = applicationStatus(h.topStage);
+                  return (
+                    <tr
+                      key={h.candidateUserId}
+                      className="border-b border-border transition-colors last:border-b-0 hover:bg-surface-muted"
                     >
-                      {h.candidateUserId.slice(0, 12)}…
-                    </TableCell>
-                    <TableCell>
-                      <FitBadge score={h.fitScore} />
-                    </TableCell>
-                    <TableCell>
-                      <Badge tone={stage.tone}>{stage.label}</Badge>
-                    </TableCell>
-                    <TableCell className="flex flex-wrap gap-1">
-                      {h.matchedSkills.slice(0, 4).map((s) => (
-                        <Badge key={s} tone="neutral">
-                          {s}
-                        </Badge>
-                      ))}
-                    </TableCell>
-                    <TableCell className="tabular-nums">{Number(h.applicationCount)}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      <td
+                        className="px-4 py-3 font-mono text-xs text-muted-foreground"
+                        aria-label={`Candidate ${h.candidateUserId}`}
+                      >
+                        {h.candidateUserId.slice(0, 12)}…
+                      </td>
+                      <td className="px-4 py-3">
+                        <FitBadge score={h.fitScore} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge tone={stage.tone}>{stage.label}</Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {h.matchedSkills.slice(0, 4).map((s) => (
+                            <Badge key={s} tone="neutral">
+                              {s}
+                            </Badge>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 tabular-nums text-foreground">
+                        {Number(h.applicationCount)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </CardContent>
     </Card>

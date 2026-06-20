@@ -41,8 +41,8 @@ export function SsoButtons() {
   if (shown.length === 0) return null;
 
   return (
-    <div className="mt-4 flex flex-col gap-3">
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+    <div className="mt-6 flex flex-col gap-3">
+      <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         <span className="h-px flex-1 bg-border" />
         or
         <span className="h-px flex-1 bg-border" />

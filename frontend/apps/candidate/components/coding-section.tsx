@@ -48,7 +48,7 @@ export function CodingSection({
               Coding task
             </h3>
             {timeLeft && (
-              <Badge tone="neutral" variant="subtle">
+              <Badge tone="neutral" variant="subtle" className="tabular-nums">
                 {timeLeft}
               </Badge>
             )}
@@ -68,9 +68,9 @@ export function CodingSection({
               </div>
             ))}
             {!!section.hiddenCaseCount && (
-              <p className="text-xs text-muted-foreground">
+              <Badge tone="neutral" variant="subtle" className="self-start tabular-nums">
                 +{section.hiddenCaseCount} hidden tests (run on submit)
-              </p>
+              </Badge>
             )}
           </div>
         </div>
@@ -121,7 +121,7 @@ export function CodingSection({
                   </Badge>
                 </div>
               ))}
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm tabular-nums text-muted-foreground">
                 Hidden tests: {result.hiddenPassed}/{result.hiddenTotal} passed
               </p>
             </div>

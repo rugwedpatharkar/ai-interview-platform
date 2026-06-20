@@ -68,10 +68,14 @@ export default async function JobDetailPage({
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
           <JobMeta job={job} />
-          <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-            {job.jdText}
-          </p>
-          <ApplyIsland jobId={job.jobId} />
+          <div className="rounded-lg border border-border bg-surface-muted p-5">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+              {job.jdText}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-surface p-5">
+            <ApplyIsland jobId={job.jobId} />
+          </div>
         </CardContent>
       </Card>
     </AppShell>

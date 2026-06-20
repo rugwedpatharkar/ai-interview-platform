@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Avatar,
   Badge,
   type BadgeTone,
   Button,
@@ -98,7 +99,7 @@ export function TeamRoster({ client }: { client: TeamClient }) {
   const members = q.data ?? [];
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-xl border border-border bg-surface">
       <Table>
         <TableHeader>
           <TableRow>
@@ -116,9 +117,16 @@ export function TeamRoster({ client }: { client: TeamClient }) {
             const revoked = m.status === "revoked";
             return (
               <TableRow key={m.id}>
-                <TableCell className="font-medium text-foreground">
-                  {m.email}
-                  {you && <span className="ml-1 text-muted-foreground">(you)</span>}
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar name={m.email} size="sm" />
+                    <span className="min-w-0 truncate font-medium text-foreground">
+                      {m.email}
+                      {you && (
+                        <span className="ml-1 font-normal text-muted-foreground">(you)</span>
+                      )}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Select
@@ -152,7 +160,7 @@ export function TeamRoster({ client }: { client: TeamClient }) {
                     {STATUS_LABEL[m.status]}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-muted-foreground">
+                <TableCell className="tabular-nums text-muted-foreground">
                   {lastActiveLabel(m.lastActiveAt)}
                 </TableCell>
                 <TableCell className="text-right">

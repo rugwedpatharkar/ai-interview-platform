@@ -145,7 +145,7 @@ export function ChatWindow({
       >
         {turns.length === 0 && emptyHint && (
           <div className="flex flex-col items-center gap-2 py-8 text-center">
-            <span className="flex size-10 items-center justify-center rounded-full bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+            <span className="flex size-10 items-center justify-center rounded-full bg-primary/15 text-primary">
               <Sparkles className="size-5" aria-hidden />
             </span>
             <p className="max-w-xs text-sm text-muted-foreground">{emptyHint}</p>
@@ -168,7 +168,7 @@ export function ChatWindow({
                   "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full",
                   isUser
                     ? "bg-primary text-primary-foreground"
-                    : "bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300",
+                    : "bg-primary/15 text-primary",
                 )}
                 aria-hidden
               >

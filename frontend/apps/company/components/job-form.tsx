@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -236,6 +237,15 @@ export function JobForm({
               placeholder="react, typescript, go"
               onChange={(e) => setSkillsRaw(e.target.value)}
             />
+            {parseSkills(skillsRaw).length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {parseSkills(skillsRaw).map((s) => (
+                  <Badge key={s} tone="neutral">
+                    {s}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </Field>
 
           <GateModeToggle value={v.gateMode} onChange={(g) => set("gateMode", g)} />

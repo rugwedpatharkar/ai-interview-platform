@@ -57,7 +57,7 @@ export function DevicePrecheck({
           muted
           playsInline
           aria-label="Camera self-view"
-          className="aspect-video w-full rounded-lg bg-surface-muted"
+          className="aspect-video w-full rounded-lg border border-border bg-surface-muted object-cover"
         />
         {!media && (
           <Button onClick={requestDevices} className="self-start">

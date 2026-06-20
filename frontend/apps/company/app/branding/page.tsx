@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  Avatar,
+  Badge,
   Button,
   Card,
   CardContent,
@@ -47,6 +49,8 @@ export default function BrandingPage() {
   const qc = useQueryClient();
   const [form, setForm] = useState<BrandingForm>(EMPTY);
   const [locationsRaw, setLocationsRaw] = useState("");
+  // Presentational mirror of the picked/seeded logo URL for the live-preview card.
+  const [logoPreview, setLogoPreview] = useState("");
 
   const profile = useAuthedQuery(token, {
     queryKey: ["company-profile"],
@@ -66,6 +70,7 @@ export default function BrandingPage() {
       logoKey: d.logoKey,
     });
     setLocationsRaw(d.locations.join(", "));
+    setLogoPreview(d.logoUrl ?? "");
   }, [profile.data]);
 
   const save = useMutation({
@@ -98,11 +103,12 @@ export default function BrandingPage() {
         <ErrorState message={errorMessage(profile.error)} retry={() => profile.refetch()} />
       )}
       {profile.data && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Brand</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display">Brand</CardTitle>
+            </CardHeader>
+            <CardContent>
             <form
               className="flex flex-col gap-4"
               onSubmit={(e) => {
@@ -113,7 +119,10 @@ export default function BrandingPage() {
               <LogoUpload
                 initialUrl={profile.data.logoUrl}
                 presign={client.presignLogo}
-                onUploaded={(logoKey) => set("logoKey", logoKey)}
+                onUploaded={(logoKey, previewUrl) => {
+                  set("logoKey", logoKey);
+                  setLogoPreview(previewUrl);
+                }}
               />
               <Field label="Display name" htmlFor="dn">
                 <Input
@@ -176,9 +185,78 @@ export default function BrandingPage() {
                 Save brand
               </Button>
             </form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <BrandPreview form={form} locationsRaw={locationsRaw} logoUrl={logoPreview} />
+        </div>
       )}
     </CompanyShell>
+  );
+}
+
+/** Read-only marketplace mirror of the editor state — no new query or handler,
+ * a pure render of the `form` the page already holds. */
+function BrandPreview({
+  form,
+  locationsRaw,
+  logoUrl,
+}: {
+  form: BrandingForm;
+  locationsRaw: string;
+  logoUrl: string;
+}) {
+  const locations = locationsRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const name = form.displayName.trim() || "Your company";
+
+  return (
+    <Card className="h-fit lg:sticky lg:top-24">
+      <CardHeader>
+        <CardTitle className="font-display text-base">Marketplace preview</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex items-start gap-3">
+          <Avatar name={name} src={logoUrl || undefined} size="lg" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-display text-lg font-semibold tracking-tight text-foreground">
+              {name}
+            </p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {form.industry.trim() && (
+                <Badge tone="neutral" variant="subtle">
+                  {form.industry.trim()}
+                </Badge>
+              )}
+              {form.size.trim() && (
+                <Badge tone="neutral" variant="subtle">
+                  {form.size.trim()}
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {locations.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {locations.map((loc) => (
+              <Badge key={loc} tone="info" variant="subtle">
+                {loc}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        <p className="line-clamp-4 text-sm text-muted-foreground">
+          {form.about.trim() || "Add an about section to tell candidates who you are."}
+        </p>
+
+        {form.website.trim() && (
+          <p className="truncate text-sm text-primary">{form.website.trim()}</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

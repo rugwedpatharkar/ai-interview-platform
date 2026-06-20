@@ -43,13 +43,13 @@ export function LogoUpload({
   }
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-surface-muted/40 p-4">
       <Avatar name="Logo" src={preview || undefined} size="lg" />
-      <div className="flex flex-col gap-1.5">
+      <div className="flex min-w-0 flex-col gap-1.5">
         <label
           className={cn(
-            buttonVariants({ variant: "outline", size: "sm" }),
-            "cursor-pointer",
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "cursor-pointer border border-border",
             busy && "pointer-events-none opacity-50",
           )}
         >

@@ -23,11 +23,23 @@ function SettingsTabs() {
 
   return (
     <Tabs defaultValue={initial}>
-      <TabsList>
-        <TabsTrigger value="account">Account</TabsTrigger>
-        <TabsTrigger value="security">Security</TabsTrigger>
-        <TabsTrigger value="notifications">Notifications</TabsTrigger>
-        <TabsTrigger value="privacy">Privacy</TabsTrigger>
+      <TabsList className="inline-flex flex-wrap gap-1 rounded-xl border border-border bg-surface-muted p-1">
+        {(
+          [
+            ["account", "Account"],
+            ["security", "Security"],
+            ["notifications", "Notifications"],
+            ["privacy", "Privacy"],
+          ] as const
+        ).map(([value, label]) => (
+          <TabsTrigger
+            key={value}
+            value={value}
+            className="rounded-lg mb-0 border-0 px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-surface data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            {label}
+          </TabsTrigger>
+        ))}
       </TabsList>
       <TabsContent value="account">
         <AccountTab client={client} />

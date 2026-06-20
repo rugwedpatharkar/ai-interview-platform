@@ -82,7 +82,7 @@ export function PrivacyTab() {
             SCOPES.map((s) => (
               <div
                 key={s.scope}
-                className="flex items-center justify-between gap-3 rounded-md border border-border p-3"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-muted p-3"
               >
                 <span className="text-sm text-foreground">{s.label}</span>
                 {granted.has(s.scope) ? (

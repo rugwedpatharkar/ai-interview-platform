@@ -63,7 +63,7 @@ export function AccountTab({ client }: { client: SettingsClient }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-muted p-3">
             <span className="flex items-center gap-2 text-sm text-foreground">
               <ShieldCheck className="size-4 text-muted-foreground" aria-hidden />
               Role
@@ -72,7 +72,7 @@ export function AccountTab({ client }: { client: SettingsClient }) {
               {roleLabel}
             </Badge>
           </div>
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-muted p-3">
             <span className="text-sm text-foreground">Account ID</span>
             <span className="truncate font-mono text-xs text-muted-foreground">{handle}</span>
           </div>

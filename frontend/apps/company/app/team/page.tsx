@@ -39,8 +39,13 @@ export default function TeamPage() {
         description="Manage who can access your workspace and what they can do."
         action={<InviteMemberDialog client={client} />}
       />
-      <div className="mt-4 flex flex-col gap-6">
-        <TeamRoster client={client} />
+      <div className="mt-6 flex flex-col gap-8">
+        <section className="flex flex-col gap-3">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
+            Members
+          </h2>
+          <TeamRoster client={client} />
+        </section>
         <PermissionMatrix />
       </div>
     </CompanyShell>

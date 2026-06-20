@@ -121,7 +121,9 @@ export function RubricManager() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>{editingId ? "Edit rubric" : "New rubric"}</CardTitle>
+          <CardTitle className="font-display">
+            {editingId ? "Edit rubric" : "New rubric"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Field
@@ -233,8 +235,8 @@ export function RubricManager() {
           <Card key={r.id}>
             <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 flex-col gap-1">
-                <p className="font-medium text-foreground">{r.name}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="font-display font-semibold text-foreground">{r.name}</p>
+                <p className="truncate text-sm text-muted-foreground">
                   {r.competencies.map((c) => c.name).join(", ") || "No competencies"}
                 </p>
               </div>

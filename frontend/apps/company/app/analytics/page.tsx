@@ -1,10 +1,6 @@
 "use client";
 
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -17,26 +13,26 @@ import { CompanyShell } from "../../components/company-shell";
 import { FunnelChart } from "../../components/funnel-chart";
 import { useAuth } from "../../lib/auth";
 
+function Kpi({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-6">
+      <p className="text-sm font-medium text-muted-foreground">{label}</p>
+      <p className="mt-2 font-display text-3xl font-semibold tracking-tight tabular-nums text-foreground">
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function FunnelView({ data }: { data: FunnelAnalytics }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Total applications</CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold text-foreground">
-            {Number(data.total)}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Conversion to hire</CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold text-foreground">
-            {Math.round(data.conversionRate * 100)}%
-          </CardContent>
-        </Card>
+        <Kpi label="Total applications" value={String(Number(data.total))} />
+        <Kpi
+          label="Conversion to hire"
+          value={`${Math.round(data.conversionRate * 100)}%`}
+        />
       </div>
 
       <FunnelChart data={data} />

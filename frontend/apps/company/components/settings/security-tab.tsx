@@ -130,7 +130,7 @@ export function SecurityTab({ client }: { client: SettingsClient }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-muted p-3">
             <span className="text-sm text-foreground">Authenticator app (TOTP)</span>
             {enabled ? (
               <Badge tone="success" variant="subtle">

@@ -30,7 +30,7 @@ export function CodeEditor({
   return (
     <div
       className={cn(
-        "rounded-lg border border-border bg-surface-muted",
+        "rounded-lg border border-border bg-surface-muted focus-within:ring-2 focus-within:ring-ring",
         className,
       )}
     >

@@ -97,7 +97,7 @@ export function CredentialsForm({
             {forgotHref && (
               <Link
                 href={forgotHref}
-                className="-mt-2 self-end text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                className="-mt-2 self-end text-sm font-medium text-primary underline-offset-4 hover:underline"
               >
                 Forgot password?
               </Link>

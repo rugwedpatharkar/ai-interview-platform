@@ -12,7 +12,7 @@ export function AssistantChat() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Bot className="size-5 text-brand-500" aria-hidden />
+          <Bot className="size-5 text-primary" aria-hidden />
           Ask the assistant
         </CardTitle>
       </CardHeader>

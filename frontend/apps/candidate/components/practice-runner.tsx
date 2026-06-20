@@ -116,10 +116,10 @@ export function PracticeRunner({
       <div role="log" aria-live="polite" className="flex flex-col gap-6">
         {turns.map((t, i) => (
           <div key={i} className="flex flex-col gap-2">
-            <div className="rounded-lg bg-surface-muted px-4 py-3 text-sm text-foreground">
+            <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm text-foreground">
               {t.question}
             </div>
-            <div className="ml-2 rounded-lg bg-primary px-4 py-3 text-sm text-primary-foreground sm:ml-8">
+            <div className="ml-2 rounded-lg bg-primary px-4 py-3 text-sm text-primary-foreground shadow-sm sm:ml-8">
               {t.answer}
             </div>
           </div>
@@ -127,7 +127,7 @@ export function PracticeRunner({
       </div>
 
       <p
-        className="font-display font-semibold text-foreground"
+        className="font-display text-lg font-semibold tracking-tight text-foreground"
         role="status"
         aria-live="polite"
       >

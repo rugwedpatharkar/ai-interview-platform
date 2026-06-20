@@ -1,6 +1,6 @@
 "use client";
 
-import { EmptyState, Skeleton } from "@ip/ui";
+import { EmptyState, Skeleton, cn } from "@ip/ui";
 import { useQuery } from "@tanstack/react-query";
 import { SearchX } from "lucide-react";
 import { useState } from "react";
@@ -48,9 +48,49 @@ export function Marketplace({
 
         <div className="flex flex-col gap-3">
           {q.data && (
-            <p className="text-sm text-muted-foreground" aria-live="polite">
-              {q.data.total} {q.data.total === 1 ? "role" : "roles"}
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p
+                className="font-display text-sm text-muted-foreground"
+                aria-live="polite"
+              >
+                <span className="font-semibold tabular-nums text-foreground">
+                  {q.data.total}
+                </span>{" "}
+                {q.data.total === 1 ? "role matches" : "roles match"}
+              </p>
+              <span className="flex-1" />
+              <div
+                role="tablist"
+                aria-label="Sort"
+                className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface-muted p-0.5"
+              >
+                {(
+                  [
+                    ["relevance", "Best match"],
+                    ["recent", "Newest"],
+                  ] as const
+                ).map(([value, label]) => {
+                  const active = (params.sort ?? "relevance") === value;
+                  return (
+                    <button
+                      key={value}
+                      role="tab"
+                      type="button"
+                      aria-selected={active}
+                      onClick={() => setParams({ ...params, sort: value })}
+                      className={cn(
+                        "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                        active
+                          ? "bg-surface text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           {showSkeletons && (
@@ -77,8 +117,13 @@ export function Marketplace({
             />
           )}
 
-          {jobs.map((j) => (
-            <JobCard key={j.jobId} job={j} action={<SaveJobButton jobId={j.jobId} />} />
+          {jobs.map((j, i) => (
+            <JobCard
+              key={j.jobId}
+              job={j}
+              bestMatch={i === 0 && (params.sort ?? "relevance") === "relevance"}
+              action={<SaveJobButton jobId={j.jobId} />}
+            />
           ))}
         </div>
       </div>

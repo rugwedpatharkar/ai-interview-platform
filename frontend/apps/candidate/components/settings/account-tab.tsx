@@ -55,7 +55,7 @@ export function AccountTab({ client }: { client: SettingsClient }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-muted p-3">
             <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
               <Mail className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               <span className="truncate">{email ?? "your account email"}</span>
