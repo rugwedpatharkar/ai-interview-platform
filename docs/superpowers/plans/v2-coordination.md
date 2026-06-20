@@ -34,7 +34,7 @@
 | W1 saved jobs | `SavedJobsService` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `api.savedJobs` (save/unsave/listSavedJobs). FE: flip `/saved` off mock |
 | W1 job alerts | `JobAlertsService` | ⬜ | ⬜ | ⬜ | |
 | W1 post-a-job | extend `Job` + `UpdateJob` + `gate_mode` | ⬜ | ⬜ | ⬜ | **next BE pickup** — pre-analyzed in log; wide JobService change, do with fresh context |
-| W2 proctored interview | proctoring auto-gate + rtc (video) | ⬜ | ⬜ | ⬜ | pivot — strict proctored |
+| W2 proctored interview | proctoring auto-gate + rtc (video) | 🟦 | ✅ | ⬜ | **auto-gate ✅ landed** (`ProctorAccepted.terminated`/`reason`); rtc video still on fake seams (Plan H) |
 | W2 candidate report | `Report.GetIntegrityTimeline` | ⬜ | ⬜ | ⬜ | first reader of proctoring_events |
 
 *(Waves 3–5: messaging, notifications, settings/2FA, team, practice, scheduling — rows added as we reach them.)*
@@ -153,3 +153,13 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   FE wiring already in place: `ProctorAck` in `frontend/apps/candidate/app/interview/[applicationId]/types.ts`
   + the `sink` callback in `page.tsx` read `terminated`/`reason` via a defensive cast → engages the moment
   this lands. No FE change needed.
+- 2026-06-20 · BE · ✅ **ProctorAccepted auto-gate LANDED** (gate GREEN; ai-agents +5 tests). A server-
+  classified HIGH-severity proctor event (`second_face`/`second_voice`/`phone_detected`/`screen_share`/
+  `virtual_camera`/`synthetic_audio_suspected`) now auto-terminates the live interview:
+  `record_proctoring_events` → `terminate_for_proctor` (persists `terminated_by_proctor`, emits a distinct
+  `interview.proctor_terminated` event, flips session `status=terminated`), and `RecordProctorEvents`
+  returns `terminated=true` + `reason=<event type>`. MED/LOW recorded only. Severity stays server-
+  authoritative (input DTO has no severity field). `pnpm gen` done → `interview_pb.ts` carries
+  `terminated`/`reason`. **FE:** the HIGH-severity auto-gate is now live; you can drop the defensive
+  `as unknown as ProctorAck` cast (1-line cleanup). **Branch note:** committed on `main` (grpc-migration
+  already merged via PR #1 `cd140f6`); pushing after the full gate is green (user-approved).
