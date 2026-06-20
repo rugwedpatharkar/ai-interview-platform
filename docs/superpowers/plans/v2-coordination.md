@@ -30,10 +30,10 @@
 | W0 candidate dashboard | existing `Application/Recommendation` | ✅ | ⬜ | — | |
 | W1 marketplace search | `DiscoveryService.SearchJobs` + `/public/jobs` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `api.discovery.searchJobs`; public `GET /public/jobs` (snake_case). FE: flip off mock |
 | W1 job detail | extend `GetPublicJobDetail` | ⬜ | ⬜ | ⬜ | |
-| W1 company profile | `CompanyProfileService` | ⬜ | ⬜ | ⬜ | |
-| W1 saved jobs | `SavedJobsService` | ⬜ | ⬜ | ⬜ | |
+| W1 company profile | `CompanyProfileService` | ⬜ | ⬜ | ⬜ | ⚠️ trust `responds_in_days` needs funnel transition timings (Application has none) — see log |
+| W1 saved jobs | `SavedJobsService` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `api.savedJobs` (save/unsave/listSavedJobs). FE: flip `/saved` off mock |
 | W1 job alerts | `JobAlertsService` | ⬜ | ⬜ | ⬜ | |
-| W1 post-a-job | extend `Job` + `UpdateJob` + `gate_mode` | ⬜ | ⬜ | ⬜ | |
+| W1 post-a-job | extend `Job` + `UpdateJob` + `gate_mode` | ⬜ | ⬜ | ⬜ | **next BE pickup** — pre-analyzed in log; wide JobService change, do with fresh context |
 | W2 proctored interview | proctoring auto-gate + rtc (video) | ⬜ | ⬜ | ⬜ | pivot — strict proctored |
 | W2 candidate report | `Report.GetIntegrityTimeline` | ⬜ | ⬜ | ⬜ | first reader of proctoring_events |
 
@@ -72,5 +72,37 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   REST returns **snake_case** JSON `{jobs:[{job_id,title,company_name,company_id,location,remote_mode,
   employment_type,salary_min,salary_max,salary_currency,skills,posted_at,snippet}],facets:{remote_mode,
   employment_type,experience_level},total,page,page_size}` — flip `marketplace-search` off `NEXT_PUBLIC_MOCK`.
-  Reminder: remote/employment/salary/skills are empty until the extend-Job step populates them. Next BE pickup:
-  **CompanyProfileService**. Also bumped venv msgpack→1.2.1 + pydantic-settings→2.14.2 (new CVEs; pip-audit clean).
+  Reminder: remote/employment/salary/skills are empty until the extend-Job step populates them. Also bumped
+  venv msgpack→1.2.1 + pydantic-settings→2.14.2 (new CVEs; pip-audit clean).
+- 2026-06-20 · BE · ⚠️ **CompanyProfile FINDING + reorder.** Its `TrustSignals.responds_in_days` (median
+  applied→first-decision) needs per-application **state-transition timings**, but the `Application` model has
+  only `state` + `created_at` — no transition history. The contract already degrades `responds_in_days=0` →
+  FE hides the chip, so CompanyProfile is still shippable as: `open_jobs` (real published count),
+  `actively_reviewing` (proxy: ≥1 app past `applied`), `responds_in_days=0`. Real responsiveness needs the
+  funnel to record transitions first — ties to the **W1 Analytics no-ghosting KPIs** (recommend doing that,
+  or an Application transition-log, before/with CompanyProfile). **Reordered:** building **SavedJobsService**
+  next (clean, FE already built `/saved`), then CompanyProfile with the proxy trust. (user asleep → noting here.)
+- 2026-06-20 · BE · 🔨 **SavedJobsService**: `admin.saved_jobs.v1` (SaveJob/UnsaveJob/ListSavedJobs), candidate-
+  scoped from the token; `saved_jobs` collection unique `(candidate_user_id, job_id)`; ListSavedJobs reuses the
+  discovery JobCardDTO projection (published-only) + `saved_at`. Save of a non-published/missing job → NotFound.
+- 2026-06-20 · BE · ✅ **SavedJobsService LANDED** (gate GREEN: admin 252). `pnpm gen` exposes
+  `useAuth().api.savedJobs.{saveJob,unsaveJob,listSavedJobs}` — FE: flip `/saved` + `SaveJobButton` off the mock.
+  (Refactor: discovery's `_job_card`/`_iso` → public `job_card`/`iso`, the shared marketplace projection.)
+- 2026-06-20 · BE · ⏸️ **CHECKPOINT — tonight's BE: gRPC migration (G1–G6, pushed `b4e8fa0`) + SearchJobs (✅) +
+  SavedJobs (✅)**, all gate GREEN (admin 252 / ai-agents 258 / lib 92 / mcp 41+42), committed on `grpc-migration`,
+  **NOT pushed** (user asleep; push at a milestone after review). **Next BE pickup = extend-Job** (post-a-job),
+  pre-analyzed below so it's a fast, careful pickup with fresh context (it's a WIDE change to the existing
+  JobService — touches its tests, so do it deliberately):
+  • `model/job.py`: add optional `city/region/country/remote_mode/employment_type/salary_min/salary_max/
+  salary_currency(str)/skills(list)/posted_at(datetime|None)`; `AptitudeConfig` gains `gate_mode="auto"`.
+  • `job.proto`: extend `CreateJobRequest` (fields 3–12 per the contract) + new `UpdateJobRequest` + widen
+  `JobResponse` (fields 5–15). `rpc UpdateJob`. (No new service → no api-client quad; `pnpm gen` widens `job_pb.ts`.)
+  • `resources/job.py`: create/update validate enums (remote_mode∈remote|hybrid|onsite, employment_type∈
+  full_time|contract|internship, gate_mode∈auto|advisory default auto), `salary_min≤salary_max`, lowercase+dedup
+  skills, ""→None, off-enum→INVALID_ARGUMENT; `update_job` manager+comp-scoped (comp_id from token, 404 cross-tenant);
+  `publish_job` stamps `posted_at=now`. • `job.py` servicer: add UpdateJob, thread fields, GetJob echoes them.
+  • `db.py`: indexes `(status,posted_at)`, `(status,remote_mode,employment_type)`, `(status,city)`.
+  • Then update SearchJobs sort to `posted_at` (fallback created_at) + the FE `JobCard` facets go live.
+  • UPDATE the existing `test_resources_job` + `test_job_grpc` for the new fields/UpdateJob. `posted_at` backfill
+  for legacy published jobs = deferred (search already falls back to created_at). After: `bash scripts/check.sh`
+  + `pnpm gen`, mark board. Then CompanyProfile (proxy trust per the finding above) → JobAlerts.
