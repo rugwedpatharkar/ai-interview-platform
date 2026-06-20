@@ -1,39 +1,45 @@
 "use client";
 
+import { Alert, Button, Card, CardContent } from "@ip/ui";
 import {
-  Alert,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Checkbox,
-  Spinner,
-  Textarea,
-} from "@ip/ui";
+  Code,
+  ConnectError,
+  startProctoring,
+  useRequireAuth,
+} from "@ip/shared";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { type KeyboardEvent, useEffect, useRef, useState } from "react";
-
-import { Code, ConnectError, startProctoring, useRequireAuth } from "@ip/shared";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "../../../lib/auth";
+import { DevicePrecheck } from "../../../components/device-precheck";
+import {
+  InterviewCaptions,
+  type CaptionLine,
+} from "../../../components/interview-captions";
+import {
+  ProctorStatusStrip,
+  type ProctorState,
+} from "../../../components/proctor-status-strip";
+import { connectRoom, makeFakeRoom, type InterviewRoom } from "./rtc-room";
+import { startAudioDetector } from "./proctor-audio";
+import { startVisionDetector } from "./proctor-vision";
+import {
+  HIGH_SEVERITY,
+  severityOf,
+  type ProctorAck,
+  type ProctorSignal,
+} from "./types";
 
-interface Turn {
-  question: string;
-  answer: string;
-}
+// Offline/build-against-fake mode: a canvas self-view + fake room + scripted captions, and
+// real fullscreen is skipped so the room runs end-to-end without a camera or RTC server.
+const MOCK = process.env.NEXT_PUBLIC_MOCK === "1";
 
-// FAILED_PRECONDITION means the interview isn't startable in its current funnel state
-// (already completed / not yet reachable) — there's no resume, so retrying can't help.
-// Surface a terminal "ended" state with a way out instead (was HTTP 409 pre-gRPC).
-function isSessionEnded(err: unknown): boolean {
-  return err instanceof ConnectError && err.code === Code.FailedPrecondition;
-}
+const HIGH = new Set<string>(HIGH_SEVERITY);
 
-// A cancelled RPC (component unmount aborts the controller) surfaces as ConnectError
-// Canceled — not a real failure, so swallow it like the old fetch AbortError.
+// A cancelled RPC (component unmount aborts the controller) surfaces as ConnectError Canceled
+// — not a real failure, so it's swallowed like a fetch AbortError.
 function isAborted(err: unknown): boolean {
   return (
     (err instanceof ConnectError && err.code === Code.Canceled) ||
@@ -41,175 +47,164 @@ function isAborted(err: unknown): boolean {
   );
 }
 
+// FAILED_PRECONDITION means the interview isn't startable in its funnel state (already
+// completed / not yet reachable) — there's no resume, so retrying can't help.
+function isSessionEnded(err: unknown): boolean {
+  return err instanceof ConnectError && err.code === Code.FailedPrecondition;
+}
+
 export default function InterviewPage() {
   const { token, ready, api } = useAuth();
   useRequireAuth(token, ready);
   const { applicationId } = useParams<{ applicationId: string }>();
-  const consentKey = `interview-consent:${applicationId}`;
-  const proctorKey = `interview-proctor-consent:${applicationId}`;
-  const [phase, setPhase] = useState<"intro" | "active" | "done">("intro");
-  const [turns, setTurns] = useState<Turn[]>([]);
-  const [current, setCurrent] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [consented, setConsented] = useState(false);
-  const [proctorConsented, setProctorConsented] = useState(false);
-  // The interview can't be resumed, so a transient failure must stay visible with an
-  // explicit retry (a toast would vanish and dead-end the candidate). The answer is kept
-  // in the textarea on failure, so retrying re-submits it.
-  const [error, setError] = useState<string | null>(null);
-  // A session-ended error (409/410) is terminal — no retry, just an exit.
-  const [ended, setEnded] = useState(false);
-  // Synchronous in-flight latch: survives a StrictMode double-invoke and a same-tick
-  // double Enter that the `busy` state flag (read from a stale closure) cannot.
-  const inFlight = useRef(false);
-  // Aborted on unmount so a stalled start/turn call can't pin `busy` indefinitely.
-  const abortCtrl = useRef<AbortController | null>(null);
 
+  const [phase, setPhase] = useState<"precheck" | "live" | "ended">("precheck");
+  const [endReason, setEndReason] = useState<string | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pstate, setPstate] = useState<ProctorState>({
+    oneFace: true,
+    eyesOnScreen: true,
+    fullscreen: true,
+  });
+  const [captions, setCaptions] = useState<CaptionLine[]>([]);
+
+  const room = useRef<InterviewRoom | null>(null);
+  const detach = useRef<Array<() => void>>([]);
+  // Synchronous latch so a StrictMode double-invoke / double Start can't double-connect.
+  const starting = useRef(false);
+
+  // End the session: detach every detector, disconnect the room, leave fullscreen, show the
+  // terminal state. Stable identity so detectors started inside onReady can call it.
+  const endSession = useCallback((reason: string) => {
+    setEndReason(reason);
+    if (reason !== "ended_by_candidate") {
+      setPstate((s) => ({ ...s, terminated: { reason } }));
+    }
+    detach.current.forEach((d) => d());
+    detach.current = [];
+    void room.current?.disconnect();
+    room.current = null;
+    if (typeof document !== "undefined" && document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => {});
+    }
+    setPhase("ended");
+  }, []);
+
+  // Proctor sink: every detector emits here. Maps typed signals to the gRPC ProctorEvent shape
+  // and records them. The server stamps severity and (per the auto-gate delta) may terminate;
+  // the client reflects that via the ack. HIGH_SEVERITY drives optimistic UI ONLY — the server
+  // stays authoritative for the actual terminate.
+  const sink = useCallback(
+    async (events: ProctorSignal[], keepalive?: boolean) => {
+      const high = events.find((e) => HIGH.has(e.type));
+      if (high) {
+        setPstate((s) => ({
+          ...s,
+          recentFlag: { type: high.type, severity: severityOf(high.type) },
+        }));
+      }
+      try {
+        const res = await api.interview.recordProctorEvents({
+          applicationId,
+          events: events.map((e) => ({
+            type: e.type,
+            at: e.at,
+            metaJson: e.meta ? JSON.stringify(e.meta) : "",
+          })),
+        });
+        // The auto-gate `terminated`/`reason` fields are not in the generated ProctorAccepted
+        // yet (it carries `accepted`). Read them defensively so the room honours the server's
+        // terminate the moment the backend delta lands — no client change required then.
+        const ack = res as unknown as ProctorAck;
+        if (!keepalive && ack?.terminated) {
+          endSession(ack.reason ?? "integrity");
+        }
+      } catch (err) {
+        // Drop a permanently-rejected batch (bad payload) so the runtime doesn't re-queue it
+        // forever; rethrow transient failures so it retries (parity with the proctor runtime's
+        // 4xx-drop / 5xx-retry split).
+        if (err instanceof ConnectError && err.code === Code.InvalidArgument) return;
+        throw err;
+      }
+    },
+    [api, applicationId, endSession],
+  );
+
+  async function onReady(media: MediaStream) {
+    if (starting.current) return;
+    starting.current = true;
+    setError(null);
+    try {
+      if (!MOCK) {
+        await document.documentElement.requestFullscreen().catch(() => {});
+      }
+      const tok = await api.interview.rtcToken({ applicationId });
+      const r = MOCK ? makeFakeRoom(media) : await connectRoom(tok, media);
+      room.current = r;
+      r.onCaption((text, final) =>
+        setCaptions((c) => [...c, { text, final }]),
+      );
+
+      // Device/behavior runtime (shipped) + on-device vision + audio (this round) → one sink.
+      detach.current.push(startProctoring({ send: sink }));
+      const emitSignal = (
+        t: ProctorSignal["type"],
+        m?: Record<string, unknown>,
+      ): void => void sink([{ type: t, at: new Date().toISOString(), meta: m }], false);
+      const videoTrack = media.getVideoTracks()[0];
+      const audioTrack = media.getAudioTracks()[0];
+      if (videoTrack) {
+        detach.current.push(await startVisionDetector(videoTrack, emitSignal));
+      }
+      if (audioTrack) {
+        detach.current.push(await startAudioDetector(audioTrack, emitSignal));
+      }
+      setPhase("live");
+    } catch (err) {
+      starting.current = false;
+      if (isAborted(err)) return;
+      // 503 "voice not configured" surfaces as Unavailable from the rtc-token RPC — offer a
+      // non-dead-end fallback rather than stranding the candidate in a half-started room.
+      if (err instanceof ConnectError && err.code === Code.Unavailable) {
+        setUnavailable(true);
+        void room.current?.disconnect();
+        room.current = null;
+        if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+        return;
+      }
+      if (isSessionEnded(err)) {
+        endSession("session_ended");
+        return;
+      }
+      setError(err instanceof Error ? err.message : "Could not start the interview.");
+      void room.current?.disconnect();
+      room.current = null;
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    }
+  }
+
+  // Tear everything down on unmount so a stalled detector/room never leaks past the page.
   useEffect(() => {
     return () => {
-      abortCtrl.current?.abort();
+      detach.current.forEach((d) => d());
+      void room.current?.disconnect();
     };
   }, []);
 
-  // Restore consent from a prior visit — an accidental refresh on the intro shouldn't
-  // force the candidate to re-tick the boxes.
-  useEffect(() => {
-    setConsented(localStorage.getItem(consentKey) === "true");
-    setProctorConsented(localStorage.getItem(proctorKey) === "true");
-  }, [consentKey, proctorKey]);
-
-  function toggleConsent(v: boolean) {
-    setConsented(v);
-    localStorage.setItem(consentKey, String(v));
-  }
-  function toggleProctorConsent(v: boolean) {
-    setProctorConsented(v);
-    localStorage.setItem(proctorKey, String(v));
-  }
-
-  // No resume endpoint — warn before navigating away mid-interview.
-  useEffect(() => {
-    if (phase !== "active") return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [phase]);
-
-  // On-device proctoring (advisory, signals-only) runs only during the active interview
-  // and only after proctoring consent. Nothing but typed events ever leaves the device.
-  useEffect(() => {
-    if (phase !== "active" || !proctorConsented) return;
-    // Advisory signals over gRPC. There's no keepalive/beacon equivalent, so the final
-    // unload flush is best-effort and may drop the very last batch — acceptable for an
-    // advisory signal sink (the backend records flags for human review, never blocks).
-    return startProctoring({
-      send: (events) =>
-        api.interview
-          .recordProctorEvents({
-            applicationId,
-            events: events.map((e) => ({
-              type: e.type,
-              at: e.at,
-              metaJson: e.meta ? JSON.stringify(e.meta) : "",
-            })),
-          })
-          .then(() => {})
-          .catch((err) => {
-            // Drop a permanently-rejected batch (bad payload) so the runtime doesn't
-            // re-queue it forever; rethrow transient failures so it retries (parity with
-            // the old client's 4xx-drop / 5xx-retry split).
-            if (err instanceof ConnectError && err.code === Code.InvalidArgument) return;
-            throw err;
-          }),
-    });
-  }, [phase, proctorConsented, applicationId, api]);
-
   if (!token) return null;
 
-  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPod|iPad/.test(navigator.platform);
-
-  async function start() {
-    if (inFlight.current) return;
-    inFlight.current = true;
-    setBusy(true);
-    setError(null);
-    abortCtrl.current?.abort();
-    const ctrl = new AbortController();
-    abortCtrl.current = ctrl;
-    try {
-      const res = await api.interview.startInterview(
-        { applicationId },
-        { signal: ctrl.signal },
-      );
-      if (!res.question) {
-        throw new Error("The interview couldn't be prepared. Please try again.");
-      }
-      setCurrent(res.question);
-      setPhase("active");
-    } catch (err) {
-      if (isAborted(err)) return;
-      if (isSessionEnded(err)) setEnded(true);
-      else setError(err instanceof Error ? err.message : "Could not start the interview");
-    } finally {
-      inFlight.current = false;
-      setBusy(false);
-    }
-  }
-
-  async function send() {
-    const text = answer.trim();
-    if (!text || inFlight.current) return;
-    inFlight.current = true;
-    setBusy(true);
-    setError(null);
-    abortCtrl.current?.abort();
-    const ctrl = new AbortController();
-    abortCtrl.current = ctrl;
-    try {
-      const res = await api.interview.submitTurn(
-        { applicationId, answer: text },
-        { signal: ctrl.signal },
-      );
-      setTurns((t) => [...t, { question: current, answer: text }]);
-      setAnswer("");
-      if (res.done) {
-        setPhase("done");
-        setCurrent("");
-      } else {
-        setCurrent(res.question);
-      }
-    } catch (err) {
-      if (isAborted(err)) return;
-      if (isSessionEnded(err)) setEnded(true);
-      else setError(err instanceof Error ? err.message : "Could not submit your answer");
-    } finally {
-      inFlight.current = false;
-      setBusy(false);
-    }
-  }
-
-  function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      void send();
-    }
-  }
-
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
+    <main className="mx-auto flex max-w-3xl flex-col gap-4 p-4">
       <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
         Interview
       </h1>
 
-      {ended && (
-        <Alert tone="warning" title="This interview session has ended">
+      {unavailable && (
+        <Alert tone="warning" title="Live interview not available right now">
           <span className="flex flex-col items-start gap-3">
-            It may already be complete or have expired, and it can't be resumed. Check your
-            tracker for the outcome.
+            The proctored interview can&apos;t be started at the moment. Please try again
+            shortly, or check your tracker for an update.
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground underline-offset-4 hover:underline"
@@ -221,132 +216,69 @@ export default function InterviewPage() {
         </Alert>
       )}
 
-      {error && !ended && (
+      {error && !unavailable && (
         <Alert tone="danger">
           <span className="flex flex-col items-start gap-3">
             {error}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={phase === "intro" ? start : send}
-              disabled={busy}
-            >
-              Retry
+            <Button variant="outline" size="sm" onClick={() => setError(null)}>
+              Dismiss
             </Button>
           </span>
         </Alert>
       )}
 
-      {!ended && phase === "intro" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Before you begin</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <Alert tone="warning">
-              This is a live text interview. It can't be paused or restarted — please
-              answer each question in one sitting and don't refresh the page.
-            </Alert>
-            <label className="flex items-start gap-2.5 text-sm text-muted-foreground">
-              <Checkbox
-                className="mt-0.5"
-                checked={consented}
-                onCheckedChange={(v) => toggleConsent(v === true)}
-              />
-              <span>
-                I understand this is a live, one-sitting interview and I'm ready to begin.
-              </span>
-            </label>
-            <label className="flex items-start gap-2.5 text-sm text-muted-foreground">
-              <Checkbox
-                className="mt-0.5"
-                checked={proctorConsented}
-                onCheckedChange={(v) => toggleProctorConsent(v === true)}
-              />
-              <span>
-                I consent to on-device integrity monitoring during this interview —
-                activity and device signals are checked locally to support a fair
-                process. No audio or video is recorded or stored.
-              </span>
-            </label>
-            <Button
-              onClick={start}
-              disabled={busy || !consented || !proctorConsented}
-              loading={busy}
-              className="self-start"
-            >
-              {busy ? "Starting…" : "Start interview"}
-            </Button>
-          </CardContent>
-        </Card>
+      {phase === "precheck" && !unavailable && (
+        <DevicePrecheck onReady={onReady} mock={MOCK} />
       )}
 
-      {!ended && phase !== "intro" && (
-        <div role="log" aria-live="polite" className="flex flex-col gap-6">
-          {turns.map((t, i) => (
-            <div key={i} className="flex flex-col gap-2">
-              <div className="rounded-lg bg-surface-muted px-4 py-3 text-sm text-foreground">
-                {t.question}
-              </div>
-              <div className="ml-2 rounded-lg bg-primary px-4 py-3 text-sm text-primary-foreground sm:ml-8">
-                {t.answer}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {phase !== "precheck" && (
+        <>
+          <ProctorStatusStrip state={pstate} />
 
-      {!ended && phase === "active" && (
-        <Card className="border-l-4 border-l-brand-500">
-          <CardContent className="flex flex-col gap-3 p-4">
-            <p
-              className="font-display font-semibold text-foreground"
-              role="status"
-              aria-live="polite"
-            >
-              {current}
-            </p>
-            <Textarea
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder={`Type your answer… (${isMac ? "⌘" : "Ctrl"}+Enter to send)`}
-              disabled={busy}
-              rows={4}
-            />
-            <Button
-              onClick={send}
-              disabled={busy || !answer.trim()}
-              className="self-end"
-            >
-              {busy ? (
-                <span className="flex items-center gap-2">
-                  <Spinner /> Sending…
-                </span>
-              ) : (
-                "Send"
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          {phase === "live" && (
+            <Card>
+              <CardContent className="p-0">
+                {/* Interviewer video + self-view tile render here; the room exposes the local
+                    stream + captions. Controls are captions · end only — NO mute / NO
+                    camera-off control exists in this tree. */}
+                <InterviewCaptions lines={captions} />
+                <div className="flex flex-col items-stretch justify-between gap-2 border-t border-border p-3 sm:flex-row sm:items-center">
+                  <Alert tone="info" className="m-0">
+                    This interview is proctored and recorded.
+                  </Alert>
+                  <Button
+                    variant="outline"
+                    onClick={() => endSession("ended_by_candidate")}
+                    className="shrink-0"
+                  >
+                    End interview
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-      {!ended && phase === "done" && (
-        <Card>
-          <CardContent className="flex flex-col gap-3 p-6">
-            <Alert tone="success">
-              Interview complete — thank you. Your responses are being scored; check your
-              tracker for the outcome.
-            </Alert>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline"
-            >
-              <ArrowLeft className="size-4" aria-hidden />
-              Back to applications
-            </Link>
-          </CardContent>
-        </Card>
+          {phase === "ended" && (
+            <Card>
+              <CardContent className="flex flex-col gap-3 p-6">
+                <Alert
+                  tone={endReason === "ended_by_candidate" ? "success" : "danger"}
+                >
+                  {endReason === "ended_by_candidate"
+                    ? "Interview ended — your responses are being scored; check your tracker for the outcome."
+                    : "This interview was ended automatically due to a serious integrity signal. The recruiter has been notified; check your tracker for the outcome."}
+                </Alert>
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  <ArrowLeft className="size-4" aria-hidden />
+                  Back to applications
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </main>
   );
