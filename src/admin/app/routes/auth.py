@@ -72,6 +72,11 @@ def _client_ip(context, trusted_proxy=False):
     return context.peer()
 
 
+def _user_agent(context):
+    """The caller's User-Agent (for the sessions list); "" when absent."""
+    return dict(context.invocation_metadata()).get("user-agent", "")
+
+
 async def caller_identity(context, tokens):
     """Shared route helper: resolve the caller's identity from access-token metadata.
 
@@ -185,6 +190,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                     request.email,
                     request.password,
                     ip=_client_ip(context, self._trusted_proxy),
+                    user_agent=_user_agent(context),
                     users=self._users,
                     tokens=self._tokens,
                     sessions=self._sessions,
@@ -221,6 +227,8 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                     tokens=self._tokens,
                     sessions=self._sessions,
                     refresh_ttl_seconds=self._refresh_ttl,
+                    ip=_client_ip(context, self._trusted_proxy),
+                    user_agent=_user_agent(context),
                 )
                 return auth_pb2.TokenResponse(
                     access_token=out["access_token"],

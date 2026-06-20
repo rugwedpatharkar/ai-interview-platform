@@ -135,6 +135,7 @@ async def login(
     password,
     *,
     ip,
+    user_agent="",
     users,
     tokens,
     sessions,
@@ -172,9 +173,12 @@ async def login(
         role=str(user["role"]),
         comp_id=user.get("comp_id"),
         jti=uuid4().hex,
+        sid=refresh_jti,
     )
     refresh = tokens.refresh_token(sub=user_id, jti=refresh_jti)
-    await sessions.allow(user_id, refresh_jti, refresh_ttl_seconds)
+    await sessions.allow(
+        user_id, refresh_jti, refresh_ttl_seconds, ip=ip, user_agent=user_agent
+    )
     if audit is not None:
         await audit.insert(AuditLog(entity="user", entity_id=user_id, action="login"))
     log.info("login ok: user_id={}", user_id)
@@ -191,10 +195,22 @@ def identity_from_token(token, *, tokens):
         "id": claims["sub"],
         "role": str(claims["role"]),
         "comp_id": claims.get("comp_id"),
+        "sid": claims.get(
+            "sid"
+        ),  # the caller's refresh-session jti (None on old tokens)
     }
 
 
-async def refresh(refresh_token, *, users, tokens, sessions, refresh_ttl_seconds):
+async def refresh(
+    refresh_token,
+    *,
+    users,
+    tokens,
+    sessions,
+    refresh_ttl_seconds,
+    ip="",
+    user_agent="",
+):
     try:
         claims = tokens.decode(refresh_token, expected_type="refresh")
     except JWTError as exc:
@@ -211,10 +227,16 @@ async def refresh(refresh_token, *, users, tokens, sessions, refresh_ttl_seconds
         raise NotFoundError("User not found")
     new_jti = uuid4().hex
     access = tokens.access_token(
-        sub=sub, role=str(user["role"]), comp_id=user.get("comp_id"), jti=uuid4().hex
+        sub=sub,
+        role=str(user["role"]),
+        comp_id=user.get("comp_id"),
+        jti=uuid4().hex,
+        sid=new_jti,
     )
     new_refresh = tokens.refresh_token(sub=sub, jti=new_jti)
-    await sessions.allow(sub, new_jti, refresh_ttl_seconds)
+    await sessions.allow(
+        sub, new_jti, refresh_ttl_seconds, ip=ip, user_agent=user_agent
+    )
     await sessions.revoke(jti)
     log.info("token refreshed: user_id={}", sub)
     return {
@@ -429,6 +451,7 @@ async def oauth_login(
         role=str(user["role"]),
         comp_id=user.get("comp_id"),
         jti=uuid4().hex,
+        sid=refresh_jti,
     )
     refresh = tokens.refresh_token(sub=user_id, jti=refresh_jti)
     await sessions.allow(user_id, refresh_jti, refresh_ttl_seconds)
