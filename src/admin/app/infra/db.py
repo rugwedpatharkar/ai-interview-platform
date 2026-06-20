@@ -57,6 +57,10 @@ INDEXES: list[IndexSpec] = [
     # Full-text marketplace search (SearchJobs + /public/jobs). One text index per
     # collection; covers title + jd + skills (skills lands with extend-Job).
     IndexSpec("jobs", [("title", "text"), ("jd_text", "text"), ("skills", "text")]),
+    # Marketplace sort/filter over published jobs (SearchJobs facets + recency sort).
+    IndexSpec("jobs", [("status", 1), ("posted_at", -1)]),
+    IndexSpec("jobs", [("status", 1), ("remote_mode", 1), ("employment_type", 1)]),
+    IndexSpec("jobs", [("status", 1), ("city", 1)]),
     # saved_jobs: candidate bookmarks; unique (candidate, job) makes Save idempotent.
     IndexSpec(
         "saved_jobs", [("candidate_user_id", 1), ("job_id", 1)], {"unique": True}
