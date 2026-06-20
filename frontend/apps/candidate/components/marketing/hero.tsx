@@ -22,14 +22,23 @@ export function Hero() {
   }
 
   return (
-    <section className="relative isolate overflow-hidden bg-[linear-gradient(135deg,#7c3aed,#4f46e5)] text-white">
+    <section className="relative isolate overflow-hidden bg-[linear-gradient(160deg,var(--brand-950),var(--brand-900))] text-white">
+      {/* Soft cyan radial glow on the right — Midnight ambience. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-20 -top-40 size-[34rem] rounded-full opacity-50 blur-[80px] [background:radial-gradient(circle_at_center,var(--primary),transparent_62%)]"
+      />
       {/* Faint aperture motif — focus/clarity, never a watching eye. */}
       <div
         aria-hidden
         className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full border border-white/10"
       />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-12 -top-12 size-72 rounded-full border border-white/5"
+      />
       <div className="mx-auto max-w-4xl px-6 py-20 text-center sm:py-28">
-        <span className="text-sm font-medium uppercase tracking-wide text-white/80">{HERO.eyebrow}</span>
+        <span className="text-sm font-medium uppercase tracking-wide text-primary">{HERO.eyebrow}</span>
         <h1 className="mt-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">{HERO.h1}</h1>
         <p className="mx-auto mt-4 max-w-xl text-balance text-base text-white/90 sm:text-lg">{HERO.subhead}</p>
 
@@ -44,23 +53,23 @@ export function Hero() {
               placeholder="Title or skill"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              className="bg-white text-foreground"
+              className="bg-surface text-foreground"
             />
             <Input
               aria-label="Location"
               placeholder="Location"
               value={loc}
               onChange={(e) => setLoc(e.target.value)}
-              className="bg-white text-foreground sm:max-w-[40%]"
+              className="bg-surface text-foreground sm:max-w-[40%]"
             />
-            <Button type="submit" size="lg" className="bg-white text-brand-700 hover:bg-white/90">
+            <Button type="submit" size="lg" className="bg-primary text-primary-foreground hover:bg-primary-hover">
               <Search className="size-4" aria-hidden /> Search
             </Button>
           </form>
         ) : (
           <a
             href={COMPANY_HIRE_HREF}
-            className="mx-auto mt-6 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-3 font-medium text-brand-700 transition-colors hover:bg-white/90"
+            className="mx-auto mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             Post a job <ArrowRight className="size-4" aria-hidden />
           </a>

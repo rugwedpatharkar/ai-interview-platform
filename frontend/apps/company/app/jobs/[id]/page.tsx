@@ -90,14 +90,32 @@ export default function JobDetailPage() {
       )}
       {job.data && (
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-                {job.data.title}
-              </h1>
-              <Badge tone={jobStatus(job.data.status).tone}>
-                {jobStatus(job.data.status).label}
-              </Badge>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+                  {job.data.title}
+                </h1>
+                <Badge tone={jobStatus(job.data.status).tone}>
+                  {jobStatus(job.data.status).label}
+                </Badge>
+                {gateMode === "advisory" && <Badge tone="info">Advisory gate</Badge>}
+              </div>
+              {(() => {
+                const place = [job.data.city, job.data.region, job.data.country]
+                  .filter(Boolean)
+                  .join(", ");
+                const meta = [
+                  job.data.remoteMode,
+                  job.data.employmentType,
+                  place,
+                ].filter(Boolean);
+                return meta.length > 0 ? (
+                  <p className="text-sm capitalize text-muted-foreground">
+                    {meta.join(" · ")}
+                  </p>
+                ) : null;
+              })()}
             </div>
             {job.data.status === "draft" && (
               <ConfirmDialog

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Avatar,
   Badge,
   Button,
   Card,
@@ -29,7 +30,27 @@ import { useAuth } from "../lib/auth";
 import { selectableIds, toggle, toggleAll } from "../lib/selection";
 import { BatchDecisionBar } from "./batch-decision-bar";
 import { DecisionControl } from "./decision-control";
+import { KpiCard } from "./kpi-card";
 import { StatusPill } from "./status-pill";
+
+// Funnel-stage filter chips — pure presentational grouping over the existing state field
+// (no new query). "all" passes everything through.
+const STAGES = {
+  all: () => true,
+  interviewed: (s: string) =>
+    ["interviewed", "scored", "shortlisted", "assessment_review"].includes(s),
+  passed: (s: string) => ["shortlisted", "hired"].includes(s),
+  shortlisted: (s: string) => s === "shortlisted",
+} satisfies Record<string, (state: string) => boolean>;
+
+type Stage = keyof typeof STAGES;
+
+const STAGE_LABELS: Record<Stage, string> = {
+  all: "All",
+  interviewed: "Interviewed",
+  passed: "Passed gate",
+  shortlisted: "Shortlisted",
+};
 
 // States where a recruiter can open the report + record/adjust a decision. Shortlisted
 // is included so a shortlisted candidate can still be moved to hired/rejected.
@@ -43,10 +64,14 @@ const POLL_MS = 10_000;
 // completes) can't poll forever. ~20 min of 10s ticks, then the recruiter refreshes.
 const MAX_POLLS = 120;
 
+// A short, stable handle for an opaque candidate id (no PII in the list payload).
+const candidateHandle = (id: string) => id.slice(0, 8).toUpperCase();
+
 export function ApplicantsTable({ jobId }: { jobId: string }) {
   const { api, token } = useAuth();
   const queryClient = useQueryClient();
   const [sel, setSel] = useState<Set<string>>(new Set());
+  const [stage, setStage] = useState<Stage>("all");
 
   const applicants = useAuthedQuery(token, {
     queryKey: ["applicants", jobId],
@@ -102,6 +127,18 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
 
   const selectable = selectableIds(list);
   const allSelected = selectable.length > 0 && selectable.every((id) => sel.has(id));
+
+  // Stage filter is presentation-only: it narrows the rendered rows but never the
+  // selection set (select-all + pruning still reason over the full list).
+  const visible = list.filter((a) => STAGES[stage](a.state));
+
+  const stageCount = (key: Stage) => list.filter((a) => STAGES[key](a.state)).length;
+  const kpis = [
+    { label: "Applicants", value: String(list.length) },
+    { label: "Interviewed", value: String(stageCount("interviewed")) },
+    { label: "Passed gate", value: String(stageCount("passed")) },
+    { label: "Shortlisted", value: String(stageCount("shortlisted")) },
+  ];
 
   // Shared action cluster so the table and the stacked-card layouts stay in lockstep.
   const actions = (a: ApplicationResponse) => {
@@ -162,8 +199,52 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
     return <span className="text-sm text-muted-foreground">—</span>;
   };
 
+  const candidateCell = (a: ApplicationResponse) => (
+    <div className="flex min-w-0 items-center gap-3">
+      <Avatar name={candidateHandle(a.candidateUserId)} size="sm" />
+      <div className="min-w-0">
+        <div
+          className="truncate font-mono text-xs font-medium text-foreground"
+          aria-label={`Candidate ${a.candidateUserId}`}
+        >
+          {candidateHandle(a.candidateUserId)}
+        </div>
+        <div className="truncate text-xs text-muted-foreground">Applicant</div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
+      {/* KPI strip — render-only funnel counts derived from the fetched list. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {kpis.map((k) => (
+          <KpiCard key={k.label} label={k.label} value={k.value} />
+        ))}
+      </div>
+
+      {/* Funnel-stage filter chips. */}
+      <div className="flex flex-wrap gap-2">
+        {(Object.keys(STAGES) as Stage[]).map((key) => {
+          const active = stage === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setStage(key)}
+              className={
+                active
+                  ? "rounded-full border border-primary bg-primary/10 px-3 py-1 text-sm font-medium text-foreground"
+                  : "rounded-full border border-border bg-surface px-3 py-1 text-sm text-muted-foreground transition-colors hover:bg-surface-muted"
+              }
+            >
+              {STAGE_LABELS[key]} · {stageCount(key)}
+            </button>
+          );
+        })}
+      </div>
+
       {sel.size > 0 && (
         <BatchDecisionBar
           jobId={jobId}
@@ -172,9 +253,15 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
         />
       )}
 
+      {visible.length === 0 && (
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          No candidates in this stage.
+        </p>
+      )}
+
       {/* Stacked cards on narrow viewports — the table overflows at ~375px. */}
       <div className="flex flex-col gap-3 sm:hidden">
-        {list.map((a) => {
+        {visible.map((a) => {
           const canSelect = selectable.includes(a.applicationId);
           return (
             <Card key={a.applicationId}>
@@ -190,12 +277,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
                         aria-label={`Select candidate ${a.candidateUserId}`}
                       />
                     )}
-                    <span
-                      className="truncate font-mono text-xs text-muted-foreground"
-                      aria-label={`Candidate ${a.candidateUserId}`}
-                    >
-                      {a.candidateUserId.slice(0, 10)}…
-                    </span>
+                    {candidateCell(a)}
                   </div>
                   <StatusPill state={a.state} />
                 </div>
@@ -219,15 +301,18 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
                 />
               </TableHead>
               <TableHead>Candidate</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Stage</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {list.map((a) => {
+            {visible.map((a) => {
               const canSelect = selectable.includes(a.applicationId);
               return (
-                <TableRow key={a.applicationId}>
+                <TableRow
+                  key={a.applicationId}
+                  data-state={sel.has(a.applicationId) ? "selected" : undefined}
+                >
                   <TableCell>
                     {canSelect && (
                       <Checkbox
@@ -239,15 +324,9 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
                       />
                     )}
                   </TableCell>
-                  <TableCell
-                    scope="row"
-                    className="font-mono text-xs"
-                    aria-label={`Candidate ${a.candidateUserId}`}
-                  >
-                    {a.candidateUserId.slice(0, 10)}…
-                  </TableCell>
+                  <TableCell scope="row">{candidateCell(a)}</TableCell>
                   <TableCell>
-                    <StatusPill state={a.state} />
+                    <StatusPill state={a.state} dot />
                   </TableCell>
                   <TableCell>
                     {/* Fixed min-height keeps rows level whether the cell holds a button

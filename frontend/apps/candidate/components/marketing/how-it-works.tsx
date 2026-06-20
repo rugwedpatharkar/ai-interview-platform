@@ -17,7 +17,7 @@ export function HowItWorks() {
               <li key={s.title}>
                 <div className="flex items-center gap-3">
                   <span className="font-display text-base font-semibold text-brand-600">{i + 1}</span>
-                  <span className="inline-flex size-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,#7c3aed,#4f46e5)] text-white">
+                  <span className="inline-flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
                     <Icon className="size-4" aria-hidden />
                   </span>
                 </div>

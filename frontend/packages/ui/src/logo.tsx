@@ -4,7 +4,7 @@ const markSizes = { sm: "size-6", md: "size-7", lg: "size-9" } as const;
 const textSizes = { sm: "text-sm", md: "text-base", lg: "text-lg" } as const;
 
 /**
- * Brand mark — a rounded violet tile with a stylised spark glyph. Standalone,
+ * Brand mark — a rounded Midnight tile with a stylised spark glyph. Standalone,
  * or paired with the wordmark via <Logo>. Pure inline SVG (CSP-safe).
  */
 export function LogoMark({
@@ -17,7 +17,7 @@ export function LogoMark({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-sm",
+        "inline-flex shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm",
         markSizes[size],
         className,
       )}
@@ -43,7 +43,7 @@ export function LogoMark({
  * each app can brand itself. Set `markOnly` to hide the text.
  */
 export function Logo({
-  label = "Interview Platform",
+  label = "Aptura",
   size = "md",
   markOnly = false,
   className,

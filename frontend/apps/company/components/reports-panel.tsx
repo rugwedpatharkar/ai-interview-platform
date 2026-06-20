@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Avatar,
   Badge,
   type BadgeTone,
   Button,
@@ -83,10 +84,20 @@ export function ReportsPanel({ jobId }: { jobId: string }) {
         <TableBody>
           {list.map((r) => (
             <TableRow key={r.applicationId}>
-              <TableCell className="font-mono text-xs" title={r.candidateUserId}>
-                {r.candidateUserId.slice(0, 10)}…
+              <TableCell title={r.candidateUserId}>
+                <span className="flex items-center gap-2">
+                  <Avatar
+                    name={r.candidateUserId.slice(0, 8).toUpperCase()}
+                    size="sm"
+                  />
+                  <span className="font-mono text-xs">
+                    {r.candidateUserId.slice(0, 8).toUpperCase()}
+                  </span>
+                </span>
               </TableCell>
-              <TableCell>{Math.round(r.overallScore * 100)}%</TableCell>
+              <TableCell className="font-mono tabular-nums">
+                {Math.round(r.overallScore * 100)}%
+              </TableCell>
               <TableCell>
                 <Badge tone={REC_TONE[r.recommendation] ?? "neutral"}>
                   {r.recommendation}

@@ -4,7 +4,7 @@ import { COMPANY_HIRE_HREF } from "../../app/(marketing)/content";
 
 export function FinalCta() {
   return (
-    <section className="bg-[linear-gradient(135deg,#7c3aed,#4f46e5)] text-white">
+    <section className="bg-[linear-gradient(160deg,var(--brand-950),var(--brand-900))] text-white">
       <div className="mx-auto max-w-3xl px-6 py-20 text-center">
         <h2 className="font-display text-3xl font-bold tracking-tight">Ready when you are.</h2>
         <p className="mx-auto mt-3 max-w-xl text-white/90">
@@ -13,7 +13,7 @@ export function FinalCta() {
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/jobs"
-            className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-3 font-medium text-brand-700 transition-colors hover:bg-white/90"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             Find your next job <ArrowRight className="size-4" aria-hidden />
           </Link>

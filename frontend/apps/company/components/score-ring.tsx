@@ -70,8 +70,18 @@ export function ScoreRing({
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="font-display text-xl font-semibold text-foreground">{pct}%</span>
-        {label && <span className="text-xs text-muted-foreground">{label}</span>}
+        <span
+          className="font-display font-semibold tabular-nums text-foreground"
+          style={{ fontSize: Math.max(16, Math.round(size * 0.28)) }}
+        >
+          {pct}
+          <span className="text-[0.6em] text-muted-foreground">%</span>
+        </span>
+        {label && (
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+            {label}
+          </span>
+        )}
       </div>
     </div>
   );

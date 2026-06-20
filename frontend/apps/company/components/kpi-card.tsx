@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 
-import { Card, CardContent, cn } from "@ip/ui";
+import { cn } from "@ip/ui";
 
 export interface KpiCardProps {
   label: string;
@@ -14,12 +14,13 @@ export interface KpiCardProps {
 // Tones reuse the @ip/ui status-foreground families (see badge.tsx); "default" is the
 // plain foreground. Kept app-local rather than in @ip/ui to avoid cross-agent contention.
 const TONE: Record<NonNullable<KpiCardProps["tone"]>, string> = {
-  default: "text-foreground",
+  default: "text-muted-foreground",
   positive: "text-success-foreground",
   warning: "text-warning-foreground",
   danger: "text-danger-foreground",
 };
 
+// Midnight `.kpi` tile: icon-prefixed label, big serif tabular value, muted delta line.
 export function KpiCard({
   label,
   value,
@@ -29,17 +30,22 @@ export function KpiCard({
   className,
 }: KpiCardProps) {
   return (
-    <Card className={className}>
-      <CardContent className="flex flex-col gap-1 p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{label}</span>
-          {Icon ? <Icon className="size-4 text-muted-foreground" /> : null}
-        </div>
-        <span className={cn("text-3xl font-semibold tabular-nums", TONE[tone])}>
-          {value}
-        </span>
-        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
-      </CardContent>
-    </Card>
+    <div
+      className={cn(
+        "rounded-xl border border-border bg-surface p-6",
+        className,
+      )}
+    >
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        {Icon ? <Icon className="size-4" /> : null}
+        <span>{label}</span>
+      </div>
+      <div className="mt-2 font-display text-3xl font-semibold tracking-tight tabular-nums text-foreground">
+        {value}
+      </div>
+      {hint ? (
+        <div className={cn("mt-1.5 text-sm tabular-nums", TONE[tone])}>{hint}</div>
+      ) : null}
+    </div>
   );
 }

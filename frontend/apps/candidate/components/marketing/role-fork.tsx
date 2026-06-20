@@ -13,7 +13,7 @@ export function RoleFork({ value, onChange }: { value: Role; onChange: (r: Role)
       onClick={() => onChange(r)}
       className={cn(
         "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-        value === r ? "bg-white text-brand-700" : "text-white/80 hover:text-white",
+        value === r ? "bg-primary text-primary-foreground" : "text-white/80 hover:text-white",
       )}
     >
       {label}
@@ -23,7 +23,7 @@ export function RoleFork({ value, onChange }: { value: Role; onChange: (r: Role)
     <div
       role="tablist"
       aria-label="What brings you here"
-      className="inline-flex gap-1 rounded-full bg-white/15 p-1"
+      className="inline-flex gap-1 rounded-full border border-white/10 bg-white/10 p-1"
     >
       {tab("seeker", "I'm looking for a job")}
       {tab("hirer", "I'm hiring")}

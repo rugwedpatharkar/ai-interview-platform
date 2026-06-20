@@ -31,11 +31,12 @@ const ROLE_LABELS: Record<string, string> = {
 type NavLink = { href: string; label: string };
 
 const NAV: NavLink[] = [
+  { href: "/", label: "Dashboard" },
   { href: "/jobs", label: "Jobs" },
+  { href: "/talent", label: "Talent" },
   { href: "/branding", label: "Branding" },
   { href: "/rubrics", label: "Rubrics" },
   { href: "/analytics", label: "Analytics" },
-  { href: "/talent", label: "Talent" },
 ];
 
 function NavItem({ href, label, active }: NavLink & { active: boolean }) {

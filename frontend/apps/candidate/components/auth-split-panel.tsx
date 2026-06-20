@@ -2,7 +2,7 @@ import { LogoMark } from "@ip/ui";
 
 /**
  * The right-hand brand panel of the split auth layout. A `--gradient-brand`
- * surface (violet→indigo) carrying the aperture mark, the Aptura tagline, and
+ * surface (Midnight indigo→cyan) carrying the aperture mark, the Aptura tagline, and
  * the proctored/fair/merit value line. Fairness framing — focus and clarity,
  * never a watching eye; no "surveillance" copy. Decorative rings are
  * `aria-hidden`; the panel is an `<aside>` so the form keeps focus order.
@@ -10,7 +10,7 @@ import { LogoMark } from "@ip/ui";
  */
 export function AuthSplitPanel() {
   return (
-    <aside className="relative hidden flex-col justify-between overflow-hidden bg-[linear-gradient(135deg,#7c3aed,#4f46e5)] p-10 text-white lg:flex">
+    <aside className="relative hidden flex-col justify-between overflow-hidden bg-[linear-gradient(150deg,var(--brand-900),var(--brand-700)_55%,var(--primary))] p-10 text-white lg:flex">
       <div
         aria-hidden
         className="pointer-events-none absolute -right-20 -top-20 size-80 rounded-full border border-white/10"

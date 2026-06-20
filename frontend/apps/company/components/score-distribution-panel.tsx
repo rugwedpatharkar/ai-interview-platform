@@ -62,7 +62,7 @@ export function ScoreDistributionPanel({ jobId }: { jobId: string }) {
                 {s.label}
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-2xl font-semibold text-foreground">
+            <CardContent className="font-display text-2xl font-semibold tabular-nums text-foreground">
               {s.value}
             </CardContent>
           </Card>
@@ -90,11 +90,11 @@ export function ScoreDistributionPanel({ jobId }: { jobId: string }) {
                 style={{ left: pct(d.min), width: pct(d.max - d.min) }}
               />
               <div
-                className="absolute top-1/2 h-5 -translate-y-1/2 rounded bg-info-surface"
+                className="absolute top-1/2 h-5 -translate-y-1/2 rounded bg-primary/25"
                 style={{ left: pct(d.p25), width: pct(d.p75 - d.p25) }}
               />
               <div
-                className="absolute top-1/2 h-5 w-0.5 -translate-y-1/2 bg-info"
+                className="absolute top-1/2 h-5 w-0.5 -translate-y-1/2 bg-primary"
                 style={{ left: pct(d.p50) }}
               />
             </div>
@@ -112,11 +112,11 @@ export function ScoreDistributionPanel({ jobId }: { jobId: string }) {
                 min–max range
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="inline-block h-3 w-4 rounded bg-info-surface" />
+                <span className="inline-block h-3 w-4 rounded bg-primary/25" />
                 p25–p75
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="inline-block h-3 w-0.5 bg-info" />
+                <span className="inline-block h-3 w-0.5 bg-primary" />
                 median
               </span>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Avatar,
   Badge,
   Card,
   CardContent,
@@ -89,13 +90,21 @@ export function RankedPanel({ jobId }: { jobId: string }) {
           <Card key={m.candidateUserId}>
             <CardContent className="flex flex-col gap-2 p-4">
               <div className="flex items-center justify-between gap-3">
-                <span
-                  className="truncate font-mono text-xs text-muted-foreground"
-                  aria-label={`Candidate ${m.candidateUserId}`}
-                >
-                  {m.candidateUserId.slice(0, 10)}…
+                <span className="flex min-w-0 items-center gap-2">
+                  <Avatar
+                    name={m.candidateUserId.slice(0, 8).toUpperCase()}
+                    size="sm"
+                  />
+                  <span
+                    className="truncate font-mono text-xs text-muted-foreground"
+                    aria-label={`Candidate ${m.candidateUserId}`}
+                  >
+                    {m.candidateUserId.slice(0, 8).toUpperCase()}
+                  </span>
                 </span>
-                <Badge tone="info">{Math.round(m.score * 100)}%</Badge>
+                <Badge tone="info" className="tabular-nums">
+                  {Math.round(m.score * 100)}%
+                </Badge>
               </div>
               <div className="text-sm text-muted-foreground">{reasons(m.reasons)}</div>
             </CardContent>
@@ -115,14 +124,24 @@ export function RankedPanel({ jobId }: { jobId: string }) {
           <TableBody>
             {matches.map((m) => (
               <TableRow key={m.candidateUserId}>
-                <TableCell
-                  className="align-top font-mono text-xs"
-                  aria-label={`Candidate ${m.candidateUserId}`}
-                >
-                  {m.candidateUserId.slice(0, 10)}…
+                <TableCell className="align-top">
+                  <span className="flex items-center gap-2">
+                    <Avatar
+                      name={m.candidateUserId.slice(0, 8).toUpperCase()}
+                      size="sm"
+                    />
+                    <span
+                      className="font-mono text-xs"
+                      aria-label={`Candidate ${m.candidateUserId}`}
+                    >
+                      {m.candidateUserId.slice(0, 8).toUpperCase()}
+                    </span>
+                  </span>
                 </TableCell>
                 <TableCell className="align-top">
-                  <Badge tone="info">{Math.round(m.score * 100)}%</Badge>
+                  <Badge tone="info" className="tabular-nums">
+                    {Math.round(m.score * 100)}%
+                  </Badge>
                 </TableCell>
                 {/* Cap the reasons column so long rationale wraps instead of stretching the row. */}
                 <TableCell className="max-w-md align-top text-sm text-muted-foreground">

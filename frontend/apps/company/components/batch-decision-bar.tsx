@@ -60,12 +60,16 @@ export function BatchDecisionBar({
   });
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-muted px-4 py-2">
-      <span className="text-sm font-medium text-foreground">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl bg-foreground px-4 py-2.5 text-background">
+      <span className="inline-flex size-4 items-center justify-center rounded bg-primary text-[10px] font-bold text-primary-foreground tabular-nums">
+        {selected.length}
+      </span>
+      <span className="text-sm font-semibold">
         {selected.length} selected
       </span>
+      <span className="flex-1" />
       <Select value={outcome} onValueChange={setOutcome}>
-        <SelectTrigger className="h-9 w-36">
+        <SelectTrigger className="h-9 w-36 border-background/30 bg-transparent text-background">
           <SelectValue placeholder="Decide…" />
         </SelectTrigger>
         <SelectContent>

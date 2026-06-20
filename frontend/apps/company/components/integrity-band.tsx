@@ -1,6 +1,7 @@
 import {
   Alert,
   Badge,
+  type BadgeTone,
   Card,
   CardContent,
   CardHeader,
@@ -13,18 +14,28 @@ import type {
   IntegrityTimeline,
   ProctorFlag,
 } from "../app/jobs/[id]/applicants/[appId]/types";
-import { SEVERITY_ORDER, severityTone, signalLabel } from "./proctor-labels";
+import { severityTone, signalLabel } from "./proctor-labels";
 import { ScoreRing } from "./score-ring";
 
 // Integrity score → a 0..1 "clean" fraction for the ring (lower raw score = cleaner).
 // 0 → 1.0 (spotless); clamp so a noisy session still reads as low-but-nonzero.
 const cleanFraction = (score: number) => Math.max(0, 1 - score / 24);
 
-function groupBySeverity(flags: ProctorFlag[]) {
-  return SEVERITY_ORDER.map((sev) => ({
-    sev,
-    items: flags.filter((f) => f.severity === sev),
-  })).filter((g) => g.items.length > 0);
+// Severity → the rail node ring color + the severity pill label/tone.
+const SEV_DOT: Record<string, string> = {
+  high: "border-danger",
+  medium: "border-warning",
+  low: "border-primary",
+};
+const SEV_LABEL: Record<string, string> = {
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+};
+
+// Newest-first reads as a timeline; the raw order is event-time ascending from the wire.
+function byTime(flags: ProctorFlag[]) {
+  return [...flags].sort((a, b) => a.at.localeCompare(b.at));
 }
 
 export function IntegrityBand({
@@ -36,18 +47,30 @@ export function IntegrityBand({
   loading: boolean;
   error: string | null;
 }) {
+  const flags = timeline ? byTime(timeline.flags) : [];
+
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-3">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 font-display">
           <ShieldCheck className="size-4 text-muted-foreground" aria-hidden />
-          Interview integrity
+          Integrity timeline
         </CardTitle>
-        {timeline && !timeline.autoTerminated && (
-          <Badge tone={timeline.flags.length === 0 ? "success" : "warning"}>
-            {timeline.flags.length === 0
-              ? "No flags"
-              : `${timeline.flags.length} flag${timeline.flags.length > 1 ? "s" : ""}`}
+        {timeline && (
+          <Badge
+            tone={
+              timeline.autoTerminated
+                ? "danger"
+                : timeline.flags.length === 0
+                  ? "success"
+                  : "warning"
+            }
+          >
+            {timeline.autoTerminated
+              ? "Gate triggered"
+              : timeline.flags.length === 0
+                ? "No gate triggered"
+                : `${timeline.flags.length} flag${timeline.flags.length > 1 ? "s" : ""}`}
           </Badge>
         )}
       </CardHeader>
@@ -72,6 +95,7 @@ export function IntegrityBand({
                 </span>
               </Alert>
             )}
+
             <div className="flex items-center gap-4">
               <ScoreRing
                 value={cleanFraction(timeline.integrityScore)}
@@ -88,38 +112,48 @@ export function IntegrityBand({
               <div className="text-sm text-muted-foreground">
                 {timeline.flags.length === 0
                   ? "No proctoring flags were raised during this interview."
-                  : `Weighted integrity score ${timeline.integrityScore} — higher means more concerning. Review the flags below.`}
+                  : `Weighted integrity score ${timeline.integrityScore} — higher means more concerning. Review the timeline below.`}
               </div>
             </div>
 
-            {groupBySeverity(timeline.flags).map(({ sev, items }) => (
-              <div key={sev}>
-                <p className="mb-1.5 flex items-center gap-2 text-sm font-medium capitalize text-foreground">
-                  {sev} severity
-                  <Badge tone={severityTone(sev)}>{items.length}</Badge>
-                </p>
-                <ul className="flex flex-col gap-1.5">
-                  {items.map((f, i) => (
-                    <li
-                      key={i}
-                      className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface-muted px-3 py-1.5 text-sm"
+            {flags.length > 0 && (
+              <ul className="relative flex flex-col before:absolute before:bottom-2 before:left-[6px] before:top-2 before:w-px before:bg-border">
+                {flags.map((f, i) => (
+                  <li
+                    key={i}
+                    className="relative grid grid-cols-[auto_1fr_auto] items-center gap-3 py-2.5 pl-6"
+                  >
+                    <span
+                      className={`absolute left-0 size-3.5 rounded-full border-2 bg-surface ${
+                        SEV_DOT[f.severity] ?? "border-border"
+                      }`}
+                      aria-hidden
+                    />
+                    <time
+                      className="font-mono text-xs tabular-nums text-muted-foreground"
+                      dateTime={f.at}
                     >
-                      <span className="text-foreground">{signalLabel(f.type)}</span>
-                      <time
-                        className="font-mono text-xs text-muted-foreground"
-                        dateTime={f.at}
-                      >
-                        {new Date(f.at).toLocaleTimeString()}
-                      </time>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+                      {new Date(f.at).toLocaleTimeString()}
+                    </time>
+                    <span className="text-sm font-medium text-foreground">
+                      {signalLabel(f.type)}
+                    </span>
+                    <Badge tone={severityTone(f.severity) as BadgeTone}>
+                      {SEV_LABEL[f.severity] ?? f.severity}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              <ShieldCheck className="size-3.5" aria-hidden />A single high-severity
+              signal auto-gates the interview server-side.
+            </p>
 
             {timeline.recordingUrl && (
               <div>
-                <p className="mb-1.5 text-sm font-medium text-foreground">
+                <p className="mb-1.5 font-display text-sm font-medium text-foreground">
                   Session recording
                 </p>
                 <video
