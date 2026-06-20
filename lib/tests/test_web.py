@@ -52,6 +52,12 @@ async def test_uses_incoming_correlation_header():
 
 
 @pytest.mark.asyncio
+async def test_oversized_incoming_correlation_is_replaced():
+    cid, _ = await _drive([(b"x-correlation-id", b"x" * 5000)])
+    assert 0 < len(cid) <= 64  # a huge client-supplied id is replaced with a fresh one
+
+
+@pytest.mark.asyncio
 async def test_generates_correlation_id_when_absent():
     cid, resp = await _drive([])
     assert cid  # a fresh id was generated + bound
