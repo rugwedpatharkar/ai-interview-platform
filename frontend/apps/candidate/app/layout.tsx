@@ -1,22 +1,31 @@
-import { ThemeProvider, Toaster, themeScript } from "@ip/ui";
-import { Geist, Fraunces } from "next/font/google";
+import { ApertureSprite, ThemeProvider, Toaster } from "@ip/ui";
+import { Hanken_Grotesk, Schibsted_Grotesk, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+import { appearanceScript } from "./settings/appearance-client";
 import { Providers } from "./providers";
 
-const sans = Geist({
+// Aperture Pro · v3 — humanist body, geometric display, mono for data labels.
+const sans = Hanken_Grotesk({
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
 });
 
-// Editorial serif display (Midnight v3). Optical-size variable; 400 + 600 cover body-display + headings.
-const display = Fraunces({
+const display = Schibsted_Grotesk({
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "600"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-display",
+});
+
+const mono = Geist_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600"],
+  variable: "--font-mono",
 });
 
 export const metadata = {
@@ -39,12 +48,19 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${sans.variable} ${display.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
-        {/* Set the persisted theme class on <html> before paint to avoid a flash. */}
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* Pre-paint script — reads aptura.appearance.v1 from localStorage and applies mode +
+            base + accent (incl. custom hue) onto <html> BEFORE React hydrates. No FOUC. */}
+        <script dangerouslySetInnerHTML={{ __html: appearanceScript }} />
       </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
+        {/* Aperture mark + lucide-style icons mounted once for use via <svg><use href="#…" /></svg> */}
+        <ApertureSprite />
         <ThemeProvider>
           <Providers>{children}</Providers>
           <Toaster richColors closeButton position="top-center" />
