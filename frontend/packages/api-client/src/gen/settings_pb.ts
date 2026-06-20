@@ -10,7 +10,123 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file settings.proto.
  */
 export const file_settings: GenFile = /*@__PURE__*/
-  fileDesc("Cg5zZXR0aW5ncy5wcm90bxIRYWRtaW4uc2V0dGluZ3MudjEiNAoKUXVpZXRIb3VycxINCgVzdGFydBgBIAEoCRILCgNlbmQYAiABKAkSCgoCdHoYAyABKAkiHQobR2V0Tm90aWZpY2F0aW9uUHJlZnNSZXF1ZXN0IvoBChFOb3RpZmljYXRpb25QcmVmcxJTChBlbWFpbF9jYXRlZ29yaWVzGAEgAygLMjkuYWRtaW4uc2V0dGluZ3MudjEuTm90aWZpY2F0aW9uUHJlZnMuRW1haWxDYXRlZ29yaWVzRW50cnkSFAoMc21zX2NyaXRpY2FsGAIgASgIEg4KBmRpZ2VzdBgDIAEoCRIyCgtxdWlldF9ob3VycxgEIAEoCzIdLmFkbWluLnNldHRpbmdzLnYxLlF1aWV0SG91cnMaNgoURW1haWxDYXRlZ29yaWVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgIOgI4ATLjAQoPU2V0dGluZ3NTZXJ2aWNlEmwKFEdldE5vdGlmaWNhdGlvblByZWZzEi4uYWRtaW4uc2V0dGluZ3MudjEuR2V0Tm90aWZpY2F0aW9uUHJlZnNSZXF1ZXN0GiQuYWRtaW4uc2V0dGluZ3MudjEuTm90aWZpY2F0aW9uUHJlZnMSYgoUU2V0Tm90aWZpY2F0aW9uUHJlZnMSJC5hZG1pbi5zZXR0aW5ncy52MS5Ob3RpZmljYXRpb25QcmVmcxokLmFkbWluLnNldHRpbmdzLnYxLk5vdGlmaWNhdGlvblByZWZzYgZwcm90bzM");
+  fileDesc("Cg5zZXR0aW5ncy5wcm90bxIRYWRtaW4uc2V0dGluZ3MudjEiEgoQU2V0dXBUb3RwUmVxdWVzdCI9ChFTZXR1cFRvdHBSZXNwb25zZRIYChBwcm92aXNpb25pbmdfdXJpGAEgASgJEg4KBnNlY3JldBgCIAEoCSIhChFWZXJpZnlUb3RwUmVxdWVzdBIMCgRjb2RlGAEgASgJIj0KElZlcmlmeVRvdHBSZXNwb25zZRIPCgdlbmFibGVkGAEgASgIEhYKDnJlY292ZXJ5X2NvZGVzGAIgAygJIiIKEkRpc2FibGVUb3RwUmVxdWVzdBIMCgRjb2RlGAEgASgJIhgKCk9rUmVzcG9uc2USCgoCb2sYASABKAgiNAoKUXVpZXRIb3VycxINCgVzdGFydBgBIAEoCRILCgNlbmQYAiABKAkSCgoCdHoYAyABKAkiHQobR2V0Tm90aWZpY2F0aW9uUHJlZnNSZXF1ZXN0IvoBChFOb3RpZmljYXRpb25QcmVmcxJTChBlbWFpbF9jYXRlZ29yaWVzGAEgAygLMjkuYWRtaW4uc2V0dGluZ3MudjEuTm90aWZpY2F0aW9uUHJlZnMuRW1haWxDYXRlZ29yaWVzRW50cnkSFAoMc21zX2NyaXRpY2FsGAIgASgIEg4KBmRpZ2VzdBgDIAEoCRIyCgtxdWlldF9ob3VycxgEIAEoCzIdLmFkbWluLnNldHRpbmdzLnYxLlF1aWV0SG91cnMaNgoURW1haWxDYXRlZ29yaWVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgIOgI4ATLrAwoPU2V0dGluZ3NTZXJ2aWNlEmwKFEdldE5vdGlmaWNhdGlvblByZWZzEi4uYWRtaW4uc2V0dGluZ3MudjEuR2V0Tm90aWZpY2F0aW9uUHJlZnNSZXF1ZXN0GiQuYWRtaW4uc2V0dGluZ3MudjEuTm90aWZpY2F0aW9uUHJlZnMSYgoUU2V0Tm90aWZpY2F0aW9uUHJlZnMSJC5hZG1pbi5zZXR0aW5ncy52MS5Ob3RpZmljYXRpb25QcmVmcxokLmFkbWluLnNldHRpbmdzLnYxLk5vdGlmaWNhdGlvblByZWZzElYKCVNldHVwVG90cBIjLmFkbWluLnNldHRpbmdzLnYxLlNldHVwVG90cFJlcXVlc3QaJC5hZG1pbi5zZXR0aW5ncy52MS5TZXR1cFRvdHBSZXNwb25zZRJZCgpWZXJpZnlUb3RwEiQuYWRtaW4uc2V0dGluZ3MudjEuVmVyaWZ5VG90cFJlcXVlc3QaJS5hZG1pbi5zZXR0aW5ncy52MS5WZXJpZnlUb3RwUmVzcG9uc2USUwoLRGlzYWJsZVRvdHASJS5hZG1pbi5zZXR0aW5ncy52MS5EaXNhYmxlVG90cFJlcXVlc3QaHS5hZG1pbi5zZXR0aW5ncy52MS5Pa1Jlc3BvbnNlYgZwcm90bzM");
+
+/**
+ * @generated from message admin.settings.v1.SetupTotpRequest
+ */
+export type SetupTotpRequest = Message<"admin.settings.v1.SetupTotpRequest"> & {
+};
+
+/**
+ * Describes the message admin.settings.v1.SetupTotpRequest.
+ * Use `create(SetupTotpRequestSchema)` to create a new message.
+ */
+export const SetupTotpRequestSchema: GenMessage<SetupTotpRequest> = /*@__PURE__*/
+  messageDesc(file_settings, 0);
+
+/**
+ * @generated from message admin.settings.v1.SetupTotpResponse
+ */
+export type SetupTotpResponse = Message<"admin.settings.v1.SetupTotpResponse"> & {
+  /**
+   * otpauth:// for the authenticator QR
+   *
+   * @generated from field: string provisioning_uri = 1;
+   */
+  provisioningUri: string;
+
+  /**
+   * raw base32, shown once
+   *
+   * @generated from field: string secret = 2;
+   */
+  secret: string;
+};
+
+/**
+ * Describes the message admin.settings.v1.SetupTotpResponse.
+ * Use `create(SetupTotpResponseSchema)` to create a new message.
+ */
+export const SetupTotpResponseSchema: GenMessage<SetupTotpResponse> = /*@__PURE__*/
+  messageDesc(file_settings, 1);
+
+/**
+ * @generated from message admin.settings.v1.VerifyTotpRequest
+ */
+export type VerifyTotpRequest = Message<"admin.settings.v1.VerifyTotpRequest"> & {
+  /**
+   * @generated from field: string code = 1;
+   */
+  code: string;
+};
+
+/**
+ * Describes the message admin.settings.v1.VerifyTotpRequest.
+ * Use `create(VerifyTotpRequestSchema)` to create a new message.
+ */
+export const VerifyTotpRequestSchema: GenMessage<VerifyTotpRequest> = /*@__PURE__*/
+  messageDesc(file_settings, 2);
+
+/**
+ * @generated from message admin.settings.v1.VerifyTotpResponse
+ */
+export type VerifyTotpResponse = Message<"admin.settings.v1.VerifyTotpResponse"> & {
+  /**
+   * @generated from field: bool enabled = 1;
+   */
+  enabled: boolean;
+
+  /**
+   * plaintext, shown once
+   *
+   * @generated from field: repeated string recovery_codes = 2;
+   */
+  recoveryCodes: string[];
+};
+
+/**
+ * Describes the message admin.settings.v1.VerifyTotpResponse.
+ * Use `create(VerifyTotpResponseSchema)` to create a new message.
+ */
+export const VerifyTotpResponseSchema: GenMessage<VerifyTotpResponse> = /*@__PURE__*/
+  messageDesc(file_settings, 3);
+
+/**
+ * @generated from message admin.settings.v1.DisableTotpRequest
+ */
+export type DisableTotpRequest = Message<"admin.settings.v1.DisableTotpRequest"> & {
+  /**
+   * a current TOTP code or an unused recovery code
+   *
+   * @generated from field: string code = 1;
+   */
+  code: string;
+};
+
+/**
+ * Describes the message admin.settings.v1.DisableTotpRequest.
+ * Use `create(DisableTotpRequestSchema)` to create a new message.
+ */
+export const DisableTotpRequestSchema: GenMessage<DisableTotpRequest> = /*@__PURE__*/
+  messageDesc(file_settings, 4);
+
+/**
+ * @generated from message admin.settings.v1.OkResponse
+ */
+export type OkResponse = Message<"admin.settings.v1.OkResponse"> & {
+  /**
+   * @generated from field: bool ok = 1;
+   */
+  ok: boolean;
+};
+
+/**
+ * Describes the message admin.settings.v1.OkResponse.
+ * Use `create(OkResponseSchema)` to create a new message.
+ */
+export const OkResponseSchema: GenMessage<OkResponse> = /*@__PURE__*/
+  messageDesc(file_settings, 5);
 
 /**
  * @generated from message admin.settings.v1.QuietHours
@@ -43,7 +159,7 @@ export type QuietHours = Message<"admin.settings.v1.QuietHours"> & {
  * Use `create(QuietHoursSchema)` to create a new message.
  */
 export const QuietHoursSchema: GenMessage<QuietHours> = /*@__PURE__*/
-  messageDesc(file_settings, 0);
+  messageDesc(file_settings, 6);
 
 /**
  * @generated from message admin.settings.v1.GetNotificationPrefsRequest
@@ -56,7 +172,7 @@ export type GetNotificationPrefsRequest = Message<"admin.settings.v1.GetNotifica
  * Use `create(GetNotificationPrefsRequestSchema)` to create a new message.
  */
 export const GetNotificationPrefsRequestSchema: GenMessage<GetNotificationPrefsRequest> = /*@__PURE__*/
-  messageDesc(file_settings, 1);
+  messageDesc(file_settings, 7);
 
 /**
  * @generated from message admin.settings.v1.NotificationPrefs
@@ -94,7 +210,7 @@ export type NotificationPrefs = Message<"admin.settings.v1.NotificationPrefs"> &
  * Use `create(NotificationPrefsSchema)` to create a new message.
  */
 export const NotificationPrefsSchema: GenMessage<NotificationPrefs> = /*@__PURE__*/
-  messageDesc(file_settings, 2);
+  messageDesc(file_settings, 8);
 
 /**
  * SettingsService — self-scoped account settings (the caller is the token; no request
@@ -119,6 +235,33 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof NotificationPrefsSchema;
     output: typeof NotificationPrefsSchema;
+  },
+  /**
+   * 2FA (TOTP). SetupTotp stages an encrypted secret; VerifyTotp enables + returns
+   * one-time recovery codes; DisableTotp takes a TOTP code OR a recovery code.
+   *
+   * @generated from rpc admin.settings.v1.SettingsService.SetupTotp
+   */
+  setupTotp: {
+    methodKind: "unary";
+    input: typeof SetupTotpRequestSchema;
+    output: typeof SetupTotpResponseSchema;
+  },
+  /**
+   * @generated from rpc admin.settings.v1.SettingsService.VerifyTotp
+   */
+  verifyTotp: {
+    methodKind: "unary";
+    input: typeof VerifyTotpRequestSchema;
+    output: typeof VerifyTotpResponseSchema;
+  },
+  /**
+   * @generated from rpc admin.settings.v1.SettingsService.DisableTotp
+   */
+  disableTotp: {
+    methodKind: "unary";
+    input: typeof DisableTotpRequestSchema;
+    output: typeof OkResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_settings, 0);
