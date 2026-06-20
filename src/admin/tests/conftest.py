@@ -381,6 +381,16 @@ class FakeConsentRepo:
         self.records = [r for r in self.records if r["user_id"] != user_id]
 
 
+class FakePracticeRepo:
+    """In-memory stand-in for PracticeSessionRepository (ai-agents practice runs)."""
+
+    def __init__(self):
+        self.docs: dict[str, dict] = {}
+
+    async def delete_by_user(self, user_id):
+        self.docs = {k: v for k, v in self.docs.items() if v.get("user_id") != user_id}
+
+
 @pytest.fixture
 def fakes():
     return {
@@ -399,4 +409,5 @@ def fakes():
         "reports": FakeReportRepo(),
         "interviews": FakeInterviewRepo(),
         "consents": FakeConsentRepo(),
+        "practice": FakePracticeRepo(),
     }

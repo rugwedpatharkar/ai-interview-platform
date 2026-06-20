@@ -90,6 +90,15 @@ INDEXES: list[IndexSpec] = [
     # audit_logs: entity+entity_id is the primary lookup pattern; comp_id backs scans.
     IndexSpec("audit_logs", [("entity", 1), ("entity_id", 1)]),
     IndexSpec("audit_logs", "comp_id"),
+    # practice_sessions written by ai-agents (detached candidate mock interviews). The
+    # (user_id, created_at) index powers history + the erasure delete_by_user; the
+    # unique (user_id, practice_id) backs single-run reads + the idempotent upsert.
+    IndexSpec("practice_sessions", [("user_id", 1), ("created_at", -1)]),
+    IndexSpec(
+        "practice_sessions",
+        [("user_id", 1), ("practice_id", 1)],
+        {"unique": True},
+    ),
 ]
 
 

@@ -61,6 +61,7 @@ def _eraser(fakes):
         interviews=fakes["interviews"],
         attempts=fakes["attempts"],
         consents=fakes["consents"],
+        practice=fakes["practice"],
     )
 
 
@@ -116,6 +117,19 @@ async def test_erase_cascades_into_ai_artifacts(fakes):
     assert await fakes["reports"].get_by_application(app_id) is None
     assert fakes["interviews"].docs == {}
     assert fakes["attempts"].records == []
+
+
+async def test_erase_deletes_practice_sessions(fakes):
+    # Practice runs are candidate PII keyed by user_id (no application link) — the
+    # erasure must purge the candidate's, and only the candidate's, practice history.
+    uid = await fakes["users"].insert(
+        User(email="c@x.com", password_hash="h", role=Role.candidate)
+    )
+    fakes["practice"].docs["p1"] = {"practice_id": "p1", "user_id": uid}
+    fakes["practice"].docs["p2"] = {"practice_id": "p2", "user_id": "other"}
+    await _eraser(fakes).erase(uid)
+    assert "p1" not in fakes["practice"].docs
+    assert "p2" in fakes["practice"].docs
 
 
 async def test_retention_sweep_erases_only_expired(fakes):

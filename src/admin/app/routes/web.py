@@ -28,6 +28,7 @@ from app.infra.repositories.messaging import (
 )
 from app.infra.repositories.notification_prefs import NotificationPrefsRepository
 from app.infra.repositories.notifications import NotificationRepository
+from app.infra.repositories.practice_sessions import PracticeSessionRepository
 from app.infra.repositories.proctoring_events import ProctorEventsRepository
 from app.infra.repositories.profiles import CandidateProfileRepository
 from app.infra.repositories.reports import ReportRepository
@@ -96,6 +97,7 @@ def make_eraser(db, storage):
         message_threads=MessageThreadRepository(db),
         messages=MessageRepository(db),
         notification_prefs=NotificationPrefsRepository(db),
+        practice=PracticeSessionRepository(db),
     )
 
 
