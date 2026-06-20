@@ -19,7 +19,7 @@
 - [x] A3. **Skeletons, not spinners/blank** — add skeleton loaders to: candidate dashboard, recruiter
   dashboard, applicants table, talent, marketplace results, applicant report, messages, notifications.
 - [x] A4. **Light-mode contrast** — bump `--muted-foreground` (and verify accent-on-white) to ≥4.5:1.
-- [ ] A5. **Browser-verify the authed sidebar shells** structurally (no backend here → verify render/overflow
+- [x] A5. **Browser-verify the authed sidebar shells** structurally (no backend here → verify render/overflow
   with a forced session or shell-only render; flag anything off).
 
 ## Wave B — Micro-interactions (minimal · optimal · beautiful; mostly CSS)
