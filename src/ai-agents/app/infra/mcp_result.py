@@ -16,7 +16,7 @@ def unwrap(result):
     )
     # FastMCP ALWAYS wraps a successful return as {"result": value} (None included).
     # An absent/empty wrapper is malformed — raise so the Consumer dead-letters it,
-    # never mistaking it for a None ("not found") that would defeat an idempotency guard.
+    # never mistaking it for a None ("not found") that would defeat idempotency guards.
     if not structured or "result" not in structured:
         raise RuntimeError("MCP tool returned no structured result")
     return structured["result"]
