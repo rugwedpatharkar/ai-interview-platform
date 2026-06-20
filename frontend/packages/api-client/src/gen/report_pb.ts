@@ -10,7 +10,111 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file report.proto.
  */
 export const file_report: GenFile = /*@__PURE__*/
-  fileDesc("CgxyZXBvcnQucHJvdG8SD2FkbWluLnJlcG9ydC52MSIqChBHZXRSZXBvcnRSZXF1ZXN0EhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJIiQKEkxpc3RSZXBvcnRzUmVxdWVzdBIOCgZqb2JfaWQYASABKAkiwAEKD0ludGVydmlld1JlcG9ydBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIZChFjYW5kaWRhdGVfdXNlcl9pZBgCIAEoCRINCgVzdGF0ZRgDIAEoCRIZChFleGVjdXRpdmVfc3VtbWFyeRgEIAEoCRISCgpoaWdobGlnaHRzGAUgAygJEg0KBXJpc2tzGAYgAygJEhUKDW92ZXJhbGxfc2NvcmUYByABKAESFgoOcmVjb21tZW5kYXRpb24YCCABKAkiPwoKUmVwb3J0TGlzdBIxCgdyZXBvcnRzGAEgAygLMiAuYWRtaW4ucmVwb3J0LnYxLkludGVydmlld1JlcG9ydCIxCgxSZXBvcnRFeHBvcnQSEAoIZmlsZW5hbWUYASABKAkSDwoHY29udGVudBgCIAEoDDKHAgoNUmVwb3J0U2VydmljZRJQCglHZXRSZXBvcnQSIS5hZG1pbi5yZXBvcnQudjEuR2V0UmVwb3J0UmVxdWVzdBogLmFkbWluLnJlcG9ydC52MS5JbnRlcnZpZXdSZXBvcnQSTwoLTGlzdFJlcG9ydHMSIy5hZG1pbi5yZXBvcnQudjEuTGlzdFJlcG9ydHNSZXF1ZXN0GhsuYWRtaW4ucmVwb3J0LnYxLlJlcG9ydExpc3QSUwoNRXhwb3J0UmVwb3J0cxIjLmFkbWluLnJlcG9ydC52MS5MaXN0UmVwb3J0c1JlcXVlc3QaHS5hZG1pbi5yZXBvcnQudjEuUmVwb3J0RXhwb3J0YgZwcm90bzM");
+  fileDesc("CgxyZXBvcnQucHJvdG8SD2FkbWluLnJlcG9ydC52MSI1ChtHZXRJbnRlZ3JpdHlUaW1lbGluZVJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkinAEKC1Byb2N0b3JGbGFnEgwKBHR5cGUYASABKAkSEAoIc2V2ZXJpdHkYAiABKAkSCgoCYXQYAyABKAkSNAoEbWV0YRgEIAMoCzImLmFkbWluLnJlcG9ydC52MS5Qcm9jdG9yRmxhZy5NZXRhRW50cnkaKwoJTWV0YUVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEipAEKEUludGVncml0eVRpbWVsaW5lEhcKD2ludGVncml0eV9zY29yZRgBIAEoBRIrCgVmbGFncxgCIAMoCzIcLmFkbWluLnJlcG9ydC52MS5Qcm9jdG9yRmxhZxIVCg1yZWNvcmRpbmdfdXJsGAMgASgJEhcKD2F1dG9fdGVybWluYXRlZBgEIAEoCBIZChF0ZXJtaW5hdGVkX3JlYXNvbhgFIAEoCSIqChBHZXRSZXBvcnRSZXF1ZXN0EhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJIiQKEkxpc3RSZXBvcnRzUmVxdWVzdBIOCgZqb2JfaWQYASABKAkiwAEKD0ludGVydmlld1JlcG9ydBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIZChFjYW5kaWRhdGVfdXNlcl9pZBgCIAEoCRINCgVzdGF0ZRgDIAEoCRIZChFleGVjdXRpdmVfc3VtbWFyeRgEIAEoCRISCgpoaWdobGlnaHRzGAUgAygJEg0KBXJpc2tzGAYgAygJEhUKDW92ZXJhbGxfc2NvcmUYByABKAESFgoOcmVjb21tZW5kYXRpb24YCCABKAkiPwoKUmVwb3J0TGlzdBIxCgdyZXBvcnRzGAEgAygLMiAuYWRtaW4ucmVwb3J0LnYxLkludGVydmlld1JlcG9ydCIxCgxSZXBvcnRFeHBvcnQSEAoIZmlsZW5hbWUYASABKAkSDwoHY29udGVudBgCIAEoDDLxAgoNUmVwb3J0U2VydmljZRJQCglHZXRSZXBvcnQSIS5hZG1pbi5yZXBvcnQudjEuR2V0UmVwb3J0UmVxdWVzdBogLmFkbWluLnJlcG9ydC52MS5JbnRlcnZpZXdSZXBvcnQSTwoLTGlzdFJlcG9ydHMSIy5hZG1pbi5yZXBvcnQudjEuTGlzdFJlcG9ydHNSZXF1ZXN0GhsuYWRtaW4ucmVwb3J0LnYxLlJlcG9ydExpc3QSUwoNRXhwb3J0UmVwb3J0cxIjLmFkbWluLnJlcG9ydC52MS5MaXN0UmVwb3J0c1JlcXVlc3QaHS5hZG1pbi5yZXBvcnQudjEuUmVwb3J0RXhwb3J0EmgKFEdldEludGVncml0eVRpbWVsaW5lEiwuYWRtaW4ucmVwb3J0LnYxLkdldEludGVncml0eVRpbWVsaW5lUmVxdWVzdBoiLmFkbWluLnJlcG9ydC52MS5JbnRlZ3JpdHlUaW1lbGluZWIGcHJvdG8z");
+
+/**
+ * @generated from message admin.report.v1.GetIntegrityTimelineRequest
+ */
+export type GetIntegrityTimelineRequest = Message<"admin.report.v1.GetIntegrityTimelineRequest"> & {
+  /**
+   * @generated from field: string application_id = 1;
+   */
+  applicationId: string;
+};
+
+/**
+ * Describes the message admin.report.v1.GetIntegrityTimelineRequest.
+ * Use `create(GetIntegrityTimelineRequestSchema)` to create a new message.
+ */
+export const GetIntegrityTimelineRequestSchema: GenMessage<GetIntegrityTimelineRequest> = /*@__PURE__*/
+  messageDesc(file_report, 0);
+
+/**
+ * @generated from message admin.report.v1.ProctorFlag
+ */
+export type ProctorFlag = Message<"admin.report.v1.ProctorFlag"> & {
+  /**
+   * ProctoringEventType
+   *
+   * @generated from field: string type = 1;
+   */
+  type: string;
+
+  /**
+   * "low" | "medium" | "high" (server-authoritative)
+   *
+   * @generated from field: string severity = 2;
+   */
+  severity: string;
+
+  /**
+   * ISO timestamp
+   *
+   * @generated from field: string at = 3;
+   */
+  at: string;
+
+  /**
+   * small typed context (never raw media)
+   *
+   * @generated from field: map<string, string> meta = 4;
+   */
+  meta: { [key: string]: string };
+};
+
+/**
+ * Describes the message admin.report.v1.ProctorFlag.
+ * Use `create(ProctorFlagSchema)` to create a new message.
+ */
+export const ProctorFlagSchema: GenMessage<ProctorFlag> = /*@__PURE__*/
+  messageDesc(file_report, 1);
+
+/**
+ * @generated from message admin.report.v1.IntegrityTimeline
+ */
+export type IntegrityTimeline = Message<"admin.report.v1.IntegrityTimeline"> & {
+  /**
+   * weighted sum — higher = more concerning
+   *
+   * @generated from field: int32 integrity_score = 1;
+   */
+  integrityScore: number;
+
+  /**
+   * chronological
+   *
+   * @generated from field: repeated admin.report.v1.ProctorFlag flags = 2;
+   */
+  flags: ProctorFlag[];
+
+  /**
+   * tenant-scoped playback URL; "" when none
+   *
+   * @generated from field: string recording_url = 3;
+   */
+  recordingUrl: string;
+
+  /**
+   * a HIGH-severity signal ended the interview
+   *
+   * @generated from field: bool auto_terminated = 4;
+   */
+  autoTerminated: boolean;
+
+  /**
+   * e.g. "second_face"; set iff auto_terminated
+   *
+   * @generated from field: string terminated_reason = 5;
+   */
+  terminatedReason: string;
+};
+
+/**
+ * Describes the message admin.report.v1.IntegrityTimeline.
+ * Use `create(IntegrityTimelineSchema)` to create a new message.
+ */
+export const IntegrityTimelineSchema: GenMessage<IntegrityTimeline> = /*@__PURE__*/
+  messageDesc(file_report, 2);
 
 /**
  * @generated from message admin.report.v1.GetReportRequest
@@ -27,7 +131,7 @@ export type GetReportRequest = Message<"admin.report.v1.GetReportRequest"> & {
  * Use `create(GetReportRequestSchema)` to create a new message.
  */
 export const GetReportRequestSchema: GenMessage<GetReportRequest> = /*@__PURE__*/
-  messageDesc(file_report, 0);
+  messageDesc(file_report, 3);
 
 /**
  * @generated from message admin.report.v1.ListReportsRequest
@@ -44,7 +148,7 @@ export type ListReportsRequest = Message<"admin.report.v1.ListReportsRequest"> &
  * Use `create(ListReportsRequestSchema)` to create a new message.
  */
 export const ListReportsRequestSchema: GenMessage<ListReportsRequest> = /*@__PURE__*/
-  messageDesc(file_report, 1);
+  messageDesc(file_report, 4);
 
 /**
  * @generated from message admin.report.v1.InterviewReport
@@ -98,7 +202,7 @@ export type InterviewReport = Message<"admin.report.v1.InterviewReport"> & {
  * Use `create(InterviewReportSchema)` to create a new message.
  */
 export const InterviewReportSchema: GenMessage<InterviewReport> = /*@__PURE__*/
-  messageDesc(file_report, 2);
+  messageDesc(file_report, 5);
 
 /**
  * @generated from message admin.report.v1.ReportList
@@ -115,7 +219,7 @@ export type ReportList = Message<"admin.report.v1.ReportList"> & {
  * Use `create(ReportListSchema)` to create a new message.
  */
 export const ReportListSchema: GenMessage<ReportList> = /*@__PURE__*/
-  messageDesc(file_report, 3);
+  messageDesc(file_report, 6);
 
 /**
  * @generated from message admin.report.v1.ReportExport
@@ -139,7 +243,7 @@ export type ReportExport = Message<"admin.report.v1.ReportExport"> & {
  * Use `create(ReportExportSchema)` to create a new message.
  */
 export const ReportExportSchema: GenMessage<ReportExport> = /*@__PURE__*/
-  messageDesc(file_report, 4);
+  messageDesc(file_report, 7);
 
 /**
  * ReportService — recruiters read the AI-generated interview report for scored
@@ -172,6 +276,16 @@ export const ReportService: GenService<{
     methodKind: "unary";
     input: typeof ListReportsRequestSchema;
     output: typeof ReportExportSchema;
+  },
+  /**
+   * Recruiter integrity timeline — the first reader of proctoring_events (comp-scoped).
+   *
+   * @generated from rpc admin.report.v1.ReportService.GetIntegrityTimeline
+   */
+  getIntegrityTimeline: {
+    methodKind: "unary";
+    input: typeof GetIntegrityTimelineRequestSchema;
+    output: typeof IntegrityTimelineSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_report, 0);

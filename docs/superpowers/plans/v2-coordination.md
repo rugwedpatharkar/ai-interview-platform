@@ -36,7 +36,7 @@
 | W1 job alerts | `JobAlertsService` | ✅ | ⬜ | ⬜ | **landed** (create/list/delete; cap 20; sweep deferred to NotificationService). `pnpm gen` has `job_alerts_pb.ts`. FE: add `jobAlerts` quad + flip `/alerts` off mock |
 | W1 post-a-job | extend `Job` + `UpdateJob` + `gate_mode` | ✅ | ✅ | ⬜ | **landed** — `pnpm gen` has marketplace fields + `api.jobs.updateJob`; SearchJobs facets now populate. FE: flip post-a-job + `/jobs/[id]` off mock |
 | W2 proctored interview | proctoring auto-gate + rtc (video) | 🟦 | ✅ | ⬜ | **auto-gate ✅ landed** (`ProctorAccepted.terminated`/`reason`); rtc video still on fake seams (Plan H) |
-| W2 candidate report | `Report.GetIntegrityTimeline` | ⬜ | ⬜ | ⬜ | first reader of proctoring_events |
+| W2 candidate report | `Report.GetIntegrityTimeline` | ✅ | ⬜ | ⬜ | **A1 landed** — `api.reports.getIntegrityTimeline` (score/flags/auto_terminated). A2 report enrichment (competencies/evidence) = ai-agents follow-on. FE: flip integrity band off mock |
 
 *(Waves 3–5: messaging, notifications, settings/2FA, team, practice, scheduling — rows added as we reach them.)*
 
@@ -49,6 +49,15 @@ on BE (mocks). BE order: W1 (SearchJobs → CompanyProfile → SavedJobs → Job
 Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 screens.
 
 ## Handoff log (append; newest last)
+- 2026-06-20 · BE · ✅ **Report.GetIntegrityTimeline LANDED (A1)** (gate GREEN). New RPC on the existing
+  ReportService (manager + comp-scoped via the application): the **first reader of proctoring_events**.
+  Returns `integrity_score` (weighted sum; severity read from the stored server-stamped field),
+  chronological `ProctorFlag[]` ({type,severity,at,meta}), `recording_url` ("" — Tier C presign deferred),
+  and `auto_terminated`/`terminated_reason` from the interview doc's `terminated_by_proctor` (Plan A).
+  No events → clean zero, **not** 404. New `ProctorEventsRepository` + `interviews.get_by_application`.
+  `pnpm gen` grew `report_pb.ts` (`IntegrityTimeline`/`ProctorFlag`). **A2** (report message enrichment —
+  competencies/evidence + integrity scalars, touches ai-agents `scoring.py`/`report_writer`) is a separate
+  follow-on. **FE:** flip the integrity band off mock to `api.reports.getIntegrityTimeline`.
 - 2026-06-20 · BE · ✅ **JobAlertsService LANDED** (gate GREEN). New `admin.job_alerts.v1` (candidate-
   scoped from token): `CreateAlert`/`ListAlerts`/`DeleteAlert` over the `job_alerts` collection (saved
   search = keyword + AlertFilters + frequency). frequency ∈ {daily,weekly} or INVALID_ARGUMENT; per-
