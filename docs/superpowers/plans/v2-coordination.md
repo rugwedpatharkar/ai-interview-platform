@@ -32,6 +32,7 @@
 | W1 job detail | extend `GetPublicJobDetail` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` grew `PublicJob` (+ `Company`); public `GET /public/jobs/{id}` (snake_case, max-age=120). FE: flip job-detail off mock |
 | W1 company profile | `CompanyProfileService` | ⬜ | ⬜ | ⬜ | ⚠️ trust `responds_in_days` needs funnel transition timings (Application has none) — see log |
 | W1 saved jobs | `SavedJobsService` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `api.savedJobs` (save/unsave/listSavedJobs). FE: flip `/saved` off mock |
+| W1 talent sourcing | `SourcingService.SearchCandidates` | ✅ | ⬜ | ⬜ | **landed** — `pnpm gen` has `sourcing_pb.ts`. FE: add `sourcing` quad + flip `candidate-search` off mock |
 | W1 job alerts | `JobAlertsService` | ⬜ | ⬜ | ⬜ | |
 | W1 post-a-job | extend `Job` + `UpdateJob` + `gate_mode` | ✅ | ✅ | ⬜ | **landed** — `pnpm gen` has marketplace fields + `api.jobs.updateJob`; SearchJobs facets now populate. FE: flip post-a-job + `/jobs/[id]` off mock |
 | W2 proctored interview | proctoring auto-gate + rtc (video) | 🟦 | ✅ | ⬜ | **auto-gate ✅ landed** (`ProctorAccepted.terminated`/`reason`); rtc video still on fake seams (Plan H) |
@@ -48,6 +49,15 @@ on BE (mocks). BE order: W1 (SearchJobs → CompanyProfile → SavedJobs → Job
 Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 screens.
 
 ## Handoff log (append; newest last)
+- 2026-06-20 · BE · ✅ **SourcingService.SearchCandidates LANDED** (gate GREEN: admin 281). New
+  `admin.sourcing.v1` (manager + comp-scoped): keyword search over the company's **own applicants only**
+  (seed = its `applications`; universe is application-existence, **never** funnel-filtered, so
+  rejected/closed-job applicants stay searchable; no global index). Returns `CandidateHit{candidate_user_id
+  (masked on render), application_count, fit_score 0..1, top_stage (furthest reached), matched_skills}` +
+  total/page/page_size (page_size≤50). **No ID/background/biometric data.** Profile batch lookup
+  (`find_by_user_ids`) avoids N+1. `pnpm gen` emitted `sourcing_pb.ts`. **FE integration pending** (same
+  status as discovery/savedJobs): add the `sourcing` quad to `packages/api-client/src/index.ts` +
+  flip `candidate-search.tsx` off the mock to `api.sourcing.searchCandidates`.
 - 2026-06-20 · FE · Seeded this board. The 24 contracts + spine are pushed (commit `eae5a56`). FE starting
   **Wave 0** (no BE dependency). Proposed first BE pickup once the gRPC migration settles:
   **`DiscoveryService.SearchJobs`** + public `/public/jobs` (job-marketplace pillar).
