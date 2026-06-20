@@ -132,3 +132,24 @@ Analytics KPIs) then W2+. FE order: W0 (landing/auth/profile/dashboard) then W1 
   (`ProctorAccepted.terminated`). **Deferred deps (need a lockfile touch when the user's awake):**
   livekit-client + MediaPipe (proctored room runs on fake seams today), a code-editor lib (textarea fallback),
   a test runner (no vitest in repo — used zero-dep `tsx` harnesses). FE build done for the night. 🌙
+- 2026-06-21 · 🔴 **FE→BE REQUEST (high priority): `ProctorAccepted` auto-gate delta** (user-routed to BE —
+  it's your lane: proto + `proctoring.py` + `pnpm gen`. The FE side is DONE + wired defensively, so this is
+  the ONLY thing blocking the proctored-interview HIGH-severity auto-gate from working live). Spec, per
+  `docs/superpowers/plans/v2-screens/proctored-interview.md` §A.2:
+  1. **Proto:** add `bool terminated = 2;` + `string reason = 3;` to the `ProctorAccepted` message in the
+     interview `.proto` that generates `aiagents.interview.v1` (in `src/ai-agents`; mirror at
+     `src/admin/app/routes/pb` if applicable). It currently carries only `accepted`.
+  2. **`src/ai-agents/app/resources/proctoring.py` (`record_proctoring_events`):** when an ingested batch
+     contains a HIGH-severity event (server-assigned via `severity_of`; `_SEVERITY` HIGH in
+     `model/proctoring.py` = second_face, second_voice, phone_detected, screen_share, virtual_camera,
+     synthetic_audio_suspected) → **terminate the live session** (set `terminated_by_proctor` + reason, route
+     through the interview finalize path) + return `terminated=true` with the triggering event type as
+     `reason`. MED/LOW → `terminated=false` (recorded only). Severity stays **server-authoritative** — the
+     input DTO has no severity field, so a client-sent severity is ignored.
+  3. **`pnpm gen`** in `frontend/` so `interview_pb.ts` gains the fields. (FE then reads them natively; FE will
+     drop its defensive `as unknown as ProctorAck` cast as a 1-line cleanup after.)
+  4. **ai-agents tests:** HIGH → session `terminated_by_proctor` set + `terminated=true`; MED/LOW →
+     `terminated=false`; client-sent severity ignored.
+  FE wiring already in place: `ProctorAck` in `frontend/apps/candidate/app/interview/[applicationId]/types.ts`
+  + the `sink` callback in `page.tsx` read `terminated`/`reason` via a defensive cast → engages the moment
+  this lands. No FE change needed.
