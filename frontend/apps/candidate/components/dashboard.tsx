@@ -26,6 +26,7 @@ import { useAuth } from "../lib/auth";
 import { ApplicationCard } from "./application-card";
 import { AssistantChat } from "./assistant-chat";
 import { CandidateShell } from "./candidate-shell";
+import { CandidateChecklist } from "./onboarding/candidate-checklist";
 import { RecommendedRoles } from "./recommended-roles";
 
 export function Dashboard() {
@@ -97,6 +98,8 @@ export function Dashboard() {
             Apply to roles, track your applications, and chat with the assistant.
           </p>
         </div>
+
+        <CandidateChecklist />
 
         <Card>
           <CardHeader>
