@@ -173,7 +173,7 @@ class ConflictError(AppError):
     """Resource already exists or violates a uniqueness constraint."""
 
 
-class PermissionError(AppError):  # noqa: A001 - shadows built-in by design (scoped)
+class PermissionError(AppError):
     """Authenticated caller is not allowed to perform this action."""
 
 
@@ -193,7 +193,7 @@ class InternalError(AppError):
     """An unexpected condition — the only error mapped to gRPC INTERNAL."""
 
 
-TimeoutError = OperationTimeout  # noqa: A001 - re-export under hierarchy namespace
+TimeoutError = OperationTimeout
 ```
 
 - [ ] **Step 1.4: Run test to verify it passes**
