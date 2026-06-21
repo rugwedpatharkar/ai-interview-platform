@@ -46,7 +46,7 @@ def _starts_with_log_context(fn: ast.AsyncFunctionDef) -> bool:
     return False
 
 
-def scan(root: Path, allow: set[str]) -> list[str]:
+def scan(root: Path, allow: set[str], repo: Path) -> list[str]:
     violations = []
     if not root.exists():
         return violations
@@ -57,6 +57,10 @@ def scan(root: Path, allow: set[str]) -> list[str]:
             tree = ast.parse(py.read_text())
         except SyntaxError:
             continue
+        try:
+            rel = py.resolve().relative_to(repo.resolve())
+        except ValueError:
+            rel = py
         for node in ast.walk(tree):
             if not isinstance(node, ast.AsyncFunctionDef):
                 continue
@@ -64,7 +68,7 @@ def scan(root: Path, allow: set[str]) -> list[str]:
                 continue
             if _starts_with_log_context(node):
                 continue
-            key = f"{py}:{node.lineno}:{node.name}"
+            key = f"{rel}:{node.lineno}:{node.name}"
             if key in allow:
                 continue
             violations.append(key)
@@ -85,7 +89,7 @@ def main() -> int:
     if not root.is_absolute():
         root = repo / root
     allow = set() if args.seed else load_allowlist(repo / args.allowlist)
-    violations = scan(root, allow)
+    violations = scan(root, allow, repo)
     if args.seed:
         for v in violations:
             print(v)
