@@ -16,6 +16,7 @@ from app.errors import (
     InvalidTokenError,
     NotFoundError,
     RateLimitedError,
+    ValidationError,
 )
 from app.infra.notifier import LoggingNotifier
 from app.model.auth import User
@@ -79,6 +80,37 @@ async def test_register_candidate_has_no_comp(fakes):
     )
     assert out["role"] == "candidate"
     assert out["comp_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_register_candidate_invalid_email_is_validation_error(fakes):
+    # A malformed/reserved email is user-input at the registration boundary: it must
+    # surface as a domain ValidationError (-> INVALID_ARGUMENT), not an uncaught
+    # pydantic ValidationError that the gRPC layer reports as INTERNAL.
+    s = _services(fakes)
+    with pytest.raises(ValidationError):
+        await auth.register_candidate(
+            "not-an-email",
+            "pw123456",
+            users=s["users"],
+            tokens=s["tokens"],
+            notifier=s["notifier"],
+        )
+
+
+@pytest.mark.asyncio
+async def test_register_company_invalid_email_is_validation_error(fakes):
+    s = _services(fakes)
+    with pytest.raises(ValidationError):
+        await auth.register_company(
+            "Acme",
+            "not-an-email",
+            "pw123456",
+            companies=s["companies"],
+            users=s["users"],
+            tokens=s["tokens"],
+            notifier=s["notifier"],
+        )
 
 
 @pytest.mark.asyncio
