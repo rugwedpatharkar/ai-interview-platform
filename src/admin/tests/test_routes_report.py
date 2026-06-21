@@ -138,7 +138,10 @@ async def test_integrity_timeline_rpc(fakes):
         report_pb2.GetIntegrityTimelineRequest(application_id=aid), _md()
     )
     assert out.integrity_score == 8
-    assert out.flags[0].type == "second_face" and out.flags[0].severity == "high"
+    assert (
+        out.flags[0].type == "second_face"
+        and out.flags[0].severity == report_pb2.FLAG_SEVERITY_HIGH
+    )
     assert out.auto_terminated is True and out.terminated_reason == "second_face"
 
 
