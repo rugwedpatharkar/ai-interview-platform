@@ -25,7 +25,8 @@ from urllib.parse import quote
 import grpc
 from pymongo.errors import PyMongoError
 
-from lib.logging import get_logger
+from lib.errors import AppError, to_grpc_status
+from lib.logging import get_logger, log_domain_error
 from lib.resilience import OperationTimeout
 from lib.storage.client import StorageError
 
@@ -36,6 +37,16 @@ log = get_logger(component="grpcweb")
 # RPCs, so the mapping is centralised here instead of in all ~23 servicers.
 _UNAVAILABLE_ERRORS = (PyMongoError, StorageError, OperationTimeout)
 
+_DOMAIN_STATUS_CODES = frozenset(
+    (
+        grpc.StatusCode.UNAUTHENTICATED,
+        grpc.StatusCode.NOT_FOUND,
+        grpc.StatusCode.PERMISSION_DENIED,
+        grpc.StatusCode.INVALID_ARGUMENT,
+        grpc.StatusCode.FAILED_PRECONDITION,
+    )
+)
+
 _ALLOW_HEADERS = "content-type,x-grpc-web,x-user-agent,authorization,grpc-timeout"
 _EXPOSE_HEADERS = "grpc-status,grpc-message,grpc-status-details-bin"
 _TRAILER_FLAG = 0x80
@@ -44,6 +55,20 @@ _DEFAULT_MAX_MESSAGE_BYTES = 4 * 1024 * 1024
 _DEFAULT_TIMEOUT_SECONDS = 30
 # gRPC-timeout unit letter -> seconds (grpc-web spec: H/M/S/m/u/n).
 _TIMEOUT_UNITS = {"H": 3600.0, "M": 60.0, "S": 1.0, "m": 1e-3, "u": 1e-6, "n": 1e-9}
+
+
+def _translate_exception_to_status(exc: Exception) -> tuple[grpc.StatusCode, str]:
+    """Single source of truth for exception → (grpc.StatusCode, message) at egress.
+
+    AppError subclasses route through ``to_grpc_status`` (typed boundary). The legacy
+    ``_UNAVAILABLE_ERRORS`` tuple is preserved as a fallback for any pre-AppError
+    callers still raising raw infra errors.
+    """
+    if isinstance(exc, (AppError, OperationTimeout)):
+        return to_grpc_status(exc)
+    if isinstance(exc, _UNAVAILABLE_ERRORS):
+        return grpc.StatusCode.UNAVAILABLE, "dependency unavailable"
+    return grpc.StatusCode.INTERNAL, "internal error"
 
 
 class _Abort(Exception):
@@ -211,17 +236,16 @@ class GrpcWebASGI:
         except TimeoutError:
             context.code = grpc.StatusCode.DEADLINE_EXCEEDED
             context.details = "Deadline exceeded"
-        except _UNAVAILABLE_ERRORS as exc:
-            log.warning(
-                "grpc-web infra unavailable on {}: {}",
-                scope["path"],
-                type(exc).__name__,
-            )
-            context.code = grpc.StatusCode.UNAVAILABLE
-            context.details = "Service temporarily unavailable"
-        except Exception:  # servicer/parse bug — clean INTERNAL, never leak a traceback
-            log.exception("grpc-web handler failed on {}", scope["path"])
-            context.code, context.details = grpc.StatusCode.INTERNAL, "Internal error"
+        except Exception as exc:
+            code, msg = _translate_exception_to_status(exc)
+            if isinstance(exc, AppError) and code in _DOMAIN_STATUS_CODES:
+                log_domain_error(log, exc)
+            else:
+                log.exception(
+                    "rpc_unhandled: code={} exc={}", code.name, type(exc).__name__
+                )
+            context.code = code
+            context.details = msg
 
         payload = b"" if data is None else _encode_frame(data)
         payload += _encode_frame(
@@ -323,17 +347,16 @@ class GrpcWebASGI:
         except TimeoutError:
             context.code = grpc.StatusCode.DEADLINE_EXCEEDED
             context.details = "Deadline exceeded"
-        except _UNAVAILABLE_ERRORS as exc:
-            log.warning(
-                "grpc-web stream infra unavailable on {}: {}", path, type(exc).__name__
-            )
-            context.code = grpc.StatusCode.UNAVAILABLE
-            context.details = "Service temporarily unavailable"
-        except (
-            Exception
-        ):  # servicer bug — clean INTERNAL trailer, never leak a traceback
-            log.exception("grpc-web stream handler failed on {}", path)
-            context.code, context.details = grpc.StatusCode.INTERNAL, "Internal error"
+        except Exception as exc:
+            code, msg = _translate_exception_to_status(exc)
+            if isinstance(exc, AppError) and code in _DOMAIN_STATUS_CODES:
+                log_domain_error(log, exc)
+            else:
+                log.exception(
+                    "rpc_unhandled: code={} exc={}", code.name, type(exc).__name__
+                )
+            context.code = code
+            context.details = msg
         await emit(
             _encode_frame(
                 _trailer_payload(context.code, context.details), trailer=True
