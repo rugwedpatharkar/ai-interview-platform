@@ -7,7 +7,10 @@ funnel identifiers are stored — practice is keyed by practice_id / user_id onl
 there is no reaper sweep (no `list_in_progress`).
 """
 
+from lib.resilience import with_timeout
+
 from app.model.practice import PracticeSession
+from lib import timeouts
 
 # Outlive the budget by a margin so a paused practice is not evicted mid-run.
 _REAPER_MARGIN_SECONDS = 1800
@@ -27,10 +30,18 @@ class RedisPracticeStore:
             self._ttl,
             session.blueprint.time_budget_min * 60 + _REAPER_MARGIN_SECONDS,
         )
-        await self._redis.set(
-            self._key(session.practice_id), session.model_dump_json(), ex=ttl
+        await with_timeout(
+            self._redis.set(
+                self._key(session.practice_id), session.model_dump_json(), ex=ttl
+            ),
+            timeouts.redis(),
+            op="practice_session.save",
         )
 
     async def get(self, practice_id):
-        raw = await self._redis.get(self._key(practice_id))
+        raw = await with_timeout(
+            self._redis.get(self._key(practice_id)),
+            timeouts.redis(),
+            op="practice_session.get",
+        )
         return PracticeSession.model_validate_json(raw) if raw else None

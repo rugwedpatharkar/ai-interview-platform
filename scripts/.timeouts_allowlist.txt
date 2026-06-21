@@ -1,4 +1,2 @@
 # Allowed-for-now uninstrumented external calls. Phase 1 deletes from this file.
 # Format: absolute/path/to/file.py:LINE (as printed by check_timeouts.py)
-/Users/rugwedpatharkar/Projects/Project/src/ai-agents/app/infra/practice_sessions.py:30
-/Users/rugwedpatharkar/Projects/Project/src/ai-agents/app/infra/practice_sessions.py:35
