@@ -9,7 +9,4 @@ src/admin/app/resources/recommend.py:13:fan_out_match
 src/admin/app/resources/aptitude.py:47:get_aptitude_test
 src/admin/app/resources/aptitude.py:90:grade_aptitude
 src/admin/app/resources/talent.py:19:get_talent_pool
-src/admin/app/resources/analytics.py:31:get_funnel_analytics
-src/admin/app/resources/analytics.py:45:get_job_score_distribution
-src/admin/app/resources/analytics.py:106:get_no_ghosting_kpis
 src/admin/app/resources/integrity.py:30:get_integrity_timeline

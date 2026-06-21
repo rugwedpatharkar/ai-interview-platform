@@ -7,7 +7,7 @@ conversion (hired / total). Manager-only, comp-scoped, repository-capped.
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 from lib.schemas import ApplicationState, Role
 
 from app.errors import ForbiddenError
@@ -29,40 +29,53 @@ def _percentile(sorted_scores, q):
 
 
 async def get_funnel_analytics(identity, *, applications):
-    if identity["role"] not in _MANAGER_ROLES:
-        raise ForbiddenError("Only company users can view analytics")
-    rows = await applications.list_by_comp(identity["comp_id"])
-    counts = Counter(r.get("state", "") for r in rows)
-    total = len(rows)
-    hired = counts.get(ApplicationState.hired.value, 0)
-    return {
-        "states": [{"state": s, "count": c} for s, c in sorted(counts.items())],
-        "total": total,
-        "conversion_rate": (hired / total) if total else 0.0,
-    }
+    async with log_context(
+        log,
+        "resource.analytics.get_funnel_analytics",
+        **bind_ids(comp_id=identity["comp_id"]),
+    ):
+        if identity["role"] not in _MANAGER_ROLES:
+            raise ForbiddenError("Only company users can view analytics")
+        rows = await applications.list_by_comp(identity["comp_id"])
+        counts = Counter(r.get("state", "") for r in rows)
+        total = len(rows)
+        hired = counts.get(ApplicationState.hired.value, 0)
+        return {
+            "states": [{"state": s, "count": c} for s, c in sorted(counts.items())],
+            "total": total,
+            "conversion_rate": (hired / total) if total else 0.0,
+        }
 
 
 async def get_job_score_distribution(identity, job_id, *, applications, reports):
-    """Bias view: overall-score spread across a job's scored candidates."""
-    if identity["role"] not in _MANAGER_ROLES:
-        raise ForbiddenError("Only company users can view analytics")
-    apps = await applications.list_by_job(job_id, identity["comp_id"])
-    app_ids = [str(a["_id"]) for a in apps]
-    scores = [
-        r.get("overall_score", 0.0) for r in await reports.list_by_applications(app_ids)
-    ]
-    if not scores:
-        return dict.fromkeys(("count", "min", "max", "mean", "p25", "p50", "p75"), 0.0)
-    scores.sort()
-    return {
-        "count": len(scores),
-        "min": scores[0],
-        "max": scores[-1],
-        "mean": sum(scores) / len(scores),
-        "p25": _percentile(scores, 0.25),
-        "p50": _percentile(scores, 0.50),
-        "p75": _percentile(scores, 0.75),
-    }
+    # Bias view: overall-score spread across a job's scored candidates.
+    async with log_context(
+        log,
+        "resource.analytics.get_job_score_distribution",
+        **bind_ids(comp_id=identity["comp_id"], job_id=job_id),
+    ):
+        if identity["role"] not in _MANAGER_ROLES:
+            raise ForbiddenError("Only company users can view analytics")
+        apps = await applications.list_by_job(job_id, identity["comp_id"])
+        app_ids = [str(a["_id"]) for a in apps]
+        scores = [
+            r.get("overall_score", 0.0)
+            for r in await reports.list_by_applications(app_ids)
+        ]
+        if not scores:
+            return dict.fromkeys(
+                ("count", "min", "max", "mean", "p25", "p50", "p75"), 0.0
+            )
+        scores.sort()
+        return {
+            "count": len(scores),
+            "min": scores[0],
+            "max": scores[-1],
+            "mean": sum(scores) / len(scores),
+            "p25": _percentile(scores, 0.25),
+            "p50": _percentile(scores, 0.50),
+            "p75": _percentile(scores, 0.75),
+        }
 
 
 _SLA_HOURS = 7 * 24  # a candidate waiting longer than this with no movement is "stale"
@@ -104,40 +117,45 @@ def _median(values):
 
 
 async def get_no_ghosting_kpis(identity, *, applications, clock=_utcnow):
-    """Responsiveness KPIs from the application transition-log: candidates awaiting a
-    first action, how fast the company responds, and recent decisions. No new
-    collection — reads each Application's `transitions` array + `created_at`."""
-    if identity["role"] not in _MANAGER_ROLES:
-        raise ForbiddenError("Only company users can view analytics")
-    rows = await applications.list_by_comp(identity["comp_id"])
-    now = clock()
-    pending_review = stale_over_sla = responded = decided_last_7d = 0
-    response_hours = []
-    for r in rows:
-        created = _as_utc(r.get("created_at"))
-        transitions = r.get("transitions") or []
-        if transitions:
-            responded += 1
-            first_at = _as_utc(transitions[0].get("at"))
-            if created and first_at:
-                response_hours.append((first_at - created).total_seconds() / 3600)
-            last = transitions[-1]
-            last_at = _as_utc(last.get("at"))
-            if (
-                last.get("state") in _DECISION_STATES
-                and last_at
-                and (now - last_at) <= timedelta(days=7)
-            ):
-                decided_last_7d += 1
-        elif r.get("state", "") not in _TERMINAL_STATES:
-            pending_review += 1
-            if created and (now - created).total_seconds() / 3600 >= _SLA_HOURS:
-                stale_over_sla += 1
-    total = len(rows)
-    return {
-        "pending_review": pending_review,
-        "stale_over_sla": stale_over_sla,
-        "median_response_hours": _median(response_hours),
-        "response_rate": (responded / total) if total else 0.0,
-        "decided_last_7d": decided_last_7d,
-    }
+    # Responsiveness KPIs from the application transition-log: candidates awaiting a
+    # first action, how fast the company responds, and recent decisions. No new
+    # collection — reads each Application's `transitions` array + `created_at`.
+    async with log_context(
+        log,
+        "resource.analytics.get_no_ghosting_kpis",
+        **bind_ids(comp_id=identity["comp_id"]),
+    ):
+        if identity["role"] not in _MANAGER_ROLES:
+            raise ForbiddenError("Only company users can view analytics")
+        rows = await applications.list_by_comp(identity["comp_id"])
+        now = clock()
+        pending_review = stale_over_sla = responded = decided_last_7d = 0
+        response_hours = []
+        for r in rows:
+            created = _as_utc(r.get("created_at"))
+            transitions = r.get("transitions") or []
+            if transitions:
+                responded += 1
+                first_at = _as_utc(transitions[0].get("at"))
+                if created and first_at:
+                    response_hours.append((first_at - created).total_seconds() / 3600)
+                last = transitions[-1]
+                last_at = _as_utc(last.get("at"))
+                if (
+                    last.get("state") in _DECISION_STATES
+                    and last_at
+                    and (now - last_at) <= timedelta(days=7)
+                ):
+                    decided_last_7d += 1
+            elif r.get("state", "") not in _TERMINAL_STATES:
+                pending_review += 1
+                if created and (now - created).total_seconds() / 3600 >= _SLA_HOURS:
+                    stale_over_sla += 1
+        total = len(rows)
+        return {
+            "pending_review": pending_review,
+            "stale_over_sla": stale_over_sla,
+            "median_response_hours": _median(response_hours),
+            "response_rate": (responded / total) if total else 0.0,
+            "decided_last_7d": decided_last_7d,
+        }
