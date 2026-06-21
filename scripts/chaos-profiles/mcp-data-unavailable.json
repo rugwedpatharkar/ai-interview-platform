@@ -1,0 +1,7 @@
+{
+  "name": "mcp-data-unavailable",
+  "description": "Drop all TCP connections to mcp-data for 30 seconds (simulates service restart or network partition). Tests Phase 1 mcp-data timeout wrappers in ai-agents and the retry/fallback path. ai-agents must return a structured error to clients rather than hanging or leaking INTERNAL.",
+  "proxy": "mcp-data",
+  "note": "mcp-data uses HTTP (not Mongo/Redis/RabbitMQ), so this profile must be applied directly via Docker stop rather than toxiproxy. See CHAOS_VERIFICATION.md runbook for the docker stop/start sequence.",
+  "toxics": []
+}

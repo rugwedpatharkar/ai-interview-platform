@@ -1,0 +1,84 @@
+# Overlay: route Mongo/Redis/RabbitMQ traffic through toxiproxy so chaos profiles
+# can inject latency / pauses / restarts without restarting the apps.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.chaos.yml up -d
+#   bash scripts/run-chaos-smoke.sh mongo-slow
+#
+# toxiproxy API: http://localhost:8474
+# Proxy ports (host-visible): Mongo 26017, Redis 6380, RabbitMQ 5673
+#
+# See docs/superpowers/plans/CHAOS_VERIFICATION.md for the full runbook.
+
+services:
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:latest
+    ports:
+      - "8474:8474"   # toxiproxy HTTP API
+      - "26017:26017" # Mongo proxy
+      - "6380:6380"   # Redis proxy
+      - "5673:5673"   # RabbitMQ proxy
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+    # Seed proxy listeners on startup so the API is ready before app services start.
+    entrypoint: >
+      sh -c "
+        /toxiproxy-server &
+        sleep 1
+        /toxiproxy-cli create mongo  --listen 0.0.0.0:26017 --upstream mongo:27017
+        /toxiproxy-cli create redis  --listen 0.0.0.0:6380  --upstream redis:6379
+        /toxiproxy-cli create rabbit --listen 0.0.0.0:5673  --upstream rabbitmq:5672
+        wait
+      "
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget -qO- http://localhost:8474/proxies"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  admin:
+    environment:
+      MONGO_URI: mongodb://toxiproxy:26017
+      REDIS_URL: redis://toxiproxy:6380/0
+      RABBITMQ_URL: amqp://guest:guest@toxiproxy:5673/
+    depends_on:
+      toxiproxy:
+        condition: service_healthy
+
+  ai-agents:
+    environment:
+      MONGO_URI: mongodb://toxiproxy:26017
+      REDIS_URL: redis://toxiproxy:6380/0
+      RABBITMQ_URL: amqp://guest:guest@toxiproxy:5673/
+    depends_on:
+      toxiproxy:
+        condition: service_healthy
+
+  mcp-data:
+    environment:
+      MONGO_URI: mongodb://toxiproxy:26017
+      REDIS_URL: redis://toxiproxy:6380/0
+      RABBITMQ_URL: amqp://guest:guest@toxiproxy:5673/
+    depends_on:
+      toxiproxy:
+        condition: service_healthy
+
+  mcp-capability:
+    environment:
+      MONGO_URI: mongodb://toxiproxy:26017
+      REDIS_URL: redis://toxiproxy:6380/0
+      RABBITMQ_URL: amqp://guest:guest@toxiproxy:5673/
+    depends_on:
+      toxiproxy:
+        condition: service_healthy
+
+  voice-worker:
+    environment:
+      MONGO_URI: mongodb://toxiproxy:26017
+      REDIS_URL: redis://toxiproxy:6380/0
+      RABBITMQ_URL: amqp://guest:guest@toxiproxy:5673/
+    depends_on:
+      toxiproxy:
+        condition: service_healthy

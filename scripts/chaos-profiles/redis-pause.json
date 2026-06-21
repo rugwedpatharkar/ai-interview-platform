@@ -1,0 +1,17 @@
+{
+  "name": "redis-pause",
+  "description": "2s pause on all Redis connections. Tests Phase 1 Redis timeout wrappers, session-read fallback behavior, and rate-limiter degradation. Services should return DEADLINE_EXCEEDED or degrade gracefully — never hang indefinitely.",
+  "proxy": "redis",
+  "toxics": [
+    {
+      "name": "redis-pause",
+      "type": "latency",
+      "stream": "downstream",
+      "toxicity": 1.0,
+      "attributes": {
+        "latency": 2000,
+        "jitter": 0
+      }
+    }
+  ]
+}
