@@ -12,17 +12,28 @@ class ApplyRequest(_message.Message):
     CONSENT_FIELD_NUMBER: _ClassVar[int]
     job_id: str
     consent: bool
-    def __init__(self, job_id: _Optional[str] = ..., consent: _Optional[bool] = ...) -> None: ...
+    def __init__(
+        self, job_id: _Optional[str] = ..., consent: _Optional[bool] = ...
+    ) -> None: ...
 
 class ListMyApplicationsRequest(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
 class ListApplicantsRequest(_message.Message):
-    __slots__ = ("job_id",)
+    __slots__ = ("job_id", "page_size", "page_token")
     JOB_ID_FIELD_NUMBER: _ClassVar[int]
+    PAGE_SIZE_FIELD_NUMBER: _ClassVar[int]
+    PAGE_TOKEN_FIELD_NUMBER: _ClassVar[int]
     job_id: str
-    def __init__(self, job_id: _Optional[str] = ...) -> None: ...
+    page_size: int
+    page_token: str
+    def __init__(
+        self,
+        job_id: _Optional[str] = ...,
+        page_size: _Optional[int] = ...,
+        page_token: _Optional[str] = ...,
+    ) -> None: ...
 
 class WithdrawApplicationRequest(_message.Message):
     __slots__ = ("application_id",)
@@ -40,10 +51,25 @@ class ApplicationResponse(_message.Message):
     job_id: str
     candidate_user_id: str
     state: str
-    def __init__(self, application_id: _Optional[str] = ..., job_id: _Optional[str] = ..., candidate_user_id: _Optional[str] = ..., state: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        application_id: _Optional[str] = ...,
+        job_id: _Optional[str] = ...,
+        candidate_user_id: _Optional[str] = ...,
+        state: _Optional[str] = ...,
+    ) -> None: ...
 
 class ApplicationList(_message.Message):
-    __slots__ = ("applications",)
+    __slots__ = ("applications", "next_page_token", "total_count")
     APPLICATIONS_FIELD_NUMBER: _ClassVar[int]
+    NEXT_PAGE_TOKEN_FIELD_NUMBER: _ClassVar[int]
+    TOTAL_COUNT_FIELD_NUMBER: _ClassVar[int]
     applications: _containers.RepeatedCompositeFieldContainer[ApplicationResponse]
-    def __init__(self, applications: _Optional[_Iterable[_Union[ApplicationResponse, _Mapping]]] = ...) -> None: ...
+    next_page_token: str
+    total_count: int
+    def __init__(
+        self,
+        applications: _Optional[_Iterable[_Union[ApplicationResponse, _Mapping]]] = ...,
+        next_page_token: _Optional[str] = ...,
+        total_count: _Optional[int] = ...,
+    ) -> None: ...

@@ -20,6 +20,8 @@ message ListMyApplicationsRequest {}
 
 message ListApplicantsRequest {
   string job_id = 1;
+  int32 page_size = 2;   // server clamps to [1, 200], default 50
+  string page_token = 3; // opaque base64 cursor; empty = first page
 }
 
 message WithdrawApplicationRequest {
@@ -35,4 +37,6 @@ message ApplicationResponse {
 
 message ApplicationList {
   repeated ApplicationResponse applications = 1;
+  string next_page_token = 2; // empty when no more pages
+  int64 total_count = 3;      // only on first page (page_token == ""); 0 otherwise
 }
