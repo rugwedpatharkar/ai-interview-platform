@@ -124,6 +124,12 @@ INDEXES: list[IndexSpec] = [
         {"unique": True},
     ),
     IndexSpec("member_job_assignments", "comp_id"),
+    # client_errors: FE unhandled exceptions — 30-day TTL; event_id for dedup lookups.
+    IndexSpec("client_errors", "created_at", {"expireAfterSeconds": 30 * 24 * 3600}),
+    IndexSpec("client_errors", "event_id"),
+    # client_events: FE analytics events — 90-day TTL; event_id for dedup lookups.
+    IndexSpec("client_events", "created_at", {"expireAfterSeconds": 90 * 24 * 3600}),
+    IndexSpec("client_events", "event_id"),
 ]
 
 
