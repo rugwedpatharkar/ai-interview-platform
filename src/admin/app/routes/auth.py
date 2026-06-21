@@ -23,6 +23,7 @@ from app.errors import (
 )
 from app.resources import auth as auth_res
 from app.routes.pb import auth_pb2, auth_pb2_grpc
+from lib import errors as lib_errors
 
 log = get_logger(component="auth.routes")
 
@@ -33,6 +34,10 @@ _grpc_errors = counter(
     ["method"],
 )
 
+# Shared lookup used by this servicer and re-imported by every other route module.
+# Errors with a lib.errors peer are kept here for the other callers; _abort uses
+# lib_errors.to_grpc_status as the primary path and falls back to this dict only for
+# the two no-peer errors (InvalidTokenError, RateLimitedError).
 _STATUS = {
     ConflictError: grpc.StatusCode.ALREADY_EXISTS,
     InvalidTokenError: grpc.StatusCode.INVALID_ARGUMENT,
@@ -128,7 +133,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
         self._secretbox = secretbox
 
     async def _abort(self, context, exc, method="unknown"):
-        code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
+        code = _STATUS.get(type(exc)) or lib_errors.to_grpc_status(exc)[0]
         log_domain_error(log, exc, method=method)
         _grpc_errors.labels(method=method).inc()
         await context.abort(code, str(exc))
