@@ -60,7 +60,7 @@ const NAV_FOR_YOU: NavEntry[] = [
 const NAV_PREPARE: NavEntry[] = [
   { href: "/practice", label: "Practice", icon: Sparkles },
   { href: "/messages", label: "Messages", icon: Mail },
-  { href: "/account", label: "Settings", icon: Settings },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 /** Shared signed-in chrome for the candidate app: Midnight sidebar + topbar shell,

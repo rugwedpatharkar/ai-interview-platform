@@ -287,8 +287,8 @@ export default function CompanyOnboardingPage() {
             <span className="ap-cell-tag">Step 3 of 4</span>
             <h2 className="ap-h3 mb-1">Invite your team</h2>
             <p className="text-sm text-ink-2">
-              Each teammate gets a recruiter seat. They&apos;ll be able to read every
-              report and sign decisions.
+              Jot down who you&apos;d like on board. Recruiter seats let teammates read
+              every report and sign decisions.
             </p>
             <div className="mt-5 grid gap-2">
               {state.teamEmails.map((email, i) => {
@@ -340,7 +340,8 @@ export default function CompanyOnboardingPage() {
               </button>
             </div>
             <p className="mt-4 text-xs text-ink-3">
-              Invitations are sent when you save — no message goes out yet.
+              This is a quick setup preview — nothing is sent yet. Invite teammates
+              anytime from Settings → Team.
             </p>
           </section>
         )}

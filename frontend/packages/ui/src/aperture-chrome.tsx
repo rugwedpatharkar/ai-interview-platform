@@ -371,7 +371,6 @@ const DEFAULT_BADGES = [
 const DEFAULT_LEGAL = [
   { label: "Terms", href: "/terms" },
   { label: "Privacy", href: "/privacy" },
-  { label: "Cookies", href: "/cookies" },
   { label: "DPA", href: "/dpa" },
 ];
 

@@ -50,7 +50,7 @@ const RESPONDED = new Set([
 ]);
 
 export function Dashboard() {
-  const { api, token, identity } = useAuth();
+  const { api, token } = useAuth();
   const email = token
     ? ((decodeJwtPayload(token)?.email as string | undefined) ?? null)
     : null;
@@ -146,8 +146,9 @@ export function Dashboard() {
     }, [list]);
 
   const nextInterview = interviewApps[0];
-  const firstName =
-    (email ? email.split("@")[0] : identity?.id)?.split(/[.\s_]/)[0] ?? "there";
+  // No display-name field exists on the identity (id is a Mongo ObjectId), so derive a
+  // friendly name from the email local-part and fall back to "there" — never the raw id.
+  const firstName = email?.split("@")[0]?.split(/[.\s_]/)[0] || "there";
   const greetName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
 
   // Stable callback for the application rows so memoized children don't re-render.
@@ -214,7 +215,7 @@ export function Dashboard() {
                 />
                 <StatCell
                   value={interviewApps.length}
-                  label="Interviews scheduled"
+                  label="Interviews to start"
                 />
                 <StatCell
                   value={respondedCount}
