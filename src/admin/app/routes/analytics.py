@@ -1,12 +1,12 @@
 """gRPC AnalyticsService routes — thin adapter over resources/analytics."""
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import analytics as analytics_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import analytics_pb2, analytics_pb2_grpc
 
 log = get_logger(component="analytics.routes")
@@ -26,14 +26,10 @@ class AnalyticsServicer(analytics_pb2_grpc.AnalyticsServiceServicer):
         self._tokens = tokens
 
     async def _abort(self, context, exc, method="unknown"):
-        log.warning(
-            "analytics.routes.{}: {} code={}",
-            method,
-            exc,
-            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
-        )
+        code, msg = to_grpc_status(exc)
+        log.warning("analytics.routes.{}: {} code={}", method, exc, code.name)
         _grpc_errors.labels(method=method).inc()
-        await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
+        await context.abort(code, msg)
 
     async def GetFunnelAnalytics(self, request, context):
         _grpc_total.labels(method="GetFunnelAnalytics").inc()
