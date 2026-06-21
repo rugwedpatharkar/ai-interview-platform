@@ -1,4 +1,3 @@
 # Resource functions not yet wrapped in log_context. Phase 2 shrinks this file.
 # Format: relative/path/to/file.py:LINE:funcname
-src/admin/app/resources/recommend.py:13:fan_out_match
 src/admin/app/resources/integrity.py:30:get_integrity_timeline
