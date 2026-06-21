@@ -1,5 +1,6 @@
 export { makeTokenStore, type TokenStore, type Tokens } from "./tokens.js";
 export { createClients, getLastCorrelationId } from "./transport.js";
+export { initObservability, track, recordError, type ClientEventName } from "./observability.js";
 export {
   makeAuth,
   type AuthState,
