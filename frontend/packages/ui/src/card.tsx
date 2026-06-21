@@ -25,9 +25,15 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
   return <div className={cn("flex flex-col gap-1.5 p-6", className)} {...props} />;
 }
 
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
+export interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {
+  /** Override the heading level. Defaults to "h2". Use "h1" on standalone pages
+   *  that have no other h1 in scope (e.g. a full-page verify card). */
+  as?: "h1" | "h2" | "h3" | "h4";
+}
+
+export function CardTitle({ className, as: Tag = "h2", ...props }: CardTitleProps) {
   return (
-    <h2
+    <Tag
       className={cn(
         // Product register: card headings are sans (Geist), not the editorial serif.
         // Page-level titles/greetings opt into font-display explicitly where they want character.

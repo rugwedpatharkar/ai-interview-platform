@@ -1,10 +1,10 @@
 "use client";
 
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import { Check } from "lucide-react";
 import type { ComponentProps } from "react";
 
 import { cn } from "./cn.js";
+import { CheckIcon } from "./internal-icons.js";
 
 export function Checkbox({
   className,
@@ -22,7 +22,7 @@ export function Checkbox({
       {...props}
     >
       <CheckboxPrimitive.Indicator className="flex animate-check-pop items-center justify-center">
-        <Check className="size-3 stroke-[3]" aria-hidden />
+        <CheckIcon className="size-3 stroke-[3]" aria-hidden />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

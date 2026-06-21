@@ -5,9 +5,17 @@ import { cn } from "./cn.js";
 import { Input } from "./input.js";
 import { EmptyState, ErrorState } from "./layout.js";
 import { Skeleton } from "./skeleton.js";
-import { MessageSquare, Send, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { SendIcon, UserIcon } from "./internal-icons.js";
+
+function MessageSquareIcon(props: React.SVGAttributes<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
 
 /** A rendered chat row — real or optimistic. The app's `MessageDTO`/optimistic message satisfy this. */
 export interface ThreadMessage {
@@ -115,7 +123,7 @@ export function MessageThreadView({
       >
         {rows.length === 0 && (
           <EmptyState
-            icon={MessageSquare}
+            icon={MessageSquareIcon}
             title="No messages yet"
             description={emptyDescription}
           />
@@ -141,7 +149,7 @@ export function MessageThreadView({
                 )}
                 aria-hidden
               >
-                {isSelf ? <User className="size-4" /> : <PeerIcon className="size-4" />}
+                {isSelf ? <UserIcon className="size-4" /> : <PeerIcon className="size-4" />}
               </span>
               <div className={cn("min-w-0", isSelf && "flex flex-col items-end")}>
                 <span className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -183,7 +191,7 @@ export function MessageThreadView({
           disabled={!input.trim() || sending}
           aria-label="Send message"
         >
-          <Send className="size-4" aria-hidden />
+          <SendIcon className="size-4" aria-hidden />
         </Button>
       </form>
     </div>

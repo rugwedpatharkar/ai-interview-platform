@@ -1,10 +1,10 @@
 "use client";
 
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
-import { Check } from "lucide-react";
 import type { ComponentProps } from "react";
 
 import { cn } from "./cn.js";
+import { CheckIcon } from "./internal-icons.js";
 
 export const DropdownMenu = DropdownMenuPrimitive.Root;
 export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
@@ -67,7 +67,7 @@ export function DropdownMenuCheckboxItem({
     >
       <span className="absolute left-2 flex size-4 items-center justify-center">
         <DropdownMenuPrimitive.ItemIndicator>
-          <Check className="size-4" />
+          <CheckIcon className="size-4" />
         </DropdownMenuPrimitive.ItemIndicator>
       </span>
       {children}

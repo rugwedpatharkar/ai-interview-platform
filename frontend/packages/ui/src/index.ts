@@ -135,7 +135,7 @@ export {
 } from "./notification-bell.js";
 
 // Aperture Pro · v3 — sprite + marketing chrome
-export { ApertureSprite, ApIcon } from "./aperture-sprite.js";
+export { ApertureSprite, ApIcon, type ApIconName } from "./aperture-sprite.js";
 export {
   type LandingAudience,
   MegaNav,

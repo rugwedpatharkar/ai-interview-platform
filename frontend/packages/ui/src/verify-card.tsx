@@ -1,12 +1,29 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ArrowRight } from "lucide-react";
 import { Alert } from "./alert.js";
 import { Button } from "./button.js";
 import { Card, CardContent, CardHeader, CardTitle } from "./card.js";
 import { Input } from "./input.js";
 import { Spinner } from "./spinner.js";
+
+function ArrowRightIcon(props: React.SVGAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </svg>
+  );
+}
 
 export type VerifyStatus = "working" | "ok" | "error" | "invalid";
 
@@ -55,7 +72,8 @@ export function VerifyCard({
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Email verification</CardTitle>
+          {/* as="h1": this card IS the standalone page — it gets the page's only h1 */}
+          <CardTitle as="h1">Email verification</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {status === "working" && (
@@ -115,7 +133,7 @@ export function VerifyCard({
               className="inline-flex items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
               Go to login
-              <ArrowRight className="size-4" aria-hidden />
+              <ArrowRightIcon className="size-4" aria-hidden />
             </a>
           ) : (
             <a
@@ -123,7 +141,7 @@ export function VerifyCard({
               className="inline-flex items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
               Continue
-              <ArrowRight className="size-4" aria-hidden />
+              <ArrowRightIcon className="size-4" aria-hidden />
             </a>
           )}
         </CardContent>

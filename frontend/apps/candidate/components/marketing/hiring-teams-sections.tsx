@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ApIcon } from "@ip/ui";
+import { ApIcon, type ApIconName } from "@ip/ui";
 import { PrivacyPanel } from "./privacy-panel";
 
 /* ============================================================
@@ -1075,7 +1075,7 @@ export function CompareTable() {
    11 — WHAT YOU GET
    ============================================================ */
 export function WhatYouGet() {
-  const artifacts = [
+  const artifacts: { tag: string; icon: ApIconName; body: string }[] = [
     {
       tag: "↳ Verified identity",
       icon: "shield-check",

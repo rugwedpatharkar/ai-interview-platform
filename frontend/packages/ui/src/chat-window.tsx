@@ -1,7 +1,29 @@
 "use client";
 
-import { ArrowDown, Send, Sparkles, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
+import { SendIcon, UserIcon } from "./internal-icons.js";
+
+function ArrowDownIcon(props: React.SVGAttributes<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 5v14" />
+      <path d="m19 12-7 7-7-7" />
+    </svg>
+  );
+}
+
+function SparklesIcon(props: React.SVGAttributes<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+      <path d="M5 3v4" />
+      <path d="M19 17v4" />
+      <path d="M3 5h4" />
+      <path d="M17 19h4" />
+    </svg>
+  );
+}
 
 import { Badge } from "./badge.js";
 import { Button } from "./button.js";
@@ -146,7 +168,7 @@ export function ChatWindow({
         {turns.length === 0 && emptyHint && (
           <div className="flex flex-col items-center gap-2 py-8 text-center">
             <span className="flex size-10 items-center justify-center rounded-full bg-primary/15 text-primary">
-              <Sparkles className="size-5" aria-hidden />
+              <SparklesIcon className="size-5" aria-hidden />
             </span>
             <p className="max-w-xs text-sm text-muted-foreground">{emptyHint}</p>
           </div>
@@ -173,9 +195,9 @@ export function ChatWindow({
                 aria-hidden
               >
                 {isUser ? (
-                  <User className="size-4" />
+                  <UserIcon className="size-4" />
                 ) : (
-                  <Sparkles className="size-4" />
+                  <SparklesIcon className="size-4" />
                 )}
               </span>
               <div className={cn("min-w-0", isUser && "flex flex-col items-end")}>
@@ -224,7 +246,7 @@ export function ChatWindow({
           aria-label="Scroll to latest"
           className="absolute bottom-16 left-1/2 inline-flex size-8 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground shadow-md transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <ArrowDown className="size-4" aria-hidden />
+          <ArrowDownIcon className="size-4" aria-hidden />
         </button>
       )}
 
@@ -247,7 +269,7 @@ export function ChatWindow({
           disabled={!input.trim()}
           aria-label="Send message"
         >
-          <Send className="size-4" aria-hidden />
+          <SendIcon className="size-4" aria-hidden />
         </Button>
       </form>
     </div>

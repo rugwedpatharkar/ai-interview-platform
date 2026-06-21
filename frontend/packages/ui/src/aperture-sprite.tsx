@@ -176,12 +176,43 @@ export function ApertureSprite() {
   );
 }
 
+/** All sprite ids defined in <ApertureSprite>. Unknown names are a type error. */
+export type ApIconName =
+  | "mark"
+  | "check"
+  | "x"
+  | "shield"
+  | "shield-check"
+  | "eye"
+  | "lock"
+  | "cam"
+  | "mic"
+  | "bolt"
+  | "user"
+  | "users"
+  | "briefcase"
+  | "grid"
+  | "report"
+  | "timer"
+  | "bell"
+  | "globe"
+  | "spark"
+  | "dl"
+  | "arrow"
+  | "building"
+  | "heart"
+  | "academy"
+  | "dollar"
+  | "bag"
+  | "chip"
+  | "menu";
+
 /** Shorthand <ApIcon name="check" /> for component-internal use. */
 export function ApIcon({
   name,
   className,
   ...rest
-}: { name: string } & React.SVGAttributes<SVGSVGElement>) {
+}: { name: ApIconName } & React.SVGAttributes<SVGSVGElement>) {
   return (
     <svg className={className} aria-hidden focusable={false} {...rest}>
       <use href={`#ap-${name}`} />

@@ -1,13 +1,30 @@
 "use client";
 
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check, ChevronDown } from "lucide-react";
 import type { ComponentProps } from "react";
 
 import { cn } from "./cn.js";
+import { CheckIcon } from "./internal-icons.js";
 
 export const Select = SelectPrimitive.Root;
 export const SelectValue = SelectPrimitive.Value;
+
+function ChevronDownIcon(props: React.SVGAttributes<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
 
 export function SelectTrigger({
   className,
@@ -27,7 +44,7 @@ export function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -73,7 +90,7 @@ export function SelectItem({
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
       <span className="absolute right-2 flex size-4 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <Check className="size-4 text-primary" aria-hidden />
+          <CheckIcon className="size-4 text-primary" aria-hidden />
         </SelectPrimitive.ItemIndicator>
       </span>
     </SelectPrimitive.Item>
