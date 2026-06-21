@@ -177,22 +177,34 @@ export default function ApplicantReportPage() {
   const dto = report.data ? toReportDTO(report.data as Record<string, unknown>) : null;
 
   const decide = useMutation({
-    mutationFn: async (action: "advance" | "hold" | "reject") => {
-      // Routes to overrideGate for "advance" — preserves the recruiter-app shortcut.
-      // hold/reject are best-effort: the real decision RPC may be added later; for now
-      // we toast so the audit trail isn't faked.
-      if (action === "advance") {
+    mutationFn: async (input: {
+      action: "advance" | "hold" | "reject";
+      reasonCode?: string;
+      freeText?: string;
+    }) => {
+      if (input.action === "advance") {
         await api.decisions.overrideGate({ applicationId: appId });
-        return action;
+        return input.action;
       }
-      return action;
+      if (input.action === "hold") {
+        await api.decisions.holdApplication({
+          applicationId: appId,
+          reasonCode: input.reasonCode ?? "other",
+          freeText: input.freeText ?? "",
+        });
+        return input.action;
+      }
+      await api.decisions.rejectApplication({
+        applicationId: appId,
+        reasonCode: input.reasonCode ?? "other",
+        freeText: input.freeText ?? "",
+      });
+      return input.action;
     },
     onSuccess: (action) => {
       if (action === "advance") toast.success("Candidate advanced");
-      if (action === "hold")
-        toast.info("Marked on hold — candidate notifications are coming soon");
-      if (action === "reject")
-        toast.info("Marked as declined — candidate notifications are coming soon");
+      if (action === "hold") toast.success("Candidate placed on hold");
+      if (action === "reject") toast.success("Candidate declined");
       qc.invalidateQueries({ queryKey: ["applicants", id] });
       qc.invalidateQueries({ queryKey: ["report", appId] });
     },
@@ -400,7 +412,7 @@ export default function ApplicantReportPage() {
                     description="The candidate proceeds to the next stage and is notified."
                     confirmLabel="Advance"
                     busy={decide.isPending}
-                    onConfirm={() => decide.mutate("advance")}
+                    onConfirm={() => decide.mutate({ action: "advance" })}
                   />
                   <ConfirmDialog
                     trigger={
@@ -412,7 +424,7 @@ export default function ApplicantReportPage() {
                     description="They stay in the pipeline; no decision is sent yet."
                     confirmLabel="Hold"
                     busy={decide.isPending}
-                    onConfirm={() => decide.mutate("hold")}
+                    onConfirm={() => decide.mutate({ action: "hold" })}
                   />
                   <ConfirmDialog
                     trigger={
@@ -421,11 +433,11 @@ export default function ApplicantReportPage() {
                       </button>
                     }
                     title="Decline this candidate?"
-                    description="Records the decline for your team. Candidate notifications are coming soon."
+                    description="Records the decline for your team. The candidate will not be notified automatically."
                     confirmLabel="Decline"
                     destructive
                     busy={decide.isPending}
-                    onConfirm={() => decide.mutate("reject")}
+                    onConfirm={() => decide.mutate({ action: "reject" })}
                   />
                 </div>
               </section>
