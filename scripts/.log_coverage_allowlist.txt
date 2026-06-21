@@ -2,7 +2,5 @@
 # Format: relative/path/to/file.py:LINE:funcname
 src/admin/app/resources/sourcing.py:53:search_candidates
 src/admin/app/resources/recommend.py:13:fan_out_match
-src/admin/app/resources/aptitude.py:47:get_aptitude_test
-src/admin/app/resources/aptitude.py:90:grade_aptitude
 src/admin/app/resources/talent.py:19:get_talent_pool
 src/admin/app/resources/integrity.py:30:get_integrity_timeline
