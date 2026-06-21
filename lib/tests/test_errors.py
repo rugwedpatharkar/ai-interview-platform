@@ -11,9 +11,7 @@ from lib.errors import (
     ValidationError,
     to_grpc_status,
 )
-from lib.errors import (
-    TimeoutError as AppTimeoutError,
-)
+from lib.errors import TimeoutError as AppTimeoutError
 from lib.resilience import OperationTimeout
 
 
@@ -66,7 +64,10 @@ def test_to_grpc_status_maps_each_subclass():
         assert code == expected_code, (
             f"{type(err).__name__} → {code}, want {expected_code}"
         )
-        assert msg == err.public_message if isinstance(err, AppError) else True
+        if isinstance(err, AppError):
+            assert msg == err.public_message
+        else:
+            assert isinstance(msg, str) and msg
 
 
 def test_to_grpc_status_falls_back_to_internal_for_unknown():
