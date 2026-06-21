@@ -1,5 +1,16 @@
 # Free-tier deployment plan — 2026-06-21
 
+> **⚠️ Superseded — read the refreshed plans instead:**
+> - **[deploy-index.md](./2026-06-21-deploy-index.md)** — decision guide + 2026 cap comparison
+> - **[deploy-shape-a-self-hosted.md](./2026-06-21-deploy-shape-a-self-hosted.md)** — recommended runbook (refreshed for the June-2026 Oracle ARM downgrade to 2 OCPU / 12 GB)
+> - **[deploy-shape-b-managed-hybrid.md](./2026-06-21-deploy-shape-b-managed-hybrid.md)** — managed-services alternative (Atlas / Upstash / CloudAMQP / R2)
+>
+> This original draft cites the pre-June-2026 Oracle ARM caps (4 OCPU / 24 GB)
+> and a Fly.io free tier that no longer exists. Kept for history; do not
+> follow as-is.
+
+---
+
 End-to-end runbook to put **Aptura** live on the internet for **$0/month**.
 Shape A from [DEPLOYMENT.md](./DEPLOYMENT.md): one always-free Oracle ARM VM
 runs the whole backend stack (`docker compose up`), Cloudflare Pages serves
