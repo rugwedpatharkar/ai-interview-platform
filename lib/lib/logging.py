@@ -183,4 +183,5 @@ def log_domain_error(log, err, **ctx) -> None:
     For unexpected exceptions, keep using ``log.exception()`` via ``log_context``.
     """
     bound = log.bind(**ctx) if ctx else log
-    bound.debug("domain_error: {} kind={}", err.public_message, type(err).__name__)
+    message = getattr(err, "public_message", str(err))
+    bound.debug("domain_error: {} kind={}", message, type(err).__name__)
