@@ -7,6 +7,8 @@ package admin.decision.v1;
 service DecisionService {
   rpc DecideApplication(DecideRequest) returns (DecisionResponse);
   rpc OverrideGate(OverrideGateRequest) returns (DecisionResponse);
+  rpc HoldApplication(HoldApplicationRequest) returns (HoldApplicationResponse);
+  rpc RejectApplication(RejectApplicationRequest) returns (RejectApplicationResponse);
 }
 
 message DecideRequest {
@@ -21,4 +23,28 @@ message OverrideGateRequest {
 message DecisionResponse {
   string application_id = 1;
   string state = 2;
+}
+
+message HoldApplicationRequest {
+  string application_id = 1;
+  string reason_code = 2;
+  string free_text = 3;
+}
+
+message HoldApplicationResponse {
+  string application_id = 1;
+  string new_state = 2;
+  int64 audited_at_ms = 3;
+}
+
+message RejectApplicationRequest {
+  string application_id = 1;
+  string reason_code = 2;
+  string free_text = 3;
+}
+
+message RejectApplicationResponse {
+  string application_id = 1;
+  string new_state = 2;
+  int64 audited_at_ms = 3;
 }
