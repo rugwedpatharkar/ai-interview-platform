@@ -48,7 +48,9 @@ async def _ensure_rag() -> dict:
             _rag["embedder"] = GeminiEmbedder(
                 api_key=_settings.gemini_api_key, model=_settings.gemini_embed_model
             )
-            _rag["store"] = QdrantVectorStore(_settings.qdrant_url)
+            _rag["store"] = QdrantVectorStore(
+                _settings.qdrant_url, _settings.qdrant_api_key
+            )
             _rag["fetcher"] = HttpFetcher()
             _rag["redis"] = create_redis(_settings.redis_url)
     return _rag

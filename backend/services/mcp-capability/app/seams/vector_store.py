@@ -18,10 +18,12 @@ def _cosine(a, b):
 
 
 class QdrantVectorStore:
-    def __init__(self, url):
+    def __init__(self, url, api_key=""):
         from qdrant_client import AsyncQdrantClient
 
-        self._client = AsyncQdrantClient(url=url)
+        # `api_key` is required by managed Qdrant (Qdrant Cloud); empty for a local
+        # cluster. Pass None when unset so the client doesn't send an empty bearer.
+        self._client = AsyncQdrantClient(url=url, api_key=api_key or None)
 
     async def upsert(self, collection, ids, vectors, payloads):
         from qdrant_client import models

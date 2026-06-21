@@ -57,16 +57,31 @@ def _token_service(s):
     )
 
 
+async def _health(send):
+    """Unauthenticated liveness probe (no DB hit) for load balancers / uptime pings."""
+    await send(
+        {
+            "type": "http.response.start",
+            "status": 200,
+            "headers": [(b"content-type", b"text/plain")],
+        }
+    )
+    await send({"type": "http.response.body", "body": b"ok"})
+
+
 def _dispatcher(grpc_app, oauth_app, public_app):
-    """Path-prefix ASGI router: /auth/oauth/* → OAuth, /public/* → REST, else gRPC-web.
+    """Path-prefix ASGI router: /healthz → 200, /auth/oauth/* → OAuth, /public/* → REST,
+    else gRPC-web.
 
     gRPC method paths are /admin.*; OAuth lives under /auth/oauth/ and the public
-    marketplace under /public/, so the three prefixes never collide.
+    marketplace under /public/, so the prefixes never collide.
     """
 
     async def dispatch(scope, receive, send):
         path = scope.get("path", "")
-        if scope["type"] == "http" and path.startswith("/auth/oauth/"):
+        if scope["type"] == "http" and path == "/healthz":
+            await _health(send)
+        elif scope["type"] == "http" and path.startswith("/auth/oauth/"):
             await oauth_app(scope, receive, send)
         elif scope["type"] == "http" and path.startswith("/public/"):
             await public_app(scope, receive, send)
