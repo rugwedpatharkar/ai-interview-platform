@@ -134,21 +134,27 @@ export default function ApplicantReportPage() {
     },
   });
 
-  // Integrity timeline — sibling, non-blocking. A1 isn't on the generated client
-  // yet, so the cast seam keeps the screen building; mock when NEXT_PUBLIC_MOCK=1.
+  // Integrity timeline — sibling, non-blocking. Wire ProctorFlag.severity is
+  // typed as `string` by protobuf-es; we project it to the local Severity union.
   const integrity = useAuthedQuery(token, {
     queryKey: ["integrity", appId],
     retry: 1,
-    queryFn: () =>
-      USE_MOCK
-        ? mockIntegrity(appId)
-        : (
-            api.reports as unknown as {
-              getIntegrityTimeline(req: {
-                applicationId: string;
-              }): Promise<IntegrityTimeline>;
-            }
-          ).getIntegrityTimeline({ applicationId: appId }),
+    queryFn: async (): Promise<IntegrityTimeline> => {
+      if (USE_MOCK) return mockIntegrity(appId);
+      const w = await api.reports.getIntegrityTimeline({ applicationId: appId });
+      return {
+        integrityScore: w.integrityScore,
+        flags: w.flags.map((f) => ({
+          type: f.type,
+          severity: f.severity as ProctorFlag["severity"],
+          at: f.at,
+          meta: f.meta,
+        })),
+        recordingUrl: w.recordingUrl,
+        autoTerminated: w.autoTerminated,
+        terminatedReason: w.terminatedReason,
+      };
+    },
     enabled: Boolean(token && appId),
   });
 
