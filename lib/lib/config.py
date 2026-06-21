@@ -43,6 +43,18 @@ class BaseServiceSettings(BaseSettings):
     s3_bucket: str = "interview-platform"
     storage_presign_ttl_seconds: int = 900
 
+    # Resilience knobs — see docs/superpowers/specs/2026-06-21-...-design.md §2.3.
+    # Every external-call site reads via lib.timeouts.<accessor>(); no magic numbers in
+    # call sites means per-environment tuning happens via env, not code.
+    mongo_op_timeout_seconds: float = 10.0
+    redis_op_timeout_seconds: float = 5.0
+    rabbitmq_publish_timeout_seconds: float = 5.0
+    llm_call_timeout_seconds: float = 30.0
+    llm_call_retry_attempts: int = 3
+    mcp_call_timeout_seconds: float = 20.0
+    storage_op_timeout_seconds: float = 35.0
+    http_client_timeout_seconds: float = 15.0
+
     @field_validator("jwt_secret")
     @classmethod
     def _jwt_secret_strength(cls, v: str) -> str:
