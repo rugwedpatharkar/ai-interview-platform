@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function WhatWeDontDoPage() {
   return (
-    <MarketingShell>
+    <MarketingShell audience="applicants">
       <section className="py-16 lg:py-24">
         <div className="ap-wrap">
           <span className="ap-eyebrow">What Aptura does not do</span>

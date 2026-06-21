@@ -26,7 +26,7 @@ export default function WaitlistPage() {
   }
 
   return (
-    <MarketingShell>
+    <MarketingShell audience="applicants">
       <section className="py-12 lg:py-20">
         <div className="ap-wrap grid items-start gap-12 lg:grid-cols-[1.05fr_1fr]">
           <div>

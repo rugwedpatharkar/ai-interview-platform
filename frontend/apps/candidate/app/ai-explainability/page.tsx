@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function AiExplainabilityPage() {
   return (
-    <MarketingShell>
+    <MarketingShell audience="applicants">
       {/* Hero */}
       <section className="py-16 lg:py-24">
         <div className="ap-wrap">

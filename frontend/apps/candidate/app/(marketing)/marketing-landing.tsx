@@ -12,7 +12,7 @@ import { ApIcon, MarketingShell } from "@ip/ui";
 
 export function MarketingLanding() {
   return (
-    <MarketingShell>
+    <MarketingShell audience="applicants">
       <Hero />
       <StatsBand />
       <EvidenceFlip />

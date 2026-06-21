@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function SampleReportPage() {
   return (
-    <MarketingShell>
+    <MarketingShell audience="applicants">
       {/* Hero */}
       <section className="py-12 lg:py-20">
         <div className="ap-wrap">
