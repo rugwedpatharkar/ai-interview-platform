@@ -35,14 +35,6 @@ src/admin/app/resources/application.py:94:withdraw_application
 src/admin/app/resources/recommend.py:13:fan_out_match
 src/admin/app/resources/aptitude.py:47:get_aptitude_test
 src/admin/app/resources/aptitude.py:90:grade_aptitude
-src/admin/app/resources/scheduling.py:185:propose_slots
-src/admin/app/resources/scheduling.py:191:reschedule
-src/admin/app/resources/scheduling.py:197:get_schedule
-src/admin/app/resources/scheduling.py:212:choose_slot
-src/admin/app/resources/scheduling.py:243:cancel
-src/admin/app/resources/scheduling.py:273:get_ics
-src/admin/app/resources/scheduling.py:305:list_candidate_interviews
-src/admin/app/resources/scheduling.py:318:list_company_bookings
 src/admin/app/resources/talent.py:19:get_talent_pool
 src/admin/app/resources/scheduler.py:17:retention_pass
 src/admin/app/resources/scheduler.py:25:aptitude_expiry_pass

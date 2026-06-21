@@ -9,7 +9,7 @@ rate-limited; the candidate's pick is first-write-wins via the booking `version`
 
 from datetime import UTC, datetime
 
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 from lib.schemas import Role
 
 from app.errors import (
@@ -183,30 +183,52 @@ async def _propose(
 
 
 async def propose_slots(identity, application_id, slots, location, note, **kw):
-    return await _propose(
-        identity, application_id, slots, location, note, "interview_proposed", **kw
-    )
+    async with log_context(
+        log,
+        "resource.scheduling.propose_slots",
+        **bind_ids(
+            user_id=identity["id"],
+            comp_id=identity.get("comp_id", ""),
+            application_id=application_id,
+        ),
+    ):
+        return await _propose(
+            identity, application_id, slots, location, note, "interview_proposed", **kw
+        )
 
 
 async def reschedule(identity, application_id, slots, location, note, **kw):
-    return await _propose(
-        identity, application_id, slots, location, note, "interview_rescheduled", **kw
-    )
+    async with log_context(
+        log,
+        "resource.scheduling.reschedule",
+        **bind_ids(
+            user_id=identity["id"],
+            comp_id=identity.get("comp_id", ""),
+            application_id=application_id,
+        ),
+    ):
+        return await _propose(
+            identity,
+            application_id,
+            slots,
+            location,
+            note,
+            "interview_rescheduled",
+            **kw,
+        )
 
 
 async def get_schedule(identity, application_id, *, applications, slots_repo, bookings):
-    await _authorize_either(identity, application_id, applications)
-    return await _schedule_dto(application_id, slots_repo, bookings)
-
-
-def _match_offered(proposal, start_at):
-    """The offered (start_dt, duration) for `start_at`, or ValidationError. Runs BEFORE
-    any CAS write so a non-offered time never touches the booking."""
-    wanted = _parse_instant(start_at)
-    for slot in (proposal or {}).get("slots", []):
-        if _as_dt(slot["start_at"]) == wanted:
-            return wanted, slot["duration_minutes"]
-    raise ValidationError("chosen time is not an offered slot")
+    async with log_context(
+        log,
+        "resource.scheduling.get_schedule",
+        **bind_ids(
+            user_id=identity["id"],
+            application_id=application_id,
+        ),
+    ):
+        await _authorize_either(identity, application_id, applications)
+        return await _schedule_dto(application_id, slots_repo, bookings)
 
 
 async def choose_slot(
@@ -221,23 +243,31 @@ async def choose_slot(
     limiter=None,
     clock=_utcnow,
 ):
-    await _owned(identity, application_id, applications)
-    await _rate_limit(limiter, identity["id"])
-    booking = await bookings.get_by_application(application_id)
-    if booking is None:
-        raise NotFoundError("no interview to schedule")
-    proposal = await slots_repo.get_open_for_application(application_id)
-    chosen_start, duration = _match_offered(proposal, start_at)
-    won = await bookings.choose_if_proposed(
-        application_id,
-        expected_version=booking["version"],
-        chosen_start_at=chosen_start,
-        duration_minutes=duration,
-        location=(proposal or {}).get("location", ""),
-    )
-    if not won:
-        raise ConflictError("that time was just taken")
-    return await _schedule_dto(application_id, slots_repo, bookings)
+    async with log_context(
+        log,
+        "resource.scheduling.choose_slot",
+        **bind_ids(
+            user_id=identity["id"],
+            application_id=application_id,
+        ),
+    ):
+        await _owned(identity, application_id, applications)
+        await _rate_limit(limiter, identity["id"])
+        booking = await bookings.get_by_application(application_id)
+        if booking is None:
+            raise NotFoundError("no interview to schedule")
+        proposal = await slots_repo.get_open_for_application(application_id)
+        chosen_start, duration = _match_offered(proposal, start_at)
+        won = await bookings.choose_if_proposed(
+            application_id,
+            expected_version=booking["version"],
+            chosen_start_at=chosen_start,
+            duration_minutes=duration,
+            location=(proposal or {}).get("location", ""),
+        )
+        if not won:
+            raise ConflictError("that time was just taken")
+        return await _schedule_dto(application_id, slots_repo, bookings)
 
 
 async def cancel(
@@ -250,42 +280,58 @@ async def cancel(
     notifications=None,
     limiter=None,
 ):
-    await _authorize_either(identity, application_id, applications)
-    await _rate_limit(limiter, identity["id"])
-    booking = await bookings.get_by_application(application_id)
-    if booking is None:
-        raise NotFoundError("no interview to cancel")
-    by = "company" if identity["role"] in _MANAGER_ROLES else "candidate"
-    # A double-cancel returns False (already cancelled) — idempotent success, no raise.
-    await bookings.cancel_if(application_id, by=by)
-    # Notify the candidate when the company cancels (the recruiter side has no single
-    # user_id on the application; candidate-initiated cancels notify no one here).
-    if by == "company":
-        await _notify(
-            notifications,
-            booking.get("candidate_user_id", ""),
-            booking.get("comp_id", ""),
-            "interview_cancelled",
-        )
-    return await _schedule_dto(application_id, slots_repo, bookings)
+    async with log_context(
+        log,
+        "resource.scheduling.cancel",
+        **bind_ids(
+            user_id=identity["id"],
+            application_id=application_id,
+        ),
+    ):
+        await _authorize_either(identity, application_id, applications)
+        await _rate_limit(limiter, identity["id"])
+        booking = await bookings.get_by_application(application_id)
+        if booking is None:
+            raise NotFoundError("no interview to cancel")
+        by = "company" if identity["role"] in _MANAGER_ROLES else "candidate"
+        # A double-cancel returns False (already cancelled) — idempotent, no raise.
+        await bookings.cancel_if(application_id, by=by)
+        # Notify the candidate when the company cancels (recruiter side has no single
+        # user_id on the application; candidate-initiated cancels notify no one here).
+        if by == "company":
+            await _notify(
+                notifications,
+                booking.get("candidate_user_id", ""),
+                booking.get("comp_id", ""),
+                "interview_cancelled",
+            )
+        return await _schedule_dto(application_id, slots_repo, bookings)
 
 
 async def get_ics(identity, application_id, *, applications, bookings, clock=_utcnow):
-    await _authorize_either(identity, application_id, applications)
-    booking = await bookings.get_by_application(application_id)
-    if booking is None or booking.get("status") != "booked":
-        raise NotFoundError("no booked interview")
-    content = build_ics(
-        booking_id=application_id,  # stable 1:1 key -> stable UID across re-sends
-        version=booking.get("version", 0),
-        start_at=_as_dt(booking["chosen_start_at"]),
-        duration_minutes=booking.get("chosen_duration_minutes", 0),
-        title="Interview",
-        now=clock(),
-        location=booking.get("location", ""),
-        note=booking.get("note", ""),
-    )
-    return {"filename": f"interview-{application_id}.ics", "content": content}
+    async with log_context(
+        log,
+        "resource.scheduling.get_ics",
+        **bind_ids(
+            user_id=identity["id"],
+            application_id=application_id,
+        ),
+    ):
+        await _authorize_either(identity, application_id, applications)
+        booking = await bookings.get_by_application(application_id)
+        if booking is None or booking.get("status") != "booked":
+            raise NotFoundError("no booked interview")
+        content = build_ics(
+            booking_id=application_id,  # stable 1:1 key -> stable UID across re-sends
+            version=booking.get("version", 0),
+            start_at=_as_dt(booking["chosen_start_at"]),
+            duration_minutes=booking.get("chosen_duration_minutes", 0),
+            title="Interview",
+            now=clock(),
+            location=booking.get("location", ""),
+            note=booking.get("note", ""),
+        )
+        return {"filename": f"interview-{application_id}.ics", "content": content}
 
 
 def _paginate(page, page_size):
@@ -303,29 +349,51 @@ def _booking_dto(r):
 
 
 async def list_candidate_interviews(identity, *, bookings, page=1, page_size=20):
-    page, page_size = _paginate(page, page_size)
-    skip = (page - 1) * page_size
-    rows = await bookings.list_for_candidate(identity["id"], skip=skip, limit=page_size)
-    total = await bookings.count_for_candidate(identity["id"])
-    return {
-        "bookings": [_booking_dto(r) for r in rows],
-        "page": page,
-        "page_size": page_size,
-        "total": total,
-    }
+    async with log_context(
+        log,
+        "resource.scheduling.list_candidate_interviews",
+        **bind_ids(user_id=identity["id"]),
+    ):
+        page, page_size = _paginate(page, page_size)
+        skip = (page - 1) * page_size
+        rows = await bookings.list_for_candidate(
+            identity["id"], skip=skip, limit=page_size
+        )
+        total = await bookings.count_for_candidate(identity["id"])
+        return {
+            "bookings": [_booking_dto(r) for r in rows],
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+        }
 
 
 async def list_company_bookings(identity, status, *, bookings, page=1, page_size=20):
-    _require_manager(identity)
-    page, page_size = _paginate(page, page_size)
-    skip = (page - 1) * page_size
-    rows = await bookings.list_for_company(
-        identity["comp_id"], status or None, skip=skip, limit=page_size
-    )
-    total = await bookings.count_for_company(identity["comp_id"], status or None)
-    return {
-        "bookings": [_booking_dto(r) for r in rows],
-        "page": page,
-        "page_size": page_size,
-        "total": total,
-    }
+    async with log_context(
+        log,
+        "resource.scheduling.list_company_bookings",
+        **bind_ids(user_id=identity["id"], comp_id=identity["comp_id"]),
+    ):
+        _require_manager(identity)
+        page, page_size = _paginate(page, page_size)
+        skip = (page - 1) * page_size
+        rows = await bookings.list_for_company(
+            identity["comp_id"], status or None, skip=skip, limit=page_size
+        )
+        total = await bookings.count_for_company(identity["comp_id"], status or None)
+        return {
+            "bookings": [_booking_dto(r) for r in rows],
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+        }
+
+
+def _match_offered(proposal, start_at):
+    """The offered (start_dt, duration) for `start_at`, or ValidationError. Runs BEFORE
+    any CAS write so a non-offered time never touches the booking."""
+    wanted = _parse_instant(start_at)
+    for slot in (proposal or {}).get("slots", []):
+        if _as_dt(slot["start_at"]) == wanted:
+            return wanted, slot["duration_minutes"]
+    raise ValidationError("chosen time is not an offered slot")
