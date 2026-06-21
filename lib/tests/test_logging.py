@@ -301,3 +301,18 @@ async def _check_log_domain_error_context(sink: _Sink):
     log_domain_error(log, err, user_id="u9")
     assert any("token expired" in m for m in sink.messages())
     assert sink.records[0]["extra"].get("user_id") == "u9"
+
+
+@pytest.mark.asyncio
+async def test_log_domain_error_tolerates_non_app_error():
+    await _with_sink(_check_log_domain_error_non_app_error)()
+
+
+async def _check_log_domain_error_non_app_error(sink: _Sink):
+    log = get_logger(component="test")
+    err = RuntimeError("oops")
+    log_domain_error(log, err)
+    msgs = sink.messages()
+    assert len(msgs) == 1
+    assert "oops" in msgs[0]
+    assert sink.records[0]["exception"] is None

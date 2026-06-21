@@ -6,7 +6,7 @@ codes. No business logic lives here.
 """
 
 import grpc
-from lib.logging import get_logger, log_context
+from lib.logging import get_logger, log_context, log_domain_error
 from lib.observability import counter, span
 
 from app.errors import (
@@ -90,7 +90,8 @@ async def caller_identity(context, tokens):
         await context.abort(grpc.StatusCode.UNAUTHENTICATED, "Not authenticated")
     try:
         return auth_res.identity_from_token(token, tokens=tokens)
-    except InvalidTokenError:
+    except InvalidTokenError as exc:
+        log_domain_error(log, exc)
         await context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid or expired token")
 
 
@@ -128,7 +129,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
     async def _abort(self, context, exc, method="unknown"):
         code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
-        log.warning("auth.routes.{}: {} code={}", method, exc, code.name)
+        log_domain_error(log, exc, method=method)
         _grpc_errors.labels(method=method).inc()
         await context.abort(code, str(exc))
 
