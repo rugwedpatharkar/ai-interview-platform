@@ -8,6 +8,7 @@ can be built against fakes in tests.
 
 from lib.grpcweb import GrpcWebASGI
 from lib.redis import RateLimiter
+from lib.resilience import with_timeout
 from lib.security import RefreshSessionStore, SingleUseTokenStore
 
 from app.infra.repositories.applications import ApplicationRepository
@@ -15,6 +16,8 @@ from app.infra.repositories.aptitude_attempts import AptitudeAttemptRepository
 from app.infra.repositories.aptitude_banks import AptitudeBankRepository
 from app.infra.repositories.aptitude_deliveries import AptitudeDeliveryRepository
 from app.infra.repositories.audit_logs import AuditLogRepository
+from app.infra.repositories.client_errors import ClientErrorRepository
+from app.infra.repositories.client_events import ClientEventRepository
 from app.infra.repositories.coding_attempts import CodingAttemptRepository
 from app.infra.repositories.coding_tasks import CodingTaskRepository
 from app.infra.repositories.companies import CompanyRepository
@@ -55,6 +58,7 @@ from app.routes.job import JobServicer
 from app.routes.job_alerts import JobAlertsServicer
 from app.routes.messaging import MessagingServicer
 from app.routes.notification import NotificationServicer
+from app.routes.observability import ObservabilityServicer
 from app.routes.pb import (
     analytics_pb2_grpc,
     application_pb2_grpc,
@@ -69,6 +73,7 @@ from app.routes.pb import (
     job_pb2_grpc,
     messaging_pb2_grpc,
     notification_pb2_grpc,
+    observability_pb2_grpc,
     preferences_pb2_grpc,
     profile_pb2_grpc,
     recommendation_pb2_grpc,
@@ -92,6 +97,7 @@ from app.routes.settings import SettingsServicer
 from app.routes.sourcing import SourcingServicer
 from app.routes.talent import TalentServicer
 from app.routes.team import TeamServicer
+from lib import timeouts
 
 
 def make_eraser(db, storage):
@@ -304,6 +310,28 @@ def create_web_app(
     )
     notification_pb2_grpc.add_NotificationServiceServicer_to_server(
         NotificationServicer(notifications=NotificationRepository(db), tokens=tokens),
+        app,
+    )
+
+    async def _dedup(event_id: str) -> bool:
+        """24h Redis SET NX EX dedup helper for ObservabilityService.
+
+        Returns True if newly seen (event accepted), False if already-seen (drop).
+        """
+        added = await with_timeout(
+            redis.set(f"obs:dedup:{event_id}", "1", ex=24 * 3600, nx=True),
+            timeouts.redis(),
+            op="observability.dedup",
+        )
+        return bool(added)
+
+    observability_pb2_grpc.add_ObservabilityServiceServicer_to_server(
+        ObservabilityServicer(
+            errors_repo=ClientErrorRepository(db),
+            events_repo=ClientEventRepository(db),
+            dedup=_dedup,
+            tokens=tokens,
+        ),
         app,
     )
     settings_pb2_grpc.add_SettingsServiceServicer_to_server(

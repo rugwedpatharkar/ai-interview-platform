@@ -7,7 +7,7 @@ from lib.security import TokenService
 from app.routes.web import create_web_app
 
 
-def test_registers_all_twenty_four_services():
+def test_registers_all_twenty_five_services():
     app = create_web_app(
         db=MagicMock(),
         redis=MagicMock(),
@@ -19,7 +19,7 @@ def test_registers_all_twenty_four_services():
         refresh_ttl_seconds=60,
     )
     services = {path.rsplit("/", 1)[0] for path in app.methods}
-    assert len(services) == 24
+    assert len(services) == 25
     assert "/admin.auth.v1.AuthService/Login" in app.methods
     assert "/admin.coding.v1.CodingService/SubmitCoding" in app.methods
     assert "/admin.preferences.v1.PreferencesService/GetAppearance" in app.methods

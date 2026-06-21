@@ -100,6 +100,24 @@ async def caller_identity(context, tokens):
         await context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid or expired token")
 
 
+_ANON_IDENTITY = {"user_id": None, "comp_id": "", "role": None}
+
+
+async def caller_identity_optional(context, tokens):
+    """Like caller_identity but anonymous-safe.
+
+    Missing or invalid tokens return an anonymous identity dict rather than aborting —
+    used by RPCs that accept unauthenticated callers (e.g. ObservabilityService).
+    """
+    token = _bearer_from_metadata(context)
+    if token is None:
+        return _ANON_IDENTITY
+    try:
+        return auth_res.identity_from_token(token, tokens=tokens)
+    except InvalidTokenError:
+        return _ANON_IDENTITY
+
+
 class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
     def __init__(
         self,
