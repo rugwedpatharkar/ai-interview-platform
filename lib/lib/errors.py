@@ -4,7 +4,7 @@ Every domain error raised inside resource / repository / handler code is a subcl
 :class:`AppError`. The central gRPC translator (``lib.grpcweb``) maps each subclass to
 the correct gRPC status. Internals raise; the translator catches at the egress boundary.
 ``TimeoutError`` is a re-export of :class:`lib.resilience.OperationTimeout` so callers
-import a single names from one module.
+import a single name from one module.
 """
 
 from typing import Any
