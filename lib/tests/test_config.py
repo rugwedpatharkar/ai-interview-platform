@@ -34,3 +34,9 @@ def test_allows_empty_and_strong_secret():
     assert BaseServiceSettings(jwt_secret="").jwt_secret == ""
     strong = "x" * 32
     assert BaseServiceSettings(jwt_secret=strong).jwt_secret == strong
+
+
+def test_observability_defaults_disabled():
+    s = BaseServiceSettings()
+    assert s.metrics_port == 0
+    assert s.otlp_endpoint is None
