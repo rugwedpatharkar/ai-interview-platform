@@ -4,50 +4,53 @@
 # source: app/routes/pb/messaging.proto
 # Protobuf Python Version: 6.33.5
 """Generated protocol buffer code."""
-
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
-
 _runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC, 6, 33, 5, "", "app/routes/pb/messaging.proto"
+    _runtime_version.Domain.PUBLIC,
+    6,
+    33,
+    5,
+    '',
+    'app/routes/pb/messaging.proto'
 )
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x1d\x61pp/routes/pb/messaging.proto\x12\x12\x61\x64min.messaging.v1":\n\x12SendMessageRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t"\x90\x01\n\nMessageDTO\x12\n\n\x02id\x18\x01 \x01(\t\x12\x16\n\x0e\x61pplication_id\x18\x02 \x01(\t\x12\x13\n\x0bsender_role\x18\x03 \x01(\t\x12\x16\n\x0esender_user_id\x18\x04 \x01(\t\x12\x0c\n\x04\x62ody\x18\x05 \x01(\t\x12\x12\n\ncreated_at\x18\x06 \x01(\t\x12\x0f\n\x07read_at\x18\x07 \x01(\t"\xc1\x01\n\tThreadDTO\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x19\n\x11\x63\x61ndidate_user_id\x18\x02 \x01(\t\x12\x19\n\x11recruiter_user_id\x18\x03 \x01(\t\x12\x11\n\tjob_title\x18\x04 \x01(\t\x12\x14\n\x0c\x63ompany_name\x18\x05 \x01(\t\x12\x17\n\x0flast_message_at\x18\x06 \x01(\t\x12\x14\n\x0clast_snippet\x18\x07 \x01(\t\x12\x0e\n\x06unread\x18\x08 \x01(\x05"5\n\x12ListThreadsRequest\x12\x0c\n\x04page\x18\x01 \x01(\x05\x12\x11\n\tpage_size\x18\x02 \x01(\x05"u\n\x13ListThreadsResponse\x12.\n\x07threads\x18\x01 \x03(\x0b\x32\x1d.admin.messaging.v1.ThreadDTO\x12\x0c\n\x04page\x18\x02 \x01(\x05\x12\x11\n\tpage_size\x18\x03 \x01(\x05\x12\r\n\x05total\x18\x04 \x01(\x05"N\n\x13ListMessagesRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x0c\n\x04page\x18\x02 \x01(\x05\x12\x11\n\tpage_size\x18\x03 \x01(\x05"x\n\x14ListMessagesResponse\x12\x30\n\x08messages\x18\x01 \x03(\x0b\x32\x1e.admin.messaging.v1.MessageDTO\x12\x0c\n\x04page\x18\x02 \x01(\x05\x12\x11\n\tpage_size\x18\x03 \x01(\x05\x12\r\n\x05total\x18\x04 \x01(\x05"9\n\x0fMarkReadRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x0e\n\x06seq_no\x18\x02 \x01(\x03"S\n\x10MarkReadResponse\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x0e\n\x06unread\x18\x02 \x01(\x05\x12\x17\n\x0f\x61\x63\x63\x65pted_seq_no\x18\x03 \x01(\x03\x32\x83\x03\n\x10MessagingService\x12U\n\x0bSendMessage\x12&.admin.messaging.v1.SendMessageRequest\x1a\x1e.admin.messaging.v1.MessageDTO\x12^\n\x0bListThreads\x12&.admin.messaging.v1.ListThreadsRequest\x1a\'.admin.messaging.v1.ListThreadsResponse\x12\x61\n\x0cListMessages\x12\'.admin.messaging.v1.ListMessagesRequest\x1a(.admin.messaging.v1.ListMessagesResponse\x12U\n\x08MarkRead\x12#.admin.messaging.v1.MarkReadRequest\x1a$.admin.messaging.v1.MarkReadResponseb\x06proto3'
-)
+
+
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1d\x61pp/routes/pb/messaging.proto\x12\x12\x61\x64min.messaging.v1\":\n\x12SendMessageRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t\"\x90\x01\n\nMessageDTO\x12\n\n\x02id\x18\x01 \x01(\t\x12\x16\n\x0e\x61pplication_id\x18\x02 \x01(\t\x12\x13\n\x0bsender_role\x18\x03 \x01(\t\x12\x16\n\x0esender_user_id\x18\x04 \x01(\t\x12\x0c\n\x04\x62ody\x18\x05 \x01(\t\x12\x12\n\ncreated_at\x18\x06 \x01(\t\x12\x0f\n\x07read_at\x18\x07 \x01(\t\"\xc1\x01\n\tThreadDTO\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x19\n\x11\x63\x61ndidate_user_id\x18\x02 \x01(\t\x12\x19\n\x11recruiter_user_id\x18\x03 \x01(\t\x12\x11\n\tjob_title\x18\x04 \x01(\t\x12\x14\n\x0c\x63ompany_name\x18\x05 \x01(\t\x12\x17\n\x0flast_message_at\x18\x06 \x01(\t\x12\x14\n\x0clast_snippet\x18\x07 \x01(\t\x12\x0e\n\x06unread\x18\x08 \x01(\x05\"5\n\x12ListThreadsRequest\x12\x0c\n\x04page\x18\x01 \x01(\x05\x12\x11\n\tpage_size\x18\x02 \x01(\x05\"u\n\x13ListThreadsResponse\x12.\n\x07threads\x18\x01 \x03(\x0b\x32\x1d.admin.messaging.v1.ThreadDTO\x12\x0c\n\x04page\x18\x02 \x01(\x05\x12\x11\n\tpage_size\x18\x03 \x01(\x05\x12\r\n\x05total\x18\x04 \x01(\x05\"N\n\x13ListMessagesRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x0c\n\x04page\x18\x02 \x01(\x05\x12\x11\n\tpage_size\x18\x03 \x01(\x05\"x\n\x14ListMessagesResponse\x12\x30\n\x08messages\x18\x01 \x03(\x0b\x32\x1e.admin.messaging.v1.MessageDTO\x12\x0c\n\x04page\x18\x02 \x01(\x05\x12\x11\n\tpage_size\x18\x03 \x01(\x05\x12\r\n\x05total\x18\x04 \x01(\x05\"9\n\x0fMarkReadRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x0e\n\x06seq_no\x18\x02 \x01(\x03\"S\n\x10MarkReadResponse\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x0e\n\x06unread\x18\x02 \x01(\x05\x12\x17\n\x0f\x61\x63\x63\x65pted_seq_no\x18\x03 \x01(\x03\"A\n\x15StreamMessagesRequest\x12\x16\n\x0e\x61pplication_id\x18\x01 \x01(\t\x12\x10\n\x08since_id\x18\x02 \x01(\t2\xe2\x03\n\x10MessagingService\x12U\n\x0bSendMessage\x12&.admin.messaging.v1.SendMessageRequest\x1a\x1e.admin.messaging.v1.MessageDTO\x12^\n\x0bListThreads\x12&.admin.messaging.v1.ListThreadsRequest\x1a\'.admin.messaging.v1.ListThreadsResponse\x12\x61\n\x0cListMessages\x12\'.admin.messaging.v1.ListMessagesRequest\x1a(.admin.messaging.v1.ListMessagesResponse\x12U\n\x08MarkRead\x12#.admin.messaging.v1.MarkReadRequest\x1a$.admin.messaging.v1.MarkReadResponse\x12]\n\x0eStreamMessages\x12).admin.messaging.v1.StreamMessagesRequest\x1a\x1e.admin.messaging.v1.MessageDTO0\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(
-    DESCRIPTOR, "app.routes.pb.messaging_pb2", _globals
-)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'app.routes.pb.messaging_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-    DESCRIPTOR._loaded_options = None
-    _globals["_SENDMESSAGEREQUEST"]._serialized_start = 53
-    _globals["_SENDMESSAGEREQUEST"]._serialized_end = 111
-    _globals["_MESSAGEDTO"]._serialized_start = 114
-    _globals["_MESSAGEDTO"]._serialized_end = 258
-    _globals["_THREADDTO"]._serialized_start = 261
-    _globals["_THREADDTO"]._serialized_end = 454
-    _globals["_LISTTHREADSREQUEST"]._serialized_start = 456
-    _globals["_LISTTHREADSREQUEST"]._serialized_end = 509
-    _globals["_LISTTHREADSRESPONSE"]._serialized_start = 511
-    _globals["_LISTTHREADSRESPONSE"]._serialized_end = 628
-    _globals["_LISTMESSAGESREQUEST"]._serialized_start = 630
-    _globals["_LISTMESSAGESREQUEST"]._serialized_end = 708
-    _globals["_LISTMESSAGESRESPONSE"]._serialized_start = 710
-    _globals["_LISTMESSAGESRESPONSE"]._serialized_end = 830
-    _globals["_MARKREADREQUEST"]._serialized_start = 832
-    _globals["_MARKREADREQUEST"]._serialized_end = 889
-    _globals["_MARKREADRESPONSE"]._serialized_start = 891
-    _globals["_MARKREADRESPONSE"]._serialized_end = 974
-    _globals["_MESSAGINGSERVICE"]._serialized_start = 977
-    _globals["_MESSAGINGSERVICE"]._serialized_end = 1364
+  DESCRIPTOR._loaded_options = None
+  _globals['_SENDMESSAGEREQUEST']._serialized_start=53
+  _globals['_SENDMESSAGEREQUEST']._serialized_end=111
+  _globals['_MESSAGEDTO']._serialized_start=114
+  _globals['_MESSAGEDTO']._serialized_end=258
+  _globals['_THREADDTO']._serialized_start=261
+  _globals['_THREADDTO']._serialized_end=454
+  _globals['_LISTTHREADSREQUEST']._serialized_start=456
+  _globals['_LISTTHREADSREQUEST']._serialized_end=509
+  _globals['_LISTTHREADSRESPONSE']._serialized_start=511
+  _globals['_LISTTHREADSRESPONSE']._serialized_end=628
+  _globals['_LISTMESSAGESREQUEST']._serialized_start=630
+  _globals['_LISTMESSAGESREQUEST']._serialized_end=708
+  _globals['_LISTMESSAGESRESPONSE']._serialized_start=710
+  _globals['_LISTMESSAGESRESPONSE']._serialized_end=830
+  _globals['_MARKREADREQUEST']._serialized_start=832
+  _globals['_MARKREADREQUEST']._serialized_end=889
+  _globals['_MARKREADRESPONSE']._serialized_start=891
+  _globals['_MARKREADRESPONSE']._serialized_end=974
+  _globals['_STREAMMESSAGESREQUEST']._serialized_start=976
+  _globals['_STREAMMESSAGESREQUEST']._serialized_end=1041
+  _globals['_MESSAGINGSERVICE']._serialized_start=1044
+  _globals['_MESSAGINGSERVICE']._serialized_end=1526
 # @@protoc_insertion_point(module_scope)
