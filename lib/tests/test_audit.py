@@ -17,15 +17,13 @@ class FakeRepo:
 class FakeRedis:
     def __init__(self) -> None:
         self.list: list[bytes] = []
-        self.set_keys: set[str] = set()
+        self.keys: dict[str, tuple[str, int | None]] = {}
 
-    async def sadd(self, key, member):
-        before = len(self.set_keys)
-        self.set_keys.add(f"{key}:{member}")
-        return 1 if len(self.set_keys) > before else 0
-
-    async def expire(self, key, seconds):
-        return 1
+    async def set(self, key, value, ex=None, nx=False):
+        if nx and key in self.keys:
+            return None
+        self.keys[key] = (value, ex)
+        return True
 
     async def rpush(self, key, value):
         self.list.append(value)
@@ -61,6 +59,18 @@ async def test_enqueue_replay_dedups_by_event_id():
     await enqueue_replay(redis, doc)
     await enqueue_replay(redis, doc)  # idempotent
     assert len(redis.list) == 1
+    # Per-event_id key carries the 24h TTL — not a shared SET refreshed each call.
+    _, ttl = redis.keys["audit:replay:seen:e1"]
+    assert ttl == 24 * 3600
+
+
+@pytest.mark.asyncio
+async def test_enqueue_replay_rejects_missing_event_id():
+    redis = FakeRedis()
+    with pytest.raises(ValueError):
+        await enqueue_replay(redis, {"action": "login"})
+    with pytest.raises(ValueError):
+        await enqueue_replay(redis, {"event_id": "", "action": "login"})
 
 
 @pytest.mark.asyncio

@@ -13,7 +13,7 @@ from typing import Any
 from lib.errors import DependencyError
 
 _REPLAY_LIST_KEY = "audit:replay"
-_REPLAY_DEDUP_KEY = "audit:replay:seen"
+_REPLAY_DEDUP_KEY_PREFIX = "audit:replay:seen:"
 _REPLAY_DEDUP_TTL_SECONDS = 24 * 3600
 
 
@@ -31,14 +31,18 @@ async def write_audit(repo, doc: dict[str, Any]) -> None:
 
 
 async def enqueue_replay(redis, doc: dict[str, Any]) -> None:
-    """Stash an audit doc on the replay queue. Idempotent on ``doc['event_id']``."""
+    """Stash an audit doc on the replay queue. Idempotent on ``doc['event_id']``
+    for a 24-hour window via a per-event_id key with ``SET NX EX`` semantics —
+    a shared dedup SET would either grow unbounded or expire entries together,
+    neither of which gives a true per-event window.
+    """
     event_id = doc.get("event_id")
     if not event_id:
         raise ValueError("enqueue_replay: doc must carry event_id")
-    added = await redis.sadd(_REPLAY_DEDUP_KEY, event_id)
+    key = f"{_REPLAY_DEDUP_KEY_PREFIX}{event_id}"
+    added = await redis.set(key, "1", ex=_REPLAY_DEDUP_TTL_SECONDS, nx=True)
     if not added:
         return
-    await redis.expire(_REPLAY_DEDUP_KEY, _REPLAY_DEDUP_TTL_SECONDS)
     await redis.rpush(_REPLAY_LIST_KEY, json.dumps(doc).encode("utf-8"))
 
 
