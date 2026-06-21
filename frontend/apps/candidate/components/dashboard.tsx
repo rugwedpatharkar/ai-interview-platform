@@ -111,39 +111,19 @@ export function Dashboard() {
   // KPI + up-next are derived client-side from the already-fetched applications —
   // display-only, no extra fetch. Memoized so the count-up tiles and up-next don't
   // recompute (or re-animate) on unrelated re-renders.
-  const { inFlightCount, interviewApps, respondedCount, avgResponseHours } =
-    useMemo(() => {
-      const inFlight = list.filter((a) => !TERMINAL_STATES.has(a.state));
-      const interviews = list.filter(
-        (a) =>
-          a.state === "interview_pending" || a.state === "interview_in_progress",
-      );
-      const responded = list.filter((a) => RESPONDED.has(a.state));
-      // Best-effort avg: only meaningful when we have any responses + applied-at.
-      // The applications shape is loose (server-side extension); treat updatedAt/createdAt
-      // as optional and fall back to "—" when the data isn't there.
-      const samples = responded
-        .map((a) => {
-          // The proto may not surface these timestamps; this is intentionally defensive
-          // because the field set varies across environments (mock vs gRPC).
-          const r = a as unknown as { createdAt?: string; updatedAt?: string };
-          const t0 = r.createdAt ? Date.parse(r.createdAt) : NaN;
-          const t1 = r.updatedAt ? Date.parse(r.updatedAt) : NaN;
-          return Number.isFinite(t0) && Number.isFinite(t1) && t1 > t0
-            ? (t1 - t0) / 3_600_000
-            : null;
-        })
-        .filter((n): n is number => n != null);
-      const avg = samples.length
-        ? Math.round(samples.reduce((s, n) => s + n, 0) / samples.length)
-        : null;
-      return {
-        inFlightCount: inFlight.length,
-        interviewApps: interviews,
-        respondedCount: responded.length,
-        avgResponseHours: avg,
-      };
-    }, [list]);
+  const { inFlightCount, interviewApps, respondedCount } = useMemo(() => {
+    const inFlight = list.filter((a) => !TERMINAL_STATES.has(a.state));
+    const interviews = list.filter(
+      (a) =>
+        a.state === "interview_pending" || a.state === "interview_in_progress",
+    );
+    const responded = list.filter((a) => RESPONDED.has(a.state));
+    return {
+      inFlightCount: inFlight.length,
+      interviewApps: interviews,
+      respondedCount: responded.length,
+    };
+  }, [list]);
 
   const nextInterview = interviewApps[0];
   // No display-name field exists on the identity (id is a Mongo ObjectId), so derive a
@@ -191,7 +171,7 @@ export function Dashboard() {
 
         <CandidateChecklist />
 
-        {/* KPI strip — four anchored stats. We always render the strip and only
+        {/* KPI strip — three anchored stats. We always render the strip and only
             swap the values in once data lands; that prevents layout jump and keeps
             the dashboard's vertical rhythm stable. */}
         <section
@@ -199,9 +179,9 @@ export function Dashboard() {
           className="rounded-[22px] border border-line bg-surface p-6"
         >
           <p className="ap-eyebrow">At a glance</p>
-          <div className="ap-stats mt-6">
+          <div className="ap-stats mt-6" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
             {applications.isLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
+              Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="ap-stat">
                   <Skeleton className="h-8 w-16" />
                   <Skeleton className="mt-3 h-3 w-32" />
@@ -220,15 +200,6 @@ export function Dashboard() {
                 <StatCell
                   value={respondedCount}
                   label="Responses received"
-                />
-                <StatCell
-                  value={avgResponseHours ?? 0}
-                  unit={avgResponseHours == null ? null : "h"}
-                  label={
-                    avgResponseHours == null
-                      ? "Avg response time (—)"
-                      : "Avg response time"
-                  }
                 />
               </>
             )}
@@ -484,21 +455,12 @@ export function Dashboard() {
 
 /** Single stat cell inside the `.ap-stats` strip. Integer values animate from 0 on
  *  mount (count-up) so the dashboard feels alive on first paint. */
-function StatCell({
-  value,
-  label,
-  unit,
-}: {
-  value: number;
-  label: string;
-  unit?: string | null;
-}) {
+function StatCell({ value, label }: { value: number; label: string }) {
   const n = useCountUp(value);
   return (
     <div className="ap-stat">
       <div className="ap-stat-n">
         <span className="tabular-nums">{Math.round(n)}</span>
-        {unit && <span className="ap-stat-unit">{unit}</span>}
       </div>
       <div className="ap-stat-l">{label}</div>
     </div>
