@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'admin'
+    static_configs:
+      - targets: ['admin:9090']
+  - job_name: 'ai-agents'
+    static_configs:
+      - targets: ['ai-agents:9090']
+  - job_name: 'mcp-data'
+    static_configs:
+      - targets: ['mcp-data:9090']
+  - job_name: 'mcp-capability'
+    static_configs:
+      - targets: ['mcp-capability:9090']
