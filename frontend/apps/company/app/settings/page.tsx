@@ -9,6 +9,7 @@ import { AccountTab } from "../../components/settings/account-tab";
 import { NotificationsTab } from "../../components/settings/notifications-tab";
 import { PrivacyTab } from "../../components/settings/privacy-tab";
 import { SecurityTab } from "../../components/settings/security-tab";
+import { useAuth } from "../../lib/auth";
 import { makeSettingsClient } from "./settings-client";
 
 const TABS = ["account", "security", "notifications", "privacy"] as const;
@@ -16,10 +17,13 @@ const TABS = ["account", "security", "notifications", "privacy"] as const;
 /** Reads ?tab= to pick the initial tab. Isolated so Next.js can Suspense-wrap the
  *  useSearchParams read without forcing the whole page into a fallback. */
 function SettingsTabs() {
+  const { api } = useAuth();
   const sp = useSearchParams();
   const requested = sp.get("tab") ?? "";
   const initial = (TABS as readonly string[]).includes(requested) ? requested : "account";
-  const client = useMemo(() => makeSettingsClient(), []);
+  // Live by default; mock when NEXT_PUBLIC_MOCK=1. Memoized per `api` so the mock's store
+  // survives re-renders and the live client's request inflight cache is preserved.
+  const client = useMemo(() => makeSettingsClient(api), [api]);
 
   return (
     <Tabs defaultValue={initial}>
