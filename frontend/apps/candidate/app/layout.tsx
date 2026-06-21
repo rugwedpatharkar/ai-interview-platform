@@ -1,4 +1,4 @@
-import { ApertureSprite, ThemeProvider, Toaster } from "@ip/ui";
+import { ApertureSprite, Toaster } from "@ip/ui";
 import { Hanken_Grotesk, Schibsted_Grotesk, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 
@@ -61,10 +61,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         {/* Aperture mark + lucide-style icons mounted once for use via <svg><use href="#…" /></svg> */}
         <ApertureSprite />
-        <ThemeProvider>
-          <Providers>{children}</Providers>
-          <Toaster richColors closeButton position="top-center" />
-        </ThemeProvider>
+        {/* Light/dark + palette is owned end-to-end by System B (aptura.appearance.v1):
+            the pre-paint appearanceScript above, the Settings → Appearance tab, and the
+            header AppearanceToggle. No ThemeProvider here — it would be a second, conflicting
+            source of truth for the `.dark` class. */}
+        <Providers>{children}</Providers>
+        <Toaster richColors closeButton position="top-center" />
       </body>
     </html>
   );

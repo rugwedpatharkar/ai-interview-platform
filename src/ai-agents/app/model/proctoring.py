@@ -9,7 +9,7 @@ state (that is the EU-prohibited zone and a bias risk), only observable events.
 
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 ProctoringEventType = Literal[
     # B — visual (browser-edge; no raw frames ever leave the device)
@@ -65,6 +65,20 @@ class ProctoringEvent(BaseModel):
     type: ProctoringEventType
     at: str  # client-supplied ISO timestamp (advisory; server stamps received_at)
     meta: dict | None = None
+
+    @field_validator("at")
+    @classmethod
+    def _clip_at(cls, v: str) -> str:
+        return v[:64]
+
+    @field_validator("meta")
+    @classmethod
+    def _bound_meta(cls, v: dict | None) -> dict | None:
+        # Client-supplied: bound to a small typed context (key count + str-clipped
+        # values) so a hostile browser can't smuggle a huge meta into the stored event.
+        if not v:
+            return v
+        return {str(k)[:64]: str(val)[:256] for k, val in list(v.items())[:20]}
 
 
 def severity_of(event_type: str) -> Severity:

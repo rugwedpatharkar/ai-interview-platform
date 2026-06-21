@@ -7,6 +7,7 @@ from app.errors import ValidationError
 from app.model.application import Application
 from app.model.aptitude import AptitudeAttempt
 from app.model.auth import User
+from app.model.coding import CodingAttempt
 from app.model.profile import CandidateProfile
 from app.resources import compliance
 
@@ -60,6 +61,8 @@ def _eraser(fakes):
         reports=fakes["reports"],
         interviews=fakes["interviews"],
         attempts=fakes["attempts"],
+        coding_attempts=fakes["coding_attempts"],
+        user_preferences=fakes["user_preferences"],
         consents=fakes["consents"],
         practice=fakes["practice"],
         slots=fakes["interview_slots"],
@@ -121,6 +124,38 @@ async def test_erase_cascades_into_ai_artifacts(fakes):
     assert fakes["attempts"].records == []
 
 
+async def test_erase_deletes_coding_attempts(fakes):
+    uid = await fakes["users"].insert(
+        User(email="c@x.com", password_hash="h", role=Role.candidate)
+    )
+    await fakes["coding_attempts"].insert(
+        CodingAttempt(
+            application_id="a1",
+            comp_id="c1",
+            candidate_user_id=uid,
+            job_id="j1",
+            cases_passed=1,
+            cases_total=1,
+            typed_correct=0,
+            typed_total=0,
+            passed=True,
+        )
+    )
+    await _eraser(fakes).erase(uid)
+    assert fakes["coding_attempts"].records == []
+
+
+async def test_erase_deletes_user_preferences(fakes):
+    uid = await fakes["users"].insert(
+        User(email="c@x.com", password_hash="h", role=Role.candidate)
+    )
+    await fakes["user_preferences"].upsert(
+        uid, {"mode": "dark", "base": "mint", "accent": "cyan", "accent_hue": None}
+    )
+    await _eraser(fakes).erase(uid)
+    assert await fakes["user_preferences"].get_by_user(uid) is None
+
+
 async def test_erase_deletes_practice_sessions(fakes):
     # Practice runs are candidate PII keyed by user_id (no application link) — the
     # erasure must purge the candidate's, and only the candidate's, practice history.
@@ -167,3 +202,30 @@ async def test_retention_sweep_erases_only_expired(fakes):
     assert count == 1
     assert (await fakes["users"].get(old))["erased"] is True
     assert (await fakes["users"].get(recent)).get("erased") is not True
+
+
+async def test_retention_sweep_isolates_per_candidate_failure(fakes):
+    # One poison candidate must NOT abort the whole sweep — healthy ones still erase.
+    expired = datetime(2020, 1, 1, tzinfo=UTC)
+    good = await fakes["users"].insert(
+        User(
+            email="g@x.com", password_hash="h", role=Role.candidate, created_at=expired
+        )
+    )
+    bad = await fakes["users"].insert(
+        User(
+            email="b@x.com", password_hash="h", role=Role.candidate, created_at=expired
+        )
+    )
+    eraser = _eraser(fakes)
+    real_erase = eraser.erase
+
+    async def _flaky(user_id):
+        if user_id == bad:
+            raise RuntimeError("erase blew up")
+        await real_erase(user_id)
+
+    eraser.erase = _flaky
+    count = await eraser.sweep(datetime(2021, 1, 1, tzinfo=UTC))
+    assert count == 1  # good erased; bad logged + skipped, sweep not aborted
+    assert (await fakes["users"].get(good))["erased"] is True

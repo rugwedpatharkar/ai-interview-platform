@@ -124,6 +124,8 @@ async def test_mcp_data_gateway_increments_call_counter():
             class _Resp:
                 def __init__(self):
                     self.content = [_Content()]
+                    self.structured_content = {"result": None}
+                    self.is_error = False
 
             return _Resp()
 

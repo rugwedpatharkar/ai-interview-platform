@@ -9,14 +9,15 @@ contract the REST routes had, moved onto the shared gRPC-web translator (lib/grp
 import grpc
 from jose import JWTError
 
-from app.errors import ConflictError, ForbiddenError, NotFoundError
+from app.errors import ConflictError, ForbiddenError, NotFoundError, ValidationError
 
 # Domain error -> gRPC status. Same mapping the REST layer expressed as HTTP codes
-# (404/403/409); INTERNAL is the fallback so an unexpected error stays opaque.
+# (404/403/409/400); INTERNAL is the fallback so an unexpected error stays opaque.
 _STATUS = {
     NotFoundError: grpc.StatusCode.NOT_FOUND,
     ForbiddenError: grpc.StatusCode.PERMISSION_DENIED,
     ConflictError: grpc.StatusCode.FAILED_PRECONDITION,
+    ValidationError: grpc.StatusCode.INVALID_ARGUMENT,
 }
 
 

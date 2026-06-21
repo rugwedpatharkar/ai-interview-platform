@@ -16,6 +16,17 @@ class RateLimitResult:
     retry_after: int  # seconds until the window resets; 0 when allowed
 
 
+# INCR + EXPIRE + read TTL in ONE atomic server-side step. A plain INCR-then-EXPIRE has
+# a window where a crash leaves a TTL-less key; the Lua removes it and saves 2 trips
+# (this runs on every login/register). EXPIRE on every hit keeps it self-healing — the
+# window slides from the latest hit.
+_HIT_LUA = """
+local c = redis.call('INCR', KEYS[1])
+redis.call('EXPIRE', KEYS[1], ARGV[1])
+return {c, redis.call('TTL', KEYS[1])}
+"""
+
+
 class RateLimiter:
     """Fixed-window rate limiter over Redis: counts hits per key within a window and
     blocks once the count exceeds `limit`. Powers login/register/forgot limits and the
@@ -41,21 +52,12 @@ class RateLimiter:
 
     async def hit(self, key: str, limit: int, window_seconds: int) -> RateLimitResult:
         redis_key = f"{self._ns}:{key}"
-        count = await with_timeout(
-            self._r.incr(redis_key), self._timeout_s, op="ratelimit.incr"
-        )
-        # Refresh the TTL on every hit: a crash between INCR and a first-hit-only EXPIRE
-        # would otherwise leave a TTL-less key, locking it forever. Always-expire keeps
-        # the limiter self-healing (the window slides from the latest hit).
-        await with_timeout(
-            self._r.expire(redis_key, window_seconds),
+        count, ttl = await with_timeout(
+            self._r.eval(_HIT_LUA, 1, redis_key, window_seconds),
             self._timeout_s,
-            op="ratelimit.expire",
+            op="ratelimit.hit",
         )
-        ttl = await with_timeout(
-            self._r.ttl(redis_key), self._timeout_s, op="ratelimit.ttl"
-        )
-        result = self._result(count, limit, ttl)
+        result = self._result(int(count), limit, int(ttl))
         if not result.allowed:
             log.warning("ratelimit.blocked key={} count={} limit={}", key, count, limit)
         return result

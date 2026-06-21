@@ -162,10 +162,24 @@ def test_callback_redirects_with_tokens(fakes):
     client = TestClient(_oauth_app(fakes))
     resp = client.get(
         "/auth/oauth/callback?provider=google&code=c&state=good",
+        cookies={"oauth_state": "good"},  # the browser-bound state set at authorize
         follow_redirects=False,
     )
     assert resp.status_code in (302, 307)
     assert "access_token" in resp.headers["location"]
+
+
+def test_callback_state_cookie_mismatch_rejected(fakes):
+    # Login-CSRF defense: a valid state with the WRONG (or absent) browser cookie is
+    # rejected before oauth_login — an attacker can't complete a flow in the victim's
+    # browser because they can't set the victim's oauth_state cookie.
+    client = TestClient(_oauth_app(fakes))
+    resp = client.get(
+        "/auth/oauth/callback?provider=google&code=c&state=good",
+        cookies={"oauth_state": "attacker-different"},
+        follow_redirects=False,
+    )
+    assert resp.headers["location"] == "http://fe/callback#error=auth_failed"
 
 
 @pytest.mark.asyncio
@@ -285,6 +299,7 @@ def test_callback_keeps_refresh_in_cookie_not_url(fakes):
     client = TestClient(_oauth_app(fakes))
     resp = client.get(
         "/auth/oauth/callback?provider=google&code=c&state=good",
+        cookies={"oauth_state": "good"},
         follow_redirects=False,
     )
     assert resp.status_code in (302, 307)

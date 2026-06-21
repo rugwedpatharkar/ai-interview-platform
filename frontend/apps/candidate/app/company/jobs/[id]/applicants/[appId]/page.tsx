@@ -172,8 +172,10 @@ export default function ApplicantReportPage() {
     },
     onSuccess: (action) => {
       if (action === "advance") toast.success("Candidate advanced");
-      if (action === "hold") toast.info("Marked on hold — decision pending");
-      if (action === "reject") toast.info("Declined — candidate will be notified");
+      if (action === "hold")
+        toast.info("Marked on hold — candidate notifications are coming soon");
+      if (action === "reject")
+        toast.info("Marked as declined — candidate notifications are coming soon");
       qc.invalidateQueries({ queryKey: ["applicants", id] });
       qc.invalidateQueries({ queryKey: ["report", appId] });
     },
@@ -387,7 +389,7 @@ export default function ApplicantReportPage() {
                       </button>
                     }
                     title="Decline this candidate?"
-                    description="The candidate is notified with the reason for the decision."
+                    description="Records the decline for your team. Candidate notifications are coming soon."
                     confirmLabel="Decline"
                     destructive
                     busy={decide.isPending}

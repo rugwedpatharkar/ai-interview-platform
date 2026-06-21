@@ -15,6 +15,8 @@ from app.infra.repositories.aptitude_attempts import AptitudeAttemptRepository
 from app.infra.repositories.aptitude_banks import AptitudeBankRepository
 from app.infra.repositories.aptitude_deliveries import AptitudeDeliveryRepository
 from app.infra.repositories.audit_logs import AuditLogRepository
+from app.infra.repositories.coding_attempts import CodingAttemptRepository
+from app.infra.repositories.coding_tasks import CodingTaskRepository
 from app.infra.repositories.companies import CompanyRepository
 from app.infra.repositories.company_profiles import CompanyProfileRepository
 from app.infra.repositories.consents import ConsentRepository
@@ -36,6 +38,7 @@ from app.infra.repositories.profiles import CandidateProfileRepository
 from app.infra.repositories.reports import ReportRepository
 from app.infra.repositories.rubrics import RubricRepository
 from app.infra.repositories.saved_jobs import SavedJobsRepository
+from app.infra.repositories.user_preferences import UserPreferencesRepository
 from app.infra.repositories.users import UserRepository
 from app.infra.totp import FernetSecretBox, PyotpProvider
 from app.resources.compliance import CandidateEraser
@@ -43,6 +46,7 @@ from app.routes.analytics import AnalyticsServicer
 from app.routes.application import ApplicationServicer
 from app.routes.aptitude import AptitudeServicer
 from app.routes.auth import AuthServicer
+from app.routes.coding import CodingServicer
 from app.routes.company_profile import CompanyProfileServicer
 from app.routes.compliance import ComplianceServicer
 from app.routes.decision import DecisionServicer
@@ -56,6 +60,7 @@ from app.routes.pb import (
     application_pb2_grpc,
     aptitude_pb2_grpc,
     auth_pb2_grpc,
+    coding_pb2_grpc,
     company_profile_pb2_grpc,
     compliance_pb2_grpc,
     decision_pb2_grpc,
@@ -64,6 +69,7 @@ from app.routes.pb import (
     job_pb2_grpc,
     messaging_pb2_grpc,
     notification_pb2_grpc,
+    preferences_pb2_grpc,
     profile_pb2_grpc,
     recommendation_pb2_grpc,
     report_pb2_grpc,
@@ -75,6 +81,7 @@ from app.routes.pb import (
     talent_pb2_grpc,
     team_pb2_grpc,
 )
+from app.routes.preferences import PreferencesServicer
 from app.routes.profile import ProfileServicer
 from app.routes.recommendation import RecommendationServicer
 from app.routes.report import ReportServicer
@@ -98,6 +105,8 @@ def make_eraser(db, storage):
         reports=ReportRepository(db),
         interviews=InterviewRepository(db),
         attempts=AptitudeAttemptRepository(db),
+        coding_attempts=CodingAttemptRepository(db),
+        user_preferences=UserPreferencesRepository(db),
         consents=ConsentRepository(db),
         notifications=NotificationRepository(db),
         message_threads=MessageThreadRepository(db),
@@ -195,6 +204,17 @@ def create_web_app(
             attempts=AptitudeAttemptRepository(db),
             deliveries=AptitudeDeliveryRepository(db),
             publisher=publisher,
+            tokens=tokens,
+        ),
+        app,
+    )
+    coding_pb2_grpc.add_CodingServiceServicer_to_server(
+        CodingServicer(
+            applications=ApplicationRepository(db),
+            tasks=CodingTaskRepository(db),
+            attempts=CodingAttemptRepository(db),
+            publisher=publisher,
+            limiter=RateLimiter(redis),
             tokens=tokens,
         ),
         app,
@@ -299,6 +319,10 @@ def create_web_app(
             notifier=notifier,
             audit=AuditLogRepository(db),
         ),
+        app,
+    )
+    preferences_pb2_grpc.add_PreferencesServiceServicer_to_server(
+        PreferencesServicer(preferences=UserPreferencesRepository(db), tokens=tokens),
         app,
     )
     messaging_pb2_grpc.add_MessagingServiceServicer_to_server(

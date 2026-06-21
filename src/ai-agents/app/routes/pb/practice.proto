@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package aiagents.practice.v1;
+
+// PracticeService — detached candidate self-serve mock interview. Token-scoped, fully
+// candidate-private; NO comp_id / job_id / application_id (practice never reaches the
+// funnel). Replaces the former /practice REST surface so ai-agents is all-gRPC.
+service PracticeService {
+  rpc StartPractice(StartPracticeRequest) returns (QuestionResponse);
+  rpc SubmitPracticeTurn(SubmitPracticeTurnRequest) returns (TurnResponse);
+  rpc ListPracticeSessions(ListPracticeSessionsRequest) returns (PracticeSessionList);
+  rpc GetPracticeFeedback(GetPracticeFeedbackRequest) returns (PracticeFeedback);
+}
+
+message StartPracticeRequest {
+  string topic = 1;    // provide EXACTLY one of topic / jd_text
+  string jd_text = 2;
+}
+message QuestionResponse {
+  string practice_id = 1;
+  string question = 2;
+}
+
+message SubmitPracticeTurnRequest {
+  string practice_id = 1;
+  string answer = 2;
+}
+message TurnResponse {
+  bool done = 1;
+  string question = 2;
+}
+
+message ListPracticeSessionsRequest {}
+message PracticeSession {
+  string practice_id = 1;
+  string role_label = 2;
+  string created_at = 3;
+}
+message PracticeSessionList {
+  repeated PracticeSession sessions = 1;
+}
+
+message GetPracticeFeedbackRequest {
+  string practice_id = 1;
+}
+message GrowthFeedback {
+  string summary = 1;
+  repeated string strengths = 2;
+  repeated string gaps = 3;
+  repeated string suggested_topics = 4;
+}
+message PracticeFeedback {
+  string evaluation_summary = 1;
+  GrowthFeedback feedback = 2;
+}

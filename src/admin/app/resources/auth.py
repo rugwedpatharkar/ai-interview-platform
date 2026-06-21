@@ -12,6 +12,7 @@ from jose import JWTError
 from lib.logging import get_logger
 from lib.schemas import Role
 from lib.security import hash_password, verify_password
+from pydantic import ValidationError as PydanticValidationError
 from pymongo.errors import DuplicateKeyError
 
 from app.config import get_settings
@@ -22,11 +23,23 @@ from app.errors import (
     InvalidTokenError,
     NotFoundError,
     RateLimitedError,
+    ValidationError,
 )
 from app.model.audit import AuditLog
 from app.model.auth import Company, User
 
 log = get_logger(component="auth.resources")
+
+
+def _build_user(**fields) -> User:
+    """Construct a User, converting model-validation failures (e.g. a malformed or
+    reserved-domain email at the registration boundary) into a domain ValidationError
+    so the gRPC layer returns INVALID_ARGUMENT — not an uncaught-exception INTERNAL."""
+    try:
+        return User(**fields)
+    except PydanticValidationError as exc:
+        raise ValidationError("Invalid email address") from exc
+
 
 VERIFY_NONCE_TTL = 86400  # 24h, matches the verification token
 RESET_NONCE_TTL = 3600  # 1h, matches the reset token
@@ -51,7 +64,7 @@ async def register_company(
     comp_id = await companies.insert(Company(name=company_name))
     try:
         user_id = await users.insert(
-            User(
+            _build_user(
                 email=email,
                 password_hash=hash_password(password),
                 role=Role.company_admin,
@@ -80,7 +93,7 @@ async def register_candidate(email, password, *, users, tokens, notifier, nonces
         raise ConflictError("Email already registered")
     try:
         user_id = await users.insert(
-            User(
+            _build_user(
                 email=email,
                 password_hash=hash_password(password),
                 role=Role.candidate,

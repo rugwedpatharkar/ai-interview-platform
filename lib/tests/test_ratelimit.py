@@ -26,6 +26,15 @@ class FakeRedis:
     async def ttl(self, key):
         return self.ttls.get(key, -1)
 
+    async def eval(self, script, numkeys, *keys_and_args):
+        # Simulate the hit Lua: INCR + EXPIRE + return [count, ttl] atomically.
+        key, window = keys_and_args[0], int(keys_and_args[1])
+        val = int(self.kv.get(key, 0)) + 1
+        self.kv[key] = str(val)
+        self.ttls[key] = window
+        self.expire_calls += 1
+        return [val, window]
+
     async def get(self, key):
         return self.kv.get(key)
 

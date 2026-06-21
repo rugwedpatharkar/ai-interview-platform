@@ -56,6 +56,7 @@ def _app(*, data, sessions, llm, settings=None, capability=None, publisher=None)
         "tokens": TokenService(secret=_SECRET),
         "data": data,
         "sessions": sessions,
+        "practice_sessions": sessions,  # PracticeServicer dep (save/get only)
         "llm": llm,
         "publisher": publisher,
         "capability": capability,
@@ -270,6 +271,28 @@ async def test_turn_rejects_oversized_answer(
     )
     _, status = _data_and_status(resp.content)
     assert status == 3  # INVALID_ARGUMENT
+
+
+@pytest.mark.asyncio
+async def test_turn_rejects_null_bytes(
+    fake_data, fake_sessions, fake_publisher, fake_llm
+):
+    sessions = fake_sessions()
+    sessions.saved["a1"] = _session()
+    app = _app(
+        data=fake_data(),
+        sessions=sessions,
+        publisher=fake_publisher(),
+        llm=fake_llm(None),
+    )
+    resp = await _call(
+        app,
+        f"{_INTERVIEW}/SubmitTurn",
+        interview_pb2.SubmitTurnRequest(application_id="a1", answer="ok\x00bad"),
+        metadata=_auth("u1"),
+    )
+    _, status = _data_and_status(resp.content)
+    assert status == 3  # INVALID_ARGUMENT — NUL byte can corrupt downstream
 
 
 @pytest.mark.asyncio

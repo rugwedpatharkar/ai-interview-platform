@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 import pytest
+from pymongo.errors import DuplicateKeyError
 
 # Fixed stand-in timestamp for fake transition records (deterministic in tests).
 _NOW = datetime(2026, 6, 20, tzinfo=UTC)
@@ -140,9 +141,16 @@ class FakeRedis:
         return dict(self.hashes.get(key, {}))
 
     async def eval(self, script, numkeys, *keys_and_args):
-        # Model Redis's atomic EVAL for revoke_user: delete each jti key in the user's
-        # set, then the set itself — one indivisible step (the only script we run).
+        # Model Redis's atomic EVAL for the two scripts we run (dispatch by content).
         keys, args = keys_and_args[:numkeys], keys_and_args[numkeys:]
+        if "INCR" in script:
+            # RateLimiter.hit: INCR + EXPIRE + return [count, ttl] atomically.
+            key, window = keys[0], int(args[0])
+            val = int(self.kv.get(key, 0)) + 1
+            self.kv[key] = str(val)
+            self.ttls[key] = window
+            return [val, window]
+        # revoke_user: delete each jti key in the user's set, then the set itself.
         user_key, prefix = keys[0], args[0]
         for jti in self.sets.get(user_key, set()):
             self.kv.pop(prefix + jti, None)
@@ -286,6 +294,9 @@ class FakeApplicationRepo:
     async def get(self, application_id):
         return self._docs.get(application_id)
 
+    async def list_by_state(self, state):
+        return [d for d in self._docs.values() if d.get("state") == state]
+
     async def set_state(self, application_id, state):
         doc = self._docs.get(application_id)
         if doc is not None:
@@ -323,7 +334,35 @@ class FakeAptitudeBankRepo:
 
 
 class FakeAptitudeAttemptRepo:
-    """In-memory stand-in for AptitudeAttemptRepository."""
+    """In-memory stand-in for AptitudeAttemptRepository.
+
+    Enforces the production unique index on application_id (a second insert for the
+    same application raises DuplicateKeyError) so idempotency paths are exercised.
+    """
+
+    def __init__(self):
+        self.records: list[dict] = []
+
+    async def insert(self, attempt) -> str:
+        doc = attempt.model_dump()
+        if any(r["application_id"] == doc["application_id"] for r in self.records):
+            raise DuplicateKeyError("duplicate application_id")
+        self.records.append(doc)
+        return str(len(self.records))
+
+    async def get_by_application(self, application_id):
+        return next(
+            (r for r in self.records if r["application_id"] == application_id), None
+        )
+
+    async def delete_by_candidate(self, candidate_user_id):
+        self.records = [
+            r for r in self.records if r["candidate_user_id"] != candidate_user_id
+        ]
+
+
+class FakeCodingAttemptRepo:
+    """In-memory stand-in for CodingAttemptRepository."""
 
     def __init__(self):
         self.records: list[dict] = []
@@ -336,6 +375,22 @@ class FakeAptitudeAttemptRepo:
         self.records = [
             r for r in self.records if r["candidate_user_id"] != candidate_user_id
         ]
+
+
+class FakeUserPreferencesRepo:
+    """In-memory stand-in for UserPreferencesRepository."""
+
+    def __init__(self):
+        self.docs: dict[str, dict] = {}
+
+    async def get_by_user(self, user_id):
+        return self.docs.get(user_id)
+
+    async def upsert(self, user_id, fields):
+        self.docs[user_id] = {**fields, "user_id": user_id}
+
+    async def delete_by_user(self, user_id):
+        self.docs.pop(user_id, None)
 
 
 class FakeInterviewRepo:
@@ -447,6 +502,8 @@ def fakes():
         "audit": FakeAuditRepo(),
         "banks": FakeAptitudeBankRepo(),
         "attempts": FakeAptitudeAttemptRepo(),
+        "coding_attempts": FakeCodingAttemptRepo(),
+        "user_preferences": FakeUserPreferencesRepo(),
         "deliveries": FakeAptitudeDeliveryRepo(),
         "reports": FakeReportRepo(),
         "interviews": FakeInterviewRepo(),

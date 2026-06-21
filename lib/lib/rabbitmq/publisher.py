@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 import aio_pika
@@ -25,6 +26,7 @@ class Publisher:
         self._exchange_name = exchange
         self._conn: aio_pika.abc.AbstractRobustConnection | None = None
         self._exchange: aio_pika.abc.AbstractExchange | None = None
+        self._exchange_lock = asyncio.Lock()
 
     async def connect(self) -> None:
         self._conn = await aio_pika.connect_robust(self._url)
@@ -41,11 +43,14 @@ class Publisher:
     async def publish(self, routing_key: str, payload: dict) -> None:
         if self._conn is None:
             raise RuntimeError("Publisher.connect() must be called first")
-        # Re-acquire a fresh exchange handle if the previous one was invalidated
-        # by a publish error (BE-#12).
+        # Re-acquire a fresh exchange handle if the previous one was invalidated by a
+        # publish error (BE-#12). The lock + double-check means concurrent publishes
+        # re-acquire ONCE instead of each opening (and orphaning) a channel.
         if self._exchange is None:
-            log.info("publisher.reacquire exchange={}", self._exchange_name)
-            self._exchange = await self._acquire_exchange()
+            async with self._exchange_lock:
+                if self._exchange is None:
+                    log.info("publisher.reacquire exchange={}", self._exchange_name)
+                    self._exchange = await self._acquire_exchange()
 
         # Stamp a correlation_id onto every event (existing > current context > new) so
         # the consumer binds it and one interview/request is traceable across services.

@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package admin.coding.v1;
+
+// CodingService — candidate runs + submits assessment code. Execution is server-side
+// (resource-capped subprocess). Candidate-owned via the application; hidden test cases
+// and typed answer keys never cross the wire.
+service CodingService {
+  rpc GetCodingTask(GetCodingTaskRequest) returns (CodingTask);
+  rpc RunCode(RunCodeRequest) returns (RunResult);          // ephemeral, no grade
+  rpc SubmitCoding(SubmitCodingRequest) returns (SubmitResult);
+}
+
+message GetCodingTaskRequest { string application_id = 1; }
+
+message TestCase {
+  string stdin = 1;
+  string expected_stdout = 2;
+}
+
+message TypedQuestion {
+  string id = 1;
+  string prompt = 2;     // accepted answers are server-side only
+}
+
+message CodingTask {
+  string application_id = 1;
+  string title = 2;
+  string prompt = 3;
+  repeated string languages = 4;
+  string starter_code = 5;
+  repeated TestCase sample_cases = 6;          // visible only
+  repeated TypedQuestion typed_questions = 7;
+  int32 cpu_seconds = 8;
+  int32 wall_seconds = 9;
+}
+
+message RunCodeRequest {
+  string application_id = 1;
+  string language = 2;
+  string source = 3;
+  string stdin = 4;
+}
+
+message RunResult {
+  string stdout = 1;
+  string stderr = 2;
+  int32 exit_code = 3;
+  int32 time_ms = 4;
+  bool timed_out = 5;
+}
+
+message TypedAnswer {
+  string id = 1;
+  string answer = 2;
+}
+
+message SubmitCodingRequest {
+  string application_id = 1;
+  string language = 2;
+  string source = 3;
+  repeated TypedAnswer typed_answers = 4;
+}
+
+message SubmitResult {
+  bool passed = 1;
+  int32 cases_passed = 2;
+  int32 cases_total = 3;
+  int32 typed_correct = 4;
+  int32 typed_total = 5;
+}

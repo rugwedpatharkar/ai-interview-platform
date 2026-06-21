@@ -2,6 +2,7 @@
 
 from lib.logging import get_logger
 from lib.schemas import Role
+from pymongo.errors import DuplicateKeyError
 
 from app.errors import ConflictError, ForbiddenError, NotFoundError, ValidationError
 from app.model.application import Application
@@ -31,15 +32,21 @@ async def apply(identity, job_id, consent, *, applications, jobs, publisher):
         raise NotFoundError("Job is not open for applications")
     if await applications.get_by_job_and_candidate(job_id, identity["id"]):
         raise ConflictError("Already applied to this job")
-    app_id = await applications.insert(
-        Application(
-            comp_id=job["comp_id"],
-            job_id=job_id,
-            candidate_user_id=identity["id"],
-            state="applied",
-            consent=True,
+    try:
+        app_id = await applications.insert(
+            Application(
+                comp_id=job["comp_id"],
+                job_id=job_id,
+                candidate_user_id=identity["id"],
+                state="applied",
+                consent=True,
+            )
         )
-    )
+    except DuplicateKeyError:
+        # A concurrent apply raced past the check above and won the unique index;
+        # surface the same clean Conflict instead of a raw 500. A lost match.run on
+        # the publish below is recovered by the reconcile sweep (applied-but-unmatched).
+        raise ConflictError("Already applied to this job") from None
     await publisher.publish(
         "application.created",
         {

@@ -102,11 +102,33 @@ def make_oauth_routes(deps):
                 "state": state,
             }
         )
-        return RedirectResponse(f"{cfg['authorize_url']}?{params}")
+        response = RedirectResponse(f"{cfg['authorize_url']}?{params}")
+        # Bind the state to THIS browser (login-CSRF defense): the callback requires
+        # this cookie to match the returned state, so an attacker can't complete their
+        # own OAuth flow in a victim's browser. SameSite=lax still rides the provider's
+        # top-level redirect back to /auth/oauth/callback.
+        response.set_cookie(
+            "oauth_state",
+            state,
+            max_age=_STATE_TTL,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            path="/auth/oauth/",
+        )
+        return response
 
     async def callback(request):
         state = request.query_params.get("state", "")
         redirect = await _take_redirect(deps, state) or deps["frontend_redirect"]
+        # Login-CSRF: the returned state must match the cookie bound to this browser at
+        # authorize time. A mismatch/absence is rejected before oauth_login (and before
+        # spending the single-use state), so a planted callback can't log a victim in.
+        if not state or state != request.cookies.get("oauth_state", ""):
+            log.warning("oauth callback: state cookie mismatch")
+            resp = _error_redirect(redirect, "auth_failed")
+            resp.delete_cookie("oauth_state", path="/auth/oauth/")
+            return resp
         try:
             result = await oauth_login(
                 request.query_params.get("provider", ""),
@@ -130,6 +152,7 @@ def make_oauth_routes(deps):
         refresh = result.pop("refresh_token")
         response = RedirectResponse(f"{redirect}#{urlencode(result)}")
         _set_refresh_cookie(response, refresh)
+        response.delete_cookie("oauth_state", path="/auth/oauth/")  # single-use
         response.headers["Referrer-Policy"] = "no-referrer"
         return response
 

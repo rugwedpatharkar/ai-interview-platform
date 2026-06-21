@@ -2,6 +2,7 @@ import pytest
 
 from app.infra.mcp_capability import McpCapability
 from app.infra.mcp_data import McpDataGateway
+from app.infra.mcp_result import unwrap
 
 
 class _Result:
@@ -11,6 +12,18 @@ class _Result:
         self.structured_content = {"result": value}
         self.is_error = is_error
         self.content = []
+
+
+class _NoStructured:
+    is_error = False
+    structured_content = None
+
+
+def test_unwrap_raises_on_missing_structured_content():
+    # A malformed tool response (no structured content) must NOT read as None/"not
+    # found" — that could skip an idempotency-guarded re-run. It is a tool error.
+    with pytest.raises(RuntimeError):
+        unwrap(_NoStructured())
 
 
 class _FakeSession:

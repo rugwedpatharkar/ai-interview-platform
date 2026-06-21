@@ -99,14 +99,35 @@ export function useTheme(): ThemeContextValue {
 /**
  * Icon button that flips light/dark. Renders a stable placeholder until mounted
  * so SSR markup matches the first client render.
+ *
+ * By default it drives the local {@link ThemeProvider} (System A — localStorage key
+ * `"theme"`), which the company app uses. Apps that own a different source of truth
+ * (the candidate app's `aptura.appearance.v1` system) pass `isDark` + `onToggle` to
+ * drive their store instead — `@ip/ui` stays app-agnostic and never imports the app.
+ * When the props are supplied the toggle is treated as mounted (the caller owns
+ * hydration), so the icon reflects `isDark` immediately.
  */
-export function ThemeToggle({ className }: { className?: string }) {
-  const { theme, toggleTheme, mounted } = useTheme();
-  const isDark = theme === "dark";
+export function ThemeToggle({
+  className,
+  isDark: isDarkProp,
+  onToggle,
+}: {
+  className?: string;
+  isDark?: boolean;
+  onToggle?: () => void;
+}) {
+  const ctx = useContext(ThemeContext);
+  const controlled = onToggle !== undefined;
+  // Controlled (candidate) path owns its own mount/hydration; uncontrolled (company)
+  // path reads the provider. Don't call useTheme() — controlled callers may mount
+  // outside a ThemeProvider.
+  const mounted = controlled ? true : (ctx?.mounted ?? false);
+  const isDark = controlled ? Boolean(isDarkProp) : ctx?.theme === "dark";
+  const toggle = controlled ? onToggle : ctx?.toggleTheme;
   return (
     <button
       type="button"
-      onClick={toggleTheme}
+      onClick={toggle}
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
       title={isDark ? "Light mode" : "Dark mode"}
       className={cn(

@@ -18,6 +18,9 @@ from pymongo.errors import DuplicateKeyError
 log = get_logger(component="mcp_data.tools")
 
 _MANAGER_ROLES = {Role.company_admin.value, Role.recruiter.value}
+# Hard ceiling on a single interview's proctoring events — bounds the read so a runaway
+# or adversarial client can't make the integrity fold load an unbounded set.
+_PROCTOR_CAP = 5000
 
 # ---------------------------------------------------------------------------
 # Prometheus metrics — defined at module level (safe at import time).
@@ -299,7 +302,14 @@ class DataStore:
                     cursor = self._proctoring.find(
                         {"application_id": application_id}, {"_id": 0}
                     )
-                    return await cursor.to_list(length=None)
+                    rows = await cursor.to_list(length=_PROCTOR_CAP)
+                    if len(rows) >= _PROCTOR_CAP:
+                        log.warning(
+                            "get_proctoring_events: truncated at {} for {}",
+                            _PROCTOR_CAP,
+                            application_id,
+                        )
+                    return rows
             except Exception:
                 _mongo_errors.labels(op=op).inc()
                 raise

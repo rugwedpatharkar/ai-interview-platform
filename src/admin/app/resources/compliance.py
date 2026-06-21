@@ -57,6 +57,8 @@ class CandidateEraser:
         reports,
         interviews,
         attempts,
+        coding_attempts=None,
+        user_preferences=None,
         consents,
         notifications=None,
         message_threads=None,
@@ -74,6 +76,8 @@ class CandidateEraser:
         self._reports = reports
         self._interviews = interviews
         self._attempts = attempts
+        self._coding_attempts = coding_attempts
+        self._user_preferences = user_preferences
         self._consents = consents
         self._notifications = notifications
         self._message_threads = message_threads
@@ -97,6 +101,8 @@ class CandidateEraser:
                 await self._messages.delete_by_application(application_id)
         await self._interviews.delete_by_user(user_id)
         await self._attempts.delete_by_candidate(user_id)
+        if self._coding_attempts is not None:
+            await self._coding_attempts.delete_by_candidate(user_id)
         # The consent ledger is keyed by user_id (identifying PII); erase it too so a
         # right-to-erasure leaves no residual linkage back to the candidate.
         await self._consents.delete_by_user(user_id)
@@ -104,6 +110,8 @@ class CandidateEraser:
             await self._notifications.delete_by_user(user_id)
         if self._notification_prefs is not None:
             await self._notification_prefs.delete_by_user(user_id)
+        if self._user_preferences is not None:
+            await self._user_preferences.delete_by_user(user_id)
         # Practice runs are detached candidate PII keyed by user_id (no application
         # link), so they cascade by user — not via the applications above.
         if self._practice is not None:
@@ -134,11 +142,20 @@ class CandidateEraser:
             log.info("retention sweep erased 0 candidates")
             return 0
         sem = asyncio.Semaphore(self._SWEEP_CONCURRENCY)
+        erased = 0
 
         async def _erase_one(user):
+            nonlocal erased
             async with sem:
-                await self.erase(str(user["_id"]))
+                # Per-candidate isolation: one poison record (e.g. a transient repo
+                # failure) must not abort the whole sweep + block every other candidate.
+                # erase() is idempotent, so the next sweep retries this one.
+                try:
+                    await self.erase(str(user["_id"]))
+                    erased += 1
+                except Exception:
+                    log.exception("retention erase failed for {}", user["_id"])
 
         await asyncio.gather(*(_erase_one(u) for u in users))
-        log.info("retention sweep erased {} candidates", len(users))
-        return len(users)
+        log.info("retention sweep erased {}/{} candidates", erased, len(users))
+        return erased

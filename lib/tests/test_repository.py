@@ -117,3 +117,29 @@ async def test_find_capped_limits_results(repo):
         await repo.insert(Item(comp_id="c1", name=f"n{i}"))
     rows = await repo.find_capped({"comp_id": "c1"}, cap=3)
     assert len(rows) == 3
+
+
+@pytest.mark.asyncio
+async def test_get_malformed_id_returns_none(repo):
+    # A malformed id is a clean miss, never an unhandled bson.InvalidId (→ 500).
+    assert await repo.get("not-a-valid-objectid") is None
+
+
+@pytest.mark.asyncio
+async def test_update_delete_malformed_id_are_noops(repo):
+    await repo.update("bad-id", {"name": "x"})  # must not raise
+    await repo.delete("bad-id")  # must not raise
+
+
+class _CappedRepo(BaseRepository[Item]):
+    collection = "items"
+    _find_cap = 3
+
+
+@pytest.mark.asyncio
+async def test_find_enforces_hard_ceiling_when_unbounded():
+    repo = _CappedRepo(FakeDB())
+    for i in range(5):
+        await repo.insert(Item(comp_id="c1", name=f"n{i}"))
+    rows = await repo.find({"comp_id": "c1"})  # no limit → bounded by the hard cap
+    assert len(rows) == 3

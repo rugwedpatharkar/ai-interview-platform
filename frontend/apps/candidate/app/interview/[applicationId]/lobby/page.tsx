@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, ApIcon, Checkbox, Logo, ThemeToggle } from "@ip/ui";
+import { Alert, ApIcon, Checkbox, Logo } from "@ip/ui";
 import { Code, ConnectError, useRequireAuth } from "@ip/shared";
 import {
   AlertTriangle,
@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fakeStream } from "../rtc-room";
 import { useAuth } from "../../../../lib/auth";
+import { AppearanceToggle } from "../../../../components/appearance-toggle";
 
 const MOCK = process.env.NEXT_PUBLIC_MOCK === "1";
 
@@ -186,7 +187,7 @@ export default function InterviewLobbyPage() {
             <ArrowLeft className="size-4" aria-hidden />
             Back to applications
           </Link>
-          <ThemeToggle />
+          <AppearanceToggle />
         </div>
       </header>
 

@@ -1,0 +1,19 @@
+# Deny-all-egress for the pod(s) that execute candidate code. The lib.execution
+# sandbox blocks secrets/CPU/mem/time in-process, but it deliberately does NOT block
+# network — that is enforced here (L3/L4) plus the seccomp deny-socket profile. The
+# executor needs no network, so egress is denied outright.
+#
+# NOTE: NetworkPolicy is only enforced by a CNI that supports it (Calico/Cilium — NOT
+# flannel alone). Verify enforcement and assert at deploy that this policy is applied;
+# off-k8s, use host egress-firewall rules instead (never privileged namespaces).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: coding-executor-deny-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: admin-service # or a dedicated, secret-free executor Deployment
+  policyTypes:
+    - Egress
+  egress: [] # deny ALL egress — candidate code has no business reaching the network

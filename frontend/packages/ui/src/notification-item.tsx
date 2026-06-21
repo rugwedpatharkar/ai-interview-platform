@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { cn } from "./cn.js";
 import type { LucideIcon } from "lucide-react";
 
@@ -29,6 +31,23 @@ function formatRelative(iso: string): string {
   return rtf.format(-Math.round(hrs / 24), "day");
 }
 
+/** Relative timestamp ("2 minutes ago"). The relative string depends on `Date.now()`,
+ *  which differs between server and client — so SSR + first client render show a stable
+ *  absolute date, then we swap to the relative string after mount to avoid a hydration
+ *  mismatch. */
+function RelativeTime({ iso }: { iso: string }) {
+  const [relative, setRelative] = useState<string | null>(null);
+  useEffect(() => setRelative(formatRelative(iso)), [iso]);
+  return (
+    <time
+      dateTime={iso}
+      className="shrink-0 text-xs tabular-nums text-muted-foreground"
+    >
+      {relative ?? new Date(iso).toLocaleDateString()}
+    </time>
+  );
+}
+
 /** One feed row — icon-by-kind + subject + clamped body + relative time + unread dot. */
 export function NotificationItem({
   notification: n,
@@ -54,9 +73,7 @@ export function NotificationItem({
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-2">
           <span className="truncate text-sm font-medium text-foreground">{n.subject}</span>
-          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-            {formatRelative(n.createdAt)}
-          </span>
+          <RelativeTime iso={n.createdAt} />
         </span>
         <span className="mt-0.5 line-clamp-2 block text-sm text-muted-foreground">{n.body}</span>
       </span>

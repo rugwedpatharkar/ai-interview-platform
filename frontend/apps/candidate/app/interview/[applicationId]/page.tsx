@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, ApIcon, Logo, ThemeToggle } from "@ip/ui";
+import { Alert, ApIcon, Logo } from "@ip/ui";
 import {
   Code,
   ConnectError,
@@ -13,6 +13,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "../../../lib/auth";
+import { AppearanceToggle } from "../../../components/appearance-toggle";
 import { DevicePrecheck } from "../../../components/device-precheck";
 import {
   InterviewCaptions,
@@ -274,7 +275,7 @@ export default function InterviewPage() {
               Back to lobby
             </Link>
           )}
-          <ThemeToggle />
+          <AppearanceToggle />
         </div>
       </header>
 

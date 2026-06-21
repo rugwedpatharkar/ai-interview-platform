@@ -75,6 +75,12 @@ class InterviewServicer(interview_pb2_grpc.InterviewServiceServicer):
             )
         if len(answer) > _MAX_ANSWER_CHARS:
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, "answer too long")
+        if "\x00" in answer:
+            # NUL bytes can truncate downstream consumers (and have no place in a typed
+            # answer) — reject at the boundary before it is stored/fed to the LLM.
+            await context.abort(
+                grpc.StatusCode.INVALID_ARGUMENT, "answer contains invalid characters"
+            )
         async with log_context(
             log,
             "grpc.interview.turn",

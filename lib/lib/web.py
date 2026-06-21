@@ -3,6 +3,7 @@
 from lib.logging import new_correlation_id, reset_correlation_id, set_correlation_id
 
 _CORRELATION_HEADER = b"x-correlation-id"
+_MAX_CORRELATION_LEN = 64
 
 
 def cors_config(origins: list[str]) -> dict:
@@ -34,7 +35,14 @@ class CorrelationIdMiddleware:
             await self._app(scope, receive, send)
             return
         incoming = dict(scope.get("headers") or []).get(_CORRELATION_HEADER)
-        cid = incoming.decode() if incoming else new_correlation_id()
+        decoded = incoming.decode("ascii", "replace") if incoming else ""
+        # Cap a client-supplied id (a UUID4 hex is 32 chars): a huge/garbage header
+        # would otherwise be echoed into every log line for the request.
+        cid = (
+            decoded
+            if 0 < len(decoded) <= _MAX_CORRELATION_LEN
+            else new_correlation_id()
+        )
         token = set_correlation_id(cid)
 
         async def send_wrapper(message):

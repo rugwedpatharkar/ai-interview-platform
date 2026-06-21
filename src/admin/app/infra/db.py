@@ -27,6 +27,10 @@ INDEXES: list[IndexSpec] = [
     IndexSpec("aptitude_attempts", "comp_id"),
     # One delivery (served order + clock-start) per application; stable on re-fetch.
     IndexSpec("aptitude_deliveries", "application_id", {"unique": True}),
+    # Coding assessment: one task per job; one attempt per application; candidate erase.
+    IndexSpec("coding_tasks", "job_id", {"unique": True}),
+    IndexSpec("coding_attempts", "application_id", {"unique": True}),
+    IndexSpec("coding_attempts", "candidate_user_id"),
     # reports written by ai-agents (one per application); admin reads + owns the index.
     IndexSpec("reports", "application_id", {"unique": True}),
     # match_results written by ai-agents (one per job+candidate); admin reads these.
@@ -83,6 +87,8 @@ INDEXES: list[IndexSpec] = [
     IndexSpec("messages", "application_id"),
     # notification_prefs: one settings doc per user.
     IndexSpec("notification_prefs", "user_id", {"unique": True}),
+    # user_preferences: one Appearance doc per user (v3).
+    IndexSpec("user_preferences", "user_id", {"unique": True}),
     # saved_jobs: candidate bookmarks; unique (candidate, job) makes Save idempotent.
     IndexSpec(
         "saved_jobs", [("candidate_user_id", 1), ("job_id", 1)], {"unique": True}

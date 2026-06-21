@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from app.model.application import Application
-from app.model.aptitude import AptitudeDelivery
+from app.model.aptitude import AptitudeAttempt, AptitudeDelivery
 from app.resources import scheduler
 
 
@@ -81,3 +81,39 @@ async def test_aptitude_expiry_skips_non_pending(fakes):
         max_age_hours=24,
     )
     assert n == 0
+
+
+@pytest.mark.asyncio
+async def test_reconcile_reemits_stranded_aptitude(fakes):
+    # Graded but still aptitude_pending = a lost aptitude.graded publish. Re-emit it.
+    stranded = await fakes["applications"].insert(
+        Application(
+            comp_id="c1", job_id="j1", candidate_user_id="u1", state="aptitude_pending"
+        )
+    )
+    await fakes["attempts"].insert(
+        AptitudeAttempt(
+            application_id=stranded,
+            comp_id="c1",
+            candidate_user_id="u1",
+            job_id="j1",
+            score=80,
+            passed=True,
+        )
+    )
+    # Started-but-ungraded (no attempt) → not stranded, must NOT be re-emitted.
+    await fakes["applications"].insert(
+        Application(
+            comp_id="c1", job_id="j1", candidate_user_id="u2", state="aptitude_pending"
+        )
+    )
+    pub = fakes["publisher"]
+    n = await scheduler.reconcile_pass(
+        applications=fakes["applications"], attempts=fakes["attempts"], publisher=pub
+    )
+    assert n == 1
+    assert (
+        "aptitude.graded",
+        {"application_id": stranded, "passed": True},
+    ) in pub.published
+    assert len(pub.published) == 1

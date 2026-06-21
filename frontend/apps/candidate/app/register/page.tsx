@@ -1,7 +1,7 @@
 "use client";
 
 import { ApIcon } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
+import { Code, errorMessage, isCode } from "@ip/shared";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
@@ -38,7 +38,13 @@ export default function RegisterPage() {
       await register(email, password);
       router.push(`/verify?email=${encodeURIComponent(email)}`);
     } catch (err) {
-      setError(errorMessage(err));
+      // AlreadyExists gets a signup-specific line; InvalidArgument falls through to
+      // errorMessage(), which already surfaces the server's own validation message.
+      setError(
+        isCode(err, Code.AlreadyExists)
+          ? "An account with this email already exists."
+          : errorMessage(err),
+      );
       setBusy(false);
     }
   }

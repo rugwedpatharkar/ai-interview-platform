@@ -132,12 +132,16 @@ export default function ApplicantSchedulePage() {
   });
 
   async function addToCalendar() {
-    const { content, filename } = await sched.getIcs(appId);
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([content], { type: "text/calendar" }));
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    try {
+      const { content, filename } = await sched.getIcs(appId);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([content], { type: "text/calendar" }));
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
   }
 
   if (!mounted) return null;

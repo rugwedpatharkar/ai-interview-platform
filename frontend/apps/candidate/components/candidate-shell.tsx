@@ -12,10 +12,11 @@ import {
   Logo,
   type SidebarNavEntry,
   SidebarShell,
-  ThemeToggle,
   sidebarMobileLinkClass,
   sidebarNavItemClass,
 } from "@ip/ui";
+
+import { AppearanceToggle } from "./appearance-toggle";
 import {
   Bell,
   Bookmark,
@@ -60,7 +61,7 @@ const NAV_FOR_YOU: NavEntry[] = [
 const NAV_PREPARE: NavEntry[] = [
   { href: "/practice", label: "Practice", icon: Sparkles },
   { href: "/messages", label: "Messages", icon: Mail },
-  { href: "/account", label: "Settings", icon: Settings },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 /** Shared signed-in chrome for the candidate app: Midnight sidebar + topbar shell,
@@ -194,7 +195,7 @@ export function CandidateShell({ children }: { children: ReactNode }) {
                 className="w-40 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
               />
             </form>
-            <ThemeToggle />
+            <AppearanceToggle />
             <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger
