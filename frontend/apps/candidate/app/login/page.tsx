@@ -113,7 +113,7 @@ function LoginInner() {
             </Link>
           }
         />
-        <PrimaryButton type="submit" busy={busy} busyLabel="Signing you in…">
+        <PrimaryButton type="submit" busy={busy} busyLabel="Signing you in…" disabled={!email.trim() || !password || busy}>
           <span className="inline-flex items-center gap-2">
             Sign in
             <ApIcon name="arrow" className="size-4" />

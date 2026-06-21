@@ -84,7 +84,7 @@ export default function RegisterPage() {
           />
           <PasswordMeter strength={strength} />
         </div>
-        <PrimaryButton type="submit" busy={busy} busyLabel="Creating your account…">
+        <PrimaryButton type="submit" busy={busy} busyLabel="Creating your account…" disabled={!email.trim() || !password || busy}>
           <span className="inline-flex items-center gap-2">
             Create account
             <ApIcon name="arrow" className="size-4" />
