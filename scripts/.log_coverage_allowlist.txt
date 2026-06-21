@@ -37,12 +37,6 @@ src/admin/app/resources/preferences.py:16:get_appearance
 src/admin/app/resources/preferences.py:21:update_appearance
 src/admin/app/resources/decision.py:26:decide_application
 src/admin/app/resources/decision.py:45:override_gate
-src/admin/app/resources/team.py:70:list_members
-src/admin/app/resources/team.py:85:invite_member
-src/admin/app/resources/team.py:124:resend_invite
-src/admin/app/resources/team.py:136:revoke_invite
-src/admin/app/resources/team.py:147:remove_member
-src/admin/app/resources/team.py:157:change_role
 src/admin/app/resources/application.py:25:apply
 src/admin/app/resources/application.py:77:list_my_applications
 src/admin/app/resources/application.py:85:list_applicants

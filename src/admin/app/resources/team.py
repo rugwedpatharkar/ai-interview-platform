@@ -7,7 +7,7 @@ Invites delegate to the shared `auth._invite_company_user`. No candidate PII —
 an employee User, untouched by the CandidateEraser cascade.
 """
 
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 from lib.schemas import Role
 
 from app.errors import ConflictError, NotFoundError, ValidationError
@@ -68,18 +68,23 @@ async def _audit(audit, user_id, action, comp_id):
 
 
 async def list_members(identity, *, page, page_size, users):
-    require_permission(identity, "team:manage")
-    page = page or 1
-    page_size = min(page_size or 50, 100)
-    skip = (page - 1) * page_size
-    rows = await users.list_company(identity["comp_id"], skip=skip, limit=page_size)
-    total = await users.count_company(identity["comp_id"])
-    return {
-        "members": [_member_dto(u) for u in rows],
-        "page": page,
-        "page_size": page_size,
-        "total": total,
-    }
+    async with log_context(
+        log,
+        "resource.team.list_members",
+        **bind_ids(comp_id=identity["comp_id"]),
+    ):
+        require_permission(identity, "team:manage")
+        page = page or 1
+        page_size = min(page_size or 50, 100)
+        skip = (page - 1) * page_size
+        rows = await users.list_company(identity["comp_id"], skip=skip, limit=page_size)
+        total = await users.count_company(identity["comp_id"])
+        return {
+            "members": [_member_dto(u) for u in rows],
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+        }
 
 
 async def invite_member(
@@ -94,77 +99,104 @@ async def invite_member(
     nonces=None,
     audit=None,
 ):
-    require_permission(identity, "team:manage")
-    if role not in _INVITABLE_ROLES:
-        raise ValidationError("role must be recruiter or hiring_manager")
-    out = await _invite_company_user(
-        email,
-        temp_password,
-        Role(role),
-        comp_id=identity["comp_id"],
-        invited_by=identity["id"],
-        audit_action="member_invited",
-        users=users,
-        tokens=tokens,
-        notifier=notifier,
-        nonces=nonces,
-        audit=audit,
-    )
-    log.info("member invited: comp_id={} user_id={}", identity["comp_id"], out["id"])
-    return {
-        "id": out["id"],
-        "email": out["email"],
-        "role": role,
-        "status": "pending",
-        "last_active_at": "",
-        "invited_by": identity["id"],
-    }
+    async with log_context(
+        log,
+        "resource.team.invite_member",
+        **bind_ids(comp_id=identity["comp_id"]),
+    ):
+        require_permission(identity, "team:manage")
+        if role not in _INVITABLE_ROLES:
+            raise ValidationError("role must be recruiter or hiring_manager")
+        out = await _invite_company_user(
+            email,
+            temp_password,
+            Role(role),
+            comp_id=identity["comp_id"],
+            invited_by=identity["id"],
+            audit_action="member_invited",
+            users=users,
+            tokens=tokens,
+            notifier=notifier,
+            nonces=nonces,
+            audit=audit,
+        )
+        log.info(
+            "member invited: comp_id={} user_id={}", identity["comp_id"], out["id"]
+        )
+        return {
+            "id": out["id"],
+            "email": out["email"],
+            "role": role,
+            "status": "pending",
+            "last_active_at": "",
+            "invited_by": identity["id"],
+        }
 
 
 async def resend_invite(
     identity, user_id, *, users, tokens, notifier, nonces=None, audit=None
 ):
-    require_permission(identity, "team:manage")
-    user = await _member_scoped(identity, user_id, users)
-    if user.get("status") == "active":
-        raise ConflictError("Member is already active")
-    await _send_verification(notifier, tokens, user_id, user["email"], nonces)
-    await _audit(audit, user_id, "member_invite_resent", identity["comp_id"])
-    return _member_dto(user)
+    async with log_context(
+        log,
+        "resource.team.resend_invite",
+        **bind_ids(user_id=user_id, comp_id=identity["comp_id"]),
+    ):
+        require_permission(identity, "team:manage")
+        user = await _member_scoped(identity, user_id, users)
+        if user.get("status") == "active":
+            raise ConflictError("Member is already active")
+        await _send_verification(notifier, tokens, user_id, user["email"], nonces)
+        await _audit(audit, user_id, "member_invite_resent", identity["comp_id"])
+        return _member_dto(user)
 
 
 async def revoke_invite(identity, user_id, *, users, sessions, audit=None):
-    require_permission(identity, "team:manage")
-    user = await _member_scoped(identity, user_id, users)
-    if user.get("status") != "pending":
-        raise ConflictError("Not a pending invite")
-    await users.revoke_seat(user_id)
-    await sessions.revoke_user(user_id)
-    await _audit(audit, user_id, "member_invite_revoked", identity["comp_id"])
-    return _member_dto({**user, "status": "revoked"})
+    async with log_context(
+        log,
+        "resource.team.revoke_invite",
+        **bind_ids(user_id=user_id, comp_id=identity["comp_id"]),
+    ):
+        require_permission(identity, "team:manage")
+        user = await _member_scoped(identity, user_id, users)
+        if user.get("status") != "pending":
+            raise ConflictError("Not a pending invite")
+        await users.revoke_seat(user_id)
+        await sessions.revoke_user(user_id)
+        await _audit(audit, user_id, "member_invite_revoked", identity["comp_id"])
+        return _member_dto({**user, "status": "revoked"})
 
 
 async def remove_member(identity, user_id, *, users, sessions, audit=None):
-    require_permission(identity, "team:manage")
-    user = await _member_scoped(identity, user_id, users)
-    await _guard_last_admin(identity, user, users)
-    await users.revoke_seat(user_id)
-    await sessions.revoke_user(user_id)
-    await _audit(audit, user_id, "member_removed", identity["comp_id"])
-    return _member_dto({**user, "status": "revoked"})
+    async with log_context(
+        log,
+        "resource.team.remove_member",
+        **bind_ids(user_id=user_id, comp_id=identity["comp_id"]),
+    ):
+        require_permission(identity, "team:manage")
+        user = await _member_scoped(identity, user_id, users)
+        await _guard_last_admin(identity, user, users)
+        await users.revoke_seat(user_id)
+        await sessions.revoke_user(user_id)
+        await _audit(audit, user_id, "member_removed", identity["comp_id"])
+        return _member_dto({**user, "status": "revoked"})
 
 
 async def change_role(identity, user_id, role, *, users, sessions, audit=None):
-    require_permission(identity, "team:manage")
-    if role not in _ALL_ROLES:
-        raise ValidationError("invalid role")
-    user = await _member_scoped(identity, user_id, users)
-    old_role = str(user.get("role", ""))
-    if old_role == Role.company_admin.value and role != Role.company_admin.value:
-        await _guard_last_admin(identity, user, users)
-    await users.set_role(user_id, role)
-    # A demotion (privilege reduction) revokes sessions; a promotion does not (v1 lean).
-    if _RANK.get(role, 0) < _RANK.get(old_role, 0):
-        await sessions.revoke_user(user_id)
-    await _audit(audit, user_id, "member_role_changed", identity["comp_id"])
-    return _member_dto({**user, "role": role})
+    async with log_context(
+        log,
+        "resource.team.change_role",
+        **bind_ids(user_id=user_id, comp_id=identity["comp_id"]),
+    ):
+        require_permission(identity, "team:manage")
+        if role not in _ALL_ROLES:
+            raise ValidationError("invalid role")
+        user = await _member_scoped(identity, user_id, users)
+        old_role = str(user.get("role", ""))
+        if old_role == Role.company_admin.value and role != Role.company_admin.value:
+            await _guard_last_admin(identity, user, users)
+        await users.set_role(user_id, role)
+        # A demotion (privilege reduction) revokes sessions; a promotion does not.
+        if _RANK.get(role, 0) < _RANK.get(old_role, 0):
+            await sessions.revoke_user(user_id)
+        await _audit(audit, user_id, "member_role_changed", identity["comp_id"])
+        return _member_dto({**user, "role": role})
