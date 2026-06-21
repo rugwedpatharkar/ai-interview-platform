@@ -13,6 +13,7 @@ from datetime import UTC, datetime, timedelta
 from statistics import median
 from uuid import uuid4
 
+from lib.errors import DependencyError
 from lib.logging import bind_ids, get_logger, log_context
 
 from app.errors import ValidationError
@@ -64,13 +65,20 @@ def _trust_signals(apps, open_jobs, *, now) -> dict:
 
 async def _logo_url(comp_id, logo_key, storage):
     """A presigned GET URL for the stored logo key (regenerated per read); "" when no
-    logo or no storage. The page caches ~5m, well within the URL lifetime."""
+    logo or no storage. The page caches ~5m, well within the URL lifetime. Storage
+    failures raise DependencyError so the client sees UNAVAILABLE instead of an empty
+    image silently rendering."""
     if not logo_key or storage is None:
         return ""
     try:
         return await storage.presigned_get_url(comp_id, "branding", logo_key)
-    except Exception:
-        return ""
+    except Exception as exc:
+        log.exception(
+            "company_profile: presigned URL generation failed for key={}", logo_key
+        )
+        raise DependencyError(
+            "logo presign failed", context={"comp_id": comp_id, "key": logo_key}
+        ) from exc
 
 
 async def get_company_profile(
