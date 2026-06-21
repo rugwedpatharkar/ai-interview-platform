@@ -7,8 +7,10 @@ interviews so half-finished sessions self-expire.
 
 from lib.logging import get_logger
 from lib.observability import counter, histogram
+from lib.resilience import with_timeout
 
 from app.model.interview import InterviewSession
+from lib import timeouts
 
 log = get_logger(component="gateway.sessions")
 
@@ -61,10 +63,14 @@ class RedisInterviewStore:
                 self._ttl,
                 session.blueprint.time_budget_min * 60 + _REAPER_MARGIN_SECONDS,
             )
-            await self._redis.set(
-                self._key(session.application_id),
-                session.model_dump_json(),
-                ex=ttl,
+            await with_timeout(
+                self._redis.set(
+                    self._key(session.application_id),
+                    session.model_dump_json(),
+                    ex=ttl,
+                ),
+                timeouts.redis(),
+                op="interview_session.save",
             )
         except Exception:
             _session_ops_errors.labels(op="save").inc()
@@ -80,7 +86,11 @@ class RedisInterviewStore:
         _session_ops_total.labels(op="get").inc()
         t0 = time.monotonic()
         try:
-            raw = await self._redis.get(self._key(application_id))
+            raw = await with_timeout(
+                self._redis.get(self._key(application_id)),
+                timeouts.redis(),
+                op="interview_session.get",
+            )
             result = InterviewSession.model_validate_json(raw) if raw else None
         except Exception:
             _session_ops_errors.labels(op="get").inc()
@@ -116,7 +126,11 @@ class RedisInterviewStore:
                 keys.append(key)
             if not keys:
                 return []
-            raws = await self._redis.mget(*keys)
+            raws = await with_timeout(
+                self._redis.mget(*keys),
+                timeouts.redis(),
+                op="interview_session.list_in_progress.mget",
+            )
             out = []
             for raw in raws:
                 if raw:
