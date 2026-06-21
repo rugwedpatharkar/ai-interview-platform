@@ -4,13 +4,13 @@ Candidate-scoped: caller_identity yields the saver from the token; candidate_use
 never a request field. Mirrors job.py's caller_identity + _abort shape.
 """
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import saved_jobs as saved_jobs_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import saved_jobs_pb2, saved_jobs_pb2_grpc
 
 log = get_logger(component="saved_jobs.routes")
@@ -31,10 +31,10 @@ class SavedJobsServicer(saved_jobs_pb2_grpc.SavedJobsServiceServicer):
         self._tokens = tokens
 
     async def _abort(self, context, exc, method):
-        code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
+        code, msg = to_grpc_status(exc)
         log.warning("saved_jobs.routes.{}: {} code={}", method, exc, code.name)
         _grpc_errors.labels(method=method).inc()
-        await context.abort(code, str(exc))
+        await context.abort(code, msg)
 
     async def SaveJob(self, request, context):
         _grpc_total.labels(method="SaveJob").inc()

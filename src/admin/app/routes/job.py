@@ -1,13 +1,14 @@
 """gRPC JobService route layer — a thin adapter over app/resources/job."""
 
 import grpc
+from lib.errors import to_grpc_status
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import discovery as discovery_res
 from app.resources import job as job_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import job_pb2, job_pb2_grpc
 
 log = get_logger(component="job.routes")
@@ -82,14 +83,10 @@ class JobServicer(job_pb2_grpc.JobServiceServicer):
         self._companies = companies
 
     async def _abort(self, context, exc, method="unknown"):
-        log.warning(
-            "job.routes.{}: {} code={}",
-            method,
-            exc,
-            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
-        )
+        code, msg = to_grpc_status(exc)
+        log.warning("job.routes.{}: {} code={}", method, exc, code.name)
         _grpc_errors.labels(method=method).inc()
-        await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
+        await context.abort(code, msg)
 
     async def CreateJob(self, request, context):
         _grpc_total.labels(method="CreateJob").inc()

@@ -4,13 +4,13 @@ Candidate-scoped: caller_identity yields the owner from the token; candidate_use
 never a request field. Mirrors saved_jobs.py's caller_identity + _abort shape.
 """
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import job_alerts as alerts_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import job_alerts_pb2, job_alerts_pb2_grpc
 
 log = get_logger(component="job_alerts.routes")
@@ -57,10 +57,10 @@ class JobAlertsServicer(job_alerts_pb2_grpc.JobAlertsServiceServicer):
         self._tokens = tokens
 
     async def _abort(self, context, exc, method):
-        code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
+        code, msg = to_grpc_status(exc)
         log.warning("job_alerts.routes.{}: {} code={}", method, exc, code.name)
         _grpc_errors.labels(method=method).inc()
-        await context.abort(code, str(exc))
+        await context.abort(code, msg)
 
     async def CreateAlert(self, request, context):
         _grpc_total.labels(method="CreateAlert").inc()

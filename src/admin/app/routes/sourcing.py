@@ -1,12 +1,12 @@
 """gRPC SourcingService routes — thin adapter over resources/sourcing."""
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import sourcing as sourcing_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import sourcing_pb2, sourcing_pb2_grpc
 
 log = get_logger(component="sourcing.routes")
@@ -36,14 +36,10 @@ class SourcingServicer(sourcing_pb2_grpc.SourcingServiceServicer):
         self._tokens = tokens
 
     async def _abort(self, context, exc, method="unknown"):
-        log.warning(
-            "sourcing.routes.{}: {} code={}",
-            method,
-            exc,
-            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
-        )
+        code, msg = to_grpc_status(exc)
+        log.warning("sourcing.routes.{}: {} code={}", method, exc, code.name)
         _grpc_errors.labels(method=method).inc()
-        await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
+        await context.abort(code, msg)
 
     async def SearchCandidates(self, request, context):
         _grpc_total.labels(method="SearchCandidates").inc()
