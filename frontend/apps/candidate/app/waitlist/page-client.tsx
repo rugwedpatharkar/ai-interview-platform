@@ -73,11 +73,10 @@ export function WaitlistClient() {
                   className="text-[1.4rem] font-semibold text-ink-deep"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  You&apos;re on the list.
+                  Mail composed in your client.
                 </h2>
                 <p className="max-w-[34ch] text-[0.94rem] text-ink-2">
-                  We&apos;ll be in touch when a role fits. If your mail client didn&apos;t open,
-                  write to{" "}
+                  If your mail client didn&apos;t open, write to{" "}
                   <a className="text-teal-strong" href="mailto:hello@aptura.app">
                     hello@aptura.app
                   </a>

@@ -25,7 +25,6 @@ import { startVisionDetector } from "./proctor-vision";
 import {
   HIGH_SEVERITY,
   severityOf,
-  type ProctorAck,
   type ProctorSignal,
 } from "./types";
 
@@ -151,12 +150,8 @@ export default function InterviewPage() {
             metaJson: e.meta ? JSON.stringify(e.meta) : "",
           })),
         });
-        // The auto-gate `terminated`/`reason` fields are not in the generated ProctorAccepted
-        // yet (it carries `accepted`). Read them defensively so the room honours the server's
-        // terminate the moment the backend delta lands — no client change required then.
-        const ack = res as unknown as ProctorAck;
-        if (!keepalive && ack?.terminated) {
-          endSession(ack.reason ?? "integrity");
+        if (!keepalive && res.terminated) {
+          endSession(res.reason || "integrity");
         }
       } catch (err) {
         if (err instanceof ConnectError && err.code === Code.InvalidArgument) return;

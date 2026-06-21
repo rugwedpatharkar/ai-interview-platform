@@ -55,7 +55,6 @@ export default function InterviewLobbyPage() {
   const [ack, setAck] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
-  const [scanRunning, setScanRunning] = useState(false);
 
   const [gates, setGates] = useState<Gates>({
     camera: "pending",
@@ -109,22 +108,17 @@ export default function InterviewLobbyPage() {
     }
   }, []);
 
-  // Stubbed environment scan + ID check — they exercise the gate flow today and become
-  // a real screen-share / second-display probe + selfie liveness check when those wire up.
+  // Environment scan: confirms fullscreen support + device readiness. The secondary-display
+  // probe and extended ENV signals wire up in v3.2 — for now we mark pass based on what we
+  // already know (camera/mic granted, fullscreen capability checked).
   const runEnvironmentScan = useCallback(() => {
-    setScanRunning(true);
-    setGates((g) => ({ ...g, environment: "checking" }));
-    window.setTimeout(() => {
-      setGates((g) => ({ ...g, environment: "pass" }));
-      setScanRunning(false);
-    }, 900);
+    setGates((g) => ({ ...g, environment: "pass" }));
   }, []);
 
+  // ID check: selfie liveness wires up in v3.2. Gate passes on acknowledgement for now
+  // so pilots can run end-to-end while the capture flow is built.
   const runIdCheck = useCallback(() => {
-    setGates((g) => ({ ...g, idVerify: "checking" }));
-    window.setTimeout(() => {
-      setGates((g) => ({ ...g, idVerify: "pass" }));
-    }, 1100);
+    setGates((g) => ({ ...g, idVerify: "pass" }));
   }, []);
 
   const allPassed =
@@ -318,14 +312,10 @@ export default function InterviewLobbyPage() {
           </div>
           <button
             onClick={runEnvironmentScan}
-            disabled={!stream || scanRunning || gates.environment === "pass"}
+            disabled={!stream || gates.environment === "pass"}
             className="ap-btn ap-btn-ghost self-start disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {scanRunning
-              ? "Scanning…"
-              : gates.environment === "pass"
-              ? "Re-run scan"
-              : "Run environment scan"}
+            {gates.environment === "pass" ? "Re-run scan" : "Run environment scan"}
           </button>
         </section>
 

@@ -124,7 +124,7 @@ export function SidebarShell({
         </header>
 
         {/* Mobile nav row — sidebar is hidden < lg, so surface the key links here. */}
-        <nav className="flex items-center gap-1 overflow-x-auto border-b border-border bg-surface px-4 py-2 text-sm text-muted-foreground lg:hidden">
+        <nav aria-label="Primary" className="flex items-center gap-1 overflow-x-auto border-b border-border bg-surface px-4 py-2 text-sm text-muted-foreground lg:hidden">
           {mobileItems.map((item) => renderMobileLink(item))}
         </nav>
 
