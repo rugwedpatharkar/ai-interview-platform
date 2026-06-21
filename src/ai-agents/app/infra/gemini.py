@@ -15,6 +15,7 @@ from lib.logging import get_logger
 from lib.observability import counter, histogram, span
 
 from app.errors import LLMError
+from lib import timeouts
 
 log = get_logger(component="llm.gemini")
 
@@ -50,7 +51,7 @@ class GeminiLLM:
         model_id="gemini-2.5-flash",
         api_key="",
         temperature=0.2,
-        timeout=30,
+        timeout=None,
         max_retries=2,
     ):
         from langchain_google_genai import ChatGoogleGenerativeAI
@@ -61,7 +62,7 @@ class GeminiLLM:
             model=model_id,
             google_api_key=api_key,
             temperature=temperature,
-            timeout=timeout,
+            timeout=timeout if timeout is not None else timeouts.llm_call(),
             max_retries=0,
         )
         self._attempts = max_retries + 1

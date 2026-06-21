@@ -5,10 +5,12 @@ BeautifulSoup imports call-local; `FakeFetcher` serves canned pages so ingestion
 unit-tested without network.
 """
 
+from lib import timeouts
+
 
 class HttpFetcher:
-    def __init__(self, timeout=10):
-        self._timeout = timeout
+    def __init__(self, timeout=None):
+        self._timeout = timeout if timeout is not None else timeouts.http_client()
 
     async def fetch(self, url):
         import httpx

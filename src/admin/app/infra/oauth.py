@@ -8,6 +8,7 @@ so SSO is unit-tested offline; live provider exchange defers until creds exist.
 from lib.logging import get_logger, log_context
 
 from app.errors import InvalidTokenError
+from lib import timeouts
 
 log = get_logger(component="infra.oauth")
 
@@ -25,7 +26,7 @@ class HttpOAuthClient:
             log.warning("oauth.exchange: unknown provider={}", provider)
             raise InvalidTokenError(f"unknown OAuth provider: {provider}")
         async with log_context(log, "oauth.exchange", provider=provider):
-            async with httpx.AsyncClient(timeout=10) as client:
+            async with httpx.AsyncClient(timeout=timeouts.http_client()) as client:
                 token_resp = await client.post(
                     cfg["token_url"],
                     data={
