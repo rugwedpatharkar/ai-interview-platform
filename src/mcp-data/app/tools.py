@@ -184,7 +184,11 @@ class DataStore:
                 return None
             job, profile = await asyncio.gather(
                 self.get_job(interview["job_id"]),
-                self._profiles.find_one({"user_id": interview["user_id"]}),
+                with_timeout(
+                    self._profiles.find_one({"user_id": interview["user_id"]}),
+                    timeouts.mongo(),
+                    op="get_interview_context.profile",
+                ),
             )
             return {
                 "transcript": interview.get("transcript", {}),
@@ -256,7 +260,13 @@ class DataStore:
                 return None
             job, profile, question_plan = await asyncio.gather(
                 self.get_job(application["job_id"]),
-                self._profiles.find_one({"user_id": application["candidate_user_id"]}),
+                with_timeout(
+                    self._profiles.find_one(
+                        {"user_id": application["candidate_user_id"]}
+                    ),
+                    timeouts.mongo(),
+                    op="get_interview_setup.profile",
+                ),
                 self.get_question_plan(application.get("job_id", "")),
             )
             return {
