@@ -14,6 +14,7 @@ import {
   TERMINAL_STATES,
   decodeJwtPayload,
   errorMessage,
+  pollingBackoff,
   useAuthedQuery,
   useCountUp,
 } from "@ip/shared";
@@ -33,6 +34,15 @@ const AssistantChat = dynamic(
   () => import("./assistant-chat").then((m) => m.AssistantChat),
   { ssr: false, loading: () => null },
 );
+
+// Exponential backoff for the applications poll — ramps from 10s to 60s over 18 polls
+// (~9 minutes total). Stops automatically when all applications reach a terminal state.
+const applicationsBackoff = pollingBackoff({
+  initialMs: 10_000,
+  capMs: 60_000,
+  maxPolls: 18,
+  jitterRatio: 0.15,
+});
 
 // State buckets used to derive the four KPI tiles + the "responses received" count.
 // Anything outside `applied` counts as a response — the company has done something
@@ -63,10 +73,12 @@ export function Dashboard() {
   const applications = useAuthedQuery(token, {
     queryKey: ["applications"],
     queryFn: () => api.applications.listMyApplications({}),
-    // Notifications are email-only, so poll while anything is still in flight.
+    // Notifications are email-only, so poll while anything is still in flight —
+    // but cap via backoff so a long session doesn't hammer the backend forever.
     refetchInterval: (query) => {
       const apps = query.state.data?.applications ?? [];
-      return apps.some((a) => !TERMINAL_STATES.has(a.state)) ? 10_000 : false;
+      if (!apps.some((a) => !TERMINAL_STATES.has(a.state))) return false;
+      return applicationsBackoff(query);
     },
   });
 
