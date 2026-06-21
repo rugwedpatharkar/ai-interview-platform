@@ -80,7 +80,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
 
   const applicants = useAuthedQuery(token, {
     queryKey: ["applicants", jobId],
-    queryFn: () => api.applications.listApplicants({ jobId }),
+    queryFn: () => api.applications.listApplicants({ jobId, pageSize: 200, pageToken: "" }),
     refetchInterval: (query) => {
       const apps = query.state.data?.applications ?? [];
       const pending = apps.some((a) => !TERMINAL_STATES.has(a.state));

@@ -58,7 +58,7 @@ export default function TalentPage() {
 
   const pool = useAuthedQuery(token, {
     queryKey: ["talent"],
-    queryFn: () => api.talent.getTalentPool({}),
+    queryFn: () => api.talent.getTalentPool({ pageSize: 200, pageToken: "" }),
     enabled: !active,
   });
 
