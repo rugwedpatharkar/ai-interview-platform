@@ -66,6 +66,12 @@ Severity: **P0** broken/UX-breaking · **P1** major · **P2** minor · **P3** po
   standalone-page `<h1>` (verify-card/card start at h2); 2FA enabled-state local-only; stale ProctorAccepted
   cast; redundant invalidateQueries; analytics `enabled:` parity; onboarding/profile missing useRequireRole.
 
+## P3 — observability (from live log scan; NOT functional bugs)
+- Expected domain errors log full tracebacks server-side: `NotFoundError("No profile yet")` (every dashboard
+  load for a user without a profile) and `ExpiredSignatureError`→`InvalidTokenError` (normal access-token expiry
+  → FE refresh). Clients receive correct gRPC status (NOT_FOUND / refresh succeeds); the noise is the stack
+  traces. Log handled `AuthDomainError`/`NotFoundError` at debug without a traceback. All 4 services healthy (Up 2h).
+
 ## Investigated — NOT bugs
 - preview_click not firing React submit = tool quirk (`requestSubmit()` works).
 - Login does not require email verification (`auth.py:157-202`) — flagged as product observation.
