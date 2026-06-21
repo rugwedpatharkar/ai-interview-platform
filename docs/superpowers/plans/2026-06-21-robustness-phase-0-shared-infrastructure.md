@@ -887,7 +887,7 @@ src/ai-agents/app/infra/sessions.py:70
 src/ai-agents/app/infra/sessions.py:75
 ```
 
-(Before commit, the executing agent runs the script once with `--seed` to auto-populate. Manual seed above is a safety net.)
+(The seeded list above is from the Phase 0 audit; if line numbers shifted, the executing agent re-greps the cited files for the equivalent uninstrumented call and updates line numbers in the allowlist before running the script. There is NO `--seed` flag on `check_timeouts.py`; the allowlist is curated by hand. The agent may extend the allowlist using `Edit` if additional pre-existing violations surface during scan.)
 
 - [ ] **Step 7.2: Write the failing test**
 
@@ -1230,7 +1230,14 @@ if __name__ == "__main__":
 Run:
 ```
 python scripts/check_log_coverage.py --seed > scripts/.log_coverage_allowlist.txt
-# prepend the header comment manually with your editor
+```
+Then use `Edit` to PREPEND these two lines to `scripts/.log_coverage_allowlist.txt` (above the seeded content):
+```
+# Resource functions not yet wrapped in log_context. Phase 2 shrinks this file.
+# Format: relative/path/to/file.py:LINE:funcname
+```
+Then run:
+```
 python scripts/check_log_coverage.py
 python -m pytest scripts/tests/test_check_log_coverage.py -v
 ```
