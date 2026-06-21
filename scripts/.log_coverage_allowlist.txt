@@ -5,10 +5,6 @@ src/admin/app/resources/rubric.py:46:list_rubrics
 src/admin/app/resources/rubric.py:51:update_rubric
 src/admin/app/resources/rubric.py:60:delete_rubric
 src/admin/app/resources/sourcing.py:53:search_candidates
-src/admin/app/resources/compliance.py:21:record_consent
-src/admin/app/resources/compliance.py:34:list_consent
-src/admin/app/resources/compliance.py:90:erase
-src/admin/app/resources/compliance.py:139:sweep
 src/admin/app/resources/coding.py:50:get_coding_task
 src/admin/app/resources/coding.py:93:run_code_attempt
 src/admin/app/resources/coding.py:151:submit_coding
