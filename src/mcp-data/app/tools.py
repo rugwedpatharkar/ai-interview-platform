@@ -12,8 +12,11 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, histogram, span
+from lib.resilience import with_timeout
 from lib.schemas import Role
 from pymongo.errors import DuplicateKeyError
+
+from lib import timeouts
 
 log = get_logger(component="mcp_data.tools")
 
@@ -66,10 +69,14 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.save_profile", user_id=user_id):
-                    await self._profiles.update_one(
-                        {"user_id": user_id},
-                        {"$set": {**doc, "parsed": True}},
-                        upsert=True,
+                    await with_timeout(
+                        self._profiles.update_one(
+                            {"user_id": user_id},
+                            {"$set": {**doc, "parsed": True}},
+                            upsert=True,
+                        ),
+                        timeouts.mongo(),
+                        op=op,
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
@@ -84,7 +91,11 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.get_profile", user_id=user_id):
-                    return await self._profiles.find_one({"user_id": user_id})
+                    return await with_timeout(
+                        self._profiles.find_one({"user_id": user_id}),
+                        timeouts.mongo(),
+                        op=op,
+                    )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
                 raise
@@ -103,7 +114,11 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.get_job", job_id=job_id):
-                    return await self._jobs.find_one({"_id": oid})
+                    return await with_timeout(
+                        self._jobs.find_one({"_id": oid}),
+                        timeouts.mongo(),
+                        op=op,
+                    )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
                 raise
@@ -119,10 +134,14 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.save_aptitude_bank", job_id=job_id):
-                    await self._banks.update_one(
-                        {"job_id": job_id},
-                        {"$set": {**doc, "job_id": job_id}},
-                        upsert=True,
+                    await with_timeout(
+                        self._banks.update_one(
+                            {"job_id": job_id},
+                            {"$set": {**doc, "job_id": job_id}},
+                            upsert=True,
+                        ),
+                        timeouts.mongo(),
+                        op=op,
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
@@ -139,7 +158,11 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.get_aptitude_bank", job_id=job_id):
-                    return await self._banks.find_one({"job_id": job_id})
+                    return await with_timeout(
+                        self._banks.find_one({"job_id": job_id}),
+                        timeouts.mongo(),
+                        op=op,
+                    )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
                 raise
@@ -152,8 +175,10 @@ class DataStore:
             "data.get_interview_context",
             **bind_ids(application_id=application_id),
         ):
-            interview = await self._interviews.find_one(
-                {"application_id": application_id}
+            interview = await with_timeout(
+                self._interviews.find_one({"application_id": application_id}),
+                timeouts.mongo(),
+                op="get_interview_context",
             )
             if interview is None:
                 return None
@@ -177,10 +202,14 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.save_report", application_id=application_id):
-                    await self._reports.update_one(
-                        {"application_id": application_id},
-                        {"$set": {**doc, "application_id": application_id}},
-                        upsert=True,
+                    await with_timeout(
+                        self._reports.update_one(
+                            {"application_id": application_id},
+                            {"$set": {**doc, "application_id": application_id}},
+                            upsert=True,
+                        ),
+                        timeouts.mongo(),
+                        op=op,
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
@@ -197,8 +226,10 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.get_report", application_id=application_id):
-                    return await self._reports.find_one(
-                        {"application_id": application_id}
+                    return await with_timeout(
+                        self._reports.find_one({"application_id": application_id}),
+                        timeouts.mongo(),
+                        op=op,
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
@@ -216,7 +247,11 @@ class DataStore:
                 oid = ObjectId(application_id)
             except InvalidId:
                 return None
-            application = await self._applications.find_one({"_id": oid})
+            application = await with_timeout(
+                self._applications.find_one({"_id": oid}),
+                timeouts.mongo(),
+                op="get_interview_setup",
+            )
             if application is None:
                 return None
             job, profile, question_plan = await asyncio.gather(
@@ -243,10 +278,14 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.save_interview", application_id=application_id):
-                    await self._interviews.update_one(
-                        {"application_id": application_id},
-                        {"$set": {**doc, "application_id": application_id}},
-                        upsert=True,
+                    await with_timeout(
+                        self._interviews.update_one(
+                            {"application_id": application_id},
+                            {"$set": {**doc, "application_id": application_id}},
+                            upsert=True,
+                        ),
+                        timeouts.mongo(),
+                        op=op,
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
@@ -276,7 +315,11 @@ class DataStore:
                     application_id=application_id,
                     count=len(docs),
                 ):
-                    await self._proctoring.insert_many(docs)
+                    await with_timeout(
+                        self._proctoring.insert_many(docs),
+                        timeouts.mongo(),
+                        op=op,
+                    )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
                 raise
@@ -336,18 +379,22 @@ class DataStore:
                     comp_id=comp_id,
                     job_id=job_id,
                 ):
-                    res = await self._match_results.update_one(
-                        {"job_id": job_id, "candidate_user_id": candidate_user_id},
-                        {
-                            "$set": {
-                                "comp_id": comp_id,
-                                "job_id": job_id,
-                                "candidate_user_id": candidate_user_id,
-                                "score": score,
-                                "reasons": reasons,
-                            }
-                        },
-                        upsert=True,
+                    res = await with_timeout(
+                        self._match_results.update_one(
+                            {"job_id": job_id, "candidate_user_id": candidate_user_id},
+                            {
+                                "$set": {
+                                    "comp_id": comp_id,
+                                    "job_id": job_id,
+                                    "candidate_user_id": candidate_user_id,
+                                    "score": score,
+                                    "reasons": reasons,
+                                }
+                            },
+                            upsert=True,
+                        ),
+                        timeouts.mongo(),
+                        op=op,
                     )
             except DuplicateKeyError:
                 return False
@@ -375,7 +422,11 @@ class DataStore:
             try:
                 async with span("mongo.get_match_results"):
                     cursor = self._match_results.find(query).sort("score", -1)
-                    return await cursor.to_list(length=200)
+                    return await with_timeout(
+                        cursor.to_list(length=200),
+                        timeouts.mongo(),
+                        op=op,
+                    )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
                 raise
@@ -391,10 +442,14 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.save_question_plan", job_id=job_id):
-                    await self._question_plans.update_one(
-                        {"job_id": job_id},
-                        {"$set": {**plan, "job_id": job_id}},
-                        upsert=True,
+                    await with_timeout(
+                        self._question_plans.update_one(
+                            {"job_id": job_id},
+                            {"$set": {**plan, "job_id": job_id}},
+                            upsert=True,
+                        ),
+                        timeouts.mongo(),
+                        op=op,
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
@@ -411,7 +466,11 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.get_question_plan", job_id=job_id):
-                    return await self._question_plans.find_one({"job_id": job_id})
+                    return await with_timeout(
+                        self._question_plans.find_one({"job_id": job_id}),
+                        timeouts.mongo(),
+                        op=op,
+                    )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
                 raise
@@ -437,10 +496,14 @@ class DataStore:
                     job_id=job_id,
                     comp_id=scope.get("comp_id", ""),
                 ):
-                    apps = await self._applications.find(
-                        {"job_id": job_id, "comp_id": scope.get("comp_id")},
-                        {"_id": 1, "candidate_user_id": 1, "state": 1},
-                    ).to_list(length=200)
+                    apps = await with_timeout(
+                        self._applications.find(
+                            {"job_id": job_id, "comp_id": scope.get("comp_id")},
+                            {"_id": 1, "candidate_user_id": 1, "state": 1},
+                        ).to_list(length=200),
+                        timeouts.mongo(),
+                        op=op,
+                    )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
                 raise
@@ -473,7 +536,11 @@ class DataStore:
                     "mongo.get_application_status",
                     application_id=application_id,
                 ):
-                    application = await self._applications.find_one({"_id": oid})
+                    application = await with_timeout(
+                        self._applications.find_one({"_id": oid}),
+                        timeouts.mongo(),
+                        op=op,
+                    )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
                 raise
@@ -509,10 +576,14 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.save_practice_summary", user_id=user_id):
-                    await self._practice.update_one(
-                        {"user_id": user_id, "practice_id": summary["practice_id"]},
-                        {"$set": {**summary, "user_id": user_id}},
-                        upsert=True,
+                    await with_timeout(
+                        self._practice.update_one(
+                            {"user_id": user_id, "practice_id": summary["practice_id"]},
+                            {"$set": {**summary, "user_id": user_id}},
+                            upsert=True,
+                        ),
+                        timeouts.mongo(),
+                        op=op,
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
@@ -529,8 +600,12 @@ class DataStore:
             _mongo_total.labels(op=op).inc()
             try:
                 async with span("mongo.get_practice_summary", user_id=user_id):
-                    return await self._practice.find_one(
-                        {"user_id": user_id, "practice_id": practice_id}
+                    return await with_timeout(
+                        self._practice.find_one(
+                            {"user_id": user_id, "practice_id": practice_id}
+                        ),
+                        timeouts.mongo(),
+                        op=op,
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
@@ -552,7 +627,11 @@ class DataStore:
                     cursor = self._practice.find({"user_id": user_id}).sort(
                         "created_at", -1
                     )
-                    return await cursor.to_list(length=200)
+                    return await with_timeout(
+                        cursor.to_list(length=200),
+                        timeouts.mongo(),
+                        op=op,
+                    )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
                 raise
