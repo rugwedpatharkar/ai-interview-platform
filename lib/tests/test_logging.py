@@ -3,11 +3,13 @@
 import asyncio
 
 import pytest
+from lib.errors import AuthError, NotFoundError
 from lib.logging import (
     _redact_extra,
     bind_ids,
     get_logger,
     log_context,
+    log_domain_error,
     log_operation,
     new_correlation_id,
     reset_correlation_id,
@@ -264,3 +266,37 @@ def test_set_correlation_id_returns_token_and_reset_restores_prior():
 
     reset_correlation_id(token)
     assert _correlation_id.get() == prior
+
+
+# ---------------------------------------------------------------------------
+# log_domain_error
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_log_domain_error_logs_at_debug_without_traceback():
+    await _with_sink(_check_log_domain_error_debug)()
+
+
+async def _check_log_domain_error_debug(sink: _Sink):
+    log = get_logger(component="test")
+    err = NotFoundError("no profile yet", context={"user_id": "u1"})
+    log_domain_error(log, err, comp_id="c1")
+
+    msgs = sink.messages()
+    assert len(msgs) == 1
+    assert "no profile yet" in msgs[0]
+    # No exc_info attached — that's the whole point.
+    assert sink.records[0]["exception"] is None
+
+
+@pytest.mark.asyncio
+async def test_log_domain_error_binds_context():
+    await _with_sink(_check_log_domain_error_context)()
+
+
+async def _check_log_domain_error_context(sink: _Sink):
+    log = get_logger(component="test")
+    err = AuthError("token expired")
+    log_domain_error(log, err, user_id="u9")
+    assert any("token expired" in m for m in sink.messages())

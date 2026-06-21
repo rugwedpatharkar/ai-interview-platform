@@ -171,3 +171,16 @@ def _ms(t0: float) -> float:
 
 def _is_async(fn) -> bool:
     return inspect.iscoroutinefunction(fn)
+
+
+def log_domain_error(log, err, **ctx) -> None:
+    """Log an expected domain error at DEBUG level with **no** traceback.
+
+    Use this at egress boundaries (gRPC translator, event-handler catch site) for errors
+    you've already promoted to a typed ``AppError`` and translated to a client status —
+    the stack trace is noise for these (commit ``24e117b`` documented the problem).
+
+    For unexpected exceptions, keep using ``log.exception()`` via ``log_context``.
+    """
+    bound = log.bind(**ctx) if ctx else log
+    bound.debug("domain_error: {} kind={}", err.public_message, type(err).__name__)
