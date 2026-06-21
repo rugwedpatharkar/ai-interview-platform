@@ -140,7 +140,7 @@ export function CompanyShell({ children }: { children: ReactNode }) {
             <p className="truncate text-sm font-medium text-foreground">{label}</p>
             {identity?.role && (
               <p className="truncate text-xs capitalize text-muted-foreground">
-                {identity.role}
+                {identity.role.replace(/_/g, " ")}
               </p>
             )}
           </div>

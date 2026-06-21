@@ -61,10 +61,17 @@ class TokenService:
         )
 
     def access_token(
-        self, sub: str, role: str, comp_id: str | None, jti: str, sid: str | None = None
+        self,
+        sub: str,
+        role: str,
+        comp_id: str | None,
+        jti: str,
+        sid: str | None = None,
+        email: str | None = None,
     ) -> str:
         # `sid` binds the access token to its refresh-session jti so settings can show
-        # "this device" + keep-current on revoke. Additive: included only when supplied.
+        # "this device" + keep-current on revoke. `email` lets the FE show a friendly
+        # greeting + avatar initials without a separate profile fetch. Both additive.
         claims = {
             "sub": sub,
             "role": role,
@@ -74,6 +81,8 @@ class TokenService:
         }
         if sid is not None:
             claims["sid"] = sid
+        if email is not None:
+            claims["email"] = email
         return self._encode(claims, self._access_minutes)
 
     def refresh_token(self, sub: str, jti: str) -> str:

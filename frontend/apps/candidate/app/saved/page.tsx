@@ -29,18 +29,20 @@ const TYPE_LABEL: Record<string, string> = {
   internship: "Internship",
 };
 
-/** Compact salary range, e.g. "$120k–160k". Only null/undefined counts as "no bound"
- * — a legitimate 0 is a real value and renders. */
+/** Compact salary range, e.g. "$120k–160k". `0` is treated as "unset" — the BE
+ * serializes missing salary fields as 0 (proto default), so "0k–0k" would leak. */
 function formatSalary(
   min: number | null | undefined,
   max: number | null | undefined,
   currency: string,
 ): string | null {
-  if (min == null && max == null) return null;
+  const hasMin = min != null && min > 0;
+  const hasMax = max != null && max > 0;
+  if (!hasMin && !hasMax) return null;
   const sym = currency === "USD" ? "$" : currency === "EUR" ? "€" : `${currency} `;
   const k = (n: number) => `${Math.round(n / 1000)}k`;
-  if (min != null && max != null) return `${sym}${k(min)}–${k(max)}`;
-  return `${sym}${k(min ?? max!)}`;
+  if (hasMin && hasMax) return `${sym}${k(min!)}–${k(max!)}`;
+  return `${sym}${k((hasMin ? min : max)!)}`;
 }
 
 function postedLabel(iso: string): string {

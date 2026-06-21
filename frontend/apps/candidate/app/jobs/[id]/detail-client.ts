@@ -4,12 +4,12 @@
 
 import type { JobDetailDTO } from "./types";
 
-/** Compact salary band, e.g. "USD 120k–160k". Null unless BOTH bounds are present.
- * Only null/undefined counts as "no bound" — a legitimate 0 is a real value. */
+/** Compact salary band, e.g. "USD 120k–160k". `0` (proto default for missing) is treated
+ * as "unset", so the detail page hides the chip instead of showing "0k–0k". */
 export function fmtSalary(
   j: Pick<JobDetailDTO, "salaryMin" | "salaryMax" | "salaryCurrency">,
 ): string | null {
-  if (j.salaryMin == null || j.salaryMax == null) return null;
+  if (!j.salaryMin || !j.salaryMax || j.salaryMin <= 0 || j.salaryMax <= 0) return null;
   return `${j.salaryCurrency ?? ""} ${(j.salaryMin / 1000) | 0}k–${(j.salaryMax / 1000) | 0}k`.trim();
 }
 

@@ -213,6 +213,7 @@ async def login(
             comp_id=user.get("comp_id"),
             jti=uuid4().hex,
             sid=refresh_jti,
+            email=user.get("email"),
         )
         refresh = tokens.refresh_token(sub=user_id, jti=refresh_jti)
         await sessions.allow(
@@ -278,6 +279,7 @@ async def verify_totp_login(
             comp_id=user.get("comp_id"),
             jti=uuid4().hex,
             sid=refresh_jti,
+            email=user.get("email"),
         )
         refresh = tokens.refresh_token(sub=user_id, jti=refresh_jti)
         await sessions.allow(
@@ -341,6 +343,7 @@ async def refresh(
             comp_id=user.get("comp_id"),
             jti=uuid4().hex,
             sid=new_jti,
+            email=user.get("email"),
         )
         new_refresh = tokens.refresh_token(sub=sub, jti=new_jti)
         await sessions.allow(
@@ -572,6 +575,7 @@ async def oauth_login(
             comp_id=user.get("comp_id"),
             jti=uuid4().hex,
             sid=refresh_jti,
+            email=user.get("email"),
         )
         refresh = tokens.refresh_token(sub=user_id, jti=refresh_jti)
         await sessions.allow(user_id, refresh_jti, refresh_ttl_seconds)

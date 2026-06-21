@@ -15,6 +15,7 @@
 
 import { useMemo } from "react";
 import type { AdminClients } from "@ip/api-client";
+import { isNotFound } from "@ip/shared";
 
 import { useAuth } from "../../../lib/auth";
 import {
@@ -73,19 +74,37 @@ export function makeApiBrandingClient(api: AdminClients): BrandingClient {
     async getProfile() {
       // comp_id is server-resolved from the token (BE comment: "comp-scoped from the token");
       // sending "" keeps the seam token-driven on the BE side.
-      const p = await api.companyProfile.getCompanyProfile({ compId: "" });
-      return {
-        compId: p.id,
-        displayName: p.name,
-        logoKey: p.logo,
-        logoUrl: p.logo,
-        about: p.about,
-        website: p.website,
-        locations: p.locations,
-        industry: "",
-        size: "",
-        accent: "teal",
-      };
+      // NOT_FOUND is expected for a newly-registered company with no published presence —
+      // surface an empty editable form so the recruiter can author their first branding.
+      try {
+        const p = await api.companyProfile.getCompanyProfile({ compId: "" });
+        return {
+          compId: p.id,
+          displayName: p.name,
+          logoKey: p.logo,
+          logoUrl: p.logo,
+          about: p.about,
+          website: p.website,
+          locations: p.locations,
+          industry: "",
+          size: "",
+          accent: "teal",
+        };
+      } catch (err) {
+        if (!isNotFound(err)) throw err;
+        return {
+          compId: "",
+          displayName: "",
+          logoKey: "",
+          logoUrl: "",
+          about: "",
+          website: "",
+          locations: [],
+          industry: "",
+          size: "",
+          accent: "teal",
+        };
+      }
     },
     async upsertProfile(form) {
       const p = await api.companyProfile.upsertCompanyProfile({
