@@ -331,6 +331,49 @@ class FakeApplicationRepo:
             }
         return job_id
 
+    async def list_talent_pool_paginated(
+        self, comp_id: str, *, page_size: int, after_user_id: str | None = None
+    ) -> tuple[list[tuple[str, int]], str | None]:
+        from collections import Counter
+
+        rows = [
+            d
+            for d in self._docs.values()
+            if d.get("comp_id") == comp_id and d.get("candidate_user_id")
+        ]
+        counts = Counter(r["candidate_user_id"] for r in rows)
+        entries = sorted(counts.items())
+        if after_user_id is not None:
+            entries = [(uid, cnt) for uid, cnt in entries if uid > after_user_id]
+        if len(entries) > page_size:
+            return entries[:page_size], entries[page_size - 1][0]
+        return entries, None
+
+    async def count_talent_pool(self, comp_id: str) -> int:
+        from collections import Counter
+
+        rows = [
+            d
+            for d in self._docs.values()
+            if d.get("comp_id") == comp_id and d.get("candidate_user_id")
+        ]
+        return len(Counter(r["candidate_user_id"] for r in rows))
+
+    async def seed_talent_pool(self, comp_id: str, n: int) -> None:
+        """Test-only helper: insert n distinct candidates each with 2 applications."""
+        for i in range(n):
+            uid = f"u-talent-{i:04d}"
+            for _ in range(2):
+                self._seq += 1
+                aid = str(self._seq)
+                self._docs[aid] = {
+                    "_id": aid,
+                    "comp_id": comp_id,
+                    "candidate_user_id": uid,
+                    "job_id": "j1",
+                    "state": "applied",
+                }
+
     async def get(self, application_id):
         return self._docs.get(application_id)
 
@@ -625,3 +668,8 @@ def fake_apps_pag():
 @pytest.fixture
 def fake_matches_pag():
     return FakeMatchRepo()
+
+
+@pytest.fixture
+def fake_tp_pag():
+    return FakeApplicationRepo()

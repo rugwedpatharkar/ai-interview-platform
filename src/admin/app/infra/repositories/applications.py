@@ -60,6 +60,41 @@ class ApplicationRepository(BaseRepository[Application]):
     async def count_by_job(self, job_id: str, comp_id: str) -> int:
         return await self.col.count_documents({"job_id": job_id, "comp_id": comp_id})
 
+    async def list_talent_pool_paginated(
+        self, comp_id: str, *, page_size: int, after_user_id: str | None = None
+    ) -> tuple[list[tuple[str, int]], str | None]:
+        """Aggregate applications by candidate for talent pool, paginated by candidate_user_id.
+
+        Returns ([(candidate_user_id, count), ...], next_after_user_id | None).
+        Uses an aggregation pipeline with a string cursor on candidate_user_id.
+        The $match on after_user_id sits after $group/$sort so it filters on the
+        grouped candidate IDs, not on raw application documents.
+        """
+        pipeline: list[dict] = [
+            {"$match": {"comp_id": comp_id}},
+            {"$group": {"_id": "$candidate_user_id", "count": {"$sum": 1}}},
+            {"$sort": {"_id": 1}},
+        ]
+        if after_user_id is not None:
+            pipeline.append({"$match": {"_id": {"$gt": after_user_id}}})
+        pipeline.append({"$limit": page_size + 1})
+        rows = await self.col.aggregate(pipeline).to_list(length=page_size + 1)
+        rows = [r for r in rows if r["_id"]]
+        if len(rows) > page_size:
+            next_after = rows[page_size - 1]["_id"]
+            return [(r["_id"], r["count"]) for r in rows[:page_size]], next_after
+        return [(r["_id"], r["count"]) for r in rows], None
+
+    async def count_talent_pool(self, comp_id: str) -> int:
+        """Count distinct candidates who have applied to this company's jobs."""
+        pipeline = [
+            {"$match": {"comp_id": comp_id}},
+            {"$group": {"_id": "$candidate_user_id"}},
+            {"$count": "n"},
+        ]
+        result = await self.col.aggregate(pipeline).to_list(length=1)
+        return result[0]["n"] if result else 0
+
     async def list_by_comp(self, comp_id: str) -> list[dict]:
         return await self.find_capped({"comp_id": comp_id})
 
