@@ -1,12 +1,13 @@
 "use client";
 
-import { ApIcon, Logo, ThemeToggle } from "@ip/ui";
+import { ApIcon, Logo } from "@ip/ui";
 import { useRequireAuth } from "@ip/shared";
 import { ArrowLeft, ArrowRight, MailQuestion, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 
 import { useAuth } from "../../../../lib/auth";
+import { AppearanceToggle } from "../../../../components/appearance-toggle";
 
 /**
  * Post-interview completion screen — focused room shell, NO sidebar, READ-ONLY.
@@ -45,7 +46,7 @@ export default function InterviewCompletedPage() {
             <ArrowLeft className="size-4" aria-hidden />
             Back to applications
           </Link>
-          <ThemeToggle />
+          <AppearanceToggle />
         </div>
       </header>
 

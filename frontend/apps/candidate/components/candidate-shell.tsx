@@ -12,10 +12,11 @@ import {
   Logo,
   type SidebarNavEntry,
   SidebarShell,
-  ThemeToggle,
   sidebarMobileLinkClass,
   sidebarNavItemClass,
 } from "@ip/ui";
+
+import { AppearanceToggle } from "./appearance-toggle";
 import {
   Bell,
   Bookmark,
@@ -194,7 +195,7 @@ export function CandidateShell({ children }: { children: ReactNode }) {
                 className="w-40 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
               />
             </form>
-            <ThemeToggle />
+            <AppearanceToggle />
             <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger

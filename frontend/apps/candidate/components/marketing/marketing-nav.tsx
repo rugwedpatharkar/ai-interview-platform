@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Logo, ThemeToggle, buttonVariants, cn } from "@ip/ui";
+import { Logo, buttonVariants, cn } from "@ip/ui";
 import { COMPANY_HIRE_HREF } from "../../app/(marketing)/content";
+import { AppearanceToggle } from "../appearance-toggle";
 
 export function MarketingNav() {
   return (
@@ -22,7 +23,7 @@ export function MarketingNav() {
           >
             How it works
           </a>
-          <ThemeToggle />
+          <AppearanceToggle />
           <Link href="/login" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
             Sign in
           </Link>
