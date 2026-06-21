@@ -63,7 +63,7 @@ class ApplicationRepository(BaseRepository[Application]):
     async def list_talent_pool_paginated(
         self, comp_id: str, *, page_size: int, after_user_id: str | None = None
     ) -> tuple[list[tuple[str, int]], str | None]:
-        """Aggregate applications by candidate for talent pool, paginated by candidate_user_id.
+        """Aggregate by candidate for talent pool, paginated by candidate_user_id.
 
         Returns ([(candidate_user_id, count), ...], next_after_user_id | None).
         Uses an aggregation pipeline with a string cursor on candidate_user_id.

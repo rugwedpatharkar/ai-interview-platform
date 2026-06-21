@@ -1,4 +1,4 @@
-"""Cursor pagination tests for list_applicants, get_candidate_recommendations, get_talent_pool — TDD.
+"""Cursor pagination tests for list_applicants / recommendations / talent — TDD.
 
 Tests are written to fail until the resource + repo implementations are added.
 """
