@@ -4,7 +4,7 @@ A rubric is a reusable named set of competencies that can later seed an intervie
 blueprint. All operations are manager-only and scoped to the caller's company.
 """
 
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 from lib.schemas import Role
 
 from app.errors import ForbiddenError, NotFoundError, ValidationError
@@ -35,30 +35,52 @@ def _to_response(doc):
 
 
 async def create_rubric(identity, name, competencies, *, rubrics):
-    _require_manager(identity)
-    comps = _comps(competencies)
-    rubric_id = await rubrics.insert(
-        Rubric(comp_id=identity["comp_id"], name=name, competencies=comps)
-    )
-    return {"id": rubric_id, "name": name, "competencies": comps}
+    async with log_context(
+        log,
+        "resource.rubric.create_rubric",
+        **bind_ids(comp_id=identity["comp_id"]),
+    ):
+        _require_manager(identity)
+        comps = _comps(competencies)
+        rubric_id = await rubrics.insert(
+            Rubric(comp_id=identity["comp_id"], name=name, competencies=comps)
+        )
+        return {"id": rubric_id, "name": name, "competencies": comps}
 
 
 async def list_rubrics(identity, *, rubrics):
-    _require_manager(identity)
-    return [_to_response(d) for d in await rubrics.list_by_comp(identity["comp_id"])]
+    async with log_context(
+        log,
+        "resource.rubric.list_rubrics",
+        **bind_ids(comp_id=identity["comp_id"]),
+    ):
+        _require_manager(identity)
+        return [
+            _to_response(d) for d in await rubrics.list_by_comp(identity["comp_id"])
+        ]
 
 
 async def update_rubric(identity, rubric_id, name, competencies, *, rubrics):
-    _require_manager(identity)
-    comps = _comps(competencies)
-    fields = {"name": name, "competencies": comps}
-    if await rubrics.update_scoped(rubric_id, identity["comp_id"], fields) == 0:
-        raise NotFoundError("Rubric not found")
-    return {"id": rubric_id, "name": name, "competencies": comps}
+    async with log_context(
+        log,
+        "resource.rubric.update_rubric",
+        **bind_ids(comp_id=identity["comp_id"]),
+    ):
+        _require_manager(identity)
+        comps = _comps(competencies)
+        fields = {"name": name, "competencies": comps}
+        if await rubrics.update_scoped(rubric_id, identity["comp_id"], fields) == 0:
+            raise NotFoundError("Rubric not found")
+        return {"id": rubric_id, "name": name, "competencies": comps}
 
 
 async def delete_rubric(identity, rubric_id, *, rubrics):
-    _require_manager(identity)
-    if await rubrics.delete_scoped(rubric_id, identity["comp_id"]) == 0:
-        raise NotFoundError("Rubric not found")
-    return {"ok": True}
+    async with log_context(
+        log,
+        "resource.rubric.delete_rubric",
+        **bind_ids(comp_id=identity["comp_id"]),
+    ):
+        _require_manager(identity)
+        if await rubrics.delete_scoped(rubric_id, identity["comp_id"]) == 0:
+            raise NotFoundError("Rubric not found")
+        return {"ok": True}

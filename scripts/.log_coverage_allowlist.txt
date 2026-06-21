@@ -1,9 +1,5 @@
 # Resource functions not yet wrapped in log_context. Phase 2 shrinks this file.
 # Format: relative/path/to/file.py:LINE:funcname
-src/admin/app/resources/rubric.py:37:create_rubric
-src/admin/app/resources/rubric.py:46:list_rubrics
-src/admin/app/resources/rubric.py:51:update_rubric
-src/admin/app/resources/rubric.py:60:delete_rubric
 src/admin/app/resources/sourcing.py:53:search_candidates
 src/admin/app/resources/coding.py:50:get_coding_task
 src/admin/app/resources/coding.py:93:run_code_attempt
