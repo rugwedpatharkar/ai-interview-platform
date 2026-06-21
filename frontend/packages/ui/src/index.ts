@@ -133,3 +133,20 @@ export {
   type BellClient,
   type BellKeys,
 } from "./notification-bell.js";
+
+// Aperture Pro · v3 — sprite + marketing chrome
+export { ApertureSprite, ApIcon } from "./aperture-sprite.js";
+export {
+  UtilityRule,
+  type UtilityRuleProps,
+  MegaNav,
+  type MegaNavProps,
+  type MegaNavLink,
+  type MegaColumn,
+  type MegaItem,
+  MegaFooter,
+  type MegaFooterProps,
+  type FooterColumn,
+  MarketingShell,
+  type MarketingShellProps,
+} from "./aperture-chrome.js";
