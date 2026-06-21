@@ -1,0 +1,35 @@
+# nginx reverse proxy for the consolidated backend on Render.
+# ONE public port ($PORT, injected by Render) fronts both browser-facing services:
+#   /agents/*  → ai-agents (interview chat/jd/practice HTTP + SSE)
+#   /*         → admin     (gRPC-web: auth, jobs, applications, decisions, …)
+# Only ${PORT} is substituted at boot (entrypoint runs `envsubst '${PORT}'`); every
+# other $var below is a literal nginx variable and must survive substitution.
+server {
+    listen ${PORT};
+    server_name _;
+
+    # Branding logo / résumé uploads ride through here; match admin's own ceiling.
+    client_max_body_size 25M;
+
+    # ai-agents — rewrite /agents/foo → /foo on the upstream (note trailing slashes).
+    location /agents/ {
+        proxy_pass http://127.0.0.1:8081/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        proxy_buffering off;          # SSE / streaming responses must flush immediately
+        proxy_read_timeout 600s;      # long-lived interview streams
+    }
+
+    # admin — gRPC-web is plain HTTP/1.1, so a normal proxy pass is enough.
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        proxy_buffering off;          # gRPC-web trailers must not be buffered
+        proxy_read_timeout 600s;
+    }
+}
