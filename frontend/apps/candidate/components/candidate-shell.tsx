@@ -172,7 +172,11 @@ export function CandidateShell({ children }: { children: ReactNode }) {
         <>
           <OfflineBanner />
           <div className="hidden text-sm text-muted-foreground lg:block">
-            <span className="font-medium text-foreground">Home</span> / Dashboard
+            <span className="font-medium text-foreground">Home</span>
+            {(() => {
+              const active = [...NAV_FOR_YOU, ...NAV_PREPARE].find((n) => isActive(n.href) && n.href !== "/");
+              return active ? <> / {active.label}</> : pathname === "/" ? <> / Dashboard</> : null;
+            })()}
           </div>
 
           <div className="flex items-center gap-2">
