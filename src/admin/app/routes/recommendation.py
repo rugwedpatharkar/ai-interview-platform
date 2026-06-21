@@ -52,11 +52,16 @@ class RecommendationServicer(recommendation_pb2_grpc.RecommendationServiceServic
         ):
             try:
                 identity = await caller_identity(context, self._tokens)
-                items = await rec_res.get_candidate_recommendations(
-                    identity, matches=self._matches
+                result = await rec_res.get_candidate_recommendations(
+                    identity,
+                    request.page_size,
+                    request.page_token,
+                    matches=self._matches,
                 )
                 return recommendation_pb2.MatchList(
-                    matches=[_to_proto(m) for m in items]
+                    matches=[_to_proto(m) for m in result["matches"]],
+                    next_page_token=result["next_page_token"],
+                    total_count=result["total_count"],
                 )
             except AuthDomainError as exc:
                 await self._abort(context, exc, "GetCandidateRecommendations")
