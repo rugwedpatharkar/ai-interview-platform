@@ -137,5 +137,6 @@ class JobRepository(BaseRepository[Job]):
                 }
             }
         )
-        docs = await self.col.aggregate(stages).to_list(length=1)
+        cursor = await self.col.aggregate(stages)
+        docs = await cursor.to_list(length=1)
         return docs[0] if docs else {}
