@@ -1,13 +1,14 @@
 """gRPC ProfileService route layer — a thin adapter over app/resources/profile."""
 
 import grpc
+from lib.errors import to_grpc_status
 from lib.logging import get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import auth as auth_res
 from app.resources import profile as profile_res
-from app.routes.auth import _STATUS, _bearer_from_metadata
+from app.routes.auth import _bearer_from_metadata
 from app.routes.pb import profile_pb2, profile_pb2_grpc
 
 log = get_logger(component="profile.routes")
@@ -66,14 +67,15 @@ class ProfileServicer(profile_pb2_grpc.ProfileServiceServicer):
         return auth_res.identity_from_token(token, tokens=self._tokens)["id"]
 
     async def _abort(self, context, exc, method="unknown"):
+        code, msg = to_grpc_status(exc)
         log.warning(
             "profile.routes.{}: {} code={}",
             method,
             exc,
-            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
+            code.name,
         )
         _grpc_errors.labels(method=method).inc()
-        await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
+        await context.abort(code, msg)
 
     async def UploadResume(self, request, context):
         _grpc_total.labels(method="UploadResume").inc()

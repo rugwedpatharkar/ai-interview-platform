@@ -1,17 +1,17 @@
 """gRPC TeamService route layer — a thin adapter over app/resources/team.
 
 Authenticates from the access token, maps proto<->resource, and translates app.errors to
-gRPC status via routes/auth._STATUS. All authz / last-admin / lifecycle logic stays in
-the resource.
+gRPC status via to_grpc_status from lib.errors. All authz / last-admin / lifecycle logic
+stays in the resource.
 """
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import team as team_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import team_pb2, team_pb2_grpc
 
 log = get_logger(component="team.routes")
@@ -45,14 +45,15 @@ class TeamServicer(team_pb2_grpc.TeamServiceServicer):
         self._nonces = nonces
 
     async def _abort(self, context, exc, method):
+        code, msg = to_grpc_status(exc)
         log.warning(
             "team.routes.{}: {} code={}",
             method,
             exc,
-            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
+            code.name,
         )
         _grpc_errors.labels(method=method).inc()
-        await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
+        await context.abort(code, msg)
 
     def _ctx(self, method, user_id=""):
         _grpc_total.labels(method=method).inc()
