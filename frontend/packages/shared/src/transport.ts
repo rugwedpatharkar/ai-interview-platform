@@ -16,6 +16,17 @@ import type { TokenStore } from "./tokens.js";
 // torn-down app's promise is collectable with its store.
 const inflightByStore = new WeakMap<TokenStore, Promise<boolean>>();
 
+// Monotonic counter: incremented on every successful token rotation. Callers capture their
+// seen value before refreshing; if the counter advanced since they captured it, a concurrent
+// caller already rotated — they skip their own rotation (3-way race guard).
+const rotationCountByStore = new WeakMap<TokenStore, number>();
+function rotationCount(store: TokenStore): number {
+  return rotationCountByStore.get(store) ?? 0;
+}
+function bumpRotation(store: TokenStore): void {
+  rotationCountByStore.set(store, (rotationCountByStore.get(store) ?? 0) + 1);
+}
+
 // Sentinel for transient (5xx / network / malformed-body) refresh errors: keep the store,
 // let the original 401 surface — only a genuine auth rejection clears + redirects.
 class TransientRefreshError extends Error {}
@@ -45,10 +56,18 @@ function refreshToken(
       } else {
         // SSO session: the refresh token is an HttpOnly cookie the SPA can't read — rotate
         // via the cookie endpoint (credentials included); the refresh stays in the cookie.
-        const res = await fetch(`${refreshBaseUrl}/auth/oauth/refresh`, {
-          method: "POST",
-          credentials: "include",
-        });
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), 8000);
+        let res: Response;
+        try {
+          res = await fetch(`${refreshBaseUrl}/auth/oauth/refresh`, {
+            method: "POST",
+            credentials: "include",
+            signal: controller.signal,
+          });
+        } finally {
+          window.clearTimeout(timer);
+        }
         if (!res.ok) {
           if (res.status >= 500)
             throw new TransientRefreshError(`cookie refresh transient (${res.status})`);
@@ -62,6 +81,7 @@ function refreshToken(
         }
         store.set({ access: data.access_token, refresh: "" });
       }
+      bumpRotation(store);
       return true;
     } catch (err) {
       if (err instanceof TransientRefreshError) {
@@ -97,16 +117,19 @@ export function createAuthedTransport(
 ) {
   const interceptor: Interceptor = (next) => async (req) => {
     const sent = store.get()?.access;
+    // Capture the rotation counter before the RPC so we can detect a concurrent rotation.
+    const seenRotation = rotationCount(store);
     if (sent) req.header.set("Authorization", `Bearer ${sent}`);
     try {
       return await next(req);
     } catch (err) {
       if (!(err instanceof ConnectError) || err.code !== Code.Unauthenticated) throw err;
-      // A concurrent request may have already refreshed — retry with the current token
-      // rather than refreshing again (which would reuse a now-rotated refresh token).
+      // A concurrent request may have already refreshed — if the token changed OR the
+      // rotation counter advanced, retry with the current token without rotating again
+      // (reusing a now-rotated refresh token would fail and spuriously log the user out).
       const current = store.get()?.access;
-      if (current && current !== sent) {
-        req.header.set("Authorization", `Bearer ${current}`);
+      if ((current && current !== sent) || rotationCount(store) !== seenRotation) {
+        if (current) req.header.set("Authorization", `Bearer ${current}`);
         return await next(req);
       }
       if (sent && (await refreshToken(store, refreshBaseUrl, onAuthLost))) {
