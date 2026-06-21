@@ -1,8 +1,11 @@
-import type { CompanyRole, MemberDTO, TeamClient } from "./types";
+import type { ApiClients } from "@ip/api-client";
+
+import type { CompanyRole, MemberDTO, MemberStatus, TeamClient } from "./types";
 
 const LIST_KEY = ["team", "members"] as const;
 
-/** True when `row` is the only *active* company_admin — drives the disable-Remove UX. */
+/** True when `row` is the only *active* company_admin — drives the disable-Remove UX.
+ * Server is authoritative; this gate avoids a pointless round-trip when we already know. */
 export function isLastAdmin(members: MemberDTO[], row: MemberDTO): boolean {
   if (row.role !== "company_admin" || row.status !== "active") return false;
   return (
@@ -69,7 +72,7 @@ export function makeMockTeamClient(): TeamClient {
       m.status = "revoked";
       return m;
     },
-    changeRole: async (id, role) => {
+    changeRole: async (id, role: CompanyRole) => {
       const m = find(id);
       m.role = role;
       return m;
@@ -78,52 +81,56 @@ export function makeMockTeamClient(): TeamClient {
   };
 }
 
-// Structural view of the generated `api.team` surface. Defined locally so the real factory
-// typechecks before `pnpm gen` lands `api.team` on ApiClients; at integration, swap the
-// param type to `ApiClients` from "@ip/api-client" and drop this interface (one-line change).
-interface TeamApiLike {
-  team: {
-    listMembers(req: Record<string, never>): Promise<{ members: MemberDTO[] }>;
-    inviteMember(req: {
-      email: string;
-      role: string;
-      tempPassword: string;
-    }): Promise<MemberDTO>;
-    resendInvite(req: { userId: string }): Promise<MemberDTO>;
-    revokeInvite(req: { userId: string }): Promise<MemberDTO>;
-    removeMember(req: { userId: string }): Promise<MemberDTO>;
-    changeRole(req: { userId: string; role: string }): Promise<MemberDTO>;
+// Gen `MemberDTO` exposes `role` and `status` as `string` (proto). The FE seam narrows them
+// to discriminated unions — remap at the boundary so the rest of the screen reads the seam
+// shape verbatim. An unknown status falls back to "active" (server is the authority; this
+// only mis-colors a pill in the unlikely race that the server adds a new state without a UI).
+type GenMember = Omit<MemberDTO, "role" | "status"> & { role: string; status: string };
+function adaptMember(m: GenMember): MemberDTO {
+  return {
+    id: m.id,
+    email: m.email,
+    role: m.role as CompanyRole,
+    status: (["active", "pending", "revoked"].includes(m.status)
+      ? m.status
+      : "active") as MemberStatus,
+    lastActiveAt: m.lastActiveAt,
+    invitedBy: m.invitedBy,
   };
 }
 
-const norm = (m: MemberDTO): MemberDTO => ({
-  id: m.id,
-  email: m.email,
-  role: m.role as CompanyRole,
-  status: m.status,
-  lastActiveAt: m.lastActiveAt ?? "",
-  invitedBy: m.invitedBy ?? "",
-});
-
-// No try/except — the React layer renders ConnectError via errorMessage(...).
-export function createTeamClient(api: TeamApiLike): TeamClient {
+/** Real TeamService client over the admin transport. Plain object literals are accepted at
+ *  the call boundary (protobuf-es). No try/except — the React layer renders ConnectError via
+ *  errorMessage(...) and the last-admin guard surfaces as FAILED_PRECONDITION. */
+export function makeApiTeamClient(api: ApiClients): TeamClient {
   const t = api.team;
   return {
-    listMembers: async () => (await t.listMembers({})).members.map(norm),
+    listMembers: async () => {
+      // ListMembers is paginated; the roster screen reads page 1 with a generous size.
+      // 100 covers every realistic seat count; the server caps server-side too.
+      const r = await t.listMembers({ page: 1, pageSize: 100 });
+      return r.members.map((row) => adaptMember(row as GenMember));
+    },
     inviteMember: async (email, role, tempPassword) =>
-      norm(await t.inviteMember({ email, role, tempPassword })),
-    resendInvite: async (userId) => norm(await t.resendInvite({ userId })),
-    revokeInvite: async (userId) => norm(await t.revokeInvite({ userId })),
-    removeMember: async (userId) => norm(await t.removeMember({ userId })),
-    changeRole: async (userId, role) => norm(await t.changeRole({ userId, role })),
+      adaptMember((await t.inviteMember({ email, role, tempPassword })) as GenMember),
+    resendInvite: async (userId) =>
+      adaptMember((await t.resendInvite({ userId })) as GenMember),
+    revokeInvite: async (userId) =>
+      adaptMember((await t.revokeInvite({ userId })) as GenMember),
+    removeMember: async (userId) =>
+      adaptMember((await t.removeMember({ userId })) as GenMember),
+    changeRole: async (userId, role) =>
+      adaptMember((await t.changeRole({ userId, role })) as GenMember),
     listQueryKey: () => LIST_KEY,
   };
 }
 
-// At integration: drop NEXT_PUBLIC_MOCK (or set =0) and return createTeamClient(api) —
-// the TeamClient interface is the seam, so no component changes.
+// Mock when NEXT_PUBLIC_MOCK=1 (fixture-driven dev), else the live gRPC client.
 export const USE_MOCK_TEAM = process.env.NEXT_PUBLIC_MOCK === "1";
 
-export function makeTeamClient(): TeamClient {
-  return makeMockTeamClient();
+/** Returns the active TeamClient for the calling component. Live by default; mock when
+ *  NEXT_PUBLIC_MOCK=1. The consumer memoizes so the mock's in-memory roster survives
+ *  re-renders. */
+export function makeTeamClient(api: ApiClients): TeamClient {
+  return USE_MOCK_TEAM ? makeMockTeamClient() : makeApiTeamClient(api);
 }
