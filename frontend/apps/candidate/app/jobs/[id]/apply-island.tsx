@@ -12,7 +12,7 @@ import {
   cn,
   toast,
 } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
+import { errorMessage, track } from "@ip/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -41,6 +41,12 @@ export function ApplyIsland({ jobId }: { jobId: string }) {
   useEffect(() => {
     setConsent(localStorage.getItem(consentKey) === "true");
   }, [consentKey]);
+
+  // Fire once per mount — the SSR page is public/crawlable, so this client-side event
+  // is the reliable signal that a real user viewed the job detail.
+  useEffect(() => {
+    track("job.viewed", { job_id: jobId });
+  }, [jobId]);
 
   function toggleConsent(v: boolean) {
     setConsent(v);

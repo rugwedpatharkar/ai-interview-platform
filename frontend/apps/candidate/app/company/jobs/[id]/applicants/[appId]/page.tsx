@@ -6,6 +6,7 @@ import {
   isNotFound,
   isTransient,
   pollingBackoff,
+  track,
   useAuthedQuery,
   useRequireRole,
 } from "@ip/shared";
@@ -181,6 +182,12 @@ export default function ApplicantReportPage() {
   const unread = threads.data?.find((t) => t.applicationId === appId)?.unread ?? 0;
 
   const dto = report.data ? toReportDTO(report.data as Record<string, unknown>) : null;
+
+  // Fire once when the report first renders successfully.
+  useEffect(() => {
+    if (dto) track("report.viewed", { application_id: appId });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!dto, appId]);
 
   const decide = useMutation({
     mutationFn: async (input: {
