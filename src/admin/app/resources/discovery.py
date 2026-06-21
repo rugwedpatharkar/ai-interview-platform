@@ -12,6 +12,10 @@ null/empty via `.get` until the W1 extend-Job step adds + populates them. `poste
 falls back to `created_at` until a real publish stamp.
 """
 
+from lib.logging import bind_ids, get_logger, log_context
+
+log = get_logger(component="discovery.resources")
+
 MAX_PAGE_SIZE = 24
 _VALID_SORT = {"relevance", "recent"}
 
@@ -54,25 +58,28 @@ def job_card(doc: dict, company_names: dict[str, str]) -> dict:
 
 
 async def get_public_job_detail(job_id, *, jobs, companies) -> dict | None:
-    """The full public job-detail DTO for a PUBLISHED job, or None (404).
-
-    Single source of truth with search_jobs for the published-only gate + field scrub:
-    full jd_text (not a snippet) + a {id,name,logo} company object. Internals
-    (comp_id/aptitude_config/required_topics/gate_mode) never ship. logo stays "" until
-    company branding (company_profiles) lands.
-    """
-    doc = await jobs.get_by_id(job_id)
-    if doc is None or doc.get("status") != "published":
-        return None
-    comp_id = doc.get("comp_id", "")
-    names = await companies.names_by_ids([comp_id]) if comp_id else {}
-    return {
-        "job_id": str(doc["_id"]),
-        "title": doc.get("title", ""),
-        "jd_text": doc.get("jd_text", ""),
-        **_public_fields(doc),
-        "company": {"id": comp_id, "name": names.get(comp_id, ""), "logo": ""},
-    }
+    # Full public job-detail DTO for a PUBLISHED job, or None (404).
+    # Single source of truth with search_jobs for the published-only gate + field scrub:
+    # full jd_text (not a snippet) + a {id,name,logo} company object. Internals
+    # (comp_id/aptitude_config/required_topics/gate_mode) never ship. logo stays ""
+    # until company branding (company_profiles) lands.
+    async with log_context(
+        log,
+        "resource.discovery.get_public_job_detail",
+        **bind_ids(job_id=job_id),
+    ):
+        doc = await jobs.get_by_id(job_id)
+        if doc is None or doc.get("status") != "published":
+            return None
+        comp_id = doc.get("comp_id", "")
+        names = await companies.names_by_ids([comp_id]) if comp_id else {}
+        return {
+            "job_id": str(doc["_id"]),
+            "title": doc.get("title", ""),
+            "jd_text": doc.get("jd_text", ""),
+            **_public_fields(doc),
+            "company": {"id": comp_id, "name": names.get(comp_id, ""), "logo": ""},
+        }
 
 
 def _buckets(raw: list) -> list[dict]:
@@ -91,40 +98,45 @@ def _clamp_page_size(value) -> int:
 
 
 async def search_jobs(params: dict, *, jobs, companies) -> dict:
-    """Run a search; return the JobCard DTO page + facets + pagination."""
-    q = params.get("q") or ""
-    page = _clamp_page(params.get("page"))
-    page_size = _clamp_page_size(params.get("page_size"))
-    sort = params.get("sort")
-    if sort not in _VALID_SORT:
-        sort = "relevance" if q else "recent"
+    # Run a search; return the JobCard DTO page + facets + pagination.
+    async with log_context(
+        log,
+        "resource.discovery.search_jobs",
+        **bind_ids(),
+    ):
+        q = params.get("q") or ""
+        page = _clamp_page(params.get("page"))
+        page_size = _clamp_page_size(params.get("page_size"))
+        sort = params.get("sort")
+        if sort not in _VALID_SORT:
+            sort = "relevance" if q else "recent"
 
-    raw = await jobs.search_published(
-        text=q,
-        location=params.get("location") or "",
-        remote=params.get("remote") or "",
-        employment_type=params.get("type") or "",
-        level=params.get("level") or "",
-        skills=params.get("skills") or [],
-        sort=sort,
-        skip=(page - 1) * page_size,
-        limit=page_size,
-    )
+        raw = await jobs.search_published(
+            text=q,
+            location=params.get("location") or "",
+            remote=params.get("remote") or "",
+            employment_type=params.get("type") or "",
+            level=params.get("level") or "",
+            skills=params.get("skills") or [],
+            sort=sort,
+            skip=(page - 1) * page_size,
+            limit=page_size,
+        )
 
-    results = raw.get("results", [])
-    comp_ids = list({d.get("comp_id") for d in results if d.get("comp_id")})
-    company_names = await companies.names_by_ids(comp_ids) if comp_ids else {}
-    total_facet = raw.get("total") or []
-    total = total_facet[0].get("n", 0) if total_facet else 0
+        results = raw.get("results", [])
+        comp_ids = list({d.get("comp_id") for d in results if d.get("comp_id")})
+        company_names = await companies.names_by_ids(comp_ids) if comp_ids else {}
+        total_facet = raw.get("total") or []
+        total = total_facet[0].get("n", 0) if total_facet else 0
 
-    return {
-        "jobs": [job_card(d, company_names) for d in results],
-        "facets": {
-            "remote_mode": _buckets(raw.get("remote_mode", [])),
-            "employment_type": _buckets(raw.get("employment_type", [])),
-            "experience_level": _buckets(raw.get("experience_level", [])),
-        },
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    }
+        return {
+            "jobs": [job_card(d, company_names) for d in results],
+            "facets": {
+                "remote_mode": _buckets(raw.get("remote_mode", [])),
+                "employment_type": _buckets(raw.get("employment_type", [])),
+                "experience_level": _buckets(raw.get("experience_level", [])),
+            },
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        }
