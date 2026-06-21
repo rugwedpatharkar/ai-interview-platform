@@ -1,6 +1,17 @@
 "use client";
 
-import { Button, Checkbox, buttonVariants, cn, toast } from "@ip/ui";
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  buttonVariants,
+  cn,
+  toast,
+} from "@ip/ui";
 import { errorMessage } from "@ip/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -12,33 +23,48 @@ import { useAuth } from "../../../lib/auth";
 /** Apply control — requires auth. Keeps the EXACT contract from the old page:
  * consent key `job-consent:<id>`, `api.applications.apply({ jobId, consent })`, and
  * the `["recommendations"]` / `["applications"]` invalidations + redirect on success.
- * Signed-out visitors get a sign-in CTA instead (the page itself is public). */
+ * Signed-out visitors get a sign-in CTA instead (the page itself is public).
+ *
+ * v3 surfaces the consent step as a modal opened by an "Apply" button, rather than the
+ * inline checkbox-and-button. The localStorage `job-consent:<id>` key still primes the
+ * checkbox so an accidental refresh during the dialog doesn't lose the tick. */
 export function ApplyIsland({ jobId }: { jobId: string }) {
   const { api, token, ready } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const consentKey = `job-consent:${jobId}`;
+  const [open, setOpen] = useState(false);
   const [consent, setConsent] = useState(false);
 
-  // Restore a previously ticked consent so an accidental refresh doesn't lose it.
+  // Restore a previously ticked consent so an accidental refresh during the consent dialog
+  // doesn't lose it. (The dialog can close + re-open without losing state.)
   useEffect(() => {
     setConsent(localStorage.getItem(consentKey) === "true");
   }, [consentKey]);
 
   function toggleConsent(v: boolean) {
     setConsent(v);
-    localStorage.setItem(consentKey, String(v));
+    try {
+      localStorage.setItem(consentKey, String(v));
+    } catch {
+      // Private-mode browsers — the in-memory state still drives the button enabled-ness.
+    }
   }
 
   const apply = useMutation({
     mutationFn: () => api.applications.apply({ jobId, consent }),
     onSuccess: () => {
       toast.success("Application submitted");
-      localStorage.removeItem(consentKey);
+      try {
+        localStorage.removeItem(consentKey);
+      } catch {
+        /* see toggleConsent */
+      }
       // The applied role must drop out of the dashboard recommendations (no stale
       // Apply button) — mirror dashboard.tsx's apply path.
       queryClient.invalidateQueries({ queryKey: ["recommendations"] });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
+      setOpen(false);
       router.push("/");
     },
     onError: (err) => toast.error(errorMessage(err)),
@@ -48,7 +74,7 @@ export function ApplyIsland({ jobId }: { jobId: string }) {
     return (
       <Link
         href={`/login?next=/jobs/${jobId}`}
-        className={cn(buttonVariants(), "self-start")}
+        className={cn(buttonVariants(), "ap-btn ap-btn-primary self-start")}
       >
         Sign in to apply
       </Link>
@@ -56,22 +82,47 @@ export function ApplyIsland({ jobId }: { jobId: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <label className="flex items-center gap-2.5 text-sm text-muted-foreground">
-        <Checkbox
-          checked={consent}
-          onCheckedChange={(v) => toggleConsent(v === true)}
-        />
-        I consent to AI-assisted screening of my application.
-      </label>
-      <Button
-        onClick={() => apply.mutate()}
-        disabled={!consent || apply.isPending}
-        loading={apply.isPending}
-        className="self-start"
+    <Dialog open={open} onOpenChange={setOpen}>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="ap-btn ap-btn-primary"
       >
-        {apply.isPending ? "Applying…" : "Apply"}
-      </Button>
-    </div>
+        Apply now
+      </button>
+      <DialogContent>
+        <DialogTitle>Apply to this role</DialogTitle>
+        <DialogDescription>
+          We&apos;ll send your application to the hiring team. AI-assisted screening is
+          opt-in and never the sole decision-maker.
+        </DialogDescription>
+        <label className="mt-4 flex items-start gap-2.5 rounded-lg border border-line bg-surface-2 p-3 text-sm text-ink-2">
+          <Checkbox
+            checked={consent}
+            onCheckedChange={(v) => toggleConsent(v === true)}
+            className="mt-0.5"
+          />
+          <span>
+            I consent to AI-assisted screening of my application. Recruiters review every
+            recommendation before deciding.
+          </span>
+        </label>
+        <div className="mt-4 flex justify-end gap-3">
+          <DialogClose asChild>
+            <Button type="button" variant="outline" disabled={apply.isPending}>
+              Cancel
+            </Button>
+          </DialogClose>
+          <Button
+            type="button"
+            onClick={() => apply.mutate()}
+            disabled={!consent || apply.isPending}
+            loading={apply.isPending}
+          >
+            {apply.isPending ? "Applying…" : "Submit application"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

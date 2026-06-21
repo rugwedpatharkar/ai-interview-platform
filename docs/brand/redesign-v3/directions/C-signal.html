@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aptura — Direction C · Signal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   APTURA · Direction C — "Signal"
+   Swiss-precision / wayfinding register. Stark near-white +
+   one disciplined vermilion signal. Bricolage Grotesque
+   (display) + Public Sans (body/UI). Modular grid, hairline
+   rules, big confident grotesk. Ink + white do the structural
+   work; vermilion is the signal — primary CTA, the hero block,
+   step numbers, key emphasis. Default theme: LIGHT.
+   ============================================================ */
+
+/* LIGHT tokens (default for C) — stark near-neutral white */
+:root{
+  --bg:            oklch(0.98 0 0);
+  --surface:       oklch(1 0 0);
+  --surface-2:     oklch(0.955 0.003 60);
+  --line:          oklch(0.88 0.004 60);
+  --line-2:        oklch(0.78 0.006 60);
+  --ink:           oklch(0.18 0.012 45);
+  --ink-2:         oklch(0.40 0.014 45);
+  --ink-3:         oklch(0.54 0.014 45);
+  --primary:       oklch(0.60 0.215 30);   /* vermilion — white text on top */
+  --primary-strong:oklch(0.55 0.225 30);
+  --primary-ink:   oklch(0.99 0.01 60);
+  --primary-soft:  oklch(0.60 0.215 30 / 0.10);
+  --glow:          oklch(0.60 0.215 30 / 0.12);
+  color-scheme: light;
+}
+/* DARK tokens — near-black + vermilion */
+.dark{
+  --bg:            oklch(0.165 0.008 45);
+  --surface:       oklch(0.205 0.01 45);
+  --surface-2:     oklch(0.255 0.012 45);
+  --line:          oklch(0.31 0.01 45);
+  --line-2:        oklch(0.40 0.012 45);
+  --ink:           oklch(0.97 0.004 60);
+  --ink-2:         oklch(0.76 0.012 55);
+  --ink-3:         oklch(0.60 0.012 55);
+  --primary:       oklch(0.67 0.205 33);   /* vermilion brighter on black */
+  --primary-strong:oklch(0.71 0.19 35);
+  --primary-ink:   oklch(0.16 0.02 40);
+  --primary-soft:  oklch(0.67 0.205 33 / 0.16);
+  --glow:          oklch(0.67 0.205 33 / 0.22);
+  color-scheme: dark;
+}
+
+/* Type scale — same names as A; Swiss-large display. */
+:root{
+  --step--1: 0.8125rem;            /* 13px  data labels */
+  --step-0:  1.0625rem;            /* 17px  body  */
+  --step-1:  1.3125rem;            /* 21px  lead  */
+  --step-2:  clamp(1.5rem, 1.1rem + 1.4vw, 1.9rem);     /* 24–30 */
+  --step-3:  clamp(2.05rem, 1.4rem + 2.6vw, 2.9rem);    /* 33–46 */
+  --display: clamp(3rem, 1.5rem + 6vw, 5.5rem);         /* 48–88 */
+  --maxw: 1200px;
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Public Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size:var(--step-0); line-height:1.6; font-weight:400;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+.display{ font-family:"Bricolage Grotesque", "Public Sans", sans-serif; }
+.label{ font-family:"Public Sans", sans-serif; font-weight:600; font-size:var(--step--1);
+  letter-spacing:.16em; text-transform:uppercase; }
+a{ color:inherit; text-decoration:none; }
+.wrap{ width:min(100% - 2.5rem, var(--maxw)); margin-inline:auto; }
+
+/* ---- Nav ---- */
+header.nav{
+  position:sticky; top:0; z-index:50;
+  backdrop-filter:saturate(140%) blur(10px);
+  background:color-mix(in oklch, var(--bg) 82%, transparent);
+  border-bottom:1px solid var(--line);
+}
+.nav-in{ display:flex; align-items:center; gap:2rem; height:66px; }
+.brand{ display:flex; align-items:center; gap:.6rem; font-family:"Bricolage Grotesque",sans-serif;
+  font-weight:800; letter-spacing:-0.03em; font-size:1.24rem; }
+.brand svg{ width:25px; height:25px; color:var(--primary); }
+.nav-links{ display:flex; gap:1.6rem; margin-left:1rem; color:var(--ink-2); font-size:0.97rem; font-weight:500; }
+.nav-links a{ position:relative; padding:.1rem 0; }
+.nav-links a:hover{ color:var(--ink); }
+.nav-links a:hover::after{ content:""; position:absolute; left:0; right:0; bottom:-2px; height:2px; background:var(--primary); }
+.nav-right{ margin-left:auto; display:flex; align-items:center; gap:1rem; }
+.nav-right .signin{ color:var(--ink-2); font-weight:500; }
+.nav-right .signin:hover{ color:var(--ink); }
+
+/* ---- Buttons — rectilinear, Swiss ---- */
+.btn{ display:inline-flex; align-items:center; gap:.5rem; height:48px; padding:0 1.3rem;
+  border-radius:6px; font-weight:600; font-size:0.98rem; letter-spacing:-0.005em;
+  border:1px solid transparent; cursor:pointer;
+  transition:transform .16s cubic-bezier(.2,.8,.2,1), background .16s, border-color .16s, color .16s; }
+.btn:active{ transform:translateY(1px); }
+.btn-primary{ background:var(--primary); color:var(--primary-ink); }
+.btn-primary:hover{ background:var(--primary-strong); }
+.btn-ghost{ border-color:var(--line-2); color:var(--ink); background:transparent; }
+.btn-ghost:hover{ border-color:var(--ink); background:var(--surface-2); }
+.btn-sm{ height:42px; padding:0 1.05rem; border-radius:5px; font-size:0.94rem; }
+
+/* ---- status line (Swiss data label) ---- */
+.status{ display:inline-flex; align-items:center; gap:.6rem; color:var(--ink-2);
+  border:1px solid var(--line); border-radius:4px; padding:.42rem .7rem; }
+.status .label{ color:var(--ink-2); }
+.dot{ width:7px; height:7px; border-radius:1px; background:var(--primary);
+  box-shadow:0 0 0 0 var(--glow); animation:pulse 2.6s ease-out infinite; }
+@keyframes pulse{ 0%{ box-shadow:0 0 0 0 var(--glow);} 70%{ box-shadow:0 0 0 8px transparent;} 100%{ box-shadow:0 0 0 0 transparent;} }
+
+/* ---- Hero ---- */
+.hero{ position:relative; border-bottom:1px solid var(--line); }
+.hero-grid{ display:grid; grid-template-columns:1.08fr 0.92fr; align-items:stretch; }
+.hero-copy{ padding:clamp(2.6rem,6vh,5rem) clamp(1.6rem,3vw,3rem) clamp(2.6rem,6vh,5rem) 0;
+  display:flex; flex-direction:column; justify-content:center; }
+.hero h1{ font-family:"Bricolage Grotesque",sans-serif; font-size:var(--display); line-height:0.98;
+  font-weight:800; letter-spacing:-0.035em; text-wrap:balance; margin-top:1.5rem;
+  overflow-wrap:break-word; }
+.hero h1 .g{ color:var(--primary); }
+.hero p.sub{ font-size:var(--step-1); line-height:1.5; color:var(--ink-2); max-width:42ch; margin-top:1.5rem; }
+.cta-row{ display:flex; gap:.8rem; margin-top:2.1rem; flex-wrap:wrap; }
+.trust{ display:flex; flex-wrap:wrap; gap:.6rem 1.6rem; margin-top:2.4rem; padding-top:1.6rem;
+  border-top:1px solid var(--line); color:var(--ink-2); font-size:0.94rem; }
+.trust span{ display:inline-flex; align-items:center; gap:.55rem; }
+.trust svg{ width:16px; height:16px; color:var(--primary); flex:none; }
+
+/* hero visual — Swiss ruled grid frame + big vermilion aperture */
+.frame{ position:relative; border-left:1px solid var(--line); background:
+  /* modular grid lines */
+  repeating-linear-gradient(to right, transparent 0, transparent calc(25% - 1px), var(--line) calc(25% - 1px), var(--line) 25%),
+  repeating-linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--line) calc(25% - 1px), var(--line) 25%),
+  var(--surface);
+  min-height:clamp(360px,52vh,560px); overflow:hidden;
+  display:grid; place-items:center; }
+.frame .crosshair{ position:absolute; inset:0; pointer-events:none; }
+.frame .crosshair::before, .frame .crosshair::after{ content:""; position:absolute; background:var(--line-2); }
+.frame .crosshair::before{ left:50%; top:0; bottom:0; width:1px; transform:translateX(-0.5px); }
+.frame .crosshair::after{ top:50%; left:0; right:0; height:1px; transform:translateY(-0.5px); }
+.optic{ position:relative; width:min(78%, 380px); aspect-ratio:1; }
+.optic svg{ position:relative; width:100%; height:100%; color:var(--primary); display:block; }
+.ring{ stroke:var(--line-2); fill:none; }
+.optic .blade{ stroke:var(--primary); stroke-width:2.4; fill:none; stroke-linecap:round; }
+.optic .focus{ stroke:color-mix(in oklch, var(--primary) 50%, transparent); fill:none; }
+.scan{ transform-origin:center; animation:spin 30s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg);} }
+
+/* Swiss data labels aligned to the grid frame */
+.data{ position:absolute; display:flex; flex-direction:column; gap:.15rem;
+  color:var(--ink-2); }
+.data .k{ font-family:"Public Sans",sans-serif; font-weight:600; font-size:var(--step--1);
+  letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); }
+.data .v{ font-family:"Bricolage Grotesque",sans-serif; font-weight:700; font-size:1.15rem;
+  letter-spacing:-0.02em; color:var(--primary); line-height:1; }
+.data.d-tl{ top:1.1rem; left:1.1rem; }
+.data.d-tr{ top:1.1rem; right:1.1rem; text-align:right; align-items:flex-end; }
+.data.d-bl{ bottom:1.1rem; left:1.1rem; }
+.data.d-br{ bottom:1.1rem; right:1.1rem; text-align:right; align-items:flex-end; }
+.data.d-br .v{ color:var(--ink); }
+.data.d-bl .v{ color:var(--ink); }
+
+/* ---- Section frame — hairline-ruled modular sections ---- */
+section{ padding:clamp(3.5rem,8vh,6rem) 0; }
+section + section{ border-top:1px solid var(--line); }
+.sec-head{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.6fr); gap:1.4rem 2rem; align-items:end; }
+.sec-head .label{ color:var(--primary); }
+h2{ font-family:"Bricolage Grotesque",sans-serif; font-size:var(--step-3); font-weight:700;
+  letter-spacing:-0.03em; line-height:1.04; text-wrap:balance; margin-top:.7rem; }
+.lead{ color:var(--ink-2); font-size:var(--step-1); line-height:1.5; max-width:58ch; }
+
+/* steps — a real 3-step sequence, numbers earn their place */
+.steps{ display:grid; grid-template-columns:repeat(3,1fr); margin-top:2.8rem;
+  border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+.step{ padding:1.6rem 1.5rem; border-left:1px solid var(--line); }
+.step:first-child{ border-left:0; }
+.step .n{ font-family:"Bricolage Grotesque",sans-serif; color:var(--primary);
+  font-size:2.2rem; font-weight:800; letter-spacing:-0.04em; line-height:1; }
+.step h3{ font-family:"Bricolage Grotesque",sans-serif; font-size:var(--step-2); font-weight:700;
+  letter-spacing:-0.02em; margin:.9rem 0 .55rem; }
+.step p{ color:var(--ink-2); font-size:1rem; line-height:1.55; }
+
+/* two-sided split */
+.split{ display:grid; grid-template-columns:1fr 1fr; margin-top:2.8rem;
+  border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+.panel{ background:var(--surface); padding:2rem 1.9rem; border-left:1px solid var(--line); }
+.panel:first-child{ border-left:0; }
+.panel.accent{ background:var(--surface-2); }
+.panel h3{ font-family:"Bricolage Grotesque",sans-serif; font-size:var(--step-2); font-weight:700; letter-spacing:-0.02em; }
+.panel ul{ list-style:none; margin-top:1.2rem; display:grid; gap:.8rem; }
+.panel li{ display:flex; gap:.7rem; color:var(--ink-2); font-size:1.02rem; line-height:1.5; }
+.panel li svg{ width:19px; height:19px; color:var(--primary); flex:none; margin-top:2px; }
+.panel .btn{ margin-top:1.6rem; }
+
+/* final cta — vermilion signal block */
+.final{ border:1px solid var(--line); border-radius:10px; overflow:hidden;
+  display:grid; grid-template-columns:1fr; }
+.final-in{ background:var(--primary); color:var(--primary-ink);
+  padding:clamp(2.6rem,6vw,4rem) clamp(1.8rem,5vw,4rem); }
+.final-in .label{ color:var(--primary-ink); opacity:.85; }
+.final h2{ font-family:"Bricolage Grotesque",sans-serif; color:var(--primary-ink);
+  max-width:20ch; margin-top:.7rem; }
+.final .cta-row{ margin-top:2rem; }
+.final .btn-light{ background:var(--primary-ink); color:var(--primary-strong); border-color:transparent; }
+.final .btn-light:hover{ background:color-mix(in oklch, var(--primary-ink) 88%, black); }
+.final .btn-outline{ border-color:color-mix(in oklch, var(--primary-ink) 55%, transparent); color:var(--primary-ink); background:transparent; }
+.final .btn-outline:hover{ border-color:var(--primary-ink); background:color-mix(in oklch, var(--primary-ink) 12%, transparent); }
+
+footer{ border-top:1px solid var(--line); padding:2.4rem 0; color:var(--ink-3); }
+.foot-in{ display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }
+.foot-in .brand{ font-size:1.08rem; }
+.tagline{ color:var(--ink-2); font-size:.98rem; }
+.foot-tag{ font-family:"Public Sans",sans-serif; font-weight:600; font-size:.72rem;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); }
+
+/* preview-only theme switch (NOT part of the design) */
+.preview-toggle{ position:fixed; right:14px; bottom:14px; z-index:99; display:flex; gap:2px;
+  background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:3px; font-size:.78rem; }
+.preview-toggle button{ border:0; background:transparent; color:var(--ink-2); padding:.3rem .7rem; border-radius:3px; cursor:pointer; font-family:inherit; }
+.preview-toggle button[aria-pressed="true"]{ background:var(--primary); color:var(--primary-ink); font-weight:600; }
+.preview-toggle::after{ content:"preview"; position:absolute; top:-1.1rem; right:.4rem; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+
+/* entrance motion — transform/opacity only */
+.rise{ opacity:0; transform:translateY(14px); animation:rise .7s cubic-bezier(.16,1,.3,1) forwards; }
+.d1{ animation-delay:.05s } .d2{ animation-delay:.13s } .d3{ animation-delay:.21s } .d4{ animation-delay:.29s } .d5{ animation-delay:.37s }
+@keyframes rise{ to{ opacity:1; transform:none; } }
+.blade, .focus{ opacity:0; animation:fade .9s ease-out .2s forwards; }
+@keyframes fade{ to{ opacity:1 } }
+
+@media (max-width:900px){
+  .hero-grid{ grid-template-columns:1fr; }
+  .hero-copy{ padding:clamp(2.2rem,5vh,3rem) 0 2.2rem; }
+  .frame{ order:-1; border-left:0; border-bottom:1px solid var(--line); min-height:340px; }
+  .sec-head{ grid-template-columns:1fr; }
+  .steps{ grid-template-columns:1fr; }
+  .step{ border-left:0; border-top:1px solid var(--line); }
+  .step:first-child{ border-top:0; }
+  .split{ grid-template-columns:1fr; }
+  .panel{ border-left:0; border-top:1px solid var(--line); }
+  .panel:first-child{ border-top:0; }
+  .nav-links{ display:none; }
+}
+@media (prefers-reduced-motion: reduce){
+  .rise,.blade,.focus{ animation:none; opacity:1; transform:none; }
+  .scan,.dot{ animation:none; }
+  html{ scroll-behavior:auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== aperture mark (reused from A) ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="0 0 48 48">
+    <g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="24" cy="24" r="19"/>
+      <g>
+        <path d="M24 6 L34.5 22"/>
+        <path d="M24 6 L34.5 22" transform="rotate(60 24 24)"/>
+        <path d="M24 6 L34.5 22" transform="rotate(120 24 24)"/>
+        <path d="M24 6 L34.5 22" transform="rotate(180 24 24)"/>
+        <path d="M24 6 L34.5 22" transform="rotate(240 24 24)"/>
+        <path d="M24 6 L34.5 22" transform="rotate(300 24 24)"/>
+      </g>
+    </g>
+  </symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v5c0 4.4-3 8-7 10-4-2-7-5.6-7-10V6z"/></symbol>
+</svg>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#"><svg><use href="#mark"/></svg>Aptura</a>
+    <nav class="nav-links">
+      <a href="#">Find roles</a><a href="#">For companies</a><a href="#">How it works</a><a href="#">Pricing</a>
+    </nav>
+    <div class="nav-right">
+      <a class="signin" href="#">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="#">Get started</a>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <div class="status rise d1"><span class="dot"></span> <span class="label">Live proctored interview</span></div>
+      <h1 class="display rise d2">Hire on<br>proven <span class="g">merit.</span></h1>
+      <p class="sub rise d3">One strictly proctored AI interview, scored on evidence — not pedigree, not polish. Cheat-proof by design, and every applicant gets a real answer.</p>
+      <div class="cta-row rise d4">
+        <a class="btn btn-primary" href="#">Find roles</a>
+        <a class="btn btn-ghost" href="#">For companies →</a>
+      </div>
+      <div class="trust rise d5">
+        <span><svg><use href="#shield"/></svg> Proctored &amp; recorded for integrity</span>
+        <span><svg><use href="#check"/></svg> Evidence-based scoring</span>
+        <span><svg><use href="#check"/></svg> Every applicant answered</span>
+      </div>
+    </div>
+
+    <div class="frame rise d3" aria-hidden="true">
+      <div class="crosshair"></div>
+      <div class="optic">
+        <svg viewBox="0 0 400 400">
+          <g class="scan">
+            <circle class="ring" cx="200" cy="200" r="174" stroke-width="1"/>
+            <circle class="focus" cx="200" cy="200" r="150" stroke-width="1" stroke-dasharray="2 10"/>
+          </g>
+          <circle class="ring" cx="200" cy="200" r="120" stroke-width="1"/>
+          <g transform="translate(200 200) scale(5.4) translate(-24 -24)">
+            <path class="blade" d="M24 6 L34.5 22"/>
+            <path class="blade" d="M24 6 L34.5 22" transform="rotate(60 24 24)"/>
+            <path class="blade" d="M24 6 L34.5 22" transform="rotate(120 24 24)"/>
+            <path class="blade" d="M24 6 L34.5 22" transform="rotate(180 24 24)"/>
+            <path class="blade" d="M24 6 L34.5 22" transform="rotate(240 24 24)"/>
+            <path class="blade" d="M24 6 L34.5 22" transform="rotate(300 24 24)"/>
+          </g>
+          <circle class="focus" cx="200" cy="200" r="26" stroke-width="1.6"/>
+        </svg>
+      </div>
+      <div class="data d-tl"><span class="k">Integrity</span><span class="v">98</span></div>
+      <div class="data d-tr"><span class="k">Signal</span><span class="v">Clean</span></div>
+      <div class="data d-bl"><span class="k">Face</span><span class="v">One</span></div>
+      <div class="data d-br"><span class="k">Frame</span><span class="v">C/03</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="label">The path</p>
+      <h2>One honest interview, start to finish.</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n">01</div><h3>Apply in minutes</h3><p>One profile, every role on the marketplace. No résumé black holes.</p></div>
+      <div class="step"><div class="n">02</div><h3>One proctored interview</h3><p>Live video &amp; voice. Integrity monitored on-device, in real time — fair, and the same for everyone.</p></div>
+      <div class="step"><div class="n">03</div><h3>Always hear back</h3><p>An evidence-based outcome with feedback. A human makes the call.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="label">Two sides, one standard</p>
+      <h2>Built for both sides of the table.</h2>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <h3>Get seen on merit.</h3>
+        <ul>
+          <li><svg><use href="#check"/></svg> One fair interview decides it — not who you know.</li>
+          <li><svg><use href="#check"/></svg> Real feedback every time. Never ghosted.</li>
+          <li><svg><use href="#check"/></svg> Practice first, then go live when you're ready.</li>
+        </ul>
+        <a class="btn btn-ghost btn-sm" href="#">Get seen, interviewed, hired →</a>
+      </div>
+      <div class="panel accent">
+        <h3>Hire on proof.</h3>
+        <ul>
+          <li><svg><use href="#shield"/></svg> Evidence-based reports with an integrity timeline.</li>
+          <li><svg><use href="#check"/></svg> Cheating caught live — high-severity auto-ends the session.</li>
+          <li><svg><use href="#check"/></svg> Advisory by design: you make the final decision.</li>
+        </ul>
+        <a class="btn btn-primary btn-sm" href="#">Start hiring</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="final">
+      <div class="final-in">
+        <p class="label">Get started</p>
+        <h2>Proof over polish. For everyone in the room.</h2>
+        <div class="cta-row">
+          <a class="btn btn-light" href="#">Find roles</a>
+          <a class="btn btn-outline" href="#">Hire on merit →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot-in">
+    <a class="brand" href="#"><svg><use href="#mark"/></svg>Aptura</a>
+    <span class="tagline">Get seen. Get interviewed. Get hired.</span>
+    <span class="foot-tag">Direction C · Signal</span>
+  </div>
+</footer>
+
+<div class="preview-toggle" role="group" aria-label="Preview theme (mockup only)">
+  <button type="button" data-theme="light" aria-pressed="true">Light</button>
+  <button type="button" data-theme="dark" aria-pressed="false">Dark</button>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  var q=new URLSearchParams(location.search).get('theme');
+  function set(t){ root.classList.toggle('dark', t==='dark');
+    document.querySelectorAll('.preview-toggle button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.theme===t)); }); }
+  if(q==='dark') set('dark'); else set('light');
+  document.querySelectorAll('.preview-toggle button').forEach(function(b){ b.addEventListener('click',function(){ set(b.dataset.theme); }); });
+})();
+</script>
+</body>
+</html>

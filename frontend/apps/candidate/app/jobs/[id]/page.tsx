@@ -1,19 +1,10 @@
-import {
-  AppShell,
-  Avatar,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@ip/ui";
+import { MarketingShell } from "@ip/ui";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { SaveJobButton } from "../../../components/save-job-button";
-import { JobMeta } from "../../../components/job-meta";
-import { ApplyIsland } from "./apply-island";
+import { SimilarRoles } from "./similar-roles";
+import { JobDetailHero } from "./job-detail-hero";
+import { JobDetailSidebar } from "./job-detail-sidebar";
 import { detail } from "./detail-client";
 
 export async function generateMetadata({
@@ -32,7 +23,10 @@ export async function generateMetadata({
 
 /** Public, SSR, crawlable job-detail page. The JD + meta render server-side
  * (token-free) so they land in the HTML; Apply + Save are client islands that
- * require sign-in. Draft/missing jobs → not-found (never leak draft existence). */
+ * require sign-in. Draft/missing jobs → not-found (never leak draft existence).
+ *
+ * v3 layout: MarketingShell chrome, then a two-column body at lg+ — JD on the
+ * left, a sticky sidebar with apply CTAs + meta on the right. */
 export default async function JobDetailPage({
   params,
 }: {
@@ -46,42 +40,40 @@ export default async function JobDetailPage({
   if (!job) notFound(); // → not-found.tsx
 
   return (
-    <AppShell title="Aptura" nav={<Link href="/jobs">Browse jobs</Link>}>
-      {/* Single page-level h1 for the entity; the visible CardTitle is the h2. */}
+    <MarketingShell>
+      {/* Single page-level h1 for the entity; the visible hero heading is the h2. */}
       <h1 className="sr-only">
         {job.title} · {job.company.name}
       </h1>
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <Avatar name={job.company.name} src={job.company.logo} size="md" />
-            <div>
-              <CardTitle>{job.title}</CardTitle>
-              <CardDescription>
-                <Link
-                  href={`/companies/${job.company.id}`}
-                  className="hover:underline"
-                >
-                  {job.company.name}
-                </Link>
-              </CardDescription>
-            </div>
-          </div>
-          {/* Save toggle — renders null when signed out (client island). */}
-          <SaveJobButton jobId={job.jobId} />
-        </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          <JobMeta job={job} />
-          <div className="rounded-lg border border-border bg-surface-muted p-5">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+
+      <JobDetailHero job={job} />
+
+      <div className="ap-wrap py-10 lg:py-12">
+        <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
+          {/* ---------- LEFT: full JD ---------- */}
+          <article className="ap-cell ap-cell--anchor">
+            <h2 className="ap-h3 mb-4">About the role</h2>
+            {/* The JD is plain text from the BE today; whitespace-pre-wrap preserves
+                hand-written newlines until a markdown renderer ships. Avoid
+                dangerouslySetInnerHTML — the source isn't sanitized end-to-end. */}
+            <p className="whitespace-pre-wrap text-[1.0rem] leading-relaxed text-ink-2">
               {job.jdText}
             </p>
-          </div>
-          <div className="rounded-lg border border-border bg-surface p-5">
-            <ApplyIsland jobId={job.jobId} />
-          </div>
-        </CardContent>
-      </Card>
-    </AppShell>
+          </article>
+
+          {/* ---------- RIGHT: sticky sidebar ---------- */}
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <JobDetailSidebar job={job} placement="top" />
+          </aside>
+        </div>
+
+        {/* Bottom Apply restated below the JD — a long JD should never bury the action. */}
+        <div className="mt-8 lg:hidden">
+          <JobDetailSidebar job={job} placement="bottom" />
+        </div>
+
+        <SimilarRoles companyId={job.company.id} excludeJobId={job.jobId} />
+      </div>
+    </MarketingShell>
   );
 }
