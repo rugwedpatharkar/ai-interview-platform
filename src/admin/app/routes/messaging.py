@@ -149,3 +149,26 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
                 )
             except AuthDomainError as exc:
                 await self._abort(context, exc, "MarkRead")
+
+    async def StreamMessages(self, request, context):
+        _grpc_total.labels(method="StreamMessages").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with (
+            log_context(
+                log,
+                "messaging.StreamMessages",
+                **bind_ids(application_id=request.application_id),
+            ),
+            span("messaging.StreamMessages", application_id=request.application_id),
+        ):
+            try:
+                async for msg in msg_res.stream_messages(
+                    request.application_id,
+                    request.since_id,
+                    identity=ident,
+                    applications=self._deps["applications"],
+                    messages=self._deps["messages"],
+                ):
+                    yield _message(msg)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "StreamMessages")

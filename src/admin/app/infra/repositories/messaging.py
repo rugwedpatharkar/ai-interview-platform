@@ -119,6 +119,18 @@ class MessageRepository(BaseRepository[Message]):
     async def count_by_thread(self, thread_id) -> int:
         return await self.col.count_documents({"thread_id": thread_id})
 
+    async def list_after(
+        self, application_id: str, since_id: str, *, limit: int
+    ) -> list[dict]:
+        """Messages for application_id with _id > since_id, asc, capped at limit."""
+        query: dict = {"application_id": application_id}
+        if since_id:
+            oid = _oid(since_id)
+            if oid:
+                query["_id"] = {"$gt": oid}
+        cursor = self.col.find(query).sort("_id", 1).limit(limit)
+        return await cursor.to_list(length=limit)
+
     async def mark_other_side_read(self, application_id, reader_side) -> None:
         """Advisory read_at stamp on the OTHER party's previously-unread rows."""
         await self.col.update_many(
