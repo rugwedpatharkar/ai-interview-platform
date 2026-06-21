@@ -10,11 +10,6 @@ src/admin/app/resources/coding.py:93:run_code_attempt
 src/admin/app/resources/coding.py:151:submit_coding
 src/admin/app/resources/discovery.py:56:get_public_job_detail
 src/admin/app/resources/discovery.py:93:search_jobs
-src/admin/app/resources/notification.py:42:list_notifications
-src/admin/app/resources/notification.py:60:mark_read
-src/admin/app/resources/notification.py:66:mark_all_read
-src/admin/app/resources/notification.py:71:notify_event
-src/admin/app/resources/notification.py:135:notify
 src/admin/app/resources/job.py:89:create_job
 src/admin/app/resources/job.py:108:update_job
 src/admin/app/resources/job.py:130:get_job
