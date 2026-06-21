@@ -40,9 +40,6 @@ src/admin/app/resources/integrity.py:30:get_integrity_timeline
 src/admin/app/resources/saved_jobs.py:13:save_job
 src/admin/app/resources/saved_jobs.py:20:unsave_job
 src/admin/app/resources/saved_jobs.py:24:list_saved_jobs
-src/admin/app/resources/report.py:44:get_report
-src/admin/app/resources/report.py:55:list_reports
-src/admin/app/resources/report.py:101:export_reports
 src/admin/app/resources/messaging.py:75:send_message
 src/admin/app/resources/messaging.py:159:list_threads
 src/admin/app/resources/messaging.py:194:list_messages
