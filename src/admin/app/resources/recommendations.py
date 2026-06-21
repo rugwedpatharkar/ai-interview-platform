@@ -5,7 +5,7 @@ only their own; a recruiter sees only their own-comp job's ranked candidates (sc
 the job). Results are score-desc; reads are repository-capped.
 """
 
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 from lib.schemas import Role
 
 from app.errors import ForbiddenError, NotFoundError
@@ -30,14 +30,24 @@ def _ranked(rows):
 
 
 async def get_candidate_recommendations(identity, *, matches):
-    if identity["role"] != Role.candidate.value:
-        raise ForbiddenError("Only candidates have recommendations")
-    return _ranked(await matches.list_by_candidate(identity["id"]))
+    async with log_context(
+        log,
+        "resource.recommendations.get_candidate_recommendations",
+        **bind_ids(user_id=identity["id"]),
+    ):
+        if identity["role"] != Role.candidate.value:
+            raise ForbiddenError("Only candidates have recommendations")
+        return _ranked(await matches.list_by_candidate(identity["id"]))
 
 
 async def get_job_ranked_candidates(identity, job_id, *, jobs, matches):
-    if identity["role"] not in _MANAGER_ROLES:
-        raise ForbiddenError("Only company users can view ranked candidates")
-    if await jobs.get_scoped(job_id, identity["comp_id"]) is None:
-        raise NotFoundError("Job not found")
-    return _ranked(await matches.list_by_job(job_id, identity["comp_id"]))
+    async with log_context(
+        log,
+        "resource.recommendations.get_job_ranked_candidates",
+        **bind_ids(comp_id=identity["comp_id"], job_id=job_id),
+    ):
+        if identity["role"] not in _MANAGER_ROLES:
+            raise ForbiddenError("Only company users can view ranked candidates")
+        if await jobs.get_scoped(job_id, identity["comp_id"]) is None:
+            raise NotFoundError("Job not found")
+        return _ranked(await matches.list_by_job(job_id, identity["comp_id"]))
