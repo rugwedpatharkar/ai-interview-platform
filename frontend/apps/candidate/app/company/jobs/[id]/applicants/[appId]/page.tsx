@@ -223,6 +223,7 @@ export default function ApplicantReportPage() {
       return input.action;
     },
     onSuccess: (action) => {
+      track("decision.made", { application_id: appId, decision: action });
       if (action === "advance") toast.success("Candidate advanced");
       if (action === "hold") toast.success("Candidate placed on hold");
       if (action === "reject") toast.success("Candidate declined");

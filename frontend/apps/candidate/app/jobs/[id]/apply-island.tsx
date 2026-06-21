@@ -12,6 +12,7 @@ import {
   cn,
   toast,
 } from "@ip/ui";
+import type { ApplicationResponse } from "@ip/api-client";
 import { errorMessage, track } from "@ip/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -59,7 +60,11 @@ export function ApplyIsland({ jobId }: { jobId: string }) {
 
   const apply = useMutation({
     mutationFn: () => api.applications.apply({ jobId, consent }),
-    onSuccess: () => {
+    onSuccess: (out: ApplicationResponse) => {
+      track("application.submitted", {
+        job_id: jobId,
+        application_id: out.applicationId,
+      });
       toast.success("Application submitted");
       try {
         localStorage.removeItem(consentKey);
@@ -91,7 +96,10 @@ export function ApplyIsland({ jobId }: { jobId: string }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          track("application.started", { job_id: jobId });
+          setOpen(true);
+        }}
         className="ap-btn ap-btn-primary"
       >
         Apply now

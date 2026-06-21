@@ -1,6 +1,6 @@
 "use client";
 
-import { errorMessage, useRequireAuth } from "@ip/shared";
+import { errorMessage, track, useRequireAuth } from "@ip/shared";
 import { EmptyState, ErrorState, Skeleton, cn } from "@ip/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, BellOff } from "lucide-react";
@@ -127,6 +127,7 @@ export default function NotificationsPage() {
                   notification={n}
                   icon={iconForKind(n.kind)}
                   onClick={() => {
+                    track("notification.opened", { notification_id: n.id, kind: n.kind });
                     // Mark-read fires regardless of link; the router.push is verbatim from
                     // the prior implementation so the deep-link contract stays intact.
                     void client
