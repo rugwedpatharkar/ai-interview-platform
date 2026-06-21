@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function TrustPage() {
   return (
-    <MarketingShell audience="applicants">
+    <MarketingShell audience="hiring-teams">
       {/* Hero */}
       <section className="relative py-16 lg:py-24">
         <div

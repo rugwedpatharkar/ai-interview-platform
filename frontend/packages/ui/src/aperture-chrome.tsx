@@ -244,7 +244,7 @@ export function MegaFooter({
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-[1.4fr_repeat(4,1fr)]">
           <div className="col-span-2 sm:col-span-3 lg:col-span-1">
             <Link
-              href="/"
+              href={audience === "hiring-teams" ? "/hiring-teams" : "/"}
               className="flex items-center gap-2 text-[1.1rem] font-bold tracking-tight text-ink-deep"
               style={{ fontFamily: "var(--font-display)" }}
             >

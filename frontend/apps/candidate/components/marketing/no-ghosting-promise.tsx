@@ -29,7 +29,7 @@ export function NoGhostingPromise() {
           </p>
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
             {[
-              ["You&apos;ll know", "An outcome message lands. Always."],
+              ["You'll know", "An outcome message lands. Always."],
               ["With a real reason", "Never silence. Never form-letters."],
               ["The same way for everyone", "Same rubric, same evidence, same review."],
             ].map(([head, sub]) => (
@@ -37,8 +37,9 @@ export function NoGhostingPromise() {
                 <h4
                   className="text-[1.06rem] font-semibold text-ink-deep"
                   style={{ fontFamily: "var(--font-display)" }}
-                  dangerouslySetInnerHTML={{ __html: head as string }}
-                />
+                >
+                  {head}
+                </h4>
                 <p className="mt-1.5 text-[0.92rem] leading-snug text-ink-2">{sub}</p>
               </div>
             ))}

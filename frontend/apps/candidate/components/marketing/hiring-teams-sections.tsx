@@ -1216,9 +1216,9 @@ export function EarlyAccess() {
         twoCol
         eyebrow="Early access"
         h2="Aptura is in pre-launch. Talk to us about a pilot."
-        lead="Pricing will land when the public launch does. Until then, we're partnering with a small number of teams to run real proctored interviews against real roles — and shaping pricing around what they actually use."
+        lead="Pricing will land when the public launch does. Until then, we're partnering with a small number of hiring teams to run real proctored interviews against real roles — and shaping pricing around what they actually use."
       />
-      <div className="mx-auto grid max-w-[62rem] gap-3 sm:grid-cols-2">
+      <div className="mx-auto max-w-xl">
         <article
           className="flex flex-col gap-3 rounded-2xl border p-6"
           style={{
@@ -1227,7 +1227,7 @@ export function EarlyAccess() {
             borderColor: "color-mix(in oklch, var(--teal) 22%, var(--line))",
           }}
         >
-          <span className="ap-pill ap-pill--teal self-start">For companies</span>
+          <span className="ap-pill ap-pill--teal self-start">For hiring teams</span>
           <h4
             className="text-[1.4rem] font-semibold tracking-[-0.02em] text-ink-deep"
             style={{ fontFamily: "var(--font-display)" }}
@@ -1241,22 +1241,6 @@ export function EarlyAccess() {
           </p>
           <Link href="/pilot" className="ap-btn ap-btn-primary ap-btn-sm self-start">
             Request a pilot →
-          </Link>
-        </article>
-        <article className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-6">
-          <span className="ap-pill ap-pill--coral self-start">For candidates</span>
-          <h4
-            className="text-[1.4rem] font-semibold tracking-[-0.02em] text-ink-deep"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Join the waitlist
-          </h4>
-          <p className="text-[0.92rem] leading-snug text-ink-2">
-            Be among the first candidates to sit a proctored Aptura interview when roles open. Try
-            the practice round first — no commitment, no scoring.
-          </p>
-          <Link href="/waitlist" className="ap-btn ap-btn-coral ap-btn-sm self-start">
-            Join the waitlist →
           </Link>
         </article>
       </div>

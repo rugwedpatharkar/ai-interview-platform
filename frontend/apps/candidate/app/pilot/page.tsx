@@ -34,7 +34,7 @@ export default function PilotPage() {
   }
 
   return (
-    <MarketingShell audience="applicants">
+    <MarketingShell audience="hiring-teams">
       <section className="py-12 lg:py-20">
         <div className="ap-wrap grid items-start gap-12 lg:grid-cols-[1.05fr_1fr]">
           {/* Pitch */}
