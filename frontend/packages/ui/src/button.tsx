@@ -1,8 +1,9 @@
 import { type VariantProps, cva } from "class-variance-authority";
-import { Loader2, type LucideIcon } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 import { type ButtonHTMLAttributes, forwardRef } from "react";
 
 import { cn } from "./cn.js";
+import { Loader2Icon } from "./internal-icons.js";
 
 const buttonVariants = cva(
   "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0",
@@ -32,16 +33,30 @@ const buttonVariants = cva(
 
 const iconSize = { default: 16, sm: 16, lg: 18, icon: 18 } as const;
 
-export interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+type BaseButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   /** lucide icon rendered before the label. */
   leadingIcon?: LucideIcon;
   /** lucide icon rendered after the label. */
   trailingIcon?: LucideIcon;
   /** Shows a spinner and disables the button while truthy. */
   loading?: boolean;
-}
+};
+
+type NonIconButtonProps = BaseButtonProps &
+  VariantProps<typeof buttonVariants> & {
+    size?: Exclude<NonNullable<VariantProps<typeof buttonVariants>["size"]>, "icon">;
+    /** aria-label is optional for labelled buttons. */
+    "aria-label"?: string;
+  };
+
+type IconButtonProps = BaseButtonProps &
+  VariantProps<typeof buttonVariants> & {
+    size: "icon";
+    /** Icon-only buttons have no visible text — aria-label is required for accessibility. */
+    "aria-label": string;
+  };
+
+export type ButtonProps = NonIconButtonProps | IconButtonProps;
 
 // forwardRef so Radix `asChild` triggers (Dialog/Select) can compose a Button.
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -69,7 +84,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading && (
-          <Loader2 className="absolute size-4 animate-spin" aria-hidden />
+          <Loader2Icon className="absolute size-4 animate-spin" aria-hidden />
         )}
         <span
           className={cn(

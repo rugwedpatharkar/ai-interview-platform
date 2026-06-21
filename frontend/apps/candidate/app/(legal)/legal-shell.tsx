@@ -19,7 +19,7 @@ export function LegalShell({
   sections: LegalSection[];
 }) {
   return (
-    <MarketingShell>
+    <MarketingShell audience="applicants">
       <section className="py-12 lg:py-20">
         <div className="ap-wrap">
           <span className="ap-eyebrow">{eyebrow}</span>

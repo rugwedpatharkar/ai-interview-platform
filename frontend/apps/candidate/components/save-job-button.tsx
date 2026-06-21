@@ -37,8 +37,7 @@ export function SaveJobButton({ jobId }: { jobId: string }) {
       toast.error(errorMessage(err));
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["saved-jobs", "ids"] });
-      qc.invalidateQueries({ queryKey: ["saved-jobs"] }); // the /saved list
+      qc.invalidateQueries({ queryKey: ["saved-jobs"] }); // prefix-matches ids + the /saved list
     },
   });
 

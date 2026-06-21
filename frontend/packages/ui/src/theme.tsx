@@ -1,6 +1,5 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
 import {
   type ReactNode,
   createContext,
@@ -11,6 +10,23 @@ import {
 } from "react";
 
 import { cn } from "./cn.js";
+
+function SunIcon(props: React.SVGAttributes<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+    </svg>
+  );
+}
+
+function MoonIcon(props: React.SVGAttributes<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </svg>
+  );
+}
 
 export type Theme = "light" | "dark";
 
@@ -136,9 +152,9 @@ export function ThemeToggle({
       )}
     >
       {mounted && isDark ? (
-        <Sun className="size-4" aria-hidden />
+        <SunIcon className="size-4" aria-hidden />
       ) : (
-        <Moon className="size-4" aria-hidden />
+        <MoonIcon className="size-4" aria-hidden />
       )}
     </button>
   );

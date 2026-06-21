@@ -40,7 +40,7 @@ export default async function JobDetailPage({
   if (!job) notFound(); // → not-found.tsx
 
   return (
-    <MarketingShell>
+    <MarketingShell audience="applicants">
       {/* Single page-level h1 for the entity; the visible hero heading is the h2. */}
       <h1 className="sr-only">
         {job.title} · {job.company.name}

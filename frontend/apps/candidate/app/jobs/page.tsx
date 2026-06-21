@@ -15,9 +15,9 @@ export const metadata: Metadata = {
  * (token-free) so job titles land in the HTML; the `Marketplace` island then takes
  * over filtering + pagination on the client, seeded by this result.
  *
- * v3 wraps the page in MarketingShell (UtilityRule + MegaNav + MegaFooter) so the
- * chrome matches the rest of the public surface. The page is still SSR — the shell
- * is a `"use client"` component but doesn't break server-rendering of children. */
+ * v3 wraps the page in MarketingShell (MegaNav + MegaFooter) so the chrome matches
+ * the rest of the public surface. The page is still SSR — the shell is a
+ * `"use client"` component but doesn't break server-rendering of children. */
 export default async function JobsPage({
   searchParams,
 }: {
@@ -35,7 +35,7 @@ export default async function JobsPage({
   const initial = await query(initialParams).catch(() => null);
 
   return (
-    <MarketingShell>
+    <MarketingShell audience="applicants">
       <section className="border-b border-line bg-surface-2 py-12 lg:py-16">
         <div className="ap-wrap">
           <span className="ap-eyebrow">Marketplace</span>

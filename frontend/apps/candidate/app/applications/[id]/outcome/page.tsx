@@ -18,7 +18,6 @@ import {
   Textarea,
   buttonVariants,
   cn,
-  toast,
 } from "@ip/ui";
 import {
   errorMessage,
@@ -36,7 +35,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import { CandidateShell } from "../../../../components/candidate-shell";
 import { useAuth } from "../../../../lib/auth";
@@ -253,7 +252,7 @@ export default function OutcomePage() {
                   <Sparkles className="size-4" aria-hidden /> See next steps
                 </Link>
               )}
-              {(verdict === "hold" || verdict === "reject") && <RescoreDialog />}
+              {(verdict === "hold" || verdict === "reject") && <RescoreDialog applicationId={id} />}
               <Link
                 href={`/messages/${id}`}
                 className={cn(buttonVariants({ variant: "outline" }))}
@@ -396,7 +395,8 @@ function CompetencyCard({
 /** Re-score request modal. There's no Rescore RPC yet, so the modal submits the request
  * as a message in the existing thread (the team sees it as a normal reply). This keeps
  * the no-ghosting promise honest without inventing a backend contract. */
-function RescoreDialog() {
+function RescoreDialog({ applicationId }: { applicationId: string }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   return (
@@ -429,20 +429,18 @@ function RescoreDialog() {
           <Button
             disabled={reason.trim().length < 10}
             onClick={() => {
-              // The actual send happens via the messages thread surface; this dialog is
-              // a guided composer that closes and points the candidate at it. We don't
-              // auto-send here because the messages client lives in /messages and the
-              // optimistic-send + receive-poll pattern shouldn't be duplicated.
-              toast.success(
-                "Draft copied to your clipboard — open the messages thread to send it.",
-              );
+              // Copy the draft to clipboard then navigate to the messages thread so the
+              // candidate can paste and send. We don't auto-send here because the messages
+              // client lives in /messages and the optimistic-send + receive-poll pattern
+              // shouldn't be duplicated.
               try {
                 navigator.clipboard.writeText(reason.trim());
               } catch {
-                // Clipboard may be unavailable in HTTP / older browsers — the toast still
-                // tells the candidate what to do.
+                // Clipboard may be unavailable in HTTP / older browsers — the navigation
+                // still opens the thread so the candidate can paste manually.
               }
               setOpen(false);
+              router.push(`/messages/${applicationId}`);
             }}
           >
             Copy &amp; open messages

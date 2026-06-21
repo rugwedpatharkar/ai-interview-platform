@@ -29,7 +29,7 @@ function CompanySettingsTabs() {
 
   return (
     <Tabs defaultValue={initial}>
-      <TabsList className="inline-flex flex-wrap gap-1 rounded-xl border border-border bg-surface-muted p-1">
+      <TabsList className="inline-flex flex-wrap gap-1 rounded-xl border border-line bg-surface-2 p-1">
         {(
           [
             ["account", "Account"],
@@ -42,7 +42,7 @@ function CompanySettingsTabs() {
           <TabsTrigger
             key={value}
             value={value}
-            className="rounded-lg mb-0 border-0 px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[state=active]:bg-surface data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+            className="rounded-lg mb-0 border-0 px-3.5 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:text-ink-deep data-[state=active]:bg-surface data-[state=active]:text-ink-deep data-[state=active]:shadow-sm"
           >
             {label}
           </TabsTrigger>

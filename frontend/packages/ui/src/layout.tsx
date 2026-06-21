@@ -1,17 +1,44 @@
 "use client";
 
-import {
-  AlertCircle,
-  Inbox,
-  type LucideIcon,
-  Menu,
-  RefreshCw,
-  X,
-} from "lucide-react";
+import type { SVGAttributes } from "react";
 import { type ReactNode, useState } from "react";
 
+type SvgComponent = React.ComponentType<SVGAttributes<SVGSVGElement>>;
+
+import { cn } from "./cn.js";
+import { AlertCircleIcon, XIcon } from "./internal-icons.js";
 import { Logo } from "./logo.js";
 import { Spinner } from "./spinner.js";
+
+function MenuIcon(props: React.SVGAttributes<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <line x1="4" x2="20" y1="12" y2="12" />
+      <line x1="4" x2="20" y1="6" y2="6" />
+      <line x1="4" x2="20" y1="18" y2="18" />
+    </svg>
+  );
+}
+
+function InboxIcon(props: React.SVGAttributes<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+    </svg>
+  );
+}
+
+function RefreshCwIcon(props: React.SVGAttributes<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+      <path d="M8 16H3v5" />
+    </svg>
+  );
+}
 
 export function AppShell({
   title,
@@ -48,7 +75,7 @@ export function AppShell({
                 onClick={() => setOpen((v) => !v)}
                 className="inline-flex size-9 items-center justify-center rounded-lg border border-border bg-surface text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
               >
-                {open ? <X className="size-4" /> : <Menu className="size-4" />}
+                {open ? <XIcon className="size-4" /> : <MenuIcon className="size-4" />}
               </button>
             )}
           </div>
@@ -95,13 +122,13 @@ export function EmptyState({
   title,
   description,
   action,
-  icon: IconComponent = Inbox,
+  icon: IconComponent = InboxIcon,
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
-  /** lucide icon shown in the illustration circle. */
-  icon?: LucideIcon;
+  /** Lucide icon or any SVG component shown in the illustration circle. */
+  icon?: SvgComponent;
 }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-surface/50 px-6 py-14 text-center">
@@ -127,7 +154,7 @@ export function ErrorState({
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-danger-border bg-danger-surface px-6 py-12 text-center">
       <span className="flex size-12 items-center justify-center rounded-full bg-danger/10 text-danger">
-        <AlertCircle className="size-6" aria-hidden />
+        <AlertCircleIcon className="size-6" aria-hidden />
       </span>
       <p className="text-sm text-danger-foreground">{message}</p>
       {retry && (
@@ -136,7 +163,7 @@ export function ErrorState({
           onClick={retry}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-danger-foreground underline-offset-4 hover:underline"
         >
-          <RefreshCw className="size-4" aria-hidden />
+          <RefreshCwIcon className="size-4" aria-hidden />
           Try again
         </button>
       )}

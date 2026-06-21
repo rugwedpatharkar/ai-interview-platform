@@ -1,10 +1,10 @@
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
 import type { ComponentProps } from "react";
 
 import { cn } from "./cn.js";
+import { XIcon } from "./internal-icons.js";
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
@@ -41,7 +41,7 @@ export function DialogContent({
             className="absolute right-4 top-4 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Close"
           >
-            <X className="size-4" aria-hidden />
+            <XIcon className="size-4" aria-hidden />
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRequireRole } from "@ip/shared";
 
 import { Dashboard } from "../components/dashboard";
-import { MarketingLanding } from "./(marketing)/marketing-landing";
+import { ApplicantsLanding } from "./(marketing)/applicants-landing";
 import { useAuth } from "../lib/auth";
 
 export function HomeClient() {
@@ -20,5 +20,5 @@ export function HomeClient() {
   if (!mounted) return null;
   if (token) return identity?.role === "candidate" ? <Dashboard /> : null;
 
-  return <MarketingLanding />;
+  return <ApplicantsLanding />;
 }

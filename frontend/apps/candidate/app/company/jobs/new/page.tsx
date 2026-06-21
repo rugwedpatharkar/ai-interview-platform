@@ -54,7 +54,7 @@ export default function PostJobPage() {
 
   const create = useMutation({
     mutationFn: () =>
-      api.jobs.createJob({ title: v.title.trim(), jdText: v.jdText }),
+      api.jobs.createJob({ title: v.title.trim(), jdText: v.jdText, skills: parseSkills(skillsRaw) }),
     onSuccess: (res) => {
       toast.success("Job created");
       router.push(`/company/jobs/${res.jobId}`);
@@ -84,7 +84,6 @@ export default function PostJobPage() {
     setTitleError(null);
     if (latch.current) return;
     latch.current = true;
-    setV((p) => ({ ...p, skills: parseSkills(skillsRaw) }));
     create.mutate();
   }
 

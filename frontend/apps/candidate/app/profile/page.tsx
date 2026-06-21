@@ -14,7 +14,7 @@ import {
   cn,
   toast,
 } from "@ip/ui";
-import { errorMessage, isNotFound, useRequireAuth } from "@ip/shared";
+import { errorMessage, isNotFound, useRequireAuth, useRequireRole } from "@ip/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, FileText, Trash2, Upload } from "lucide-react";
 import {
@@ -78,8 +78,9 @@ const MAX_RESUME_BYTES = 10 * 1024 * 1024;
 const MAX_PARSE_POLLS = 30;
 
 export default function ProfilePage() {
-  const { api, token, ready } = useAuth();
+  const { api, token, identity, ready } = useAuth();
   useRequireAuth(token, ready);
+  useRequireRole(identity?.role, ["candidate"], ready);
   const queryClient = useQueryClient();
   const [form, setForm] = useState<Form>(EMPTY);
   const touched = useRef(false);

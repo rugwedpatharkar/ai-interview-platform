@@ -27,7 +27,7 @@ import { useEffect, useState } from "react";
 
 import { CompanyShell } from "../../components/company-shell";
 import { LogoUpload } from "../../components/logo-upload";
-import { makeMockBrandingClient } from "./branding-client";
+import { USE_MOCK, createBrandingClient, makeMockBrandingClient } from "./branding-client";
 import type { BrandingForm } from "./branding-types";
 import { useAuth } from "../../lib/auth";
 
@@ -43,9 +43,8 @@ const EMPTY: BrandingForm = {
 };
 
 export default function BrandingPage() {
-  const { token } = useAuth();
-  // Swap to realBrandingClient(api) after pnpm gen — the page component is unchanged.
-  const client = makeMockBrandingClient();
+  const { api, token } = useAuth();
+  const client = USE_MOCK ? makeMockBrandingClient() : createBrandingClient(api);
   const qc = useQueryClient();
   const [form, setForm] = useState<BrandingForm>(EMPTY);
   const [locationsRaw, setLocationsRaw] = useState("");

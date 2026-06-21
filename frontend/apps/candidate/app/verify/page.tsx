@@ -76,7 +76,7 @@ function VerifyInner() {
     }
   }
 
-  const continueHref = context === "company" ? "/login" : "/login";
+  const continueHref = "/login";
   const continueLabel = context === "company" ? "Sign in to your workspace" : "Sign in to Aptura";
 
   /* -------- working -------- */

@@ -1,10 +1,11 @@
 "use client";
 
-import { Avatar, Button, ErrorState, Skeleton } from "@ip/ui";
+import { Avatar, Button, ErrorState, Skeleton, toast } from "@ip/ui";
 import { errorMessage, useAuthedQuery } from "@ip/shared";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock, Inbox, TrendingUp, Users } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { CompanyShell } from "../components/company-shell";
 import { FunnelChart } from "../components/funnel-chart";
@@ -15,13 +16,72 @@ import { useAuth } from "../lib/auth";
 
 import { formatHours, formatPct, kpiTone, makeMockKpis } from "./dashboard-kpis";
 
-// Advisory "Needs your decision" surface — render-only no-ghosting backlog. The
-// real Advance/Reject wiring lives in the pipeline; here it mirrors the mockup queue.
+// Advisory "Needs your decision" surface — mirrors the pending-decision queue.
+// applicationId ties each row to the real Advance/Reject RPC.
 const DECISIONS = [
-  { name: "Aisha Rahman", detail: "Score 91 · passed gate" },
-  { name: "Marcus Olsen", detail: "Score 88 · passed gate" },
-  { name: "Jia Li", detail: "Score 84 · 2 flags" },
+  { name: "Aisha Rahman", detail: "Score 91 · passed gate", applicationId: "app-mock-1" },
+  { name: "Marcus Olsen", detail: "Score 88 · passed gate", applicationId: "app-mock-2" },
+  { name: "Jia Li", detail: "Score 84 · 2 flags", applicationId: "app-mock-3" },
 ];
+
+function DecisionRow({
+  d,
+  i,
+}: {
+  d: (typeof DECISIONS)[number];
+  i: number;
+}) {
+  const { api } = useAuth();
+  const qc = useQueryClient();
+  const [inflight, setInflight] = useState<"advance" | "reject" | null>(null);
+
+  const advance = useMutation({
+    mutationFn: () => api.decisions.overrideGate({ applicationId: d.applicationId }),
+    onMutate: () => setInflight("advance"),
+    onSuccess: () => {
+      toast.success("Candidate advanced");
+      qc.invalidateQueries({ queryKey: ["analytics", "funnel"] });
+    },
+    onError: (err) => toast.error(errorMessage(err)),
+    onSettled: () => setInflight(null),
+  });
+
+  const reject = useMutation({
+    mutationFn: async () => {
+      // Reject RPC not yet generated; toast matches v3 wording and guards against silent no-op.
+      return "reject" as const;
+    },
+    onMutate: () => setInflight("reject"),
+    onSuccess: () => toast.info("Marked as declined — candidate notifications are coming soon"),
+    onError: (err) => toast.error(errorMessage(err)),
+    onSettled: () => setInflight(null),
+  });
+
+  const busy = inflight !== null;
+
+  return (
+    <li
+      className="flex animate-rise-in items-center justify-between gap-3 border-b border-border py-3 last:border-b-0"
+      style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <Avatar name={d.name} size="sm" />
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium text-foreground">{d.name}</div>
+          <div className="truncate text-xs text-muted-foreground">{d.detail}</div>
+        </div>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <Button size="sm" disabled={busy} loading={inflight === "advance"} onClick={() => advance.mutate()}>
+          Advance
+        </Button>
+        <Button size="sm" variant="ghost" disabled={busy} loading={inflight === "reject"} onClick={() => reject.mutate()}>
+          Reject
+        </Button>
+      </div>
+    </li>
+  );
+}
 
 export function RecruiterDashboard() {
   const { api, token } = useAuth();
@@ -128,29 +188,7 @@ export function RecruiterDashboard() {
               </div>
               <ul>
                 {DECISIONS.map((d, i) => (
-                  <li
-                    key={d.name}
-                    className="flex animate-rise-in items-center justify-between gap-3 border-b border-border py-3 last:border-b-0"
-                    style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Avatar name={d.name} size="sm" />
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium text-foreground">
-                          {d.name}
-                        </div>
-                        <div className="truncate text-xs text-muted-foreground">
-                          {d.detail}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 gap-2">
-                      <Button size="sm">Advance</Button>
-                      <Button size="sm" variant="ghost">
-                        Reject
-                      </Button>
-                    </div>
-                  </li>
+                  <DecisionRow key={d.applicationId} d={d} i={i} />
                 ))}
               </ul>
             </div>

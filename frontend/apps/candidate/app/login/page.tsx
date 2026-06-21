@@ -4,7 +4,7 @@ import { ApIcon } from "@ip/ui";
 import { errorMessage } from "@ip/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, type FormEvent, useEffect, useState } from "react";
+import { Suspense, type FormEvent, useEffect, useRef, useState } from "react";
 
 import {
   AuthShell,
@@ -39,6 +39,8 @@ function LoginInner() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Prevents the mount-effect from racing the submit success path.
+  const navigatingRef = useRef(false);
 
   const notice = sp.get("notice");
   const noticeText =
@@ -49,8 +51,9 @@ function LoginInner() {
         : null;
 
   // If a session reappears (second-tab login), bounce on mount.
+  // Gated so it doesn't race the submit success path.
   useEffect(() => {
-    if (ready && identity) router.replace(roleHome(identity.role));
+    if (!navigatingRef.current && ready && identity) router.replace(roleHome(identity.role));
   }, [ready, identity, router]);
 
   async function onSubmit(event: FormEvent) {
@@ -59,6 +62,8 @@ function LoginInner() {
     setError(null);
     try {
       await login(email, password);
+      // Claim the navigation slot before the AuthProvider effect tick can fire.
+      navigatingRef.current = true;
       // Don't wait for the AuthProvider effect tick — read the role straight
       // from the freshly-persisted token and route.
       router.push(roleHome(decodeRoleFromStore()));

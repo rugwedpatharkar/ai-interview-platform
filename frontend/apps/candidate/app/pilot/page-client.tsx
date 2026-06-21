@@ -34,7 +34,7 @@ export function PilotClient() {
   }
 
   return (
-    <MarketingShell>
+    <MarketingShell audience="hiring-teams">
       <section className="py-12 lg:py-20">
         <div className="ap-wrap grid items-start gap-12 lg:grid-cols-[1.05fr_1fr]">
           {/* Pitch */}
@@ -83,11 +83,10 @@ export function PilotClient() {
                   className="text-[1.4rem] font-semibold text-ink-deep"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  Email is on its way.
+                  Mail composed in your client.
                 </h2>
                 <p className="max-w-[34ch] text-[0.94rem] text-ink-2">
-                  We&apos;ll respond within two business days. If your mail client didn&apos;t
-                  open, write to{" "}
+                  If your mail client didn&apos;t open, write to{" "}
                   <a className="text-teal-strong" href="mailto:hello@aptura.app">
                     hello@aptura.app
                   </a>

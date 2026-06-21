@@ -1,7 +1,7 @@
 "use client";
 
 import { Field, Input, Textarea, toast } from "@ip/ui";
-import { useRequireRole } from "@ip/shared";
+import { errorMessage, useRequireRole } from "@ip/shared";
 import { Check, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
@@ -89,11 +89,12 @@ function isValidEmail(e: string): boolean {
 }
 
 export default function CompanyOnboardingPage() {
-  const { token, identity, ready } = useAuth();
+  const { api, token, identity, ready } = useAuth();
   useRequireRole(identity?.role, ["recruiter", "company_admin"], ready);
   const router = useRouter();
 
   const [mounted, setMounted] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [state, setState] = useState<WizardState>(INITIAL);
 
   // Hydrate from localStorage post-mount so SSR / first paint stays deterministic.
@@ -114,15 +115,87 @@ export default function CompanyOnboardingPage() {
 
   const setStep = (step: WizardState["step"]) => setState((s) => ({ ...s, step }));
 
+  async function finish() {
+    setSaving(true);
+    try {
+      // 1. Profile — gate: if this fails, abort entirely.
+      await api.companyProfile.upsertCompanyProfile({
+        about: state.companyName.trim(),
+        website: state.companyWebsite.trim(),
+        logo: state.companyLogoUrl.trim(),
+        locations: [],
+      });
+    } catch (err) {
+      toast.error(errorMessage(err));
+      setSaving(false);
+      return; // keep state so the user can retry
+    }
+
+    // Profile saved — safe to clear local state now.
+    clearState();
+
+    const failures: string[] = [];
+
+    // 2. First role (best-effort, only if a title was given).
+    const roleTitle = state.roleTitle.trim();
+    if (roleTitle) {
+      const skills = state.roleSkillsRaw
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+      try {
+        await api.jobs.createJob({
+          title: roleTitle,
+          jdText: "",
+          skills,
+          gateMode: "",
+          city: "",
+          region: "",
+          country: "",
+          remoteMode: "",
+          employmentType: "",
+          salaryMin: BigInt(0),
+          salaryMax: BigInt(0),
+          salaryCurrency: "",
+        });
+      } catch {
+        failures.push("first role draft");
+      }
+    }
+
+    // 3. Team invites — fan-out, best-effort.
+    const validEmails = state.teamEmails.filter(isValidEmail);
+    if (validEmails.length > 0) {
+      const results = await Promise.allSettled(
+        validEmails.map((email) =>
+          api.team.inviteMember({ email, role: "recruiter", tempPassword: "" }),
+        ),
+      );
+      const failedEmails = validEmails.filter((_, i) => results[i]?.status === "rejected");
+      if (failedEmails.length > 0) {
+        failures.push(`invites for ${failedEmails.join(", ")}`);
+      }
+    }
+
+    if (failures.length > 0) {
+      toast.warning(
+        `Setup saved, but some steps need attention: ${failures.join("; ")}. You can retry from Settings in your dashboard.`,
+      );
+    } else {
+      toast.success("You're set up — welcome to the workspace.");
+    }
+
+    setSaving(false);
+    router.push("/company");
+  }
+
   function next() {
     if (state.step === 1 && !state.companyName.trim()) {
       toast.error("Company name is required to continue.");
       return;
     }
     if (state.step === 4) {
-      toast.success("You're set up — welcome to the workspace.");
-      clearState();
-      router.push("/company");
+      void finish();
       return;
     }
     setStep((state.step + 1) as WizardState["step"]);
@@ -368,7 +441,7 @@ export default function CompanyOnboardingPage() {
           <button
             type="button"
             onClick={back}
-            disabled={state.step === 1}
+            disabled={state.step === 1 || saving}
             className="ap-btn ap-btn-ghost disabled:opacity-40"
           >
             <ChevronLeft className="size-4" aria-hidden /> Back
@@ -379,8 +452,12 @@ export default function CompanyOnboardingPage() {
                 Skip for now
               </button>
             )}
-            <button type="submit" className="ap-btn ap-btn-primary">
-              {state.step === 4 ? "Finish setup" : "Continue"}
+            <button
+              type="submit"
+              disabled={saving}
+              className="ap-btn ap-btn-primary disabled:opacity-60"
+            >
+              {state.step === 4 ? (saving ? "Saving…" : "Finish setup") : "Continue"}
               {state.step < 4 && <ChevronRight className="size-4" aria-hidden />}
             </button>
           </div>

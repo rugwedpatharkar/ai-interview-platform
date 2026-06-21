@@ -11,9 +11,17 @@ import { EmptyState, ErrorState } from "./layout.js";
 import { NotificationItem, type NotificationItemData } from "./notification-item.js";
 import { Skeleton } from "./skeleton.js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
+
+function BellIcon(props: React.SVGAttributes<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+    </svg>
+  );
+}
 
 /** A feed row the bell renders. App `Notification` types satisfy this. */
 export interface BellNotification extends NotificationItemData {
@@ -116,7 +124,7 @@ export function NotificationBell({
         aria-label={count > 0 ? `Notifications, ${count} unread` : "Notifications"}
         className="relative rounded-full p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <Bell className="size-5" aria-hidden />
+        <BellIcon className="size-5" aria-hidden />
         {count > 0 && (
           <Badge
             className="absolute -right-0.5 -top-0.5 min-w-4 bg-primary px-1 text-[10px] font-semibold tabular-nums text-primary-foreground"
@@ -153,7 +161,7 @@ export function NotificationBell({
           )}
           {!feed.isLoading && !feed.isError && items.length === 0 && (
             <EmptyState
-              icon={Bell}
+              icon={BellIcon}
               title="You're all caught up"
               description="New notifications will show up here."
             />

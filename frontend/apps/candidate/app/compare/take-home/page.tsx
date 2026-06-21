@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function CompareTakeHomePage() {
   return (
-    <MarketingShell>
+    <MarketingShell audience="hiring-teams">
       <section className="py-16 lg:py-24">
         <div className="ap-wrap">
           <span className="ap-eyebrow">Aptura vs. take-home tests</span>

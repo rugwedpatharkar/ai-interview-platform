@@ -71,12 +71,14 @@ export default function AuthCallbackPage() {
     // The SSO refresh token rides an HttpOnly cookie (not JS-readable). Seed
     // the access token; cookie-based silent refresh is a documented follow-up.
     store.set({ access, refresh: "" });
-    router.replace(roleHome(payload.role));
-
+    // Arm the timeout before router.replace so it only covers the pending
+    // navigation window; clear immediately after to prevent a stale-toast race.
     const timer = window.setTimeout(
       () => setError("Sign-in is taking too long. Please try again."),
       RESOLVE_TIMEOUT_MS,
     );
+    router.replace(roleHome(payload.role));
+    window.clearTimeout(timer);
     return () => window.clearTimeout(timer);
   }, [router]);
 

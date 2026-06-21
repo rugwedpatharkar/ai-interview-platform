@@ -53,7 +53,7 @@ export default async function CompanyPage({
   }));
 
   return (
-    <MarketingShell>
+    <MarketingShell audience="applicants">
       {/* Single page-level h1 for the entity; visible heading is the h2 in the hero. */}
       <h1 className="sr-only">{company.name}</h1>
 

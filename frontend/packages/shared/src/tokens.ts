@@ -30,6 +30,15 @@ export function makeTokenStore(namespace: string): TokenStore {
 
   let current = read();
 
+  // Sync state when another tab writes or clears the same key.
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", (event: StorageEvent) => {
+      if (event.storageArea !== window.localStorage || event.key !== key) return;
+      current = read();
+      for (const listener of listeners) listener();
+    });
+  }
+
   function set(tokens: Tokens | null) {
     current = tokens;
     if (typeof window !== "undefined") {

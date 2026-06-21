@@ -1,39 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ApIcon, MarketingShell } from "@ip/ui";
+import { ApIcon, type ApIconName } from "@ip/ui";
+import { PrivacyPanel } from "./privacy-panel";
 
 /* ============================================================
-   APTURA · LANDING (v3 · Aperture Pro)
-   Implementation of docs/brand/redesign-v3/directions/D-aperture-pro.html
-   16-section feature-rich, dual-audience landing.
-   Pre-launch posture: every claim is truthful.
+   Section primitives (file-local)
    ============================================================ */
-
-export function MarketingLanding() {
-  return (
-    <MarketingShell>
-      <Hero />
-      <StatsBand />
-      <EvidenceFlip />
-      <HowItHappens />
-      <PlatformBento />
-      <IntegrityTimeline />
-      <DefenseSplit />
-      <EvidenceReport />
-      <AdvisoryGate />
-      <CompareTable />
-      <WhatYouGet />
-      <TrustBand />
-      <DesignedFor />
-      <EarlyAccess />
-      <Faq />
-      <FinalCta />
-    </MarketingShell>
-  );
-}
-
-/* ---------- Section primitives (page-local) ---------- */
 
 function Section({
   children,
@@ -86,145 +59,8 @@ function SectionHead({
 }
 
 /* ============================================================
-   1 — HERO
+   Internal helpers (file-local, not exported)
    ============================================================ */
-function Hero() {
-  return (
-    <section className="relative py-12 lg:py-20">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-[-10%] top-[-20%] -z-10 h-[80%]"
-        style={{
-          background:
-            "radial-gradient(60% 50% at 80% 30%, var(--teal-glow), transparent 70%)",
-        }}
-      />
-      <div className="ap-wrap grid items-center gap-10 lg:grid-cols-[1.08fr_1.05fr] lg:gap-12">
-        <div>
-          <span className="ap-status ap-status--live">
-            <span className="ap-dot" /> Live · proctored interview in progress
-          </span>
-          <h1 className="ap-h1 mt-5">
-            Hire on <span className="text-teal">proven merit.</span>
-            <br />
-            Cheat-proof by design.
-          </h1>
-          <p className="mt-5 max-w-[36ch] text-[var(--step-1)] leading-relaxed text-ink-2">
-            Aptura is a hiring marketplace where every candidate sits one strictly proctored AI
-            interview — and every applicant gets a real answer. Companies get an evidence-based
-            report with an integrity timeline. Humans decide.
-          </p>
-          <div className="mt-7 flex flex-wrap gap-2.5">
-            <Link href="/pilot" className="ap-btn ap-btn-primary ap-btn-lg">
-              Book a pilot
-            </Link>
-            <Link href="/sample-report" className="ap-btn ap-btn-ghost ap-btn-lg">
-              <ApIcon name="dl" className="size-4" /> See a sample report
-            </Link>
-          </div>
-          <div className="mt-9 flex flex-wrap gap-x-7 gap-y-2 text-[0.94rem] text-ink-2">
-            <span className="inline-flex items-center gap-2">
-              <ApIcon name="shield-check" className="size-4 text-teal" /> Fullscreen-locked,
-              on-device proctoring
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <ApIcon name="check" className="size-4 text-teal" /> Evidence-based scoring · human
-              decides
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <ApIcon name="user" className="size-4 text-teal" /> Every applicant answered
-            </span>
-          </div>
-        </div>
-        <InterviewHud />
-      </div>
-    </section>
-  );
-}
-
-function InterviewHud() {
-  return (
-    <div className="ap-hud relative" aria-label="Sample proctored interview UI">
-      <div className="ap-hud-topbar">
-        <span className="ap-hud-title">Sample interview · Senior Product Designer</span>
-        <span className="ap-hud-meta">· demo HUD</span>
-        <span className="ml-auto inline-flex items-center gap-1 text-[0.78rem] text-ink-2">
-          <ApIcon name="lock" className="size-[13px]" /> Fullscreen locked
-        </span>
-      </div>
-      <div className="ap-hud-stage">
-        <span className="ap-hud-interviewer">
-          <span className="ap-dot" /> Iris · AI Interviewer
-        </span>
-        <span className="ap-hud-timer">14:38</span>
-        <div className="ap-hud-self" aria-hidden />
-        <div className="ap-hud-caption">
-          <span className="ap-hud-caption-who">Iris</span>
-          Walk me through a tradeoff you made between speed and accessibility on your last launch.
-          Be specific about the constraint.
-        </div>
-      </div>
-      <div className="ap-hud-strip">
-        <div className="ap-hud-chip ap-hud-chip--good">
-          <span className="ap-hud-chip-lbl">Face</span>
-          <span className="ap-hud-chip-val">One</span>
-        </div>
-        <div className="ap-hud-chip ap-hud-chip--good">
-          <span className="ap-hud-chip-lbl">Gaze</span>
-          <span className="ap-hud-chip-val">On</span>
-        </div>
-        <div className="ap-hud-chip ap-hud-chip--good">
-          <span className="ap-hud-chip-lbl">Mic</span>
-          <span className="ap-hud-chip-val">Live</span>
-        </div>
-        <div className="ap-hud-chip ap-hud-chip--good">
-          <span className="ap-hud-chip-lbl">Integrity</span>
-          <span className="ap-hud-chip-val">98</span>
-        </div>
-      </div>
-      <div
-        className="absolute bottom-[14%] -right-3 hidden items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-[0.84rem] shadow-[0_14px_40px_-16px_color-mix(in_oklch,var(--ink-deep)_40%,transparent)] sm:flex"
-        aria-hidden
-      >
-        <span className="size-2 rounded-full bg-gold" />
-        <div>
-          <b className="block text-ink-deep">Evidence captured</b>
-          <span className="text-[0.76rem] text-ink-3">
-            “…I traded a 200ms perf win for WCAG AA…”
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   2 — STATS BAND
-   ============================================================ */
-function StatsBand() {
-  return (
-    <section className="pb-0 pt-0">
-      <div className="ap-wrap">
-        <div className="rounded-3xl border border-line bg-surface-2 px-6 py-7 lg:px-8 lg:py-9">
-          <div className="mb-6 grid max-w-[62ch] gap-1">
-            <span className="ap-eyebrow">By design</span>
-            <h3 className="ap-h3 text-[1.25rem]">The architecture, in numbers.</h3>
-            <p className="text-[0.9rem] text-ink-3">
-              Aptura is pre-launch — these are facts about what the product does, not customer
-              outcomes we haven&apos;t earned yet.
-            </p>
-          </div>
-          <div className="ap-stats">
-            <Stat n="1" l="Proctored AI interview per role. No second takes, no off-platform retries." />
-            <Stat n="40" unit="+" l="On-device proctoring signals. Only typed events leave the browser." />
-            <Stat n="0" l="Raw frames or audio sent to our servers — ever." />
-            <Stat n="100" unit="%" l="Of applicants get an outcome and a reason. No ghosting." />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function Stat({ n, unit, l }: { n: string; unit?: string; l: string }) {
   return (
@@ -235,94 +71,6 @@ function Stat({ n, unit, l }: { n: string; unit?: string; l: string }) {
       </div>
       <div className="ap-stat-l">{l}</div>
     </div>
-  );
-}
-
-/* ============================================================
-   3 — EVIDENCE FLIP
-   ============================================================ */
-function EvidenceFlip() {
-  return (
-    <Section divider>
-      <SectionHead
-        twoCol
-        eyebrow="The shift"
-        h2="Stop hiring on what the résumé says. Start hiring on what the interview proves."
-        lead={
-          <>
-            Résumés are written. Aptura interviews are{" "}
-            <em className="not-italic font-medium text-teal-strong">
-              observed, recorded, and evidenced
-            </em>
-            . Same role, two different signals — and only one of them tells you whether the person
-            can do the work, today.
-          </>
-        }
-      />
-      <div className="relative grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-line bg-surface-2 p-6">
-          <span className="text-[0.76rem] font-semibold uppercase tracking-[0.14em] text-ink-3">
-            What you see today
-          </span>
-          <h3 className="ap-h3 mt-2">A résumé you can&apos;t verify.</h3>
-          <div className="mt-5 rounded-xl border border-dashed border-line-2 bg-surface p-4 font-mono text-[0.82rem] leading-relaxed text-ink-2">
-            <div className="mb-2 font-semibold text-ink-deep">
-              Sample candidate — Sr. Product Designer
-            </div>
-            <ResumeRow y="'24–'26" body="Lead designer · prior employer — claims unverifiable" />
-            <ResumeRow y="'21–'24" body='Sr. designer · prior employer — quotes "drove +38% lift"' />
-            <ResumeRow y="'19–'21" body="Earlier role — undated, ambiguous scope" strike />
-            <ResumeRow y="Edu" body="Design degree · listed certifications · plugin author" />
-            <ResumeRow y="Note" body="Cover letter style suggests AI assistance. No way to verify." muted />
-          </div>
-        </div>
-        <div
-          aria-hidden
-          className="absolute left-1/2 top-1/2 z-10 hidden size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-coral text-coral-ink shadow-[0_6px_20px_-6px_color-mix(in_oklch,var(--coral)_50%,transparent)] lg:grid"
-        >
-          <ApIcon name="arrow" className="size-[18px]" />
-        </div>
-        <div className="rounded-2xl border border-line bg-surface p-6">
-          <span className="text-[0.76rem] font-semibold uppercase tracking-[0.14em] text-teal-strong">
-            What matters · Aptura Report
-          </span>
-          <h3 className="ap-h3 mt-2">Evidence with timestamps and a verdict.</h3>
-          <div className="mt-5 rounded-xl border border-line bg-surface p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <div className="font-semibold text-ink-deep">Sample candidate</div>
-                <div className="text-[0.86rem] text-ink-3">
-                  Sr. Product Designer · sample report
-                </div>
-              </div>
-              <span className="ap-pill ap-pill--good">Advance</span>
-            </div>
-            <div className="mt-4 flex items-center gap-4">
-              <div className="ap-ring" style={{ ["--pct" as string]: 86 }}>
-                <span className="ap-ring-v">86</span>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[0.74rem] uppercase tracking-[0.1em] text-ink-3">
-                  Aptura Score
-                </span>
-                <span className="font-semibold text-ink-deep">Strong evidence</span>
-                <span className="text-[0.84rem] text-ink-2">Top 12% for this role</span>
-              </div>
-            </div>
-            <div className="mt-5 grid gap-2.5">
-              <BarRow name="Problem framing" v="4.2 / 5" pct={84} />
-              <BarRow name="Communication" v="4.5 / 5" pct={90} />
-              <BarRow name="Tradeoff reasoning" v="3.8 / 5" pct={76} />
-              <BarRow name="Domain knowledge" v="4.1 / 5" pct={82} />
-            </div>
-            <div className="mt-4 flex items-center gap-2 border-t border-line pt-4 text-[0.86rem] text-ink-2">
-              <ApIcon name="shield-check" className="size-4 text-good" />
-              Integrity score 98 · 0 high-severity flags · ID-verified · 1 fullscreen exit (24s)
-            </div>
-          </div>
-        </div>
-      </div>
-    </Section>
   );
 }
 
@@ -354,63 +102,6 @@ function BarRow({ name, v, pct }: { name: string; v: string; pct: number }) {
         <i style={{ width: `${pct}%` }} />
       </span>
     </div>
-  );
-}
-
-/* ============================================================
-   4 — HOW IT HAPPENS (5 acts)
-   ============================================================ */
-function HowItHappens() {
-  return (
-    <Section divider id="how">
-      <SectionHead
-        eyebrow="How an Aptura interview happens"
-        h2="One linear, observable process — start to verified decision."
-        lead="No second takes. No off-platform retries. Every step is logged, every signal is on-device, every event is severity-stamped server-side."
-      />
-      <div className="grid gap-5">
-        <Act
-          step="Step 01"
-          n="1.0"
-          title="Invite & identity check"
-          body="One-tap invite from the marketplace or your ATS. The candidate completes a government-ID match and an environment scan before anything starts."
-          bullets={["ID match (government photo)", "Selfie liveness, anti-deepfake", "Device, mic and camera pre-flight"]}
-          visual={<MiniIdentity />}
-        />
-        <Act
-          step="Step 02"
-          n="2.0"
-          title="Live, strictly proctored interview"
-          body="Fullscreen-locked. Camera and mic stay on throughout — there is no mute or camera-off button by design. Iris adapts questions to the role's competencies."
-          bullets={["Adaptive question paths from the rubric", "Live caption + transcript", "40-signal proctoring runs on-device"]}
-          visual={<MiniRoom />}
-        />
-        <Act
-          step="Step 03"
-          n="3.0"
-          title="Integrity timeline"
-          body="Every signal is severity-stamped server-side. Low / medium events are surfaced for human review. High-severity events auto-end the session — there is no debate later."
-          bullets={["Low / Medium → advisory to your reviewer", "High severity → server-authoritative auto-end", "Every event has a clip and a reason"]}
-          visual={<MiniTimeline />}
-        />
-        <Act
-          step="Step 04"
-          n="4.0"
-          title="Evidence-based scoring"
-          body="The Aptura Core 6 rubric scores each competency on the transcript — every score is backed by a quoted line and a timestamp. No black box."
-          bullets={["Quoted transcript backs every rating", "Calibrated against a bias-audited model", "Re-score on demand — same evidence, new lens"]}
-          visual={<MiniRubric />}
-        />
-        <Act
-          step="Step 05"
-          n="5.0"
-          title="A human makes the call"
-          body="Aptura recommends; your hiring manager decides. Every decision is logged with the reviewer's name, the evidence shown, and the reason given."
-          bullets={["Advisory mode is the default", "Outcome and feedback to every candidate", "Decision audit kept per outcome (reviewer, evidence, reason)"]}
-          visual={<MiniDecision />}
-        />
-      </div>
-    </Section>
   );
 }
 
@@ -594,10 +285,393 @@ function MiniDecision() {
   );
 }
 
+function Node({ label, sub, core }: { label: string; sub: string; core?: boolean }) {
+  if (core) {
+    return (
+      <div className="rounded-2xl border border-teal-strong bg-gradient-to-br from-teal to-teal-strong p-4 text-center text-teal-ink shadow-[0_12px_36px_-16px_color-mix(in_oklch,var(--teal)_60%,transparent)]">
+        <b
+          className="block text-[1rem] font-semibold text-teal-ink"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          {label}
+        </b>
+        <span className="text-[0.84rem]">{sub}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-xl border border-line bg-surface-2 p-3 text-center text-[0.84rem] text-ink-2">
+      <b className="mb-0.5 block text-[0.88rem] font-semibold text-ink-deep">{label}</b>
+      {sub}
+    </div>
+  );
+}
+
+function KV({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-ink-3">{k}</span>
+      <span className="font-semibold text-ink-deep">{v}</span>
+    </div>
+  );
+}
+
+function MatchCard({
+  name,
+  pct,
+  tone,
+}: {
+  name: string;
+  pct: string;
+  tone: "teal" | "coral" | "gold";
+}) {
+  const avBg = {
+    teal: "linear-gradient(135deg, var(--teal), var(--teal-strong))",
+    coral:
+      "linear-gradient(135deg, var(--coral), color-mix(in oklch, var(--coral) 60%, var(--ink-deep)))",
+    gold:
+      "linear-gradient(135deg, var(--gold), color-mix(in oklch, var(--gold) 50%, var(--ink-deep)))",
+  };
+  return (
+    <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-2 px-2.5 py-2">
+      <div className="size-7 rounded-full" style={{ background: avBg[tone] }} />
+      <div className="flex-1 text-[0.84rem]">
+        <b className="block font-semibold text-ink-deep">{name}</b>
+        <span className="text-[0.72rem] text-ink-3">Sr. Product Designer · sample</span>
+      </div>
+      <span className="font-mono text-[0.84rem] font-semibold text-teal-strong">{pct}</span>
+    </div>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="size-2 rounded-full" style={{ background: color }} />
+      {label}
+    </span>
+  );
+}
+
+function Event({
+  sev,
+  stamp,
+  ttl,
+  body,
+  clip,
+  expanded,
+}: {
+  sev: "l" | "m" | "h";
+  stamp: string;
+  ttl: string;
+  body: string;
+  clip: string;
+  expanded?: boolean;
+}) {
+  const dot = {
+    l: "var(--good)",
+    m: "var(--warn)",
+    h: "var(--danger)",
+  }[sev];
+  return (
+    <article
+      className={
+        expanded
+          ? "rounded-2xl border border-coral bg-surface p-4 shadow-[0_6px_24px_-10px_color-mix(in_oklch,var(--coral)_30%,transparent)]"
+          : "rounded-2xl border border-line bg-surface-2 p-4"
+      }
+    >
+      <div className="flex items-center gap-2 font-mono text-[0.78rem] text-ink-3">
+        <span className="size-[7px] rounded-full" style={{ background: dot }} />
+        <span>{stamp}</span>
+      </div>
+      <div
+        className="mt-1.5 text-[1rem] font-semibold text-ink-deep"
+        style={{ fontFamily: "var(--font-display)" }}
+      >
+        {ttl}
+      </div>
+      <p className="mt-1 text-[0.86rem] text-ink-2">{body}</p>
+      <div className="mt-2.5 rounded-lg border border-dashed border-[color-mix(in_oklch,var(--gold)_35%,var(--line))] bg-[color-mix(in_oklch,var(--gold)_15%,var(--surface))] px-2.5 py-2 text-[0.78rem] text-ink-2">
+        {clip}
+      </div>
+    </article>
+  );
+}
+
+function Competency({
+  name,
+  score,
+  pct,
+  quote,
+  stamp,
+}: {
+  name: string;
+  score: string;
+  pct: number;
+  quote: string;
+  stamp: string;
+}) {
+  return (
+    <div className="mt-5 rounded-xl border border-line bg-surface-2 p-4">
+      <div className="flex items-center gap-2.5">
+        <span className="font-semibold text-ink-deep">{name}</span>
+        <span className="ml-auto font-mono font-semibold text-teal-strong">{score}</span>
+      </div>
+      <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-surface-3">
+        <i className="block h-full rounded-full bg-teal" style={{ width: `${pct}%` }} />
+      </div>
+      <blockquote className="mt-3.5 rounded-r-lg border-l-[3px] border-teal bg-surface px-3 py-2.5 text-[0.88rem] leading-relaxed text-ink">
+        <span
+          className="text-[1.4em] leading-none text-teal"
+          style={{ fontFamily: "var(--font-display)" }}
+          aria-hidden
+        >
+          &ldquo;
+        </span>
+        {quote}
+        <span
+          className="text-[1.4em] leading-none text-teal"
+          style={{ fontFamily: "var(--font-display)" }}
+          aria-hidden
+        >
+          &rdquo;
+        </span>
+      </blockquote>
+      <span className="mt-1.5 block font-mono text-[0.74rem] text-ink-3">{stamp}</span>
+    </div>
+  );
+}
+
+function Bullet({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex gap-2.5">
+      <span className="mt-[9px] size-[5px] shrink-0 rounded-full bg-current opacity-50" />
+      {children}
+    </li>
+  );
+}
+
+function CompareRow({ cap, r, t, u }: { cap: string; r: string; t: string; u: string }) {
+  return (
+    <div className="ap-compare-row">
+      <div>{cap}</div>
+      <div>
+        <CompareCell value={r} />
+      </div>
+      <div>
+        <CompareCell value={t} />
+      </div>
+      <div className="ap-compare-us">
+        <CompareCell value={u} us />
+      </div>
+    </div>
+  );
+}
+
+function CompareCell({ value, us }: { value: string; us?: boolean }) {
+  const lower = value.toLowerCase();
+  if (lower === "no") return <span className="ap-compare-no">No</span>;
+  if (lower === "n/a") return <span className="ap-compare-no">N/A</span>;
+  if (lower === "mid") return <span className="ap-compare-mid">Partial</span>;
+  if (us) {
+    return (
+      <span className="ap-compare-yes">
+        <ApIcon name="check" className="size-[14px]" />
+        {value}
+      </span>
+    );
+  }
+  return <span className="ap-compare-no">{value}</span>;
+}
+
+function TrustCol({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
+  return (
+    <div>
+      <span className="ap-eyebrow">{eyebrow}</span>
+      <h4 className="ap-h4 mt-1.5">{title}</h4>
+      <p className="mt-1.5 text-[0.9rem] leading-snug text-ink-2">{body}</p>
+    </div>
+  );
+}
+
+/* ============================================================
+   2 — STATS BAND
+   ============================================================ */
+export function StatsBand() {
+  return (
+    <section className="pb-0 pt-0">
+      <div className="ap-wrap">
+        <div className="rounded-3xl border border-line bg-surface-2 px-6 py-7 lg:px-8 lg:py-9">
+          <div className="mb-6 grid max-w-[62ch] gap-1">
+            <span className="ap-eyebrow">By design</span>
+            <h3 className="ap-h3 text-[1.25rem]">The architecture, in numbers.</h3>
+            <p className="text-[0.9rem] text-ink-3">
+              Aptura is pre-launch — these are facts about what the product does, not customer
+              outcomes we haven&apos;t earned yet.
+            </p>
+          </div>
+          <div className="ap-stats">
+            <Stat n="1" l="Proctored AI interview per role. No second takes, no off-platform retries." />
+            <Stat n="40" unit="+" l="On-device proctoring signals. Only typed events leave the browser." />
+            <Stat n="0" l="Raw frames or audio sent to our servers — ever." />
+            <Stat n="100" unit="%" l="Of applicants get an outcome and a reason. No ghosting." />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================================
+   3 — EVIDENCE FLIP
+   ============================================================ */
+export function EvidenceFlip() {
+  return (
+    <Section divider>
+      <SectionHead
+        twoCol
+        eyebrow="The shift"
+        h2="Stop hiring on what the résumé says. Start hiring on what the interview proves."
+        lead={
+          <>
+            Résumés are written. Aptura interviews are{" "}
+            <em className="not-italic font-medium text-teal-strong">
+              observed, recorded, and evidenced
+            </em>
+            . Same role, two different signals — and only one of them tells you whether the person
+            can do the work, today.
+          </>
+        }
+      />
+      <div className="relative grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-line bg-surface-2 p-6">
+          <span className="text-[0.76rem] font-semibold uppercase tracking-[0.14em] text-ink-3">
+            What you see today
+          </span>
+          <h3 className="ap-h3 mt-2">A résumé you can&apos;t verify.</h3>
+          <div className="mt-5 rounded-xl border border-dashed border-line-2 bg-surface p-4 font-mono text-[0.82rem] leading-relaxed text-ink-2">
+            <div className="mb-2 font-semibold text-ink-deep">
+              Sample candidate — Sr. Product Designer
+            </div>
+            <ResumeRow y="'24–'26" body="Lead designer · prior employer — claims unverifiable" />
+            <ResumeRow y="'21–'24" body='Sr. designer · prior employer — quotes "drove +38% lift"' />
+            <ResumeRow y="'19–'21" body="Earlier role — undated, ambiguous scope" strike />
+            <ResumeRow y="Edu" body="Design degree · listed certifications · plugin author" />
+            <ResumeRow y="Note" body="Cover letter style suggests AI assistance. No way to verify." muted />
+          </div>
+        </div>
+        <div
+          aria-hidden
+          className="absolute left-1/2 top-1/2 z-10 hidden size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-coral text-coral-ink shadow-[0_6px_20px_-6px_color-mix(in_oklch,var(--coral)_50%,transparent)] lg:grid"
+        >
+          <ApIcon name="arrow" className="size-[18px]" />
+        </div>
+        <div className="rounded-2xl border border-line bg-surface p-6">
+          <span className="text-[0.76rem] font-semibold uppercase tracking-[0.14em] text-teal-strong">
+            What matters · Aptura Report
+          </span>
+          <h3 className="ap-h3 mt-2">Evidence with timestamps and a verdict.</h3>
+          <div className="mt-5 rounded-xl border border-line bg-surface p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="font-semibold text-ink-deep">Sample candidate</div>
+                <div className="text-[0.86rem] text-ink-3">
+                  Sr. Product Designer · sample report
+                </div>
+              </div>
+              <span className="ap-pill ap-pill--good">Advance</span>
+            </div>
+            <div className="mt-4 flex items-center gap-4">
+              <div className="ap-ring" style={{ ["--pct" as string]: 86 }}>
+                <span className="ap-ring-v">86</span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[0.74rem] uppercase tracking-[0.1em] text-ink-3">
+                  Aptura Score
+                </span>
+                <span className="font-semibold text-ink-deep">Strong evidence</span>
+                <span className="text-[0.84rem] text-ink-2">Top 12% for this role</span>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-2.5">
+              <BarRow name="Problem framing" v="4.2 / 5" pct={84} />
+              <BarRow name="Communication" v="4.5 / 5" pct={90} />
+              <BarRow name="Tradeoff reasoning" v="3.8 / 5" pct={76} />
+              <BarRow name="Domain knowledge" v="4.1 / 5" pct={82} />
+            </div>
+            <div className="mt-4 flex items-center gap-2 border-t border-line pt-4 text-[0.86rem] text-ink-2">
+              <ApIcon name="shield-check" className="size-4 text-good" />
+              Integrity score 98 · 0 high-severity flags · ID-verified · 1 fullscreen exit (24s)
+            </div>
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+/* ============================================================
+   4 — HOW IT HAPPENS (5 acts)
+   ============================================================ */
+export function HowItHappens() {
+  return (
+    <Section divider id="how">
+      <SectionHead
+        eyebrow="How an Aptura interview happens"
+        h2="One linear, observable process — start to verified decision."
+        lead="No second takes. No off-platform retries. Every step is logged, every signal is on-device, every event is severity-stamped server-side."
+      />
+      <div className="grid gap-5">
+        <Act
+          step="Step 01"
+          n="1.0"
+          title="Invite & identity check"
+          body="One-tap invite from the marketplace or your ATS. The candidate completes a government-ID match and an environment scan before anything starts."
+          bullets={["ID match (government photo)", "Selfie liveness, anti-deepfake", "Device, mic and camera pre-flight"]}
+          visual={<MiniIdentity />}
+        />
+        <Act
+          step="Step 02"
+          n="2.0"
+          title="Live, strictly proctored interview"
+          body="Fullscreen-locked. Camera and mic stay on throughout — there is no mute or camera-off button by design. Iris adapts questions to the role's competencies."
+          bullets={["Adaptive question paths from the rubric", "Live caption + transcript", "40-signal proctoring runs on-device"]}
+          visual={<MiniRoom />}
+        />
+        <Act
+          step="Step 03"
+          n="3.0"
+          title="Integrity timeline"
+          body="Every signal is severity-stamped server-side. Low / medium events are surfaced for human review. High-severity events auto-end the session — there is no debate later."
+          bullets={["Low / Medium → advisory to your reviewer", "High severity → server-authoritative auto-end", "Every event has a clip and a reason"]}
+          visual={<MiniTimeline />}
+        />
+        <Act
+          step="Step 04"
+          n="4.0"
+          title="Evidence-based scoring"
+          body="The Aptura Core 6 rubric scores each competency on the transcript — every score is backed by a quoted line and a timestamp. No black box."
+          bullets={["Quoted transcript backs every rating", "Calibrated against a bias-audited model", "Re-score on demand — same evidence, new lens"]}
+          visual={<MiniRubric />}
+        />
+        <Act
+          step="Step 05"
+          n="5.0"
+          title="A human makes the call"
+          body="Aptura recommends; your hiring manager decides. Every decision is logged with the reviewer's name, the evidence shown, and the reason given."
+          bullets={["Advisory mode is the default", "Outcome and feedback to every candidate", "Decision audit kept per outcome (reviewer, evidence, reason)"]}
+          visual={<MiniDecision />}
+        />
+      </div>
+    </Section>
+  );
+}
+
 /* ============================================================
    5 — PLATFORM BENTO
    ============================================================ */
-function PlatformBento() {
+export function PlatformBento() {
   return (
     <Section divider id="platform">
       <SectionHead
@@ -698,69 +772,10 @@ function PlatformBento() {
   );
 }
 
-function Node({ label, sub, core }: { label: string; sub: string; core?: boolean }) {
-  if (core) {
-    return (
-      <div className="rounded-2xl border border-teal-strong bg-gradient-to-br from-teal to-teal-strong p-4 text-center text-teal-ink shadow-[0_12px_36px_-16px_color-mix(in_oklch,var(--teal)_60%,transparent)]">
-        <b
-          className="block text-[1rem] font-semibold text-teal-ink"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          {label}
-        </b>
-        <span className="text-[0.84rem]">{sub}</span>
-      </div>
-    );
-  }
-  return (
-    <div className="rounded-xl border border-line bg-surface-2 p-3 text-center text-[0.84rem] text-ink-2">
-      <b className="mb-0.5 block text-[0.88rem] font-semibold text-ink-deep">{label}</b>
-      {sub}
-    </div>
-  );
-}
-
-function KV({ k, v }: { k: string; v: string }) {
-  return (
-    <div className="flex justify-between">
-      <span className="text-ink-3">{k}</span>
-      <span className="font-semibold text-ink-deep">{v}</span>
-    </div>
-  );
-}
-
-function MatchCard({
-  name,
-  pct,
-  tone,
-}: {
-  name: string;
-  pct: string;
-  tone: "teal" | "coral" | "gold";
-}) {
-  const avBg = {
-    teal: "linear-gradient(135deg, var(--teal), var(--teal-strong))",
-    coral:
-      "linear-gradient(135deg, var(--coral), color-mix(in oklch, var(--coral) 60%, var(--ink-deep)))",
-    gold:
-      "linear-gradient(135deg, var(--gold), color-mix(in oklch, var(--gold) 50%, var(--ink-deep)))",
-  };
-  return (
-    <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-2 px-2.5 py-2">
-      <div className="size-7 rounded-full" style={{ background: avBg[tone] }} />
-      <div className="flex-1 text-[0.84rem]">
-        <b className="block font-semibold text-ink-deep">{name}</b>
-        <span className="text-[0.72rem] text-ink-3">Sr. Product Designer · sample</span>
-      </div>
-      <span className="font-mono text-[0.84rem] font-semibold text-teal-strong">{pct}</span>
-    </div>
-  );
-}
-
 /* ============================================================
    6 — INTEGRITY TIMELINE
    ============================================================ */
-function IntegrityTimeline() {
+export function IntegrityTimeline() {
   return (
     <Section divider id="integrity">
       <SectionHead
@@ -831,65 +846,10 @@ function IntegrityTimeline() {
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="size-2 rounded-full" style={{ background: color }} />
-      {label}
-    </span>
-  );
-}
-
-function Event({
-  sev,
-  stamp,
-  ttl,
-  body,
-  clip,
-  expanded,
-}: {
-  sev: "l" | "m" | "h";
-  stamp: string;
-  ttl: string;
-  body: string;
-  clip: string;
-  expanded?: boolean;
-}) {
-  const dot = {
-    l: "var(--good)",
-    m: "var(--warn)",
-    h: "var(--danger)",
-  }[sev];
-  return (
-    <article
-      className={
-        expanded
-          ? "rounded-2xl border border-coral bg-surface p-4 shadow-[0_6px_24px_-10px_color-mix(in_oklch,var(--coral)_30%,transparent)]"
-          : "rounded-2xl border border-line bg-surface-2 p-4"
-      }
-    >
-      <div className="flex items-center gap-2 font-mono text-[0.78rem] text-ink-3">
-        <span className="size-[7px] rounded-full" style={{ background: dot }} />
-        <span>{stamp}</span>
-      </div>
-      <div
-        className="mt-1.5 text-[1rem] font-semibold text-ink-deep"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        {ttl}
-      </div>
-      <p className="mt-1 text-[0.86rem] text-ink-2">{body}</p>
-      <div className="mt-2.5 rounded-lg border border-dashed border-[color-mix(in_oklch,var(--gold)_35%,var(--line))] bg-[color-mix(in_oklch,var(--gold)_15%,var(--surface))] px-2.5 py-2 text-[0.78rem] text-ink-2">
-        {clip}
-      </div>
-    </article>
-  );
-}
-
 /* ============================================================
    7 — DEFENSE SPLIT
    ============================================================ */
-function DefenseSplit() {
+export function DefenseSplit() {
   return (
     <Section divider>
       <SectionHead
@@ -921,29 +881,7 @@ function DefenseSplit() {
             ))}
           </ul>
         </div>
-        <div className="ap-def-panel ap-def-panel--privacy">
-          <h3 className="ap-h3 flex items-center gap-2">
-            <ApIcon name="shield-check" className="size-6 text-teal" />
-            What Aptura does <em className="not-italic font-medium text-teal-strong">not</em> do
-          </h3>
-          <ul className="ap-def-list ap-def-list--privacy">
-            {[
-              ["No real-time human watcher.", "Reviewers only see flagged events, after the fact."],
-              ["No raw video or audio leaves the browser.", "Detectors run on-device; only typed events are sent."],
-              ["No emotion or affect inference.", '"Candidate looked stressed" scoring? Never.'],
-              ["No identity matching beyond the ID check.", "No voiceprints, no face match against other databases."],
-              ["No keystroke surveillance for content.", "We track tab-switches, not what you type elsewhere."],
-              ["Encrypted at rest. Deleted on request.", "Right-to-erase honored across every Aptura artifact."],
-            ].map(([b, rest]) => (
-              <li key={b as string}>
-                <ApIcon name="check" />
-                <span>
-                  <b>{b}</b> {rest}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <PrivacyPanel />
       </div>
     </Section>
   );
@@ -952,7 +890,7 @@ function DefenseSplit() {
 /* ============================================================
    8 — EVIDENCE REPORT
    ============================================================ */
-function EvidenceReport() {
+export function EvidenceReport() {
   return (
     <Section divider id="evidence">
       <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_1fr]">
@@ -1038,54 +976,10 @@ function EvidenceReport() {
   );
 }
 
-function Competency({
-  name,
-  score,
-  pct,
-  quote,
-  stamp,
-}: {
-  name: string;
-  score: string;
-  pct: number;
-  quote: string;
-  stamp: string;
-}) {
-  return (
-    <div className="mt-5 rounded-xl border border-line bg-surface-2 p-4">
-      <div className="flex items-center gap-2.5">
-        <span className="font-semibold text-ink-deep">{name}</span>
-        <span className="ml-auto font-mono font-semibold text-teal-strong">{score}</span>
-      </div>
-      <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-surface-3">
-        <i className="block h-full rounded-full bg-teal" style={{ width: `${pct}%` }} />
-      </div>
-      <blockquote className="mt-3.5 rounded-r-lg border-l-[3px] border-teal bg-surface px-3 py-2.5 text-[0.88rem] leading-relaxed text-ink">
-        <span
-          className="text-[1.4em] leading-none text-teal"
-          style={{ fontFamily: "var(--font-display)" }}
-          aria-hidden
-        >
-          “
-        </span>
-        {quote}
-        <span
-          className="text-[1.4em] leading-none text-teal"
-          style={{ fontFamily: "var(--font-display)" }}
-          aria-hidden
-        >
-          ”
-        </span>
-      </blockquote>
-      <span className="mt-1.5 block font-mono text-[0.74rem] text-ink-3">{stamp}</span>
-    </div>
-  );
-}
-
 /* ============================================================
    9 — ADVISORY GATE
    ============================================================ */
-function AdvisoryGate() {
+export function AdvisoryGate() {
   return (
     <Section divider>
       <SectionHead
@@ -1133,19 +1027,10 @@ function AdvisoryGate() {
   );
 }
 
-function Bullet({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex gap-2.5">
-      <span className="mt-[9px] size-[5px] shrink-0 rounded-full bg-current opacity-50" />
-      {children}
-    </li>
-  );
-}
-
 /* ============================================================
    10 — COMPARE TABLE
    ============================================================ */
-function CompareTable() {
+export function CompareTable() {
   return (
     <Section divider>
       <SectionHead
@@ -1186,44 +1071,11 @@ function CompareTable() {
   );
 }
 
-function CompareRow({ cap, r, t, u }: { cap: string; r: string; t: string; u: string }) {
-  return (
-    <div className="ap-compare-row">
-      <div>{cap}</div>
-      <div>
-        <CompareCell value={r} />
-      </div>
-      <div>
-        <CompareCell value={t} />
-      </div>
-      <div className="ap-compare-us">
-        <CompareCell value={u} us />
-      </div>
-    </div>
-  );
-}
-
-function CompareCell({ value, us }: { value: string; us?: boolean }) {
-  const lower = value.toLowerCase();
-  if (lower === "no") return <span className="ap-compare-no">No</span>;
-  if (lower === "n/a") return <span className="ap-compare-no">N/A</span>;
-  if (lower === "mid") return <span className="ap-compare-mid">Partial</span>;
-  if (us) {
-    return (
-      <span className="ap-compare-yes">
-        <ApIcon name="check" className="size-[14px]" />
-        {value}
-      </span>
-    );
-  }
-  return <span className="ap-compare-no">{value}</span>;
-}
-
 /* ============================================================
    11 — WHAT YOU GET
    ============================================================ */
-function WhatYouGet() {
-  const artifacts = [
+export function WhatYouGet() {
+  const artifacts: { tag: string; icon: ApIconName; body: string }[] = [
     {
       tag: "↳ Verified identity",
       icon: "shield-check",
@@ -1279,7 +1131,7 @@ function WhatYouGet() {
 /* ============================================================
    12 — TRUST BAND
    ============================================================ */
-function TrustBand() {
+export function TrustBand() {
   return (
     <Section divider>
       <div className="ap-trust">
@@ -1316,20 +1168,10 @@ function TrustBand() {
   );
 }
 
-function TrustCol({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
-  return (
-    <div>
-      <span className="ap-eyebrow">{eyebrow}</span>
-      <h4 className="ap-h4 mt-1.5">{title}</h4>
-      <p className="mt-1.5 text-[0.9rem] leading-snug text-ink-2">{body}</p>
-    </div>
-  );
-}
-
 /* ============================================================
    13 — DESIGNED FOR
    ============================================================ */
-function DesignedFor() {
+export function DesignedFor() {
   const verticals = [
     ["chip", "Technology", "Engineering, product, design"],
     ["dollar", "Financial services", "Banks, fintech, audit-heavy"],
@@ -1367,16 +1209,16 @@ function DesignedFor() {
 /* ============================================================
    14 — EARLY ACCESS
    ============================================================ */
-function EarlyAccess() {
+export function EarlyAccess() {
   return (
     <Section divider id="pricing">
       <SectionHead
         twoCol
         eyebrow="Early access"
         h2="Aptura is in pre-launch. Talk to us about a pilot."
-        lead="Pricing will land when the public launch does. Until then, we're partnering with a small number of teams to run real proctored interviews against real roles — and shaping pricing around what they actually use."
+        lead="Pricing will land when the public launch does. Until then, we're partnering with a small number of hiring teams to run real proctored interviews against real roles — and shaping pricing around what they actually use."
       />
-      <div className="mx-auto grid max-w-[62rem] gap-3 sm:grid-cols-2">
+      <div className="mx-auto max-w-xl">
         <article
           className="flex flex-col gap-3 rounded-2xl border p-6"
           style={{
@@ -1385,7 +1227,7 @@ function EarlyAccess() {
             borderColor: "color-mix(in oklch, var(--teal) 22%, var(--line))",
           }}
         >
-          <span className="ap-pill ap-pill--teal self-start">For companies</span>
+          <span className="ap-pill ap-pill--teal self-start">For hiring teams</span>
           <h4
             className="text-[1.4rem] font-semibold tracking-[-0.02em] text-ink-deep"
             style={{ fontFamily: "var(--font-display)" }}
@@ -1401,68 +1243,39 @@ function EarlyAccess() {
             Request a pilot →
           </Link>
         </article>
-        <article className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-6">
-          <span className="ap-pill ap-pill--coral self-start">For candidates</span>
-          <h4
-            className="text-[1.4rem] font-semibold tracking-[-0.02em] text-ink-deep"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Join the waitlist
-          </h4>
-          <p className="text-[0.92rem] leading-snug text-ink-2">
-            Be among the first candidates to sit a proctored Aptura interview when roles open. Try
-            the practice round first — no commitment, no scoring.
-          </p>
-          <Link href="/waitlist" className="ap-btn ap-btn-coral ap-btn-sm self-start">
-            Join the waitlist →
-          </Link>
-        </article>
       </div>
     </Section>
   );
 }
 
 /* ============================================================
-   15 — FAQ
+   15 — HIRING TEAMS FAQ (recruiter-POV, 8 items)
    ============================================================ */
-function Faq() {
+export function HiringTeamsFaq() {
   const items = [
-    { aud: "comp", q: "What's actually different about Aptura's interview vs. existing AI video tools?", a: "It's a live, fullscreen-locked, identity-verified interview with on-device proctoring — not an async video upload. Every score points to a quoted transcript line. Reports include an integrity timeline with severity per event." },
-    { aud: "cand", q: "Will a real person watch me during the interview?", a: "No. There is no real-time human watcher. Detectors run on your device; only typed events are sent. Reviewers only see flagged events, after the fact, with the recording encrypted at rest." },
-    { aud: "comp", q: "How is bias handled?", a: "Aptura's scoring model is bias-aware by design: rubric-driven scoring, evidence-linked ratings, advisory recommendations only, and a human signs every outcome. A third-party audit (NYC AEDT-144 methodology or equivalent) is scheduled before public launch." },
-    { aud: "cand", q: "What if I have a disability or need an accommodation?", a: "Accommodations are first-class. Extended time, captions, screen-reader-friendly question delivery, and alternative response modes are all available at request — they do not affect your score or appear in your report." },
-    { aud: "comp", q: 'What does "human decides" mean operationally?', a: "Aptura recommends Advance or Hold — never auto-rejects. A named reviewer signs every outcome. Each decision is logged with the reviewer's name, the evidence shown, and the reason given; retention is configurable per pilot." },
-    { aud: "cand", q: "Can I retake the interview if my connection drops?", a: "Yes. Connection drops are not penalised. If a session is interrupted unexpectedly, you'll get a one-tap re-entry and a fresh recording — without losing prior responses." },
-    { aud: "comp", q: "What happens to the recording, transcript, and proctoring events?", a: "Recordings are encrypted at rest. Retention is configurable per pilot. Right-to-erase is honored across every Aptura artifact — recording, transcript, scoring, and decision metadata." },
-    { aud: "cand", q: "Will I get feedback even if I'm not advanced?", a: "Yes. Every applicant — advanced or not — receives an outcome message with a competency-level note, the recommendation reason, and an option to request a re-score for a different role." },
-    { aud: "comp", q: "Can I bring our own rubric?", a: "Yes — custom rubrics are part of the pilot onboarding. The Aptura Core 6 is the default; you can adapt it to your role and we'll apply the same evidence-linked scoring approach." },
-    { aud: "cand", q: "Does Aptura analyse my face for emotion?", a: "No. We do not infer emotion, affect, or personality from your face or voice. We detect presence, identity match, and proctoring signals — never feelings." },
-    { aud: "comp", q: "How does it integrate with our ATS?", a: "ATS integrations (Greenhouse, Lever, Ashby, Workday, SuccessFactors) are on the roadmap. The core product runs standalone today; pilots typically start with email and CSV handoff into your existing flow. Tell us the ATS you use and we'll build that integration next." },
-    { aud: "cand", q: "Can I practice before the real interview?", a: "Yes. A full practice round mirrors the real one — same UI, same rubric, no scoring against you. You'll see exactly what's being evaluated before you sit the real interview." },
-    { aud: "comp", q: "What if a HIGH-severity event fires by mistake?", a: "A HIGH-severity auto-end can be appealed. The reviewer sees the clip and the reason; if the event was a false positive, the candidate is offered a fresh interview at no cost to either side." },
-    { aud: "cand", q: "I don't have a webcam. Can I still apply?", a: "A working camera and microphone are required for the proctored interview by design. We'll guide you through low-bandwidth and mobile options. Accommodations are honored." },
-    { aud: "comp", q: "Can we white-label the candidate experience?", a: "White-labelling the candidate flow (your branding, your domain) is planned for the post-launch enterprise tier. In a pilot, candidates always see the role and the company name clearly." },
-    { aud: "cand", q: "How long is the interview?", a: "Most Aptura interviews run between 18 and 35 minutes — sized to the rubric for the role. You'll see the expected duration before you start, and there are no surprise rounds." },
+    { q: "What's actually different about Aptura's interview vs. existing AI video tools?", a: "It's a live, fullscreen-locked, identity-verified interview with on-device proctoring — not an async video upload. Every score points to a quoted transcript line. Reports include an integrity timeline with severity per event." },
+    { q: "How is bias handled?", a: "Aptura's scoring model is bias-aware by design: rubric-driven scoring, evidence-linked ratings, advisory recommendations only, and a human signs every outcome. A third-party audit (NYC AEDT-144 methodology or equivalent) is scheduled before public launch." },
+    { q: 'What does "human decides" mean operationally?', a: "Aptura recommends Advance or Hold — never auto-rejects. A named reviewer signs every outcome. Each decision is logged with the reviewer's name, the evidence shown, and the reason given; retention is configurable per pilot." },
+    { q: "What happens to the recording, transcript, and proctoring events?", a: "Recordings are encrypted at rest. Retention is configurable per pilot. Right-to-erase is honored across every Aptura artifact — recording, transcript, scoring, and decision metadata." },
+    { q: "Can I bring our own rubric?", a: "Yes — custom rubrics are part of the pilot onboarding. The Aptura Core 6 is the default; you can adapt it to your role and we'll apply the same evidence-linked scoring approach." },
+    { q: "How does it integrate with our ATS?", a: "ATS integrations (Greenhouse, Lever, Ashby, Workday, SuccessFactors) are on the roadmap. The core product runs standalone today; pilots typically start with email and CSV handoff into your existing flow. Tell us the ATS you use and we'll build that integration next." },
+    { q: "What if a HIGH-severity event fires by mistake?", a: "A HIGH-severity auto-end can be appealed. The reviewer sees the clip and the reason; if the event was a false positive, the candidate is offered a fresh interview at no cost to either side." },
+    { q: "Can we white-label the candidate experience?", a: "White-labelling the candidate flow (your branding, your domain) is planned for the post-launch enterprise tier. In a pilot, candidates always see the role and the company name clearly." },
   ];
+
   return (
     <Section divider id="faq">
-      <SectionHead eyebrow="Questions, answered" h2="The objections recruiters and candidates ask first." />
+      <SectionHead
+        eyebrow="Questions, answered"
+        h2="The questions hiring teams ask first."
+      />
       <div className="grid gap-3 lg:grid-cols-2">
-        {items.map(({ aud, q, a }) => (
-          <details key={q} className="group rounded-xl border border-line bg-surface p-4" data-aud={aud}>
+        {items.map(({ q, a }) => (
+          <details key={q} className="group rounded-xl border border-line bg-surface p-4">
             <summary
               className="flex cursor-pointer list-none items-center gap-3 font-semibold text-ink-deep"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              <span
-                className={
-                  aud === "cand"
-                    ? "rounded border border-coral/30 bg-coral-soft px-1.5 py-0.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-coral"
-                    : "rounded border border-teal/30 bg-teal-soft px-1.5 py-0.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-teal-strong"
-                }
-              >
-                {aud === "cand" ? "Candidate" : "Company"}
-              </span>
               {q}
               <span className="ml-auto text-xl text-ink-3 transition-transform group-open:rotate-45">
                 +
@@ -1473,57 +1286,5 @@ function Faq() {
         ))}
       </div>
     </Section>
-  );
-}
-
-/* ============================================================
-   16 — FINAL CTA
-   ============================================================ */
-function FinalCta() {
-  return (
-    <section className="pb-12 pt-16 lg:pb-16">
-      <div className="ap-wrap">
-        <div
-          className="grid gap-6 rounded-[28px] border border-line p-7 lg:grid-cols-2 lg:gap-8 lg:p-12"
-          style={{
-            background:
-              "linear-gradient(135deg, color-mix(in oklch, var(--teal) 12%, var(--surface)), color-mix(in oklch, var(--coral) 6%, var(--surface)))",
-          }}
-        >
-          <article className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-6 lg:p-7">
-            <span className="ap-eyebrow text-teal-strong">For companies</span>
-            <h3
-              className="text-[1.8rem] font-semibold tracking-[-0.022em] text-ink-deep"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Hire on proof. Not pedigree, not polish.
-            </h3>
-            <p className="text-ink-2">
-              Replace résumé screens, take-homes, and ghost rounds with one verified interview and
-              one auditable decision.
-            </p>
-            <Link href="/pilot" className="ap-btn ap-btn-primary ap-btn-lg mt-auto self-start">
-              Book a pilot
-            </Link>
-          </article>
-          <article className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-6 lg:p-7">
-            <span className="ap-eyebrow text-coral">For candidates</span>
-            <h3
-              className="text-[1.8rem] font-semibold tracking-[-0.022em] text-ink-deep"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Get seen. Get interviewed. Get hired.
-            </h3>
-            <p className="text-ink-2">
-              One fair, proctored interview — and a real answer every time. Practice for free; sit
-              the real round when you&apos;re ready.
-            </p>
-            <Link href="/waitlist" className="ap-btn ap-btn-coral ap-btn-lg mt-auto self-start">
-              Join the waitlist
-            </Link>
-          </article>
-        </div>
-      </div>
-    </section>
   );
 }

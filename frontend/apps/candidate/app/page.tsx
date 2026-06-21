@@ -1,9 +1,9 @@
 import { HomeClient } from "./page-client";
 
 export const metadata = {
-  title: "Aptura — Hire on proven merit. Cheat-proof by design.",
+  title: "Aptura — Get seen. Get interviewed. Get hired.",
   description:
-    "One strictly proctored AI interview per candidate; every applicant gets a real answer.",
+    "Apply to roles, sit one fair proctored interview, and always hear back — with a real reason.",
 };
 
 export default function Home() {
