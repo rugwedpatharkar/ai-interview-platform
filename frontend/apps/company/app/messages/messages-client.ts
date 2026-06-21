@@ -1,9 +1,17 @@
 // Messaging transport (company side). Real gRPC client wraps `api.messaging.*`; an in-memory
-// mock lets the Messages tab build before `pnpm gen`. Identical seam to the candidate app — only
-// the mock's seeded `side`/copy differ. Query-key helpers + the poll `subscribe()` seam owned here.
+// mock lets the Messages tab build when NEXT_PUBLIC_MOCK=1. Identical seam to the candidate
+// app — only the mock's seeded `side`/copy differ. Query-key helpers + the poll `subscribe()`
+// seam owned here so the view and cache invalidation never drift.
 //
-// gRPC swap: when `api.messaging.*` is generated, the `MessagingApi` cast disappears and this
-// file collapses to the `@ip/shared/messages.ts` re-export. Components depend on `MessagesClient`.
+// Wired 2026-06-21 — `api.messaging.*` is live (admin transport via createGrpcWebTransport).
+// Field names are camelCase off the wire (protobuf-es). The DTO shapes diverge from proto only
+// in two places: `senderRole` widens from string → `SenderSide` (server emits "candidate" |
+// "recruiter") and `readAt: ""` → `null` (the `mapMessage` normalizer below).
+
+import type {
+  MessageDTO as ProtoMessage,
+  ThreadDTO as ProtoThread,
+} from "@ip/api-client";
 
 import type { useAuth } from "../../lib/auth";
 import type { MessageDTO, MessagesClient, SenderSide, ThreadDTO } from "./types";
@@ -13,11 +21,28 @@ export const USE_MOCK = process.env.NEXT_PUBLIC_MOCK === "1";
 const nz = (s: string | null | undefined): string | null => (s && s.length ? s : null);
 
 // proto sends "" for absent read_at; normalize so the UI tests `readAt === null` for unread.
-export function mapMessage(m: MessageDTO): MessageDTO {
-  return { ...m, readAt: nz(m.readAt) };
+export function mapMessage(m: ProtoMessage | MessageDTO): MessageDTO {
+  return {
+    id: m.id,
+    applicationId: m.applicationId,
+    senderRole: m.senderRole as SenderSide,
+    senderUserId: m.senderUserId,
+    body: m.body,
+    createdAt: m.createdAt,
+    readAt: nz(m.readAt),
+  };
 }
-function mapThread(t: ThreadDTO): ThreadDTO {
-  return { ...t };
+function mapThread(t: ProtoThread | ThreadDTO): ThreadDTO {
+  return {
+    applicationId: t.applicationId,
+    candidateUserId: t.candidateUserId,
+    recruiterUserId: t.recruiterUserId,
+    jobTitle: t.jobTitle,
+    companyName: t.companyName,
+    lastMessageAt: t.lastMessageAt,
+    lastSnippet: t.lastSnippet,
+    unread: t.unread,
+  };
 }
 
 export const listQueryKey = () => ["messages", "threads"] as const;
@@ -26,21 +51,13 @@ export const threadQueryKey = (applicationId: string) =>
 
 type Api = ReturnType<typeof useAuth>["api"];
 
-// The generated client doesn't carry `messaging` until `pnpm gen` runs; this is the seam.
-interface MessagingApi {
-  messaging: {
-    sendMessage(req: { applicationId: string; body: string }): Promise<MessageDTO>;
-    listThreads(req: Record<string, never>): Promise<{ threads: ThreadDTO[] }>;
-    listMessages(req: { applicationId: string }): Promise<{ messages: MessageDTO[] }>;
-    markRead(req: { applicationId: string }): Promise<{ applicationId: string; unread: number }>;
-  };
-}
-
-/** Real gRPC client. Wraps `api.messaging.*` directly until the shared package lands. */
+/** Real gRPC client over `api.messaging.*`. The MessagesClient seam is what consumers depend on;
+ *  this adapter just owns the proto ↔ DTO mapping (normalize empty strings, narrow senderRole). */
 export function createMessagesClient(api: Api): MessagesClient {
-  const m = (api as unknown as MessagingApi).messaging;
+  const m = api.messaging;
   const client: MessagesClient = {
     async send(applicationId, body) {
+      // The server is the authority on the cap + identity; we send the trimmed body.
       return mapMessage(await m.sendMessage({ applicationId, body: body.trim() }));
     },
     async listThreads() {
@@ -55,6 +72,8 @@ export function createMessagesClient(api: Api): MessagesClient {
     },
     listQueryKey,
     threadQueryKey,
+    // v1 = short-poll; swapping to SSE replaces ONLY this body. The write path, query keys, and
+    // MessageThreadView stay untouched.
     subscribe(applicationId) {
       return {
         queryKey: threadQueryKey(applicationId),
@@ -65,7 +84,7 @@ export function createMessagesClient(api: Api): MessagesClient {
   return client;
 }
 
-/** In-memory mock so the Messages tab builds + demos before `pnpm gen`. Seeds one inbound
+/** In-memory mock so the Messages tab builds + demos under NEXT_PUBLIC_MOCK. Seeds one inbound
  *  candidate message so a recruiter opening the tab sees a started conversation. */
 export function makeMockMessagesClient(applicationId: string, side: SenderSide): MessagesClient {
   const now = () => new Date().toISOString();
