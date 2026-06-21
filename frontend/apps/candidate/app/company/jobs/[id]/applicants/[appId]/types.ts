@@ -1,8 +1,9 @@
 // FE-facing shapes for the enriched candidate report + integrity timeline. Field names
-// are the camelCased protobuf-es projection. The report screen codes against these
-// until the BE deltas (A1 GetIntegrityTimeline + A2 enriched Report) land via `pnpm gen`.
+// are the camelCased protobuf-es projection.
 
-export type Severity = "low" | "medium" | "high";
+import { FlagSeverity } from "@ip/api-client";
+
+export { FlagSeverity };
 export type Recommendation = "advance" | "hold" | "reject";
 
 export interface Evidence {
@@ -31,7 +32,7 @@ export interface ReportDTO {
 
 export interface ProctorFlag {
   type: string;
-  severity: Severity;
+  severity: FlagSeverity;
   at: string; // ISO
   meta: Record<string, string>;
 }

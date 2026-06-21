@@ -2,15 +2,15 @@
 // @generated from file report.proto (package admin.report.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file report.proto.
  */
 export const file_report: GenFile = /*@__PURE__*/
-  fileDesc("CgxyZXBvcnQucHJvdG8SD2FkbWluLnJlcG9ydC52MSI1ChtHZXRJbnRlZ3JpdHlUaW1lbGluZVJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkinAEKC1Byb2N0b3JGbGFnEgwKBHR5cGUYASABKAkSEAoIc2V2ZXJpdHkYAiABKAkSCgoCYXQYAyABKAkSNAoEbWV0YRgEIAMoCzImLmFkbWluLnJlcG9ydC52MS5Qcm9jdG9yRmxhZy5NZXRhRW50cnkaKwoJTWV0YUVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEipAEKEUludGVncml0eVRpbWVsaW5lEhcKD2ludGVncml0eV9zY29yZRgBIAEoBRIrCgVmbGFncxgCIAMoCzIcLmFkbWluLnJlcG9ydC52MS5Qcm9jdG9yRmxhZxIVCg1yZWNvcmRpbmdfdXJsGAMgASgJEhcKD2F1dG9fdGVybWluYXRlZBgEIAEoCBIZChF0ZXJtaW5hdGVkX3JlYXNvbhgFIAEoCSIqChBHZXRSZXBvcnRSZXF1ZXN0EhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJIiQKEkxpc3RSZXBvcnRzUmVxdWVzdBIOCgZqb2JfaWQYASABKAkiLQoIRXZpZGVuY2USDQoFcXVvdGUYASABKAkSEgoKdHVybl9pbmRleBgCIAEoBSJ0Cg9Db21wZXRlbmN5U2NvcmUSEgoKY29tcGV0ZW5jeRgBIAEoCRINCgVzY29yZRgCIAEoARIRCglyYXRpb25hbGUYAyABKAkSKwoIZXZpZGVuY2UYBCADKAsyGS5hZG1pbi5yZXBvcnQudjEuRXZpZGVuY2UiSQoQSW50ZWdyaXR5U3VtbWFyeRINCgVzY29yZRgBIAEoARINCgVmbGFncxgCIAMoCRIXCg9hdXRvX3Rlcm1pbmF0ZWQYAyABKAgiswIKD0ludGVydmlld1JlcG9ydBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIZChFjYW5kaWRhdGVfdXNlcl9pZBgCIAEoCRINCgVzdGF0ZRgDIAEoCRIZChFleGVjdXRpdmVfc3VtbWFyeRgEIAEoCRISCgpoaWdobGlnaHRzGAUgAygJEg0KBXJpc2tzGAYgAygJEhUKDW92ZXJhbGxfc2NvcmUYByABKAESFgoOcmVjb21tZW5kYXRpb24YCCABKAkSOwoRY29tcGV0ZW5jeV9zY29yZXMYCSADKAsyIC5hZG1pbi5yZXBvcnQudjEuQ29tcGV0ZW5jeVNjb3JlEjQKCWludGVncml0eRgKIAEoCzIhLmFkbWluLnJlcG9ydC52MS5JbnRlZ3JpdHlTdW1tYXJ5Ij8KClJlcG9ydExpc3QSMQoHcmVwb3J0cxgBIAMoCzIgLmFkbWluLnJlcG9ydC52MS5JbnRlcnZpZXdSZXBvcnQiMQoMUmVwb3J0RXhwb3J0EhAKCGZpbGVuYW1lGAEgASgJEg8KB2NvbnRlbnQYAiABKAwy8QIKDVJlcG9ydFNlcnZpY2USUAoJR2V0UmVwb3J0EiEuYWRtaW4ucmVwb3J0LnYxLkdldFJlcG9ydFJlcXVlc3QaIC5hZG1pbi5yZXBvcnQudjEuSW50ZXJ2aWV3UmVwb3J0Ek8KC0xpc3RSZXBvcnRzEiMuYWRtaW4ucmVwb3J0LnYxLkxpc3RSZXBvcnRzUmVxdWVzdBobLmFkbWluLnJlcG9ydC52MS5SZXBvcnRMaXN0ElMKDUV4cG9ydFJlcG9ydHMSIy5hZG1pbi5yZXBvcnQudjEuTGlzdFJlcG9ydHNSZXF1ZXN0Gh0uYWRtaW4ucmVwb3J0LnYxLlJlcG9ydEV4cG9ydBJoChRHZXRJbnRlZ3JpdHlUaW1lbGluZRIsLmFkbWluLnJlcG9ydC52MS5HZXRJbnRlZ3JpdHlUaW1lbGluZVJlcXVlc3QaIi5hZG1pbi5yZXBvcnQudjEuSW50ZWdyaXR5VGltZWxpbmViBnByb3RvMw");
+  fileDesc("CgxyZXBvcnQucHJvdG8SD2FkbWluLnJlcG9ydC52MSI1ChtHZXRJbnRlZ3JpdHlUaW1lbGluZVJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkiuwEKC1Byb2N0b3JGbGFnEgwKBHR5cGUYASABKAkSLwoIc2V2ZXJpdHkYAiABKA4yHS5hZG1pbi5yZXBvcnQudjEuRmxhZ1NldmVyaXR5EgoKAmF0GAMgASgJEjQKBG1ldGEYBCADKAsyJi5hZG1pbi5yZXBvcnQudjEuUHJvY3RvckZsYWcuTWV0YUVudHJ5GisKCU1ldGFFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIqQBChFJbnRlZ3JpdHlUaW1lbGluZRIXCg9pbnRlZ3JpdHlfc2NvcmUYASABKAUSKwoFZmxhZ3MYAiADKAsyHC5hZG1pbi5yZXBvcnQudjEuUHJvY3RvckZsYWcSFQoNcmVjb3JkaW5nX3VybBgDIAEoCRIXCg9hdXRvX3Rlcm1pbmF0ZWQYBCABKAgSGQoRdGVybWluYXRlZF9yZWFzb24YBSABKAkiKgoQR2V0UmVwb3J0UmVxdWVzdBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCSIkChJMaXN0UmVwb3J0c1JlcXVlc3QSDgoGam9iX2lkGAEgASgJIi0KCEV2aWRlbmNlEg0KBXF1b3RlGAEgASgJEhIKCnR1cm5faW5kZXgYAiABKAUidAoPQ29tcGV0ZW5jeVNjb3JlEhIKCmNvbXBldGVuY3kYASABKAkSDQoFc2NvcmUYAiABKAESEQoJcmF0aW9uYWxlGAMgASgJEisKCGV2aWRlbmNlGAQgAygLMhkuYWRtaW4ucmVwb3J0LnYxLkV2aWRlbmNlIkkKEEludGVncml0eVN1bW1hcnkSDQoFc2NvcmUYASABKAESDQoFZmxhZ3MYAiADKAkSFwoPYXV0b190ZXJtaW5hdGVkGAMgASgIIrMCCg9JbnRlcnZpZXdSZXBvcnQSFgoOYXBwbGljYXRpb25faWQYASABKAkSGQoRY2FuZGlkYXRlX3VzZXJfaWQYAiABKAkSDQoFc3RhdGUYAyABKAkSGQoRZXhlY3V0aXZlX3N1bW1hcnkYBCABKAkSEgoKaGlnaGxpZ2h0cxgFIAMoCRINCgVyaXNrcxgGIAMoCRIVCg1vdmVyYWxsX3Njb3JlGAcgASgBEhYKDnJlY29tbWVuZGF0aW9uGAggASgJEjsKEWNvbXBldGVuY3lfc2NvcmVzGAkgAygLMiAuYWRtaW4ucmVwb3J0LnYxLkNvbXBldGVuY3lTY29yZRI0CglpbnRlZ3JpdHkYCiABKAsyIS5hZG1pbi5yZXBvcnQudjEuSW50ZWdyaXR5U3VtbWFyeSI/CgpSZXBvcnRMaXN0EjEKB3JlcG9ydHMYASADKAsyIC5hZG1pbi5yZXBvcnQudjEuSW50ZXJ2aWV3UmVwb3J0IjEKDFJlcG9ydEV4cG9ydBIQCghmaWxlbmFtZRgBIAEoCRIPCgdjb250ZW50GAIgASgMKo8BCgxGbGFnU2V2ZXJpdHkSHQoZRkxBR19TRVZFUklUWV9VTlNQRUNJRklFRBAAEhUKEUZMQUdfU0VWRVJJVFlfTE9XEAESFQoRRkxBR19TRVZFUklUWV9NRUQQAhIWChJGTEFHX1NFVkVSSVRZX0hJR0gQAxIaChZGTEFHX1NFVkVSSVRZX0NSSVRJQ0FMEAQy8QIKDVJlcG9ydFNlcnZpY2USUAoJR2V0UmVwb3J0EiEuYWRtaW4ucmVwb3J0LnYxLkdldFJlcG9ydFJlcXVlc3QaIC5hZG1pbi5yZXBvcnQudjEuSW50ZXJ2aWV3UmVwb3J0Ek8KC0xpc3RSZXBvcnRzEiMuYWRtaW4ucmVwb3J0LnYxLkxpc3RSZXBvcnRzUmVxdWVzdBobLmFkbWluLnJlcG9ydC52MS5SZXBvcnRMaXN0ElMKDUV4cG9ydFJlcG9ydHMSIy5hZG1pbi5yZXBvcnQudjEuTGlzdFJlcG9ydHNSZXF1ZXN0Gh0uYWRtaW4ucmVwb3J0LnYxLlJlcG9ydEV4cG9ydBJoChRHZXRJbnRlZ3JpdHlUaW1lbGluZRIsLmFkbWluLnJlcG9ydC52MS5HZXRJbnRlZ3JpdHlUaW1lbGluZVJlcXVlc3QaIi5hZG1pbi5yZXBvcnQudjEuSW50ZWdyaXR5VGltZWxpbmViBnByb3RvMw");
 
 /**
  * @generated from message admin.report.v1.GetIntegrityTimelineRequest
@@ -41,11 +41,11 @@ export type ProctorFlag = Message<"admin.report.v1.ProctorFlag"> & {
   type: string;
 
   /**
-   * "low" | "medium" | "high" (server-authoritative)
+   * server-authoritative
    *
-   * @generated from field: string severity = 2;
+   * @generated from field: admin.report.v1.FlagSeverity severity = 2;
    */
-  severity: string;
+  severity: FlagSeverity;
 
   /**
    * ISO timestamp
@@ -351,6 +351,42 @@ export type ReportExport = Message<"admin.report.v1.ReportExport"> & {
  */
 export const ReportExportSchema: GenMessage<ReportExport> = /*@__PURE__*/
   messageDesc(file_report, 10);
+
+/**
+ * @generated from enum admin.report.v1.FlagSeverity
+ */
+export enum FlagSeverity {
+  /**
+   * @generated from enum value: FLAG_SEVERITY_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: FLAG_SEVERITY_LOW = 1;
+   */
+  LOW = 1,
+
+  /**
+   * @generated from enum value: FLAG_SEVERITY_MED = 2;
+   */
+  MED = 2,
+
+  /**
+   * @generated from enum value: FLAG_SEVERITY_HIGH = 3;
+   */
+  HIGH = 3,
+
+  /**
+   * @generated from enum value: FLAG_SEVERITY_CRITICAL = 4;
+   */
+  CRITICAL = 4,
+}
+
+/**
+ * Describes the enum admin.report.v1.FlagSeverity.
+ */
+export const FlagSeveritySchema: GenEnum<FlagSeverity> = /*@__PURE__*/
+  enumDesc(file_report, 0);
 
 /**
  * ReportService — recruiters read the AI-generated interview report for scored
