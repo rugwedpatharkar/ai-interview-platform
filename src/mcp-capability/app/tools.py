@@ -15,11 +15,13 @@ from datetime import UTC, datetime
 
 from lib.logging import get_logger, log_context
 from lib.observability import counter, histogram, span
+from lib.resilience import with_timeout
 
 from app.chunking import chunk as _chunk
 from app.chunking import content_hash
 from app.retrieval import hybrid_search
 from app.schemas import Citation, IngestResult, KbSearchResult
+from lib import timeouts
 
 log = get_logger(component="mcp_capability.tools")
 
@@ -130,9 +132,19 @@ async def kb_search(query, topic, owner, *, embedder, store, redis, k=5):
         _kb_search_total.inc()
         t0 = time.monotonic()
         try:
-            version = _version(await redis.get(_version_key(owner, topic)))
+            version = _version(
+                await with_timeout(
+                    redis.get(_version_key(owner, topic)),
+                    timeouts.redis(),
+                    op="kb_search.version_read",
+                )
+            )
             cache_key = _cache_key(owner, topic, k, query, version)
-            cached = await redis.get(cache_key)
+            cached = await with_timeout(
+                redis.get(cache_key),
+                timeouts.redis(),
+                op="kb_search.cache_get",
+            )
             if cached is not None:
                 _kb_search_duration.observe((time.monotonic() - t0) * 1000)
                 return KbSearchResult.model_validate_json(cached)
@@ -149,7 +161,11 @@ async def kb_search(query, topic, owner, *, embedder, store, redis, k=5):
                     Citation(**hit["source"]) for hit in hits if hit.get("source")
                 ],
             )
-            await redis.set(cache_key, result.model_dump_json(), ex=_CACHE_TTL_SECONDS)
+            await with_timeout(
+                redis.set(cache_key, result.model_dump_json(), ex=_CACHE_TTL_SECONDS),
+                timeouts.redis(),
+                op="kb_search.cache_set",
+            )
             _kb_search_duration.observe((time.monotonic() - t0) * 1000)
             return result
         except Exception:
@@ -180,7 +196,11 @@ async def _ingest_one(owner, source, *, fetcher, embedder, store, redis):
             digest = content_hash(piece)
             # Dedup within the page too: the seen-set is only written after the loop, so
             # a chunk repeated in one page would otherwise be embedded + upserted twice.
-            if digest in seen_this_batch or await redis.sismember(seen_key, digest):
+            if digest in seen_this_batch or await with_timeout(
+                redis.sismember(seen_key, digest),
+                timeouts.redis(),
+                op="ingest.dedup_check",
+            ):
                 skipped += 1
                 continue
             seen_this_batch.add(digest)
@@ -200,11 +220,23 @@ async def _ingest_one(owner, source, *, fetcher, embedder, store, redis):
         vectors = await embedder.embed(texts)
         await store.upsert(collection, ids, vectors, payloads)
         for payload in payloads:
-            await redis.sadd(seen_key, payload["content_hash"])
-        await redis.expire(seen_key, _SEEN_TTL_SECONDS)
+            await with_timeout(
+                redis.sadd(seen_key, payload["content_hash"]),
+                timeouts.redis(),
+                op="ingest.dedup_add",
+            )
+        await with_timeout(
+            redis.expire(seen_key, _SEEN_TTL_SECONDS),
+            timeouts.redis(),
+            op="ingest.dedup_expire",
+        )
         # Bump the version so a cached kb_search for this (owner, topic) misses and
         # re-reads the now-larger collection (closes the stale-after-ingest window).
-        await redis.incr(_version_key(owner, topic))
+        await with_timeout(
+            redis.incr(_version_key(owner, topic)),
+            timeouts.redis(),
+            op="ingest.version_bump",
+        )
         return len(texts), skipped
 
 

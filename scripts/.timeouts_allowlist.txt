@@ -5,10 +5,3 @@
 /Users/rugwedpatharkar/Projects/Project/src/ai-agents/app/infra/sessions.py:119
 /Users/rugwedpatharkar/Projects/Project/src/ai-agents/app/infra/practice_sessions.py:30
 /Users/rugwedpatharkar/Projects/Project/src/ai-agents/app/infra/practice_sessions.py:35
-/Users/rugwedpatharkar/Projects/Project/src/mcp-capability/app/tools.py:133
-/Users/rugwedpatharkar/Projects/Project/src/mcp-capability/app/tools.py:135
-/Users/rugwedpatharkar/Projects/Project/src/mcp-capability/app/tools.py:152
-/Users/rugwedpatharkar/Projects/Project/src/mcp-capability/app/tools.py:183
-/Users/rugwedpatharkar/Projects/Project/src/mcp-capability/app/tools.py:203
-/Users/rugwedpatharkar/Projects/Project/src/mcp-capability/app/tools.py:204
-/Users/rugwedpatharkar/Projects/Project/src/mcp-capability/app/tools.py:207
