@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file application.proto.
  */
 export const file_application: GenFile = /*@__PURE__*/
-  fileDesc("ChFhcHBsaWNhdGlvbi5wcm90bxIUYWRtaW4uYXBwbGljYXRpb24udjEiLwoMQXBwbHlSZXF1ZXN0Eg4KBmpvYl9pZBgBIAEoCRIPCgdjb25zZW50GAIgASgIIhsKGUxpc3RNeUFwcGxpY2F0aW9uc1JlcXVlc3QiJwoVTGlzdEFwcGxpY2FudHNSZXF1ZXN0Eg4KBmpvYl9pZBgBIAEoCSI0ChpXaXRoZHJhd0FwcGxpY2F0aW9uUmVxdWVzdBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCSJnChNBcHBsaWNhdGlvblJlc3BvbnNlEhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJEg4KBmpvYl9pZBgCIAEoCRIZChFjYW5kaWRhdGVfdXNlcl9pZBgDIAEoCRINCgVzdGF0ZRgEIAEoCSJSCg9BcHBsaWNhdGlvbkxpc3QSPwoMYXBwbGljYXRpb25zGAEgAygLMikuYWRtaW4uYXBwbGljYXRpb24udjEuQXBwbGljYXRpb25SZXNwb25zZTK0AwoSQXBwbGljYXRpb25TZXJ2aWNlElYKBUFwcGx5EiIuYWRtaW4uYXBwbGljYXRpb24udjEuQXBwbHlSZXF1ZXN0GikuYWRtaW4uYXBwbGljYXRpb24udjEuQXBwbGljYXRpb25SZXNwb25zZRJsChJMaXN0TXlBcHBsaWNhdGlvbnMSLy5hZG1pbi5hcHBsaWNhdGlvbi52MS5MaXN0TXlBcHBsaWNhdGlvbnNSZXF1ZXN0GiUuYWRtaW4uYXBwbGljYXRpb24udjEuQXBwbGljYXRpb25MaXN0EmQKDkxpc3RBcHBsaWNhbnRzEisuYWRtaW4uYXBwbGljYXRpb24udjEuTGlzdEFwcGxpY2FudHNSZXF1ZXN0GiUuYWRtaW4uYXBwbGljYXRpb24udjEuQXBwbGljYXRpb25MaXN0EnIKE1dpdGhkcmF3QXBwbGljYXRpb24SMC5hZG1pbi5hcHBsaWNhdGlvbi52MS5XaXRoZHJhd0FwcGxpY2F0aW9uUmVxdWVzdBopLmFkbWluLmFwcGxpY2F0aW9uLnYxLkFwcGxpY2F0aW9uUmVzcG9uc2ViBnByb3RvMw");
+  fileDesc("ChFhcHBsaWNhdGlvbi5wcm90bxIUYWRtaW4uYXBwbGljYXRpb24udjEiLwoMQXBwbHlSZXF1ZXN0Eg4KBmpvYl9pZBgBIAEoCRIPCgdjb25zZW50GAIgASgIIhsKGUxpc3RNeUFwcGxpY2F0aW9uc1JlcXVlc3QiTgoVTGlzdEFwcGxpY2FudHNSZXF1ZXN0Eg4KBmpvYl9pZBgBIAEoCRIRCglwYWdlX3NpemUYAiABKAUSEgoKcGFnZV90b2tlbhgDIAEoCSI0ChpXaXRoZHJhd0FwcGxpY2F0aW9uUmVxdWVzdBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCSJnChNBcHBsaWNhdGlvblJlc3BvbnNlEhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJEg4KBmpvYl9pZBgCIAEoCRIZChFjYW5kaWRhdGVfdXNlcl9pZBgDIAEoCRINCgVzdGF0ZRgEIAEoCSKAAQoPQXBwbGljYXRpb25MaXN0Ej8KDGFwcGxpY2F0aW9ucxgBIAMoCzIpLmFkbWluLmFwcGxpY2F0aW9uLnYxLkFwcGxpY2F0aW9uUmVzcG9uc2USFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJEhMKC3RvdGFsX2NvdW50GAMgASgDMrQDChJBcHBsaWNhdGlvblNlcnZpY2USVgoFQXBwbHkSIi5hZG1pbi5hcHBsaWNhdGlvbi52MS5BcHBseVJlcXVlc3QaKS5hZG1pbi5hcHBsaWNhdGlvbi52MS5BcHBsaWNhdGlvblJlc3BvbnNlEmwKEkxpc3RNeUFwcGxpY2F0aW9ucxIvLmFkbWluLmFwcGxpY2F0aW9uLnYxLkxpc3RNeUFwcGxpY2F0aW9uc1JlcXVlc3QaJS5hZG1pbi5hcHBsaWNhdGlvbi52MS5BcHBsaWNhdGlvbkxpc3QSZAoOTGlzdEFwcGxpY2FudHMSKy5hZG1pbi5hcHBsaWNhdGlvbi52MS5MaXN0QXBwbGljYW50c1JlcXVlc3QaJS5hZG1pbi5hcHBsaWNhdGlvbi52MS5BcHBsaWNhdGlvbkxpc3QScgoTV2l0aGRyYXdBcHBsaWNhdGlvbhIwLmFkbWluLmFwcGxpY2F0aW9uLnYxLldpdGhkcmF3QXBwbGljYXRpb25SZXF1ZXN0GikuYWRtaW4uYXBwbGljYXRpb24udjEuQXBwbGljYXRpb25SZXNwb25zZWIGcHJvdG8z");
 
 /**
  * @generated from message admin.application.v1.ApplyRequest
@@ -55,6 +55,20 @@ export type ListApplicantsRequest = Message<"admin.application.v1.ListApplicants
    * @generated from field: string job_id = 1;
    */
   jobId: string;
+
+  /**
+   * server clamps to [1, 200], default 50
+   *
+   * @generated from field: int32 page_size = 2;
+   */
+  pageSize: number;
+
+  /**
+   * opaque base64 cursor; empty = first page
+   *
+   * @generated from field: string page_token = 3;
+   */
+  pageToken: string;
 };
 
 /**
@@ -121,6 +135,20 @@ export type ApplicationList = Message<"admin.application.v1.ApplicationList"> & 
    * @generated from field: repeated admin.application.v1.ApplicationResponse applications = 1;
    */
   applications: ApplicationResponse[];
+
+  /**
+   * empty when no more pages
+   *
+   * @generated from field: string next_page_token = 2;
+   */
+  nextPageToken: string;
+
+  /**
+   * only on first page (page_token == ""); 0 otherwise
+   *
+   * @generated from field: int64 total_count = 3;
+   */
+  totalCount: bigint;
 };
 
 /**

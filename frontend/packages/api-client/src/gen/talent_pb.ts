@@ -10,12 +10,21 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file talent.proto.
  */
 export const file_talent: GenFile = /*@__PURE__*/
-  fileDesc("Cgx0YWxlbnQucHJvdG8SD2FkbWluLnRhbGVudC52MSITChFUYWxlbnRQb29sUmVxdWVzdCJDCgtUYWxlbnRFbnRyeRIZChFjYW5kaWRhdGVfdXNlcl9pZBgBIAEoCRIZChFhcHBsaWNhdGlvbl9jb3VudBgCIAEoAyI7CgpUYWxlbnRQb29sEi0KB2VudHJpZXMYASADKAsyHC5hZG1pbi50YWxlbnQudjEuVGFsZW50RW50cnkyYQoNVGFsZW50U2VydmljZRJQCg1HZXRUYWxlbnRQb29sEiIuYWRtaW4udGFsZW50LnYxLlRhbGVudFBvb2xSZXF1ZXN0GhsuYWRtaW4udGFsZW50LnYxLlRhbGVudFBvb2xiBnByb3RvMw");
+  fileDesc("Cgx0YWxlbnQucHJvdG8SD2FkbWluLnRhbGVudC52MSI6ChFUYWxlbnRQb29sUmVxdWVzdBIRCglwYWdlX3NpemUYASABKAUSEgoKcGFnZV90b2tlbhgCIAEoCSJDCgtUYWxlbnRFbnRyeRIZChFjYW5kaWRhdGVfdXNlcl9pZBgBIAEoCRIZChFhcHBsaWNhdGlvbl9jb3VudBgCIAEoAyJpCgpUYWxlbnRQb29sEi0KB2VudHJpZXMYASADKAsyHC5hZG1pbi50YWxlbnQudjEuVGFsZW50RW50cnkSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJEhMKC3RvdGFsX2NvdW50GAMgASgDMmEKDVRhbGVudFNlcnZpY2USUAoNR2V0VGFsZW50UG9vbBIiLmFkbWluLnRhbGVudC52MS5UYWxlbnRQb29sUmVxdWVzdBobLmFkbWluLnRhbGVudC52MS5UYWxlbnRQb29sYgZwcm90bzM");
 
 /**
  * @generated from message admin.talent.v1.TalentPoolRequest
  */
 export type TalentPoolRequest = Message<"admin.talent.v1.TalentPoolRequest"> & {
+  /**
+   * @generated from field: int32 page_size = 1;
+   */
+  pageSize: number;
+
+  /**
+   * @generated from field: string page_token = 2;
+   */
+  pageToken: string;
 };
 
 /**
@@ -55,6 +64,16 @@ export type TalentPool = Message<"admin.talent.v1.TalentPool"> & {
    * @generated from field: repeated admin.talent.v1.TalentEntry entries = 1;
    */
   entries: TalentEntry[];
+
+  /**
+   * @generated from field: string next_page_token = 2;
+   */
+  nextPageToken: string;
+
+  /**
+   * @generated from field: int64 total_count = 3;
+   */
+  totalCount: bigint;
 };
 
 /**

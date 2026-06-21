@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file decision.proto.
  */
 export const file_decision: GenFile = /*@__PURE__*/
-  fileDesc("Cg5kZWNpc2lvbi5wcm90bxIRYWRtaW4uZGVjaXNpb24udjEiOAoNRGVjaWRlUmVxdWVzdBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIPCgdvdXRjb21lGAIgASgJIi0KE092ZXJyaWRlR2F0ZVJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkiOQoQRGVjaXNpb25SZXNwb25zZRIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRINCgVzdGF0ZRgCIAEoCTLKAQoPRGVjaXNpb25TZXJ2aWNlEloKEURlY2lkZUFwcGxpY2F0aW9uEiAuYWRtaW4uZGVjaXNpb24udjEuRGVjaWRlUmVxdWVzdBojLmFkbWluLmRlY2lzaW9uLnYxLkRlY2lzaW9uUmVzcG9uc2USWwoMT3ZlcnJpZGVHYXRlEiYuYWRtaW4uZGVjaXNpb24udjEuT3ZlcnJpZGVHYXRlUmVxdWVzdBojLmFkbWluLmRlY2lzaW9uLnYxLkRlY2lzaW9uUmVzcG9uc2ViBnByb3RvMw");
+  fileDesc("Cg5kZWNpc2lvbi5wcm90bxIRYWRtaW4uZGVjaXNpb24udjEiOAoNRGVjaWRlUmVxdWVzdBIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIPCgdvdXRjb21lGAIgASgJIi0KE092ZXJyaWRlR2F0ZVJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkiOQoQRGVjaXNpb25SZXNwb25zZRIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRINCgVzdGF0ZRgCIAEoCSJYChZIb2xkQXBwbGljYXRpb25SZXF1ZXN0EhYKDmFwcGxpY2F0aW9uX2lkGAEgASgJEhMKC3JlYXNvbl9jb2RlGAIgASgJEhEKCWZyZWVfdGV4dBgDIAEoCSJbChdIb2xkQXBwbGljYXRpb25SZXNwb25zZRIWCg5hcHBsaWNhdGlvbl9pZBgBIAEoCRIRCgluZXdfc3RhdGUYAiABKAkSFQoNYXVkaXRlZF9hdF9tcxgDIAEoAyJaChhSZWplY3RBcHBsaWNhdGlvblJlcXVlc3QSFgoOYXBwbGljYXRpb25faWQYASABKAkSEwoLcmVhc29uX2NvZGUYAiABKAkSEQoJZnJlZV90ZXh0GAMgASgJIl0KGVJlamVjdEFwcGxpY2F0aW9uUmVzcG9uc2USFgoOYXBwbGljYXRpb25faWQYASABKAkSEQoJbmV3X3N0YXRlGAIgASgJEhUKDWF1ZGl0ZWRfYXRfbXMYAyABKAMypAMKD0RlY2lzaW9uU2VydmljZRJaChFEZWNpZGVBcHBsaWNhdGlvbhIgLmFkbWluLmRlY2lzaW9uLnYxLkRlY2lkZVJlcXVlc3QaIy5hZG1pbi5kZWNpc2lvbi52MS5EZWNpc2lvblJlc3BvbnNlElsKDE92ZXJyaWRlR2F0ZRImLmFkbWluLmRlY2lzaW9uLnYxLk92ZXJyaWRlR2F0ZVJlcXVlc3QaIy5hZG1pbi5kZWNpc2lvbi52MS5EZWNpc2lvblJlc3BvbnNlEmgKD0hvbGRBcHBsaWNhdGlvbhIpLmFkbWluLmRlY2lzaW9uLnYxLkhvbGRBcHBsaWNhdGlvblJlcXVlc3QaKi5hZG1pbi5kZWNpc2lvbi52MS5Ib2xkQXBwbGljYXRpb25SZXNwb25zZRJuChFSZWplY3RBcHBsaWNhdGlvbhIrLmFkbWluLmRlY2lzaW9uLnYxLlJlamVjdEFwcGxpY2F0aW9uUmVxdWVzdBosLmFkbWluLmRlY2lzaW9uLnYxLlJlamVjdEFwcGxpY2F0aW9uUmVzcG9uc2ViBnByb3RvMw");
 
 /**
  * @generated from message admin.decision.v1.DecideRequest
@@ -76,6 +76,114 @@ export const DecisionResponseSchema: GenMessage<DecisionResponse> = /*@__PURE__*
   messageDesc(file_decision, 2);
 
 /**
+ * @generated from message admin.decision.v1.HoldApplicationRequest
+ */
+export type HoldApplicationRequest = Message<"admin.decision.v1.HoldApplicationRequest"> & {
+  /**
+   * @generated from field: string application_id = 1;
+   */
+  applicationId: string;
+
+  /**
+   * @generated from field: string reason_code = 2;
+   */
+  reasonCode: string;
+
+  /**
+   * @generated from field: string free_text = 3;
+   */
+  freeText: string;
+};
+
+/**
+ * Describes the message admin.decision.v1.HoldApplicationRequest.
+ * Use `create(HoldApplicationRequestSchema)` to create a new message.
+ */
+export const HoldApplicationRequestSchema: GenMessage<HoldApplicationRequest> = /*@__PURE__*/
+  messageDesc(file_decision, 3);
+
+/**
+ * @generated from message admin.decision.v1.HoldApplicationResponse
+ */
+export type HoldApplicationResponse = Message<"admin.decision.v1.HoldApplicationResponse"> & {
+  /**
+   * @generated from field: string application_id = 1;
+   */
+  applicationId: string;
+
+  /**
+   * @generated from field: string new_state = 2;
+   */
+  newState: string;
+
+  /**
+   * @generated from field: int64 audited_at_ms = 3;
+   */
+  auditedAtMs: bigint;
+};
+
+/**
+ * Describes the message admin.decision.v1.HoldApplicationResponse.
+ * Use `create(HoldApplicationResponseSchema)` to create a new message.
+ */
+export const HoldApplicationResponseSchema: GenMessage<HoldApplicationResponse> = /*@__PURE__*/
+  messageDesc(file_decision, 4);
+
+/**
+ * @generated from message admin.decision.v1.RejectApplicationRequest
+ */
+export type RejectApplicationRequest = Message<"admin.decision.v1.RejectApplicationRequest"> & {
+  /**
+   * @generated from field: string application_id = 1;
+   */
+  applicationId: string;
+
+  /**
+   * @generated from field: string reason_code = 2;
+   */
+  reasonCode: string;
+
+  /**
+   * @generated from field: string free_text = 3;
+   */
+  freeText: string;
+};
+
+/**
+ * Describes the message admin.decision.v1.RejectApplicationRequest.
+ * Use `create(RejectApplicationRequestSchema)` to create a new message.
+ */
+export const RejectApplicationRequestSchema: GenMessage<RejectApplicationRequest> = /*@__PURE__*/
+  messageDesc(file_decision, 5);
+
+/**
+ * @generated from message admin.decision.v1.RejectApplicationResponse
+ */
+export type RejectApplicationResponse = Message<"admin.decision.v1.RejectApplicationResponse"> & {
+  /**
+   * @generated from field: string application_id = 1;
+   */
+  applicationId: string;
+
+  /**
+   * @generated from field: string new_state = 2;
+   */
+  newState: string;
+
+  /**
+   * @generated from field: int64 audited_at_ms = 3;
+   */
+  auditedAtMs: bigint;
+};
+
+/**
+ * Describes the message admin.decision.v1.RejectApplicationResponse.
+ * Use `create(RejectApplicationResponseSchema)` to create a new message.
+ */
+export const RejectApplicationResponseSchema: GenMessage<RejectApplicationResponse> = /*@__PURE__*/
+  messageDesc(file_decision, 6);
+
+/**
  * DecisionService — recruiter decision loop + gate override. Both advance the
  * funnel through the single authority (app/resources/funnel). Manager-only.
  *
@@ -97,6 +205,22 @@ export const DecisionService: GenService<{
     methodKind: "unary";
     input: typeof OverrideGateRequestSchema;
     output: typeof DecisionResponseSchema;
+  },
+  /**
+   * @generated from rpc admin.decision.v1.DecisionService.HoldApplication
+   */
+  holdApplication: {
+    methodKind: "unary";
+    input: typeof HoldApplicationRequestSchema;
+    output: typeof HoldApplicationResponseSchema;
+  },
+  /**
+   * @generated from rpc admin.decision.v1.DecisionService.RejectApplication
+   */
+  rejectApplication: {
+    methodKind: "unary";
+    input: typeof RejectApplicationRequestSchema;
+    output: typeof RejectApplicationResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_decision, 0);
