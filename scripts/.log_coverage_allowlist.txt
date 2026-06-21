@@ -19,6 +19,3 @@ src/admin/app/resources/job_alerts.py:35:create_alert
 src/admin/app/resources/job_alerts.py:59:list_alerts
 src/admin/app/resources/job_alerts.py:63:delete_alert
 src/admin/app/resources/integrity.py:30:get_integrity_timeline
-src/admin/app/resources/saved_jobs.py:13:save_job
-src/admin/app/resources/saved_jobs.py:20:unsave_job
-src/admin/app/resources/saved_jobs.py:24:list_saved_jobs
