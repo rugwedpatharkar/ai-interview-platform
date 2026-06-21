@@ -58,12 +58,26 @@ def _to_proto(r):
     )
 
 
+_SEVERITY_MAP = {
+    "low": report_pb2.FLAG_SEVERITY_LOW,
+    "med": report_pb2.FLAG_SEVERITY_MED,
+    "medium": report_pb2.FLAG_SEVERITY_MED,
+    "high": report_pb2.FLAG_SEVERITY_HIGH,
+    "critical": report_pb2.FLAG_SEVERITY_CRITICAL,
+}
+
+
 def _timeline_proto(t):
     return report_pb2.IntegrityTimeline(
         integrity_score=t["integrity_score"],
         flags=[
             report_pb2.ProctorFlag(
-                type=f["type"], severity=f["severity"], at=f["at"], meta=f["meta"]
+                type=f["type"],
+                severity=_SEVERITY_MAP.get(
+                    f["severity"].lower(), report_pb2.FLAG_SEVERITY_UNSPECIFIED
+                ),
+                at=f["at"],
+                meta=f["meta"],
             )
             for f in t["flags"]
         ],
