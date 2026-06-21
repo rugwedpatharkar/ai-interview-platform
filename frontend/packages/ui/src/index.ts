@@ -147,3 +147,4 @@ export {
   MarketingShell,
   type MarketingShellProps,
 } from "./aperture-chrome.js";
+export { SignInBand, type SignInBandProps } from "./sign-in-band.js";
