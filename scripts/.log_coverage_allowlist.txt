@@ -15,7 +15,4 @@ src/admin/app/resources/talent.py:19:get_talent_pool
 src/admin/app/resources/analytics.py:31:get_funnel_analytics
 src/admin/app/resources/analytics.py:45:get_job_score_distribution
 src/admin/app/resources/analytics.py:106:get_no_ghosting_kpis
-src/admin/app/resources/job_alerts.py:35:create_alert
-src/admin/app/resources/job_alerts.py:59:list_alerts
-src/admin/app/resources/job_alerts.py:63:delete_alert
 src/admin/app/resources/integrity.py:30:get_integrity_timeline
