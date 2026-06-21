@@ -24,9 +24,6 @@ src/admin/app/resources/job.py:108:update_job
 src/admin/app/resources/job.py:130:get_job
 src/admin/app/resources/job.py:138:list_jobs
 src/admin/app/resources/job.py:143:publish_job
-src/admin/app/resources/profile.py:52:upload_resume
-src/admin/app/resources/profile.py:73:get_profile
-src/admin/app/resources/profile.py:80:update_profile
 src/admin/app/resources/recommendations.py:32:get_candidate_recommendations
 src/admin/app/resources/recommendations.py:38:get_job_ranked_candidates
 src/admin/app/resources/preferences.py:16:get_appearance
