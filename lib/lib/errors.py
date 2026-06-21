@@ -27,7 +27,7 @@ class AppError(Exception):
 
 
 class ValidationError(AppError):
-    """Boundary validation failed (bad email, missing required field, oversize input)."""
+    """Boundary validation failed (bad email, missing required field, oversize)."""
 
 
 class NotFoundError(AppError):
