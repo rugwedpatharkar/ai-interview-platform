@@ -1,5 +1,6 @@
 """Application (candidate-job) business logic — transport-agnostic resources."""
 
+from lib.cursors import decode_cursor, encode_cursor
 from lib.logging import bind_ids, get_logger, log_context
 from lib.schemas import Role
 from pymongo.errors import DuplicateKeyError
@@ -93,7 +94,11 @@ async def list_my_applications(identity, *, applications):
         ]
 
 
-async def list_applicants(identity, job_id, *, applications):
+_DEFAULT_PAGE_SIZE = 50
+_MAX_PAGE_SIZE = 200
+
+
+async def list_applicants(identity, job_id, page_size, page_token, *, applications):
     async with log_context(
         log,
         "resource.application.list_applicants",
@@ -101,10 +106,21 @@ async def list_applicants(identity, job_id, *, applications):
     ):
         if identity["role"] not in _MANAGER_ROLES:
             raise ForbiddenError("Only company users can view applicants")
-        return [
-            _to_response(a)
-            for a in await applications.list_by_job(job_id, identity["comp_id"])
-        ]
+        size = max(1, min(page_size or _DEFAULT_PAGE_SIZE, _MAX_PAGE_SIZE))
+        after_id = decode_cursor(page_token)
+        rows, next_after = await applications.list_by_job_paginated(
+            job_id, identity["comp_id"], page_size=size, after_id=after_id
+        )
+        total = (
+            await applications.count_by_job(job_id, identity["comp_id"])
+            if not page_token
+            else 0
+        )
+        return {
+            "applications": [_to_response(a) for a in rows],
+            "next_page_token": encode_cursor(next_after) if next_after else "",
+            "total_count": total,
+        }
 
 
 async def withdraw_application(

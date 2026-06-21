@@ -39,6 +39,27 @@ class ApplicationRepository(BaseRepository[Application]):
     async def list_by_job(self, job_id: str, comp_id: str) -> list[dict]:
         return await self.find_capped({"job_id": job_id, "comp_id": comp_id})
 
+    async def list_by_job_paginated(
+        self, job_id: str, comp_id: str, *, page_size: int, after_id=None
+    ) -> tuple[list[dict], object | None]:
+        """Paginated list_by_job using _id forward-only cursor.
+
+        Fetches page_size+1 rows; if that many arrived a next page exists and the
+        cursor is the (page_size+1)-th doc's _id. Trims result to page_size.
+        """
+        query: dict = {"job_id": job_id, "comp_id": comp_id}
+        if after_id is not None:
+            query["_id"] = {"$gt": after_id}
+        cursor = self.col.find(query).sort("_id", 1).limit(page_size + 1)
+        rows = await cursor.to_list(length=page_size + 1)
+        if len(rows) > page_size:
+            next_after = rows[page_size - 1]["_id"]
+            return rows[:page_size], next_after
+        return rows, None
+
+    async def count_by_job(self, job_id: str, comp_id: str) -> int:
+        return await self.col.count_documents({"job_id": job_id, "comp_id": comp_id})
+
     async def list_by_comp(self, comp_id: str) -> list[dict]:
         return await self.find_capped({"comp_id": comp_id})
 

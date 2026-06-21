@@ -291,6 +291,46 @@ class FakeApplicationRepo:
             if d["job_id"] == job_id and d["comp_id"] == comp_id
         ]
 
+    async def list_by_job_paginated(self, job_id, comp_id, *, page_size, after_id=None):
+        # Mimic real repo: sort by _id ascending, paginate via _id > after_id.
+        rows = sorted(
+            (
+                d
+                for d in self._docs.values()
+                if d["job_id"] == job_id and d["comp_id"] == comp_id
+            ),
+            key=lambda d: d["_id"],
+        )
+        if after_id is not None:
+            rows = [d for d in rows if d["_id"] > after_id]
+        if len(rows) > page_size:
+            return rows[:page_size], rows[page_size - 1]["_id"]
+        return rows, None
+
+    async def count_by_job(self, job_id, comp_id):
+        return sum(
+            1
+            for d in self._docs.values()
+            if d["job_id"] == job_id and d["comp_id"] == comp_id
+        )
+
+    async def seed_applications(self, *, job_id, comp_id, n):
+        """Test-only helper: insert n stub applications with real ObjectId ids so
+        the opaque cursor round-trips through decode_cursor cleanly.
+        """
+        from bson import ObjectId
+
+        for _ in range(n):
+            oid = ObjectId()
+            self._docs[str(oid)] = {
+                "_id": oid,
+                "job_id": job_id,
+                "comp_id": comp_id,
+                "candidate_user_id": f"u-{oid}",
+                "state": "applied",
+            }
+        return job_id
+
     async def get(self, application_id):
         return self._docs.get(application_id)
 
@@ -512,3 +552,18 @@ def fakes():
         "interview_slots": FakeInterviewSlotsRepo(),
         "interview_bookings": FakeInterviewBookingRepo(),
     }
+
+
+@pytest.fixture
+def identity_manager():
+    return {"id": "u-mgr", "role": "company_admin", "comp_id": "c1"}
+
+
+@pytest.fixture
+def identity_candidate():
+    return {"id": "u-cand", "role": "candidate", "comp_id": ""}
+
+
+@pytest.fixture
+def fake_apps_pag():
+    return FakeApplicationRepo()

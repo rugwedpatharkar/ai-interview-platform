@@ -125,7 +125,9 @@ async def test_apply_concurrent_race_maps_to_conflict(fakes):
 async def test_candidate_cannot_list_applicants(fakes):
     jid = await _published_job(fakes)
     with pytest.raises(ForbiddenError):
-        await application.list_applicants(CAND, jid, applications=fakes["applications"])
+        await application.list_applicants(
+            CAND, jid, 50, "", applications=fakes["applications"]
+        )
 
 
 @pytest.mark.asyncio
@@ -140,15 +142,19 @@ async def test_manager_lists_applicants_company_scoped(fakes):
         publisher=fakes["publisher"],
     )
     mine = await application.list_applicants(
-        ADMIN, jid, applications=fakes["applications"]
+        ADMIN, jid, 50, "", applications=fakes["applications"]
     )
-    assert len(mine) == 1
+    assert len(mine["applications"]) == 1
+    assert mine["total_count"] == 1
     other = await application.list_applicants(
         {"id": "x", "role": "company_admin", "comp_id": "c2"},
         jid,
+        50,
+        "",
         applications=fakes["applications"],
     )
-    assert other == []
+    assert other["applications"] == []
+    assert other["total_count"] == 0
 
 
 @pytest.mark.asyncio
