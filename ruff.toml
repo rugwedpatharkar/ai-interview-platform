@@ -36,5 +36,6 @@ extend-immutable-calls = [
 known-first-party = ["app"]
 
 [lint.per-file-ignores]
-# Asserts and fake secrets are expected in tests, not security findings.
-"**/tests/**" = ["S101", "S105", "S106", "S107"]
+# Asserts, fake secrets, and subprocess invocations (gate-guard tests) are expected
+# in tests, not security findings.
+"**/tests/**" = ["S101", "S105", "S106", "S107", "S603", "S607"]
