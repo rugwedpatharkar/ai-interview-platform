@@ -22,10 +22,6 @@ src/admin/app/resources/job.py:138:list_jobs
 src/admin/app/resources/job.py:143:publish_job
 src/admin/app/resources/recommendations.py:32:get_candidate_recommendations
 src/admin/app/resources/recommendations.py:38:get_job_ranked_candidates
-src/admin/app/resources/application.py:25:apply
-src/admin/app/resources/application.py:77:list_my_applications
-src/admin/app/resources/application.py:85:list_applicants
-src/admin/app/resources/application.py:94:withdraw_application
 src/admin/app/resources/recommend.py:13:fan_out_match
 src/admin/app/resources/aptitude.py:47:get_aptitude_test
 src/admin/app/resources/aptitude.py:90:grade_aptitude
