@@ -15,6 +15,10 @@ echo "==> ruff format (check)"
 echo "==> ruff lint (incl. security S-rules)"
 "$RUFF" check .
 
+echo "==> robustness guards (timeouts + log-coverage)"
+"$PY" "$ROOT/scripts/check_timeouts.py"
+"$PY" "$ROOT/scripts/check_log_coverage.py"
+
 echo "==> pip-audit (dependency CVEs)"
 "$ROOT/.venv/bin/pip-audit"
 
