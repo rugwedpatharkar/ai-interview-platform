@@ -1,7 +1,10 @@
-# Backend — Job marketplace / search (`/jobs`) · contract
+# Marketplace search — Backend contract (v3 · frozen)
 
-> **Screen.** Public job marketplace / search. **FE consumer:** `frontend_marketplace-search.md`.
-> **Status.** `EXISTING — reuse v2` (live). Source: `../../v2-screens/marketplace-search.md`.
+> **Screen.** Public job marketplace / search (`/jobs`). **FE consumer:** [`frontend_marketplace-search.md`](./frontend_marketplace-search.md).
+> **Status:** `EXISTING — reuse v2` · live · no proto delta, no new collections, no new events.
+> **Anti-fiction reminder:** Aptura is pre-launch. This contract documents only what the UI consumes today;
+> no fabricated job counts, no fake employers, no claimed integrations — see the anti-fiction rule in
+> [`_design-language.md`](../_design-language.md).
 > **Real-vs-mock today.** The public REST `GET /public/jobs` is **live** (token-free, SSR-read) and the authed
 > mirror `discovery.searchJobs` gRPC shares the same resource layer. FE has a `NEXT_PUBLIC_MOCK` fixture for
 > offline dev; flipping the flag points at the real endpoint with no code change.
@@ -92,7 +95,9 @@ export interface SearchJobsParams {
 ## Cross-references
 
 - Restates: `../../v2-screens/marketplace-search.md` §A.
-- Shares `resources/discovery.py` with `../job-detail/backend_job-detail.md` (`get_public_job_detail`) and
-  `../company-profile/backend_company-profile.md` (`list_company_jobs` reuses `search_jobs` projection — same
-  `JobCardDTO`).
+- Design language: [`../_design-language.md`](../_design-language.md).
+- Demo to match: [`../../../brand/redesign-v3/directions/D-aperture-pro.html`](../../../brand/redesign-v3/directions/D-aperture-pro.html).
+- Shares `resources/discovery.py` with [`../job-detail/backend_job-detail.md`](../job-detail/backend_job-detail.md)
+  (`get_public_job_detail`) and [`../company-profile/backend_company-profile.md`](../company-profile/backend_company-profile.md)
+  (`list_company_jobs` reuses `search_jobs` projection — same `JobCardDTO`).
 - Pillar: `../../v2/2026-06-19-job-marketplace.md` (Inc 1, Mongo `$text`+`$facet`).

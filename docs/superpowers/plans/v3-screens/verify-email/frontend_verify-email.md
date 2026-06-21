@@ -1,36 +1,160 @@
-# Frontend — `verify-email` (Midnight v3)
+# Verify email — Frontend implementation plan (v3 · Aperture Pro)
 
-> **Screen:** Verify email · **Goal:** reskin the existing verify screen (token-from-URL + `VerifyCard` with resend) to the **Midnight** auth split-panel, reusing the verify/resend handlers verbatim (presentational only).
-> **Unified route + role:** `/verify` · auth (signed-out). Token read from `?token=`.
-> **Mockup:** ✗ → **build in Task 0** as `docs/brand/redesign-v2/verify-email.html` (auth split-panel: brand/value panel + verify-status card across its working/ok/error/invalid states).
-> **Existing code it reskins:**
-> - `frontend/apps/candidate/app/verify/page.tsx` (reads `?token=`; `verify({ token })` → status; `resendVerification({ email })`; wraps `VerifyCard` in `<AuthLayout selfFramed>`)
-> - `frontend/packages/ui/src/verify-card.tsx` (`@ip/ui VerifyCard` + `VerifyStatus`)
-> - `frontend/apps/candidate/components/auth-layout.tsx` + `auth-split-panel.tsx`
+> 🚨 **Mandatory rule:** This is a **complete rebuild** of this screen, not a reskin. You are NOT
+> modifying the existing UI; you are creating new UI that matches the **Aperture Pro** design
+> language exactly. Backend contracts are frozen — reuse them. UI is new — match the demo
+> ([D-aperture-pro.html](../../../brand/redesign-v3/directions/D-aperture-pro.html)).
+> Read [`_design-language.md`](../_design-language.md) before you write any markup.
+
+## Goal
+
+Public, token-scoped **email-verification surface**. Rebuild the existing self-framed `<VerifyCard>`
+UI as the centered **auth-card** primitive with four explicit states (`working` spinner / `ok`
+success / `error` message + resend / `invalid` missing-token). The one-shot
+`useAuth().api.auth.verify({ token })` call (guarded by a `called` ref so it never fires twice in
+StrictMode) and the `api.auth.resendVerification({ email })` action are preserved verbatim.
+
+## Route + role
+
+`/verify` · **public** (signed-out, token-scoped via `?token=`). On `ok` → "Continue to your
+home" button → `/` (candidate home).
+
+## Approved mockup (build to this exactly)
+
+- **Design language (canonical):** [`../_design-language.md`](../_design-language.md) — see the
+  **auth-card primitive**. The four `VerifyStatus` branches all render inside the same card.
+- **Reference demo (for tokens, type, motion, mark):**
+  [`docs/brand/redesign-v3/directions/D-aperture-pro.html`](../../../brand/redesign-v3/directions/D-aperture-pro.html).
+- **Screenshots for token / theme proof:**
+  `docs/brand/redesign-v3/directions/screenshots/D-aperture-pro-{light,dark}-hero.jpeg`.
+
+No per-screen mockup file. Build to the auth-card primitive; the four branches each render inside
+the same card with state-specific copy, icon, and CTA.
+
+## Existing code being REPLACED (not modified)
+
+Delete-and-rebuild scope:
+
+- `frontend/apps/candidate/app/verify/page.tsx` — current `<AuthLayout selfFramed>` + `<VerifyCard>`
+  shell with the `called` ref guard, `useEffect` URL read, and `onResend` wiring
+- `frontend/apps/company/app/verify/page.tsx` — recruiter-app copy
+- `frontend/packages/ui/src/verify-card.tsx` — current `<VerifyCard>` + `VerifyStatus` (rebuilt
+  inside the new auth-card primitive in `@ip/ui`; the `VerifyStatus` enum stays — see below)
+- `frontend/apps/candidate/components/auth-layout.tsx` and `auth-split-panel.tsx` — v2 shells
+  (deleted by `/login` Task 1)
+
+Preserved logic surfaces (out-of-scope to edit):
+
+- `useEffect` that reads `URLSearchParams(window.location.search).get("token")` and the `called`
+  ref that ensures `verify({ token })` fires exactly once (StrictMode-safe)
+- `useAuth().api.auth.verify({ token })` — sets `status="ok"` on resolve, `status="error"` +
+  `message = errorMessage(err)` on reject
+- `useAuth().api.auth.resendVerification({ email })` — wired as the `onResend` handler in the
+  `error` branch
+- `VerifyStatus = "working" | "ok" | "error" | "invalid"` (kept as an exported `@ip/ui` type so
+  the page state stays the same shape)
 
 ## Layout & components
-- **Shell:** **auth split-panel** (`AuthLayout`). Note the page uses `<AuthLayout selfFramed>` — `VerifyCard` brings its own frame, so the layout doesn't re-add the form `max-w-md` centering. Preserve `selfFramed`.
-- **Form pane:** `@ip/ui VerifyCard` — status-driven (`working` spinner / `ok` success + continue `/` / `error` message + resend / `invalid` missing-token). Reskin `VerifyCard`'s ad-hoc colors → Midnight tokens.
-- **Brand panel:** `AuthSplitPanel` (Midnight reskin shared with `login`).
-- **Components:** all reused — `AuthLayout`, `AuthSplitPanel`, `VerifyCard`. **No new component.**
 
-## Data wiring (kept identical to today)
-- **Client/seam:** `useAuth().api.auth.verify({ token })`; `api.auth.resendVerification({ email })` (passed as `onResend` to `VerifyCard`).
-- **TanStack query keys:** none (one-shot `useEffect` with a `called` ref guard).
-- **Consumes** (`backend_verify-email.md`): `verify`, `resendVerification`; `continueHref="/"`. **No field change.**
+Reuse the `@ip/ui` auth-card primitive from `/login` (Task 1 there). The four branches render
+inside the same card.
 
-## Tasks (bite-sized; presentational only)
-- [ ] **Task 0 — build the mockup.** Create `docs/brand/redesign-v2/verify-email.html`: split-panel, left a self-framed verify card showing the **four** states (working/ok/error/invalid, e.g. stacked variants), right Midnight brand panel. Browser-verify `:4173` (dark + light). Commit the HTML.
-- [ ] **Task 1 — reskin `VerifyCard`.** In `packages/ui/src/verify-card.tsx`, swap ad-hoc colors → Midnight token classes/vars across all four `VerifyStatus` branches; keep the resend input/handler + `continueHref` wiring verbatim. `@ip/ui` typecheck + (if present) the existing `VerifyCard` test stays green. Build + browser-verify; commit explicit path.
-- [ ] **Task 2 — reskin/confirm the page frame.** Confirm `<AuthLayout selfFramed>` + the reskinned panel render correctly; swap any residual ad-hoc color on the page → tokens. **Do not touch** the `useEffect` token read, the `called` ref, `verify`, or `resendVerification`. Build + browser-verify `/verify?token=…` and `/verify` (no token); commit.
+| Region | Component | Tokens / primitives |
+|---|---|---|
+| Page surface | `<main class="auth">` | Identical to `/login`. |
+| Card | `<AuthCard>` | Identical to `/login`. The card geometry is stable across all four states — no layout shift. |
+| Brand mark | `<LogoMark>` (aperture sprite) | Identical. |
+| `working` headline | `<h1 class="display">Verifying your email…</h1>` | Schibsted Grotesk, `var(--step-3)`. |
+| `working` body | `<Spinner aria-label="Verifying" /> <p>One second.</p>` | Spinner sized 40px, color `--teal`; respects `prefers-reduced-motion` (replaces the spin with a static `--teal-glow` ring). |
+| `ok` headline | `<h1 class="display">Email verified</h1>` | Schibsted Grotesk, `var(--step-3)`. |
+| `ok` body | `<svg><use href="#shield-check"/></svg>` icon (color `--good`) + `<p>You're all set. Welcome to Aptura.</p>` + `<Button class="btn btn-primary">Continue to your home</Button>` → `/` | `continueHref="/"` (existing prop). |
+| `error` headline | `<h1 class="display">Couldn't verify</h1>` | Schibsted Grotesk, `var(--step-3)`. |
+| `error` body | `<Alert tone="danger">{message}</Alert>` + resend block | Resend block: `<Field>` + `<Input type="email" autocomplete="email" required>` + `<Button class="btn btn-ghost">Resend verification email</Button>`. On resend success: `<Alert tone="success">If that account exists, a new link is on its way.</Alert>` (neutral). |
+| `invalid` headline | `<h1 class="display">No verification token</h1>` | Schibsted Grotesk, `var(--step-3)`. |
+| `invalid` body | `<Alert tone="danger">This verification link is missing the token. Try opening it from your email again, or request a new one.</Alert>` + same resend block as `error` | The RPC is never called in this branch. |
+| Back link (all states) | `<Link href="/login"><ArrowLeft aria-hidden /> Back to sign in</Link>` | Below the body, `color: var(--ink-3)`, link in `--teal-strong`. |
 
-> **Restyle discipline:** the `called` ref-guard, the status state machine, and the resend handler are out of scope to edit. Diff is markup/classes only. (`selfFramed` must stay so the card isn't double-framed.)
+The page is a thin wrapper that renders `<AuthCard>` with the right state-specific contents — the
+old `<VerifyCard>` self-framed component is replaced by the centered auth-card primitive so this
+screen looks identical to its siblings.
+
+## Data wiring / seam
+
+- **Client/seam:** `useAuth().api.auth.verify({ token })` (one-shot, guarded by the `called` ref);
+  `useAuth().api.auth.resendVerification({ email })` (wired as `onResend`).
+- **State machine.** `status: VerifyStatus = "working" | "ok" | "error" | "invalid"`. On mount the
+  `useEffect` reads the URL token: empty → `status="invalid"` (no RPC); non-empty → fire `verify`
+  exactly once → `status="ok"` on resolve, `status="error"` + `message` on reject.
+- **`called` ref** ensures the RPC never fires twice in StrictMode. **Load-bearing — do not
+  remove.**
+- **Resend handler:** on `onResend(email)` → `api.auth.resendVerification({ email })` → on resolve
+  render the neutral success `<Alert>`; on reject render the neutral error `<Alert>` (never leak
+  existence).
+- **TanStack query keys:** none (one-shot mutation + one-shot resend mutation).
+- **Backend:** see [`backend_verify-email.md`](./backend_verify-email.md) — no proto delta, no new
+  RPC.
+
+## Tasks (TDD-style, build → screenshot-verify → commit per task)
+
+> **Task 0 — design language is the mockup.** No per-screen HTML mockup. Build to the auth-card
+> primitive; the four branches each render inside the same card.
+
+- **Task 1 — Rebuild `/verify` using the auth-card primitive.** Replace
+  `apps/candidate/app/verify/page.tsx` (and the recruiter copy) so the route renders
+  `<main class="auth"><AuthCard>…</AuthCard></main>` with the four state-specific contents (see
+  the Layout & components table). Move the `VerifyStatus` enum export into `@ip/ui` (re-exported
+  from `frontend/packages/ui/src/verify-status.ts` so the page can `import { VerifyStatus } from
+  "@ip/ui"`). Wire the `useEffect` URL read, the `called` ref, and the `verify` call verbatim.
+  Commit explicit paths.
+- **Task 2 — Resend wiring.** In the `error` + `invalid` branches, render the resend block (email
+  `<Field>` + `<Input>` + `<Button>`). Wire `api.auth.resendVerification({ email })`. Render the
+  neutral success `<Alert>` on resolve, the neutral error `<Alert>` on reject. Verify the resend
+  email validation (`required` + format) before allowing the button to fire. Commit.
+- **Task 3 — All four states verified.** Verify each `VerifyStatus` branch renders inside the same
+  card with no layout shift:
+  1. `working` — spinner + "Verifying your email…" (initial state on a valid `?token=`).
+  2. `ok` — shield-check + "Email verified" + "Continue to your home" → `/`.
+  3. `error` — `<Alert>` with the server message + resend block.
+  4. `invalid` — `<Alert>` for missing token + resend block (RPC not called).
+  Commit.
+- **Task 4 — Verify + screenshot.** `--filter @ip/candidate build` + `tsc --noEmit` green. Run the
+  dev server, navigate to `/verify?token=demo` (mock the success and the error responses) and
+  `/verify` (no token). Screenshot each of the four states at 1440×900 and 390×844 in both
+  themes. Side-by-side fidelity check against the `/login` rebuild. Verify the `called` ref
+  prevents a double-fire in StrictMode (the dev server should show the `verify` request exactly
+  once in the network tab).
 
 ## States & a11y
-- **States (preserved, named):** **working** (spinner); **ok** (success + continue `/`); **error** (message + resend); **invalid** (missing token). No new states.
-- **Responsive:** `lg:grid-cols-2`; panel `hidden` below `lg`.
-- **Dark + light:** tokens throughout (`VerifyCard` + panel); brand panel reads `--accent`.
-- **A11y:** decorative rings `aria-hidden`; spinner has an accessible label; resend field labeled; form-first focus; contrast ≥4.5:1.
+
+- **States.** `working` (spinner, no CTA, polite live region) · `ok` (success icon + continue CTA;
+  focus moves to the CTA) · `error` (`<Alert>` + resend block; focus moves to the alert) ·
+  `invalid` (`<Alert>` + resend block, RPC not called; focus moves to the alert). Resend nested
+  states: idle → loading → sent (neutral success) / error (neutral failure). All four states use
+  the same card geometry — **no layout shift** between them.
+- **Responsive.** Card is `max-width: 480px` from `>= 480px`. Below `480px`, page padding
+  collapses to `1rem` and the card fills the viewport. No split-panel to collapse.
+- **Dark + light.** All colors via tokens. Spinner color `--teal`; success icon color `--good`;
+  alerts `--danger` / `--good`; all resolve in both themes.
+- **A11y.** One `<h1>` per state (the headline changes with `status`). Spinner has
+  `aria-label="Verifying"`. Resend `<Field>` label + `aria-describedby` for the email format.
+  `<ArrowLeft>` icon is `aria-hidden`. `:focus-visible` ring uses `--teal` 2px / 4px halo. Touch
+  targets ≥44×44. Body contrast ≥4.5:1. `<Alert>` regions are `role="alert"`. On `status`
+  transition, focus moves to the new primary action (continue / alert / resend input). The
+  `called`-ref guard prevents two RPCs in StrictMode (avoids a double-fire announcement to screen
+  readers). Honors `prefers-reduced-motion` — spinner falls back to a static `--teal-glow` ring.
 
 ## Acceptance
-- Matches `verify-email.html`; `@ip/ui` + `@ip/candidate` build/typecheck green; **zero functional diff** (verify + resend + all four states identical); mock→real path unchanged (already real `Auth.*`).
+
+- Looks 1:1 like the auth-card primitive in [`_design-language.md`](../_design-language.md) — the
+  same card geometry as `/login`, with state-specific contents per `VerifyStatus`. Side-by-side
+  screenshot proof committed under
+  `docs/brand/redesign-v3/verify/verify-email-{light,dark}-{working,ok,error,invalid}.jpeg`.
+- `--filter @ip/ui build` + `--filter @ip/candidate build` is green; `--filter @ip/company build`
+  is green (or the unified package if v3 unification has landed); `tsc --noEmit` is green; no
+  console errors / warnings on the rendered page; reduced-motion is honored.
+- **Zero functional diff** from today: `verify({ token })` is called exactly once (`called` ref
+  guard preserved); `resendVerification({ email })` fires on the resend handler; the four
+  `VerifyStatus` branches map to the same `status` state machine; `continueHref="/"` lands on the
+  candidate home. The `called` ref is **load-bearing** — do not remove it.
+- The token consumed here was minted by the registration flow (or by a prior `resendVerification`
+  call); this contract documents nothing about token minting.

@@ -1,7 +1,11 @@
-# Backend — Company profile (`/companies/[id]`) · contract
+# Company profile — Backend contract (v3 · frozen)
 
-> **Screen.** Public company profile page. **FE consumer:** `frontend_company-profile.md`.
-> **Status.** `EXISTING — reuse v2` (NEW service in v2). Source: `../../v2-screens/company-profile.md`.
+> **Screen.** Public company profile page (`/companies/[id]`). **FE consumer:** [`frontend_company-profile.md`](./frontend_company-profile.md).
+> **Status:** `EXISTING — reuse v2` (NEW service in v2 — already defined; no further proto delta).
+> Source: `../../v2-screens/company-profile.md`.
+> **Anti-fiction reminder:** Aptura is pre-launch. Trust signals are funnel-derived (never self-reported);
+> no fabricated employer reviews, no fake testimonials, no claimed ATS integrations — see the
+> anti-fiction rule in [`_design-language.md`](../_design-language.md).
 > **Real-vs-mock today.** `CompanyProfileService` (admin gRPC) + its public REST mirrors `GET /public/companies/{id}`
 > and `/jobs` are defined in v2 (shared `resources/company_profile.py`). FE has a `NEXT_PUBLIC_MOCK` fixture; the
 > trust aggregation degrades to `0`/hidden when the funnel has insufficient samples.
@@ -85,7 +89,9 @@ responds chip when `respondsInDays === 0`; pluralizes "open role(s)". **Mock sha
 ## Cross-references
 
 - Restates: `../../v2-screens/company-profile.md` §A.
-- Reuses `JobCardDTO`/`JobCard` from `../marketplace-search/backend_marketplace-search.md`; shares
-  `resources/discovery.py` projection. Links to per-job `../job-detail/backend_job-detail.md`.
+- Design language: [`../_design-language.md`](../_design-language.md).
+- Demo to match: [`../../../brand/redesign-v3/directions/D-aperture-pro.html`](../../../brand/redesign-v3/directions/D-aperture-pro.html).
+- Reuses `JobCardDTO`/`JobCard` from [`../marketplace-search/backend_marketplace-search.md`](../marketplace-search/backend_marketplace-search.md);
+  shares `resources/discovery.py` projection. Links to per-job [`../job-detail/backend_job-detail.md`](../job-detail/backend_job-detail.md).
 - Trust signals trace to the anti-ghosting differentiator (no-ghosting KPIs).
 - Pillar: `../../v2/2026-06-19-job-marketplace.md` Task 7 (Company-profile resource).

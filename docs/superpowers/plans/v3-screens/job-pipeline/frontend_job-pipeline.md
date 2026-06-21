@@ -1,84 +1,227 @@
-# Frontend — `job-pipeline` (Midnight v3)
+# Job pipeline — Frontend implementation plan (v3 · Aperture Pro)
 
-> **Screen:** Job pipeline — applicants, ranking, advisory gate · **Goal:** reskin the existing `/company/jobs/[id]` pipeline into the Midnight `.app` shell (KPI strip, funnel-stage filter chips, a selection bar + batch decide, the `.table-wrap` applicants table with status/integrity/gate `.pill`s, the Ranked panel, score distribution, and the gate-mode control) **with zero behavior change** — same `ListApplicants`/`GetJobRankedCandidates` queries, same `OverrideGate`/`DecideApplication` handlers, same selection reducer + gate-mode mutation.
-> **Unified route + role:** `/company/jobs/[id]` (signed-in **company/recruiter**; `.app` shell under `/company/*`).
-> **Mockup:** ✓ [`redesign-v2/applicants-pipeline.html`](../../../../brand/redesign-v2/applicants-pipeline.html) — **no Task 0**.
-> **Existing code it reskins (exact paths):**
-> - `frontend/apps/company/app/jobs/[id]/page.tsx` (`JobDetailPage` — tabs Pipeline/Report/Schedule/Messages; gate-mode Settings; publish/status controls)
-> - `frontend/apps/company/components/applicants-table.tsx` (rows, status pills, `assessment_review` advisory cluster, bulk-select, poll/override)
-> - `frontend/apps/company/components/ranked-panel.tsx` (`GetJobRankedCandidates` AI match order)
-> - `frontend/apps/company/components/reports-panel.tsx` · `score-distribution-panel.tsx`
-> - `frontend/apps/company/components/gate-mode-toggle.tsx` (per-job auto|advisory)
-> - `frontend/apps/company/components/batch-decision-bar.tsx` (bulk decide fan-out)
-> - BE contract: [`backend_job-pipeline.md`](./backend_job-pipeline.md) (restates [`../../v2-screens/applicants-pipeline.md`](../../v2-screens/applicants-pipeline.md)).
+> 🚨 **Mandatory rule:** This is a **complete rebuild** of this screen, not a reskin. You are NOT
+> modifying the existing UI; you are creating new UI that matches the **Aperture Pro** design
+> language exactly. Backend contracts are frozen — reuse them. UI is new — match the demo
+> ([D-aperture-pro.html](../../../brand/redesign-v3/directions/D-aperture-pro.html)).
+> Read [`_design-language.md`](../_design-language.md) before you write any markup.
 
-## Layout & components (shell → mockup region map)
+## Goal
 
-**Shell:** signed-in `.app` (`CompanyShell`) → `.side` (**Jobs & applicants** `aria-current`) + `.main` → `.topbar` (crumb `Jobs / Senior Backend Engineer` + `.searchbox` "Search applicants" + Export `.btn-ghost.btn-sm` + `.avatar`) + `.content`.
+Rebuild `/company/jobs/[id]` from scratch as a **stage-column kanban** of applicants — one
+`.cell` "lane" per funnel stage, applicants as `.match > .card` rows that can be dragged or
+acted-upon to move stage. The previous v2/Midnight applicants table layout is **discarded** in
+favour of the kanban form, which surfaces the funnel narrative (Applied → Interview → Review →
+Decision) at a glance. The Ranked / Reports / Scores tabs and Settings (gate-mode) remain — they
+are rebuilt against the new `.cell` / `.ring` / `.bar` primitives — but the **Pipeline** tab is
+the kanban. Every existing `Application.ListApplicants` / `Recommendation.GetJobRankedCandidates`
+/ `Decision.*` RPC is preserved verbatim.
 
-| Mockup region | `@ip/ui` class | Existing component |
+## Route + role
+
+`/company/jobs/[id]` (`apps/company/app/jobs/[id]/page.tsx`) · **company** — guarded by
+`useRequireRole(["recruiter", "company_admin"])` (enforced inside `CompanyShell`).
+
+## Approved mockup (build to this exactly)
+
+- **Live demo:** [`docs/brand/redesign-v3/directions/D-aperture-pro.html`](../../../brand/redesign-v3/directions/D-aperture-pro.html)
+  — `.cell` (anchor + supporting), `.match > .card` rows with avatar + name + role + `.pct`,
+  `.pill-good/.pill-warn/.pill-danger`, `.ring`, `.bar`, `.tag` mono kickers, `.itl-pip.l/.m/.h`
+  severity dots (reused for the integrity pill).
+- **Screenshots:** `docs/brand/redesign-v3/directions/screenshots/D-aperture-pro-{light,dark}-full.jpeg`.
+
+No per-screen mockup yet — Task 0 builds the kanban composition.
+
+## Existing code being REPLACED (not modified)
+
+Delete-and-rebuild scope:
+
+- `frontend/apps/company/app/jobs/[id]/page.tsx` — tab host (Pipeline / Report / Schedule /
+  Messages); the tabs survive, the Pipeline panel is rebuilt as a kanban
+- `frontend/apps/company/components/applicants-table.tsx` — table markup (the **table form is
+  discarded**; the kanban replaces it)
+- `frontend/apps/company/components/ranked-panel.tsx` — rebuilt to `.cell` + `.match > .card`
+  rows + `.ring` per applicant
+- `frontend/apps/company/components/reports-panel.tsx` · `score-distribution-panel.tsx` —
+  rebuilt to the new `.cell` + `.bar` / `.bars` vocabulary
+- `frontend/apps/company/components/gate-mode-toggle.tsx` — rebuilt as `<GateModeTiles />`
+  matching the post-a-job tiles
+- `frontend/apps/company/components/batch-decision-bar.tsx` — replaced by `<SelectionBar />`
+  on the kanban (mirrors the `.pill`/button language of the design language)
+
+What is **NOT** touched: `CompanyShell`, `frontend/apps/company/lib/selection.ts` (pure reducer
++ tests survive), `applicationStatus` / `StatusPill` mapping (logical mapping survives; only
+markup is new), any `*.proto`.
+
+## Section spine — 7 regions, in order
+
+| # | Region | Component | Notes |
+|---|---|---|---|
+| 0 | App shell | `<CompanyShell>` (existing) | `.app` sidebar + topbar. **Jobs & applicants** `aria-current`. Topbar crumb = `<Company> / Jobs / <Title>`, search box ("Search applicants…"), **Export** `.btn-ghost.btn-sm`, avatar. |
+| 1 | Job head | `<JobHead />` | h1 (job title) + `.sub` line (`Remote · Full-time · Published Nd ago`) + trailing `.pill-teal` "Advisory gate" (when `gate_mode==="advisory"`) or `.pill-warn` "Auto-end on HIGH" (when `gate_mode==="auto"`). |
+| 2 | Tab strip | `<JobTabs />` | `Pipeline · Report · Schedule · Messages · Settings`. `role="tablist"`, selected → `aria-selected="true"` and a teal underline (2px). Tab content swaps below. |
+| 3 | KPI strip (Pipeline tab) | `<PipelineKpis />` | `.stats-grid` (4 columns) of `.stat`: **Applicants · Interviewed · Passed gate · Median response**. Derived from the already-fetched applicants list — render-only, no extra fetch. |
+| 4 | Kanban — applicants stage columns (Pipeline tab) | `<ApplicantsKanban />` | Horizontal scroll row of stage `.cell` "lanes". Lanes: **Applied · Interview pending · Interviewed · Assessment review · Shortlisted · Rejected**. Each lane = `.cell.tight` with `.tag` mono header (lane name + `.tnum` count), then a vertical `.match` list of `.card` applicant rows. |
+| 5 | Applicant card (kanban) | `<ApplicantCard />` | `.match > .card` row: avatar (initials over `--coral`→`--teal` gradient), `.col` with `<b>` name + `<span>` role/sub, trailing `.pct` mono match% from the ranked map (when available), and a **single-line integrity pill** below the row using `.pill-good/.pill-warn/.pill-danger` (Clean / Flags / Auto-ended). The `assessment_review` lane carries an extra `.tag` "AI recommended — you decide." |
+| 6 | Selection bar | `<SelectionBar />` | Floating bottom bar (visible when ≥1 decidable card is selected). Inverted ink background. "N selected" + **Message** `.btn-ghost.btn-sm` + **Reject** `.btn-ghost.btn-sm` + **Advance** `.btn-primary.btn-sm`. Wires to the existing batch fan-out. |
+| 7 | Settings tab (gate-mode) | `<GateModeTiles />` (the post-a-job primitive, reused) | Two selectable `.cell` tiles (Advisory / Auto). Persisted via `Job.UpdateJob({ jobId, gateMode })`. Save `.btn-primary` disabled until changed. |
+
+The **Ranked / Reports / Scores** tabs are rebuilt as ordered `.cell` lists or single
+`.cell.anchor`s (per tab) using the new primitives; the data shape is unchanged.
+
+## Layout & components — map to `@ip/ui` and tokens
+
+| Region | Primitive | Tokens |
 |---|---|---|
-| Page head (job title + meta + **Advisory gate** badge) + tabs | `.page-head` (`h2` + `.sub` + `.badge`) + `.tabs[role=tablist]` | `JobDetailPage` tabs |
-| KPI strip (Applicants / Interviewed / Pass gate / Median response) | `.kpis` → `.kpi` (`.k-label`/`.k-val.tnum`/`.k-delta`) | derived counts (render-only) |
-| Funnel-stage filter chips (All/Interviewed/Passed gate/Shortlisted) + Sort | `.toolbar` + `.chip-toggle[aria-pressed]` | client filter over `ListApplicants` |
-| Selection bar (N selected → Message/Reject/Advance) | `.selbar` (inverted ink bg) + `.btn-primary.btn-sm`/`.btn-ghost.btn-sm` | `BatchDecisionBar` |
-| Applicants table | `.table-wrap` + `table.data` (checkbox col + Candidate/Score/Integrity/Stage/Applied/Gate/·) | `applicants-table.tsx` |
-| Candidate cell | `.who`(`.avatar`/`.nm`/`.sub`) | row |
-| Score / Applied cells | `.tnum` | row |
-| Integrity / Stage / Gate cells | `.pill` (`.pill-good` Clean/Pass · `.pill-warn` flags · `.pill-bad` Terminated/Below bar · `.pill-accent` Interviewed · `.pill-neutral` In review/Borderline) | `StatusPill` / `applicationStatus` |
-| `assessment_review` advisory cluster ("AI recommended — you decide" + Advance/Decline) | `.badge` + `.btn-sm` cluster | advisory cluster |
-| Ranked / Reports / Scores tabs | `.tabs` content | `ranked-panel`/`reports-panel`/`score-distribution-panel` |
-| Settings (gate-mode) | `.card` + gate-mode control | `gate-mode-toggle` + Settings tab |
-| Row check / select-all | `td .check` / `th .check` (`.on` when checked) | `Checkbox` + selection reducer |
+| Shell | `CompanyShell` (existing) | already on the new tokens |
+| Job head | `h1.display` + `.sub` + `.pill-teal` / `.pill-warn` | typography + pill tokens |
+| Tab strip | `[role=tablist]` with bottom-border `--line`; active tab carries 2px `--teal` underline | tab tokens |
+| KPI strip | `.stats-grid` + `.stat` | as design language |
+| Kanban lane | `.cell.tight` with `.tag` header + vertical `.match` body | `--surface`, `--line` |
+| Applicant card | `.match > .card` | teal-gradient avatar, mono `.pct` |
+| Integrity pill | `.pill-good` Clean · `.pill-warn` Flags (N) · `.pill-danger` Auto-ended | severity tones from the design language |
+| Selection bar | inverted-ink floating bar; primary + ghost `.btn-sm` | `--ink-deep` bg, `--teal-ink` foreground |
+| Gate tiles | `.cell` + `.cell.anchor` (selected) | `--teal-soft` tint |
 
-**New vs reused:** no new logic. The selection bar maps `BatchDecisionBar` to `.selbar`; status/integrity/gate cells map `StatusPill`/`applicationStatus` to `.pill-*`; the advisory cluster + gate-mode control keep their existing handlers. Reskin only.
+All primitives live in `@ip/ui/src/app.css`. **Anti-slop ban —** no side-stripe borders on
+cards, no glassmorphism, no identical card grids (the kanban lanes are **purpose-rotated**, not
+visually identical), no `01 · 02 · 03` numbered eyebrows on lanes (the lane name is the kicker).
 
-## Data wiring (kept identical to today)
-- **Applicants:** `api.applications.listApplicants({ jobId })` — query key `["applicants", jobId]`; rows `ApplicationResponse { applicationId, candidateUserId, state, ... }` (incl. `state === "assessment_review"`).
-- **Ranked:** `api.recommendations.getJobRankedCandidates({ jobId })` — key `["ranked", jobId]`; `matches[] { candidateUserId, score, reasons[] }`.
-- **Decide / advance:** `Decision.DecideApplication({ applicationId, outcome })` (`shortlisted|hired|rejected`) + `Decision.OverrideGate({ applicationId })` — both audited, notify the candidate. **Batch** = `Promise.allSettled` fan-out over `DecideApplication` (no new RPC); invalidates `["applicants"]`/`["ranked"]`/`["reports"]`/`["score-dist"]`/`["analytics"]`.
-- **Selection:** the pure `lib/selection.ts` reducer (`toggle`/`toggleAll`/`selectableIds`; decidable = `scored|shortlisted|assessment_review`) — **unchanged** (its tests still pass).
-- **Gate mode:** seeded from `job.data?.aptitudeConfig?.gateMode ?? "auto"`; save → `api.jobs.updateJob({ jobId, gateMode })`; invalidates `["job", id]`. Compiles before `UpdateJob` lands (optional-chain default). See [`backend_job-pipeline.md`](./backend_job-pipeline.md).
+## Data wiring / seam
 
-## Tasks (bite-sized; reskin only — pure reducers/helpers unchanged) · **mockup ✓ → skip Task 0**
+**Identical to today.** No new RPC, no new query key.
 
-> Per-task: `--filter @ip/company build` (+ `--filter @ip/ui typecheck` when touching `@ip/ui`) → browser-verify → explicit-path commit.
+| Region | Hook | Query key | Source |
+|---|---|---|---|
+| Kanban applicants | `useAuthedQuery(token, ["applicants", jobId], () => api.applications.listApplicants({ jobId }))` | `["applicants", jobId]` | `Application.ListApplicants` |
+| Ranked tab + match% on cards | `useAuthedQuery(token, ["ranked", jobId], () => api.recommendations.getJobRankedCandidates({ jobId }))` | `["ranked", jobId]` | `Recommendation.GetJobRankedCandidates` |
+| Job head + gate-mode seed | `useAuthedQuery(token, ["job", id], () => api.jobs.getJob({ jobId: id }))` (existing) | `["job", id]` | `Job.GetJob` (echoes `aptitudeConfig.gateMode`) |
+| Advance / Override gate | `useMutation(({ applicationId }) => api.decisions.overrideGate({ applicationId }))` → invalidates `["applicants",jobId]`, `["ranked",jobId]` | — | `Decision.OverrideGate` |
+| Decide (shortlist / hire / reject) | `useMutation(({ applicationId, outcome }) => api.decisions.decideApplication({ applicationId, outcome }))` → invalidates the same keys | — | `Decision.DecideApplication` |
+| **Batch decide** | `Promise.allSettled` fan-out over `DecideApplication` (no new RPC). Failed-count toast. | — | (existing pattern) |
+| Save gate-mode | `useMutation(({ jobId, gateMode }) => api.jobs.updateJob({ jobId, gateMode }))` → invalidates `["job", id]` | — | `Job.UpdateJob` (new in v2) |
 
-### Task 1: Shell + page head + tabs + KPI strip
-- [ ] Wrap `JobDetailPage` in `CompanyShell`; `.page-head` = job `h2` + `.sub` (Remote · Full-time · Published Nd ago) + `.badge` "Advisory gate" (when `gate_mode==="advisory"`); tabs → `.tabs[role=tablist]` (Pipeline/Report/Schedule/Messages — keep the existing tab set + their content). Render the KPI strip as `.kpis`/`.kpi` from existing derived counts (render-only — no new query).
-- [ ] Verify build; commit `app/jobs/[id]/page.tsx`.
+**Drag-to-move stage actions** are syntactic sugar over the existing `Decision.*` mutations —
+dropping a card on **Shortlisted** fires `DecideApplication({ outcome: "shortlisted" })`,
+dropping on **Rejected** fires `DecideApplication({ outcome: "rejected" })`, dropping on
+**Interview pending** from the `assessment_review` lane fires `OverrideGate`. No new RPC. The
+target-lane validity is computed from the same `decidable` set as today
+(`scored|shortlisted|assessment_review`). Invalid drops snap back.
 
-### Task 2: Filter chips + selection bar
-- [ ] Funnel-stage filter `.toolbar` of `.chip-toggle[aria-pressed]` (All/Interviewed/Passed gate/Shortlisted + Sort) — client filter over the fetched applicants (counts from the list). Reskin `BatchDecisionBar` → `.selbar` (inverted `--ink` bg) shown when `sel.size>0`: "N selected" + Message/Reject `.btn-ghost.btn-sm` + Advance `.btn-primary.btn-sm`. Keep the `Promise.allSettled` fan-out + invalidations verbatim.
-- [ ] Verify: selecting decidable rows reveals the bar; "Apply to selected" decides the set + rows update. Commit `components/batch-decision-bar.tsx` + `applicants-table.tsx`.
+**Anti-fiction guard.** Empty pipeline shows truthful copy — "**No applicants yet** — share the
+role link" with a copy-to-clipboard `.btn.btn-ghost.btn-sm` of the public job URL. Never seed
+sample applicants. Per-lane empty states say "No <stage> applicants yet" — never "Be the first!"
+or other fake nudges.
 
-### Task 3: Applicants table → `.table-wrap`
-- [ ] Reskin `applicants-table.tsx` to `.table-wrap`/`table.data`: leading checkbox col (`th .check`/`td .check.on`), Candidate `.who`, Score `.tnum`, Integrity/Stage/Gate `.pill-*` (via `StatusPill`/`applicationStatus`), Applied `.tnum`, trailing `View` `.btn-ghost.btn-sm` Link → `/company/jobs/[id]/applicants/[appId]`. Keep loading/empty/error branches, the poll/`override` logic, the mobile-card ↔ desktop-table lockstep, and the selection checkboxes (`selectableIds`) **unchanged**.
-- [ ] Verify: rows render with correct pills; checkboxes select decidable rows only; poll continues for non-terminal. Commit `components/applicants-table.tsx`.
+## Tasks (TDD-style, build → screenshot-verify → commit per task)
 
-### Task 4: `assessment_review` advisory cluster (reskin)
-- [ ] Reskin the advisory action cluster: a `.badge`/`.pill-warn` "AI recommended — you decide" + **View report** / **Advance** (`OverrideGate` `ConfirmDialog`) / **Decline** (`DecisionControl` → `DecideApplication(rejected)`). Keep the `assessment_review` membership (non-terminal, keeps polling) + the `override` `onSuccess` invalidation of `["ranked", jobId]` **unchanged**.
-- [ ] Verify: an `assessment_review` row shows the badge + Advance/Decline; Advance moves it out of the queue. Commit `components/applicants-table.tsx`.
+> **Task 0 — Build the per-screen mockup.** Create
+> `docs/brand/redesign-v3/screens/job-pipeline.html` linking `@ip/ui/src/{tokens.css,app.css}`
+> and the sprite. Embed the `.app` shell. Body = `<JobHead />` + `<JobTabs />` + Pipeline tab
+> with the KPI strip + the 6-lane kanban (each lane with 2-4 sample applicant rows, integrity
+> pills mixed Clean / Flags / Auto-ended; include one `assessment_review` row with the "AI
+> recommended — you decide" tag) + the selection bar (rendered as if 2 cards are selected).
+> Sample names "Candidate A" / "Candidate B". Browser-verify in both themes at 1440×900 and
+> 390×844. Commit the new HTML file only.
 
-### Task 5: Ranked / Reports / Scores panels
-- [ ] Reskin `ranked-panel.tsx` (AI match order — `.card`/`.who`/`.ring` score), `reports-panel.tsx`, `score-distribution-panel.tsx` to Midnight `.card`/`.bar`/`.pill`/`.tnum`. Keep their queries + props identical.
-- [ ] Verify each tab renders; commit the three component files.
+- **Task 1 — Shell + head + tabs.** Mount `JobDetailPage` under `CompanyShell`; render
+  `<JobHead />` (h1 + sub + gate badge) and `<JobTabs />` (Pipeline / Report / Schedule /
+  Messages / Settings). Keep the existing tab-content host (the other tabs still mount their
+  components). Confirm topbar crumb. Commit
+  `apps/company/app/jobs/[id]/page.tsx`, `apps/company/components/jobs/{job-head.tsx,job-tabs.tsx}`.
 
-### Task 6: Gate-mode Settings control
-- [ ] Reskin `gate-mode-toggle.tsx` / the Settings tab to a Midnight `.card` with the auto|advisory control (token tiles) + Save `.btn-primary` (disabled until changed). Keep `updateJob` mutation + `["job", id]` invalidation + the optional-chain seed **unchanged**.
-- [ ] Verify: persisted value shows, Save disabled until changed, save toasts. Commit `components/gate-mode-toggle.tsx` + `app/jobs/[id]/page.tsx`.
+- **Task 2 — Pipeline KPI strip.** Build `<PipelineKpis />` deriving 4 counts from the
+  already-fetched `["applicants", jobId]` list. Render-only, no extra fetch. Verify the strip
+  matches the design-language `.stats-grid` rhythm. Commit
+  `components/pipeline/pipeline-kpis.tsx`.
 
-### Task 7: Build + full preview
-- [ ] `--filter @ip/company build` green; preview `/company/jobs/[id]`: Pipeline tab (funnel-stage pills, selection bar + batch decide, an `assessment_review` advisory row), Ranked tab (refreshed after a batch action via the `["ranked"]` invalidation), Settings tab (gate-mode persists). Screenshot the Pipeline tab with a mixed funnel + active selection. Commit.
+- **Task 3 — Applicants kanban + applicant card.** Build `<ApplicantsKanban />` + the lane
+  `<KanbanLane />` + the card `<ApplicantCard />`. Group the applicants by `state` into the 6
+  lanes. Each card reads:
+  - `match%` from the `["ranked", jobId]` map (key by `candidateUserId`), missing → `—`
+  - integrity pill from the existing `StatusPill` mapping (or its equivalent), Clean /
+    Flags (N) / Auto-ended
+  - the `assessment_review` lane carries the "AI recommended — you decide" `.tag` on each card.
+
+  Wire the existing per-row `OverrideGate` / `DecideApplication` handlers behind a card's
+  context menu and the drag-drop targets. Preserve the existing poll loop for non-terminal
+  states. Truthful empty: "No applicants yet — share the role link" + copy-link button. Per-lane
+  empty: "No <stage> applicants yet." Commit
+  `components/pipeline/{applicants-kanban,kanban-lane,applicant-card}.tsx`.
+
+- **Task 4 — Drag-to-move (or button-driven move).** Add a lightweight drag handler over the
+  `.match > .card` rows using `dnd-kit` (already a candidate dep — verify) or a CSS-only "Move
+  to…" menu when DnD is not yet wired. Dropping a card on a valid target lane fires the
+  matching mutation (per the mapping above). Invalid drops snap back. Verify the same handlers
+  fire from the kanban as from the (now-deleted) table — no new RPC. Commit
+  `components/pipeline/applicants-kanban.tsx`.
+
+- **Task 5 — Selection bar.** Build `<SelectionBar />` over the existing `lib/selection.ts`
+  reducer (`toggle` / `toggleAll` / `selectableIds`). Floating bar appears when ≥1 decidable
+  card is selected. Wire the fan-out batch handler (`Promise.allSettled` over
+  `DecideApplication`) verbatim. Failed-count toast on partial failure. Commit
+  `components/pipeline/selection-bar.tsx`.
+
+- **Task 6 — Ranked / Reports / Scores tabs.** Rebuild `ranked-panel.tsx` to a `.cell` + ordered
+  `.match > .card` list with `.ring` per row (overall score, 0–100); `reports-panel.tsx` to a
+  `.cell.anchor` summary + a `.cell` per applicant; `score-distribution-panel.tsx` to a
+  `.cell` with a `.bars` mini-chart. Their queries + props stay identical. Commit the three
+  component files.
+
+- **Task 7 — Settings tab (gate-mode).** Build the Settings tab as a `.cell` host for the
+  `<GateModeTiles />` primitive (same component as `post-a-job`). Seed from
+  `job.data?.aptitudeConfig?.gateMode ?? "auto"`. Save → `Job.UpdateJob`, invalidate
+  `["job", id]`. Commit `app/jobs/[id]/settings-tab.tsx`.
+
+- **Task 8 — Full preview + fidelity verify.**
+  1. `--filter @ip/company build` + `tsc --noEmit` green.
+  2. Boot dev, sign in as a recruiter, open a job with mixed applicants. Screenshot every tab
+     in both themes at 1440×900 and 390×844. Side-by-side against the Task-0 HTML and the
+     design-language demo.
+  3. Confirm the existing `lib/selection.ts` tests still pass.
+  4. Confirm the same `Decision.*` handlers fire from the kanban as from the previous table —
+     `["applicants",jobId]` / `["ranked",jobId]` / `["analytics","kpis",30]` are invalidated
+     identically.
+  5. Confirm a non-manager loading the page is still redirected by `CompanyShell`.
 
 ## States & a11y
-- **Applicants tab:** `LoadingState` / `EmptyState` "No applicants yet" / `ErrorState`+retry (inherited) / success rows; selection bar iff ≥1 decidable selected; per-action busy via `decide.isPending`/`override.isPending`; toasts on success/error; selection pruned to the decidable set on every refetch.
-- **Advisory queue:** "AI recommended — you decide" + Advance (→ `interview_pending`) + Decline (→ `rejected`); the row keeps polling until it transitions.
-- **Settings:** gate-mode seeded from the job; Save disabled until changed; success/error toasts.
-- **`auto`/legacy jobs:** read `"auto"` (optional-chain default) — no `assessment_review` rows; the advisory cluster is never hit.
-- **Responsive:** the checkbox/score columns kept in lockstep across the `sm:hidden` card layout and the `hidden sm:block` table; `.selbar` + chips wrap; Settings card `max-w-md`; readable at ~375px.
-- **Dark + light:** tokens only (`.pill-*` tones, `.selbar` `--ink` bg, `.check.on` `--accent`, `.ring`/`.bar`) — no hardcoded color.
-- **A11y:** `StatusPill` carries the label as text (not color-only); select-all + per-row checkboxes are real keyboard-operable `Checkbox`es; the gate-mode `Select` gets its name from `Field`; the advisory badge makes the human-decision framing explicit, not color-implied; focus rings via `:focus-visible`; contrast ≥4.5:1.
+
+- **Pipeline.**
+  - **Loading** — kanban renders skeleton cards in each lane.
+  - **Empty (no applicants at all)** — full-bleed truthful copy "No applicants yet — share the
+    role link" + copy-link button. **Never seeded with fake applicants.**
+  - **Per-lane empty** — "No <stage> applicants yet."
+  - **Error** — inline `.pill-danger` row + Retry; the other lanes stay interactive.
+  - **Success** — cards render in lanes; selection bar appears when decidable rows are
+    selected; drag-drop fires mutations.
+- **Assessment review lane (advisory only).** Cards carry "AI recommended — you decide"
+  `.tag` + per-card Advance / Decline buttons inside the card body. Polls until the card
+  transitions.
+- **Settings.** Gate-mode seeded from the job; Save disabled until changed; success/error
+  toasts.
+- **Auto / legacy jobs.** `gateMode === "auto"` → no `assessment_review` lane content (the
+  pipeline funnel never produces those rows). Default-off, unchanged behavior.
+- **Responsive.** Sidebar collapses ≤1000px. Kanban lanes horizontally scroll under ~900px
+  (snap-to-lane scrolling); below ~600px, lanes stack vertically into a single column. KPI
+  strip 4 → 2 → 1 columns. Selection bar drops above the safe area on mobile.
+- **Dark + light.** All color via tokens. Per-user Appearance accent recolors the active tab
+  underline, the selected gate tile, the `.pill-teal` gate badge, the kanban accent.
+- **A11y.** Tabs use `role="tablist"` + `aria-selected`. Kanban lane has
+  `role="region" aria-label="<stage>"`. Each applicant card is a real `<article>` with a
+  keyboard-focusable "Open report" `<a>` (the card's primary affordance). Drag-and-drop has a
+  keyboard fallback (Space to pick up, arrows to move between lanes, Space to drop — `dnd-kit`
+  provides this). Integrity pill carries a text label (not color-only). Touch targets ≥44×44.
+  Contrast ≥4.5:1. Focus rings via `:focus-visible` — `--teal` 2px / 4px halo.
 
 ## Acceptance
-- Matches `redesign-v2/applicants-pipeline.html`; `--filter @ip/ui typecheck` + `--filter @ip/company build` + `typecheck` green; **zero functional diff** (same `ListApplicants`/`GetJobRankedCandidates` queries, same `OverrideGate`/`DecideApplication` + batch fan-out, same `selection.ts` reducer + tests, same gate-mode mutation); advisory path default-off (`auto`) so existing jobs are byte-for-byte unchanged; works against existing RPCs today and against `updateJob` + advisory `assessment_review` rows once the BE deltas land.
+
+- Looks 1:1 like the per-screen Task 0 HTML AND the relevant slices of
+  [`D-aperture-pro.html`](../../../brand/redesign-v3/directions/D-aperture-pro.html). Side-by-side
+  screenshot proof committed under `docs/brand/redesign-v3/verify/job-pipeline-{light,dark}.jpeg`.
+- `--filter @ip/company build` green; `tsc --noEmit` green; no console errors / warnings.
+- **Zero functional diff.** Same `ListApplicants` / `GetJobRankedCandidates` queries, same
+  `OverrideGate` / `DecideApplication` mutations + batch fan-out, same `lib/selection.ts`
+  reducer + tests, same gate-mode `UpdateJob` mutation. The advisory branch (`assessment_review`)
+  is default-off (`auto`) so existing jobs are byte-for-byte unchanged.
+- Empty pipeline shows truthful copy — no fabricated applicants.
+- A non-manager loading the page is still redirected by `CompanyShell`.
