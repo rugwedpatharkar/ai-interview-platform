@@ -1,15 +1,45 @@
+import os
+
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    YamlConfigSettingsSource,
+)
 
 
 class BaseServiceSettings(BaseSettings):
     """Common settings for every service. Subclass per service to add specifics.
 
-    Values come from environment / `.env`. Infra defaults point at local
-    docker-compose; production overrides via env.
+    Resolution order (first wins): constructor args > env vars > `.env` > a single
+    `config.yaml` > field defaults. The YAML file is the one-file convenience for
+    credentials/URLs (gitignored; keys are the lowercase field names, e.g. `mongo_uri`);
+    env vars override it so managed deploys (Render/Vercel) win without editing it.
+    Path via `CONFIG_FILE` (default `config.yaml`); a missing file is simply skipped.
     """
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        yaml_source = YamlConfigSettingsSource(
+            settings_cls, yaml_file=os.getenv("CONFIG_FILE", "config.yaml")
+        )
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            yaml_source,
+            file_secret_settings,
+        )
 
     service_name: str = "service"
     environment: str = "dev"

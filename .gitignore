@@ -5,6 +5,12 @@
 **/.env
 **/.env.local
 **/.env.*.local
+# Single-file credentials YAML (the config.yaml settings source). NEVER commit;
+# only the secret-free config.example.yaml is tracked.
+config.yaml
+**/config.yaml
+!config.example.yaml
+!**/config.example.yaml
 *.pem
 *.key
 *_secret*

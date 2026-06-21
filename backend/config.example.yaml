@@ -1,0 +1,53 @@
+# Single-file backend config. Copy to `backend/config.yaml` (gitignored) and fill in.
+# Every key is a service setting (the lowercase field name). All four services read the
+# SAME file — each picks the keys it knows and ignores the rest.
+#
+# Resolution order (first wins): env vars > .env > THIS FILE > defaults.
+#   • Local dev   — fill config.yaml; run the services / `docker compose`.
+#   • Render      — upload config.yaml as a Secret File (Dashboard → Environment →
+#                   Secret Files, mount path /app/config.yaml) and set CONFIG_FILE=
+#                   /app/config.yaml. Nothing secret ever enters git. (Or skip the file
+#                   and set env vars in the dashboard — env overrides this file.)
+#
+# Point the app at a non-default path with the CONFIG_FILE env var.
+
+# ── Required everywhere ───────────────────────────────────────────────
+jwt_secret: ""            # openssl rand -hex 32   (>=32 chars)
+gemini_api_key: ""        # aistudio.google.com/apikey
+
+# ── Data plane (free managed clouds, no credit card) ──────────────────
+mongo_uri: "mongodb+srv://USER:PASS@cluster0.xxxx.mongodb.net/?retryWrites=true&w=majority"
+redis_url: "rediss://default:PASS@xxxx.upstash.io:6379"
+rabbitmq_url: "amqps://USER:PASS@xxxx.cloudamqp.com/VHOST"
+
+# Vector DB (mcp-capability RAG). Qdrant Cloud free.
+qdrant_url: "https://xxxx.cloud.qdrant.io:6333"
+qdrant_api_key: ""
+
+# Object storage (Cloudflare R2, S3-compatible)
+s3_endpoint_url: "https://<account-id>.r2.cloudflarestorage.com"
+s3_region: "auto"
+s3_access_key_id: ""
+s3_secret_access_key: ""
+s3_bucket: "interview-platform"
+
+# ── Browser CORS — your frontend origin(s), comma-separated, with scheme ──
+cors_allow_origin: "https://aptura.vercel.app"
+
+# ── Email (Resend SMTP; optional) ─────────────────────────────────────
+# smtp_host: "smtp.resend.com"
+# smtp_port: 587
+# smtp_user: "resend"
+# smtp_pass: ""            # Resend API key
+# smtp_from: "noreply@yourdomain.com"
+
+# ── Voice interview (optional; LiveKit + Groq) ────────────────────────
+# livekit_url: "wss://xxxx.livekit.cloud"
+# livekit_api_key: ""
+# livekit_api_secret: ""
+# groq_api_key: ""
+
+# ── Per-service ports (leave as defaults unless running them side-by-side) ──
+# admin + ai-agents read http_port; the consolidated container sets these per process.
+# http_port: 8080
+# mcp_port: 8100
