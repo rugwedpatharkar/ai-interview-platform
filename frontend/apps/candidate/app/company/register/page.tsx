@@ -85,7 +85,7 @@ export default function CompanyRegisterPage() {
           onChange={setPassword}
           placeholder="At least 8 characters"
         />
-        <PrimaryButton type="submit" busy={busy} busyLabel="Creating workspace…">
+        <PrimaryButton type="submit" busy={busy} busyLabel="Creating workspace…" disabled={!companyName.trim() || !email.trim() || !password || busy}>
           <span className="inline-flex items-center gap-2">
             Create workspace
             <ApIcon name="arrow" className="size-4" />

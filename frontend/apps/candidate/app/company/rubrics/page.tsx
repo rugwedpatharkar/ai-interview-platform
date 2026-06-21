@@ -346,7 +346,7 @@ export default function RubricsPage() {
                 <button
                   type="button"
                   className="ap-btn ap-btn-primary"
-                  disabled={save.isPending}
+                  disabled={save.isPending || (showErrors && Boolean(nameError || namedRows.length === 0 || hasWeightError))}
                   onClick={onSave}
                 >
                   {save.isPending && <Spinner className="size-4" />}

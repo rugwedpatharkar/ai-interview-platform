@@ -454,7 +454,7 @@ export default function CompanyOnboardingPage() {
             )}
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || (state.step === 1 && !state.companyName.trim())}
               className="ap-btn ap-btn-primary disabled:opacity-60"
             >
               {state.step === 4 ? (saving ? "Saving…" : "Finish setup") : "Continue"}
