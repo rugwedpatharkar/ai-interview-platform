@@ -4,45 +4,44 @@
 # source: app/routes/pb/notification.proto
 # Protobuf Python Version: 6.33.5
 """Generated protocol buffer code."""
+
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 _runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC,
-    6,
-    33,
-    5,
-    '',
-    'app/routes/pb/notification.proto'
+    _runtime_version.Domain.PUBLIC, 6, 33, 5, "", "app/routes/pb/notification.proto"
 )
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n app/routes/pb/notification.proto\x12\x15\x61\x64min.notification.v1\"}\n\x0fNotificationDTO\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04kind\x18\x02 \x01(\t\x12\x0f\n\x07subject\x18\x03 \x01(\t\x12\x0c\n\x04\x62ody\x18\x04 \x01(\t\x12\x0c\n\x04link\x18\x05 \x01(\t\x12\x12\n\ncreated_at\x18\x06 \x01(\t\x12\x0f\n\x07read_at\x18\x07 \x01(\t\"C\n\x0bListRequest\x12\x0c\n\x04page\x18\x01 \x01(\x05\x12\x11\n\tpage_size\x18\x02 \x01(\x05\x12\x13\n\x0bunread_only\x18\x03 \x01(\x08\"\x93\x01\n\x0cListResponse\x12=\n\rnotifications\x18\x01 \x03(\x0b\x32&.admin.notification.v1.NotificationDTO\x12\x14\n\x0cunread_count\x18\x02 \x01(\x05\x12\x0c\n\x04page\x18\x03 \x01(\x05\x12\x11\n\tpage_size\x18\x04 \x01(\x05\x12\r\n\x05total\x18\x05 \x01(\x05\"*\n\x0fMarkReadRequest\x12\x17\n\x0fnotification_id\x18\x01 \x01(\t\"\x14\n\x12MarkAllReadRequest\"(\n\x10MarkReadResponse\x12\x14\n\x0cunread_count\x18\x01 \x01(\x05\x32\xb3\x02\n\x13NotificationService\x12\\\n\x11ListNotifications\x12\".admin.notification.v1.ListRequest\x1a#.admin.notification.v1.ListResponse\x12[\n\x08MarkRead\x12&.admin.notification.v1.MarkReadRequest\x1a\'.admin.notification.v1.MarkReadResponse\x12\x61\n\x0bMarkAllRead\x12).admin.notification.v1.MarkAllReadRequest\x1a\'.admin.notification.v1.MarkReadResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n app/routes/pb/notification.proto\x12\x15\x61\x64min.notification.v1"}\n\x0fNotificationDTO\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04kind\x18\x02 \x01(\t\x12\x0f\n\x07subject\x18\x03 \x01(\t\x12\x0c\n\x04\x62ody\x18\x04 \x01(\t\x12\x0c\n\x04link\x18\x05 \x01(\t\x12\x12\n\ncreated_at\x18\x06 \x01(\t\x12\x0f\n\x07read_at\x18\x07 \x01(\t"C\n\x0bListRequest\x12\x0c\n\x04page\x18\x01 \x01(\x05\x12\x11\n\tpage_size\x18\x02 \x01(\x05\x12\x13\n\x0bunread_only\x18\x03 \x01(\x08"\x93\x01\n\x0cListResponse\x12=\n\rnotifications\x18\x01 \x03(\x0b\x32&.admin.notification.v1.NotificationDTO\x12\x14\n\x0cunread_count\x18\x02 \x01(\x05\x12\x0c\n\x04page\x18\x03 \x01(\x05\x12\x11\n\tpage_size\x18\x04 \x01(\x05\x12\r\n\x05total\x18\x05 \x01(\x05":\n\x0fMarkReadRequest\x12\x17\n\x0fnotification_id\x18\x01 \x01(\t\x12\x0e\n\x06seq_no\x18\x02 \x01(\x03"\x14\n\x12MarkAllReadRequest"A\n\x10MarkReadResponse\x12\x14\n\x0cunread_count\x18\x01 \x01(\x05\x12\x17\n\x0f\x61\x63\x63\x65pted_seq_no\x18\x02 \x01(\x03\x32\xb3\x02\n\x13NotificationService\x12\\\n\x11ListNotifications\x12".admin.notification.v1.ListRequest\x1a#.admin.notification.v1.ListResponse\x12[\n\x08MarkRead\x12&.admin.notification.v1.MarkReadRequest\x1a\'.admin.notification.v1.MarkReadResponse\x12\x61\n\x0bMarkAllRead\x12).admin.notification.v1.MarkAllReadRequest\x1a\'.admin.notification.v1.MarkReadResponseb\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'app.routes.pb.notification_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(
+    DESCRIPTOR, "app.routes.pb.notification_pb2", _globals
+)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
-  _globals['_NOTIFICATIONDTO']._serialized_start=59
-  _globals['_NOTIFICATIONDTO']._serialized_end=184
-  _globals['_LISTREQUEST']._serialized_start=186
-  _globals['_LISTREQUEST']._serialized_end=253
-  _globals['_LISTRESPONSE']._serialized_start=256
-  _globals['_LISTRESPONSE']._serialized_end=403
-  _globals['_MARKREADREQUEST']._serialized_start=405
-  _globals['_MARKREADREQUEST']._serialized_end=447
-  _globals['_MARKALLREADREQUEST']._serialized_start=449
-  _globals['_MARKALLREADREQUEST']._serialized_end=469
-  _globals['_MARKREADRESPONSE']._serialized_start=471
-  _globals['_MARKREADRESPONSE']._serialized_end=511
-  _globals['_NOTIFICATIONSERVICE']._serialized_start=514
-  _globals['_NOTIFICATIONSERVICE']._serialized_end=821
+    DESCRIPTOR._loaded_options = None
+    _globals["_NOTIFICATIONDTO"]._serialized_start = 59
+    _globals["_NOTIFICATIONDTO"]._serialized_end = 184
+    _globals["_LISTREQUEST"]._serialized_start = 186
+    _globals["_LISTREQUEST"]._serialized_end = 253
+    _globals["_LISTRESPONSE"]._serialized_start = 256
+    _globals["_LISTRESPONSE"]._serialized_end = 403
+    _globals["_MARKREADREQUEST"]._serialized_start = 405
+    _globals["_MARKREADREQUEST"]._serialized_end = 463
+    _globals["_MARKALLREADREQUEST"]._serialized_start = 465
+    _globals["_MARKALLREADREQUEST"]._serialized_end = 485
+    _globals["_MARKREADRESPONSE"]._serialized_start = 487
+    _globals["_MARKREADRESPONSE"]._serialized_end = 552
+    _globals["_NOTIFICATIONSERVICE"]._serialized_start = 555
+    _globals["_NOTIFICATIONSERVICE"]._serialized_end = 862
 # @@protoc_insertion_point(module_scope)

@@ -36,8 +36,10 @@ message ListResponse {
 
 message MarkReadRequest {
   string notification_id = 1;
+  int64 seq_no = 2;             // 0 = server picks current+1 (backward-compat default)
 }
 message MarkAllReadRequest {}
 message MarkReadResponse {
-  int32 unread_count = 1;   // fresh post-ack count
+  int32 unread_count = 1;       // fresh post-ack count
+  int64 accepted_seq_no = 2;   // monotonic high-water mark after this ack
 }
