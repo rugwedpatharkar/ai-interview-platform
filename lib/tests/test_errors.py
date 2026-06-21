@@ -1,3 +1,4 @@
+import grpc
 from lib.errors import (
     AppError,
     AuthError,
@@ -8,8 +9,11 @@ from lib.errors import (
     NotFoundError,
     PermissionError,
     ValidationError,
+    to_grpc_status,
 )
-from lib.errors import TimeoutError as AppTimeoutError
+from lib.errors import (
+    TimeoutError as AppTimeoutError,
+)
 from lib.resilience import OperationTimeout
 
 
@@ -43,3 +47,29 @@ def test_subclasses_all_inherit_from_app_error():
 
 def test_timeout_error_is_operation_timeout_alias():
     assert AppTimeoutError is OperationTimeout
+
+
+def test_to_grpc_status_maps_each_subclass():
+    cases = [
+        (ValidationError("bad email"), grpc.StatusCode.INVALID_ARGUMENT),
+        (NotFoundError("no profile"), grpc.StatusCode.NOT_FOUND),
+        (ConflictError("dup"), grpc.StatusCode.ALREADY_EXISTS),
+        (PermissionError("denied"), grpc.StatusCode.PERMISSION_DENIED),
+        (AuthError("expired"), grpc.StatusCode.UNAUTHENTICATED),
+        (DependencyError("mongo down"), grpc.StatusCode.UNAVAILABLE),
+        (BusinessRuleError("state terminal"), grpc.StatusCode.FAILED_PRECONDITION),
+        (AppTimeoutError("op", 1.0), grpc.StatusCode.DEADLINE_EXCEEDED),
+        (InternalError("bug"), grpc.StatusCode.INTERNAL),
+    ]
+    for err, expected_code in cases:
+        code, msg = to_grpc_status(err)
+        assert code == expected_code, (
+            f"{type(err).__name__} → {code}, want {expected_code}"
+        )
+        assert msg == err.public_message if isinstance(err, AppError) else True
+
+
+def test_to_grpc_status_falls_back_to_internal_for_unknown():
+    code, msg = to_grpc_status(RuntimeError("surprise"))
+    assert code == grpc.StatusCode.INTERNAL
+    assert msg == "internal error"

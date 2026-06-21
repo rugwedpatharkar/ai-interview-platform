@@ -9,6 +9,8 @@ import a single name from one module.
 
 from typing import Any
 
+import grpc
+
 from lib.resilience import OperationTimeout
 
 
@@ -59,3 +61,29 @@ class InternalError(AppError):
 
 
 TimeoutError = OperationTimeout
+
+
+_STATUS_MAP: dict[type[Exception], grpc.StatusCode] = {
+    ValidationError: grpc.StatusCode.INVALID_ARGUMENT,
+    NotFoundError: grpc.StatusCode.NOT_FOUND,
+    ConflictError: grpc.StatusCode.ALREADY_EXISTS,
+    PermissionError: grpc.StatusCode.PERMISSION_DENIED,
+    AuthError: grpc.StatusCode.UNAUTHENTICATED,
+    DependencyError: grpc.StatusCode.UNAVAILABLE,
+    BusinessRuleError: grpc.StatusCode.FAILED_PRECONDITION,
+    OperationTimeout: grpc.StatusCode.DEADLINE_EXCEEDED,
+    InternalError: grpc.StatusCode.INTERNAL,
+}
+
+
+def to_grpc_status(err: Exception) -> tuple[grpc.StatusCode, str]:
+    """Map any exception to ``(grpc.StatusCode, public_message)`` for the egress
+    boundary. Unknown exceptions fall back to ``INTERNAL`` with a generic message —
+    the original exception still propagates through ``log.exception``; this is only
+    what we put on the wire.
+    """
+    for cls, code in _STATUS_MAP.items():
+        if isinstance(err, cls):
+            msg = err.public_message if isinstance(err, AppError) else str(err)
+            return code, msg
+    return grpc.StatusCode.INTERNAL, "internal error"
