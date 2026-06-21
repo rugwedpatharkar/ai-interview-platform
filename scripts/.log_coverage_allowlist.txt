@@ -26,8 +26,6 @@ src/admin/app/resources/job.py:138:list_jobs
 src/admin/app/resources/job.py:143:publish_job
 src/admin/app/resources/recommendations.py:32:get_candidate_recommendations
 src/admin/app/resources/recommendations.py:38:get_job_ranked_candidates
-src/admin/app/resources/preferences.py:16:get_appearance
-src/admin/app/resources/preferences.py:21:update_appearance
 src/admin/app/resources/decision.py:26:decide_application
 src/admin/app/resources/decision.py:45:override_gate
 src/admin/app/resources/application.py:25:apply
