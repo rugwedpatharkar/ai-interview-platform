@@ -28,7 +28,18 @@ def test_timeout_accessors_read_from_settings(monkeypatch):
         timeouts._cached_settings = None
 
 
-def test_defaults_match_spec_section_2_3():
+def test_defaults_match_spec_section_2_3(monkeypatch):
+    for var in (
+        "MONGO_OP_TIMEOUT_SECONDS",
+        "REDIS_OP_TIMEOUT_SECONDS",
+        "RABBITMQ_PUBLISH_TIMEOUT_SECONDS",
+        "LLM_CALL_TIMEOUT_SECONDS",
+        "LLM_CALL_RETRY_ATTEMPTS",
+        "MCP_CALL_TIMEOUT_SECONDS",
+        "STORAGE_OP_TIMEOUT_SECONDS",
+        "HTTP_CLIENT_TIMEOUT_SECONDS",
+    ):
+        monkeypatch.delenv(var, raising=False)
     s = BaseServiceSettings()
     timeouts._cached_settings = s
     try:
