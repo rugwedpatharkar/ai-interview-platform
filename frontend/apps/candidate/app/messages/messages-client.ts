@@ -70,13 +70,19 @@ export function createMessagesClient(api: Api): MessagesClient {
     },
     listQueryKey,
     threadQueryKey,
-    // v1 = short-poll; swapping to SSE replaces ONLY this body. The write path, query keys, and
-    // MessageThreadView stay untouched.
     subscribe(applicationId) {
       return {
         queryKey: threadQueryKey(applicationId),
         queryFn: () => client.listMessages(applicationId),
       };
+    },
+    async *streamMessages(applicationId, sinceId, signal) {
+      for await (const msg of m.streamMessages(
+        { applicationId, sinceId },
+        { signal },
+      )) {
+        yield mapMessage(msg);
+      }
     },
   };
   return client;
@@ -144,6 +150,10 @@ export function makeMockMessagesClient(applicationId: string, side: SenderSide):
     threadQueryKey,
     subscribe(appId) {
       return { queryKey: threadQueryKey(appId), queryFn: () => client.listMessages(appId) };
+    },
+    // eslint-disable-next-line require-yield
+    async *streamMessages(_appId, _sinceId, _signal) {
+      // Mock: no live messages; the poll in useThreadMessages handles updates.
     },
   };
   return client;
