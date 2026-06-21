@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ApIcon, MarketingShell } from "@ip/ui";
+import { PrivacyPanel } from "../../components/marketing/privacy-panel";
 
 /* ============================================================
    APTURA · LANDING (v3 · Aperture Pro)
@@ -921,29 +922,7 @@ function DefenseSplit() {
             ))}
           </ul>
         </div>
-        <div className="ap-def-panel ap-def-panel--privacy">
-          <h3 className="ap-h3 flex items-center gap-2">
-            <ApIcon name="shield-check" className="size-6 text-teal" />
-            What Aptura does <em className="not-italic font-medium text-teal-strong">not</em> do
-          </h3>
-          <ul className="ap-def-list ap-def-list--privacy">
-            {[
-              ["No real-time human watcher.", "Reviewers only see flagged events, after the fact."],
-              ["No raw video or audio leaves the browser.", "Detectors run on-device; only typed events are sent."],
-              ["No emotion or affect inference.", '"Candidate looked stressed" scoring? Never.'],
-              ["No identity matching beyond the ID check.", "No voiceprints, no face match against other databases."],
-              ["No keystroke surveillance for content.", "We track tab-switches, not what you type elsewhere."],
-              ["Encrypted at rest. Deleted on request.", "Right-to-erase honored across every Aptura artifact."],
-            ].map(([b, rest]) => (
-              <li key={b as string}>
-                <ApIcon name="check" />
-                <span>
-                  <b>{b}</b> {rest}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <PrivacyPanel />
       </div>
     </Section>
   );
