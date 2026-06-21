@@ -95,7 +95,8 @@ async def _feed_and_read(proc, stdin: str, cap: int):
     if len(out) > cap:
         # Output exceeded the cap — kill the group now so a flooding child can't keep
         # producing and can't block the stderr read (its pipe then EOFs immediately).
-        with contextlib.suppress(ProcessLookupError):
+        # macOS sandbox blocks process-group signals with PermissionError (EPERM).
+        with contextlib.suppress(ProcessLookupError, PermissionError):
             os.killpg(proc.pid, signal.SIGKILL)
     err = await proc.stderr.read(cap + 1)
     return out, err
@@ -139,7 +140,8 @@ async def run_code(
         # Always SIGKILL the group + reap: the child may still be alive (it timed out,
         # or it flooded output and is blocked writing to a full pipe after our bounded
         # read). A bounded read means a runaway printer can never OOM the parent.
-        with contextlib.suppress(ProcessLookupError):
+        # macOS sandbox blocks process-group signals with PermissionError (EPERM).
+        with contextlib.suppress(ProcessLookupError, PermissionError):
             os.killpg(proc.pid, signal.SIGKILL)
         with contextlib.suppress(Exception):
             await asyncio.wait_for(proc.wait(), timeout=1.0)
