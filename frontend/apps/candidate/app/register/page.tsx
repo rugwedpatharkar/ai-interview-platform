@@ -1,7 +1,7 @@
 "use client";
 
 import { ApIcon } from "@ip/ui";
-import { Code, errorMessage, isCode } from "@ip/shared";
+import { Code, errorMessage, isCode, track } from "@ip/shared";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
@@ -36,6 +36,7 @@ export default function RegisterPage() {
     setError(null);
     try {
       await register(email, password);
+      track("auth.registered", { role: "candidate" });
       router.push(`/verify?email=${encodeURIComponent(email)}`);
     } catch (err) {
       // AlreadyExists gets a signup-specific line; InvalidArgument falls through to
@@ -84,7 +85,7 @@ export default function RegisterPage() {
           />
           <PasswordMeter strength={strength} />
         </div>
-        <PrimaryButton type="submit" busy={busy} busyLabel="Creating your account…">
+        <PrimaryButton type="submit" busy={busy} busyLabel="Creating your account…" disabled={!email.trim() || !password || busy}>
           <span className="inline-flex items-center gap-2">
             Create account
             <ApIcon name="arrow" className="size-4" />

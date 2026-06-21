@@ -47,6 +47,7 @@ class McpCapability:
         except Exception:
             _mcp_cap_errors.labels(tool=tool).inc()
             _mcp_cap_duration.labels(tool=tool).observe((time.monotonic() - t0) * 1000)
+            log.exception("mcp-capability call failed for tool={}", tool)
             raise
         _mcp_cap_duration.labels(tool=tool).observe((time.monotonic() - t0) * 1000)
         return result

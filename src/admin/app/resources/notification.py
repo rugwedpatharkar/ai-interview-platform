@@ -6,11 +6,12 @@ advances. Sending is delegated to the injected email Notifier (infra); message c
 and recipient resolution live here. States with no candidate-facing message are skipped.
 """
 
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 
 from app.errors import NotFoundError
 from app.model.notification import Notification
 from app.resources.discovery import iso
+from app.resources.mark_read import mark_thread_read
 
 log = get_logger(component="notification.resources")
 
@@ -42,30 +43,65 @@ def _dto(doc: dict) -> dict:
 async def list_notifications(
     user_id, *, notifications, page=1, page_size=50, unread_only=False
 ):
-    """A recipient's notifications (recency desc). unread_count is ALWAYS fresh."""
-    page = _clamp_page(page)
-    page_size = _clamp_page_size(page_size)
-    rows = await notifications.list_by_user(
-        user_id, unread_only=unread_only, limit=page_size, skip=(page - 1) * page_size
-    )
-    return {
-        "notifications": [_dto(r) for r in rows],
-        "unread_count": await notifications.unread_count(user_id),
-        "page": page,
-        "page_size": page_size,
-        "total": await notifications.count_for(user_id, unread_only),
-    }
+    async with log_context(
+        log,
+        "resource.notification.list_notifications",
+        **bind_ids(user_id=user_id),
+    ):
+        # A recipient's notifications (recency desc). unread_count is ALWAYS fresh.
+        page = _clamp_page(page)
+        page_size = _clamp_page_size(page_size)
+        rows = await notifications.list_by_user(
+            user_id,
+            unread_only=unread_only,
+            limit=page_size,
+            skip=(page - 1) * page_size,
+        )
+        return {
+            "notifications": [_dto(r) for r in rows],
+            "unread_count": await notifications.unread_count(user_id),
+            "page": page,
+            "page_size": page_size,
+            "total": await notifications.count_for(user_id, unread_only),
+        }
 
 
-async def mark_read(user_id, notification_id, *, notifications):
-    if not await notifications.mark_read(user_id, notification_id):
-        raise NotFoundError("notification not found")
-    return await notifications.unread_count(user_id)
+async def mark_read(
+    user_id,
+    notification_id,
+    *,
+    notifications,
+    read_state=None,
+    seq_no: int = 0,
+    comp_id: str = "",
+):
+    async with log_context(
+        log,
+        "resource.notification.mark_read",
+        **bind_ids(user_id=user_id),
+    ):
+        if not await notifications.mark_read(user_id, notification_id):
+            raise NotFoundError("notification not found")
+        if read_state is not None:
+            await mark_thread_read(
+                comp_id,
+                user_id,
+                "notification",
+                notification_id,
+                seq_no,
+                store=read_state,
+            )
+        return await notifications.unread_count(user_id)
 
 
 async def mark_all_read(user_id, *, notifications):
-    await notifications.mark_all_read(user_id)
-    return await notifications.unread_count(user_id)
+    async with log_context(
+        log,
+        "resource.notification.mark_all_read",
+        **bind_ids(user_id=user_id),
+    ):
+        await notifications.mark_all_read(user_id)
+        return await notifications.unread_count(user_id)
 
 
 async def notify_event(
@@ -79,19 +115,25 @@ async def notify_event(
     link=None,
     dedup_key=None,
 ):
-    """Non-funnel notification entry (messaging / practice / alert sweep). Best-effort +
-    idempotent via the sparse (user_id, dedup_key) index. Returns True on insert."""
-    return await notifications.insert_dedup(
-        Notification(
-            user_id=user_id,
-            comp_id=comp_id,
-            kind=kind,
-            subject=subject,
-            body=body,
-            link=link,
-            dedup_key=dedup_key,
+    async with log_context(
+        log,
+        "resource.notification.notify_event",
+        **bind_ids(user_id=user_id, comp_id=comp_id),
+    ):
+        # Non-funnel notification entry (messaging / practice / alert sweep).
+        # Best-effort + idempotent via the sparse (user_id, dedup_key) index.
+        # Returns True on insert.
+        return await notifications.insert_dedup(
+            Notification(
+                user_id=user_id,
+                comp_id=comp_id,
+                kind=kind,
+                subject=subject,
+                body=body,
+                link=link,
+                dedup_key=dedup_key,
+            )
         )
-    )
 
 
 # to_state -> (subject, body). States absent here (applied, interviewed, scored,
@@ -133,14 +175,18 @@ class TransitionNotifier:
         self._notifier = notifier
 
     async def notify(self, application, to_state, event):
-        message = _MESSAGES.get(to_state)
-        if message is None:
-            return
-        candidate_user_id = application["candidate_user_id"]
-        user = await self._users.get(candidate_user_id)
-        if user is None:
-            log.warning("notify: candidate {} not found", candidate_user_id)
-            return
-        subject, body = message
-        await self._notifier.send_email(user["email"], subject, body)
-        log.info("notified {} of state {}", user["email"], to_state)
+        async with log_context(
+            log,
+            "resource.notification.notify",
+        ):
+            message = _MESSAGES.get(to_state)
+            if message is None:
+                return
+            candidate_user_id = application["candidate_user_id"]
+            user = await self._users.get(candidate_user_id)
+            if user is None:
+                log.warning("notify: candidate {} not found", candidate_user_id)
+                return
+            subject, body = message
+            await self._notifier.send_email(user["email"], subject, body)
+            log.info("notified {} of state {}", user["email"], to_state)

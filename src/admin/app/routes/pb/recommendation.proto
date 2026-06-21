@@ -10,7 +10,10 @@ service RecommendationService {
   rpc GetJobRankedCandidates(JobRankedRequest) returns (MatchList);
 }
 
-message CandidateRecommendationsRequest {}
+message CandidateRecommendationsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
 
 message JobRankedRequest {
   string job_id = 1;
@@ -25,4 +28,6 @@ message Match {
 
 message MatchList {
   repeated Match matches = 1;
+  string next_page_token = 2;
+  int64 total_count = 3;
 }

@@ -77,6 +77,7 @@ class RedisInterviewStore:
             _session_ops_duration.labels(op="save").observe(
                 (time.monotonic() - t0) * 1000
             )
+            log.exception("interview_session.save failed")
             raise
         _session_ops_duration.labels(op="save").observe((time.monotonic() - t0) * 1000)
 
@@ -97,6 +98,7 @@ class RedisInterviewStore:
             _session_ops_duration.labels(op="get").observe(
                 (time.monotonic() - t0) * 1000
             )
+            log.exception("interview_session.get failed")
             raise
         _session_ops_duration.labels(op="get").observe((time.monotonic() - t0) * 1000)
         return result
@@ -142,6 +144,7 @@ class RedisInterviewStore:
             _session_ops_duration.labels(op="list_in_progress").observe(
                 (time.monotonic() - t0) * 1000
             )
+            log.exception("interview_session.list_in_progress failed")
             raise
         _session_ops_duration.labels(op="list_in_progress").observe(
             (time.monotonic() - t0) * 1000

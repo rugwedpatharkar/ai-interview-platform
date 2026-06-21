@@ -76,7 +76,11 @@ services:
     environment:
       <<: *common-env
       MCP_PORT: 8100
-    ports: ["8100:8100"]
+      METRICS_PORT: "9090"
+      OTLP_ENDPOINT: "${OTLP_ENDPOINT:-}"
+    ports:
+      - "8100:8100"
+      - "9093:9090"
     depends_on:
       mongo: {condition: service_healthy}
 
@@ -89,7 +93,11 @@ services:
       MCP_PORT: 8101
       QDRANT_URL: http://qdrant:6333
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-    ports: ["8101:8101"]
+      METRICS_PORT: "9090"
+      OTLP_ENDPOINT: "${OTLP_ENDPOINT:-}"
+    ports:
+      - "8101:8101"
+      - "9094:9090"
     depends_on:
       minio-setup: {condition: service_completed_successfully}
       qdrant: {condition: service_started}
@@ -103,7 +111,11 @@ services:
       # Explicit FE origins so credentialed CORS (the refresh cookie) works; a "*" here
       # would disable credentials (see lib/lib/web.py). Set to your real origins in prod.
       CORS_ALLOW_ORIGIN: "http://localhost:3000,http://localhost:3001"
-    ports: ["8080:8080"]
+      METRICS_PORT: "9090"
+      OTLP_ENDPOINT: "${OTLP_ENDPOINT:-}"
+    ports:
+      - "8080:8080"
+      - "9091:9090"
     depends_on:
       mongo: {condition: service_healthy}
       redis: {condition: service_healthy}
@@ -122,7 +134,11 @@ services:
       MCP_DATA_URL: http://mcp-data:8100/mcp
       MCP_CAPABILITY_URL: http://mcp-capability:8101/mcp
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-    ports: ["8081:8080"]
+      METRICS_PORT: "9090"
+      OTLP_ENDPOINT: "${OTLP_ENDPOINT:-}"
+    ports:
+      - "8081:8080"
+      - "9092:9090"
     depends_on:
       mongo: {condition: service_healthy}
       redis: {condition: service_healthy}

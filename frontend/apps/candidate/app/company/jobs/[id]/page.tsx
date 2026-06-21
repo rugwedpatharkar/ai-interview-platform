@@ -93,7 +93,7 @@ export default function JobPipelinePage() {
   // Preserve the existing polling pattern from the recruiter app's ApplicantsTable.
   const applicants = useAuthedQuery(token, {
     queryKey: ["applicants", id],
-    queryFn: () => api.applications.listApplicants({ jobId: id }),
+    queryFn: () => api.applications.listApplicants({ jobId: id, pageSize: 200, pageToken: "" }),
     enabled: Boolean(token && id),
     refetchInterval: (q) => {
       const apps = q.state.data?.applications ?? [];

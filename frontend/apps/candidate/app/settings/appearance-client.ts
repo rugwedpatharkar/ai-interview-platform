@@ -39,7 +39,6 @@ export interface AppearanceClient {
 
 export const APPEARANCE_QUERY_KEY = ["preferences", "appearance"] as const;
 export const APPEARANCE_STORAGE_KEY = "aptura.appearance.v1";
-export const USE_MOCK = process.env.NEXT_PUBLIC_MOCK === "1";
 
 export const DEFAULT_APPEARANCE: AppearancePrefs = {
   mode: "system",
@@ -222,13 +221,10 @@ export function makeApiAppearanceClient(api: AdminClients): AppearanceClient {
   };
 }
 
-/** Hook: returns the live appearance client (or the mock under NEXT_PUBLIC_MOCK). */
+/** Hook: returns the live appearance client. */
 export function useAppearanceClient(): AppearanceClient {
   const { api } = useAuth();
-  return useMemo(
-    () => (USE_MOCK ? makeMockAppearanceClient() : makeApiAppearanceClient(api)),
-    [api],
-  );
+  return useMemo(() => makeApiAppearanceClient(api), [api]);
 }
 
 /** No-arg factory for tests / Storybook. */

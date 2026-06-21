@@ -12,10 +12,20 @@ class SendMessageRequest(_message.Message):
     BODY_FIELD_NUMBER: _ClassVar[int]
     application_id: str
     body: str
-    def __init__(self, application_id: _Optional[str] = ..., body: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self, application_id: _Optional[str] = ..., body: _Optional[str] = ...
+    ) -> None: ...
 
 class MessageDTO(_message.Message):
-    __slots__ = ("id", "application_id", "sender_role", "sender_user_id", "body", "created_at", "read_at")
+    __slots__ = (
+        "id",
+        "application_id",
+        "sender_role",
+        "sender_user_id",
+        "body",
+        "created_at",
+        "read_at",
+    )
     ID_FIELD_NUMBER: _ClassVar[int]
     APPLICATION_ID_FIELD_NUMBER: _ClassVar[int]
     SENDER_ROLE_FIELD_NUMBER: _ClassVar[int]
@@ -30,10 +40,28 @@ class MessageDTO(_message.Message):
     body: str
     created_at: str
     read_at: str
-    def __init__(self, id: _Optional[str] = ..., application_id: _Optional[str] = ..., sender_role: _Optional[str] = ..., sender_user_id: _Optional[str] = ..., body: _Optional[str] = ..., created_at: _Optional[str] = ..., read_at: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[str] = ...,
+        application_id: _Optional[str] = ...,
+        sender_role: _Optional[str] = ...,
+        sender_user_id: _Optional[str] = ...,
+        body: _Optional[str] = ...,
+        created_at: _Optional[str] = ...,
+        read_at: _Optional[str] = ...,
+    ) -> None: ...
 
 class ThreadDTO(_message.Message):
-    __slots__ = ("application_id", "candidate_user_id", "recruiter_user_id", "job_title", "company_name", "last_message_at", "last_snippet", "unread")
+    __slots__ = (
+        "application_id",
+        "candidate_user_id",
+        "recruiter_user_id",
+        "job_title",
+        "company_name",
+        "last_message_at",
+        "last_snippet",
+        "unread",
+    )
     APPLICATION_ID_FIELD_NUMBER: _ClassVar[int]
     CANDIDATE_USER_ID_FIELD_NUMBER: _ClassVar[int]
     RECRUITER_USER_ID_FIELD_NUMBER: _ClassVar[int]
@@ -50,7 +78,17 @@ class ThreadDTO(_message.Message):
     last_message_at: str
     last_snippet: str
     unread: int
-    def __init__(self, application_id: _Optional[str] = ..., candidate_user_id: _Optional[str] = ..., recruiter_user_id: _Optional[str] = ..., job_title: _Optional[str] = ..., company_name: _Optional[str] = ..., last_message_at: _Optional[str] = ..., last_snippet: _Optional[str] = ..., unread: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        application_id: _Optional[str] = ...,
+        candidate_user_id: _Optional[str] = ...,
+        recruiter_user_id: _Optional[str] = ...,
+        job_title: _Optional[str] = ...,
+        company_name: _Optional[str] = ...,
+        last_message_at: _Optional[str] = ...,
+        last_snippet: _Optional[str] = ...,
+        unread: _Optional[int] = ...,
+    ) -> None: ...
 
 class ListThreadsRequest(_message.Message):
     __slots__ = ("page", "page_size")
@@ -58,7 +96,9 @@ class ListThreadsRequest(_message.Message):
     PAGE_SIZE_FIELD_NUMBER: _ClassVar[int]
     page: int
     page_size: int
-    def __init__(self, page: _Optional[int] = ..., page_size: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self, page: _Optional[int] = ..., page_size: _Optional[int] = ...
+    ) -> None: ...
 
 class ListThreadsResponse(_message.Message):
     __slots__ = ("threads", "page", "page_size", "total")
@@ -70,7 +110,13 @@ class ListThreadsResponse(_message.Message):
     page: int
     page_size: int
     total: int
-    def __init__(self, threads: _Optional[_Iterable[_Union[ThreadDTO, _Mapping]]] = ..., page: _Optional[int] = ..., page_size: _Optional[int] = ..., total: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        threads: _Optional[_Iterable[_Union[ThreadDTO, _Mapping]]] = ...,
+        page: _Optional[int] = ...,
+        page_size: _Optional[int] = ...,
+        total: _Optional[int] = ...,
+    ) -> None: ...
 
 class ListMessagesRequest(_message.Message):
     __slots__ = ("application_id", "page", "page_size")
@@ -80,7 +126,12 @@ class ListMessagesRequest(_message.Message):
     application_id: str
     page: int
     page_size: int
-    def __init__(self, application_id: _Optional[str] = ..., page: _Optional[int] = ..., page_size: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        application_id: _Optional[str] = ...,
+        page: _Optional[int] = ...,
+        page_size: _Optional[int] = ...,
+    ) -> None: ...
 
 class ListMessagesResponse(_message.Message):
     __slots__ = ("messages", "page", "page_size", "total")
@@ -92,18 +143,35 @@ class ListMessagesResponse(_message.Message):
     page: int
     page_size: int
     total: int
-    def __init__(self, messages: _Optional[_Iterable[_Union[MessageDTO, _Mapping]]] = ..., page: _Optional[int] = ..., page_size: _Optional[int] = ..., total: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        messages: _Optional[_Iterable[_Union[MessageDTO, _Mapping]]] = ...,
+        page: _Optional[int] = ...,
+        page_size: _Optional[int] = ...,
+        total: _Optional[int] = ...,
+    ) -> None: ...
 
 class MarkReadRequest(_message.Message):
-    __slots__ = ("application_id",)
+    __slots__ = ("application_id", "seq_no")
     APPLICATION_ID_FIELD_NUMBER: _ClassVar[int]
+    SEQ_NO_FIELD_NUMBER: _ClassVar[int]
     application_id: str
-    def __init__(self, application_id: _Optional[str] = ...) -> None: ...
+    seq_no: int
+    def __init__(
+        self, application_id: _Optional[str] = ..., seq_no: _Optional[int] = ...
+    ) -> None: ...
 
 class MarkReadResponse(_message.Message):
-    __slots__ = ("application_id", "unread")
+    __slots__ = ("application_id", "unread", "accepted_seq_no")
     APPLICATION_ID_FIELD_NUMBER: _ClassVar[int]
     UNREAD_FIELD_NUMBER: _ClassVar[int]
+    ACCEPTED_SEQ_NO_FIELD_NUMBER: _ClassVar[int]
     application_id: str
     unread: int
-    def __init__(self, application_id: _Optional[str] = ..., unread: _Optional[int] = ...) -> None: ...
+    accepted_seq_no: int
+    def __init__(
+        self,
+        application_id: _Optional[str] = ...,
+        unread: _Optional[int] = ...,
+        accepted_seq_no: _Optional[int] = ...,
+    ) -> None: ...

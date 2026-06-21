@@ -2,7 +2,7 @@
 
 from uuid import uuid4
 
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 
 from app.errors import NotFoundError, ValidationError
 from app.model.profile import CandidateProfile
@@ -50,49 +50,56 @@ def _to_response(profile):
 
 
 async def upload_resume(user_id, data, content_type, *, profiles, storage, publisher):
-    _validate_resume(content_type, data)
-    key = f"{user_id}/{uuid4().hex}{_ALLOWED_TYPES[content_type]}"
-    object_key = await storage.put(user_id, "resumes", key, data, content_type)
-    fields = {
-        "resume_key": object_key,
-        "resume_uploaded": True,
-        "parsed": False,
-        "confirmed": False,
-    }
-    if await profiles.get_by_user(user_id) is None:
-        await profiles.insert(CandidateProfile(user_id=user_id, **fields))
-    else:
-        await profiles.update_by_user(user_id, fields)
-    await publisher.publish(
-        "profile.parse", {"user_id": user_id, "resume_key": object_key}
-    )
-    log.info("resume uploaded + parse queued: user_id={}", user_id)
-    return _to_response(await profiles.get_by_user(user_id))
+    async with log_context(
+        log, "resource.profile.upload_resume", **bind_ids(user_id=user_id)
+    ):
+        _validate_resume(content_type, data)
+        key = f"{user_id}/{uuid4().hex}{_ALLOWED_TYPES[content_type]}"
+        object_key = await storage.put(user_id, "resumes", key, data, content_type)
+        fields = {
+            "resume_key": object_key,
+            "resume_uploaded": True,
+            "parsed": False,
+            "confirmed": False,
+        }
+        if await profiles.get_by_user(user_id) is None:
+            await profiles.insert(CandidateProfile(user_id=user_id, **fields))
+        else:
+            await profiles.update_by_user(user_id, fields)
+        await publisher.publish(
+            "profile.parse", {"user_id": user_id, "resume_key": object_key}
+        )
+        log.info("resume uploaded + parse queued: user_id={}", user_id)
+        return _to_response(await profiles.get_by_user(user_id))
 
 
 async def get_profile(user_id, *, profiles):
-    profile = await profiles.get_by_user(user_id)
-    if profile is None:
-        raise NotFoundError("No profile yet")
-    return _to_response(profile)
+    async with log_context(
+        log, "resource.profile.get_profile", **bind_ids(user_id=user_id)
+    ):
+        profile = await profiles.get_by_user(user_id)
+        if profile is None:
+            raise NotFoundError("No profile yet")
+        return _to_response(profile)
 
 
 async def update_profile(user_id, fields, *, profiles):
-    """Candidate sets the general profile fields (name/age/location/relocation/pref).
-
-    A full-form replace of those fields; `age == 0` means unset. No official documents —
-    see the data-scope note.
-    """
-    if (
-        fields.get("job_preference")
-        and fields["job_preference"] not in _JOB_PREFERENCES
+    # Candidate sets the general profile fields (name/age/location/relocation/pref).
+    # A full-form replace of those fields; `age == 0` means unset. No official documents
+    # — see the data-scope note.
+    async with log_context(
+        log, "resource.profile.update_profile", **bind_ids(user_id=user_id)
     ):
-        raise ValidationError("job_preference must be hybrid, remote, or onsite")
-    if fields.get("age") and not 16 <= fields["age"] <= 100:
-        raise ValidationError("age must be between 16 and 100")
-    if await profiles.get_by_user(user_id) is None:
-        await profiles.insert(CandidateProfile(user_id=user_id, **fields))
-    else:
-        await profiles.update_by_user(user_id, fields)
-    log.info("profile updated: user_id={}", user_id)
-    return _to_response(await profiles.get_by_user(user_id))
+        if (
+            fields.get("job_preference")
+            and fields["job_preference"] not in _JOB_PREFERENCES
+        ):
+            raise ValidationError("job_preference must be hybrid, remote, or onsite")
+        if fields.get("age") and not 16 <= fields["age"] <= 100:
+            raise ValidationError("age must be between 16 and 100")
+        if await profiles.get_by_user(user_id) is None:
+            await profiles.insert(CandidateProfile(user_id=user_id, **fields))
+        else:
+            await profiles.update_by_user(user_id, fields)
+        log.info("profile updated: user_id={}", user_id)
+        return _to_response(await profiles.get_by_user(user_id))

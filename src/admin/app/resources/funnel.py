@@ -7,7 +7,7 @@ the shared `ApplicationState`/`FunnelEvent` enums so typos are caught, not silen
 turned into illegal transitions.
 """
 
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 from lib.schemas import ApplicationState as S
 from lib.schemas import FunnelEvent as E
 
@@ -65,39 +65,48 @@ def next_state(current, event, payload):
 async def advance_application(
     application_id, event, payload, *, applications, audit, notifier=None
 ):
-    application = await applications.get(application_id)
-    if application is None:
-        raise NotFoundError("Application not found")
-    current = application["state"]
-    new = next_state(current, event, payload)
-    # Compare-and-swap on the observed state: a concurrent writer or a redelivered event
-    # that already produced this transition is a no-op (no duplicate audit row or
-    # notification); a genuine conflict surfaces as InvalidTransition.
-    if not await applications.set_state_if(application_id, current, new):
-        fresh = await applications.get(application_id)
-        if fresh is not None and fresh["state"] == new:
-            log.info("funnel: {} already {} ({}), no-op", application_id, new, event)
-            return new
-        raise InvalidTransition(f"state moved under {event!r} from {current!r}")
-    await audit.insert(
-        AuditLog(
-            entity="application",
-            entity_id=application_id,
-            action=event,
-            comp_id=application.get("comp_id"),
-            from_state=current,
-            to_state=new,
+    async with log_context(
+        log,
+        "resource.funnel.advance_application",
+        **bind_ids(application_id=application_id),
+    ):
+        application = await applications.get(application_id)
+        if application is None:
+            raise NotFoundError("Application not found")
+        current = application["state"]
+        new = next_state(current, event, payload)
+        # CAS on the observed state: a concurrent writer or a redelivered event that
+        # already produced this transition is a no-op (no duplicate audit row or
+        # notification); a genuine conflict surfaces as InvalidTransition.
+        if not await applications.set_state_if(application_id, current, new):
+            fresh = await applications.get(application_id)
+            if fresh is not None and fresh["state"] == new:
+                log.info(
+                    "funnel: {} already {} ({}), no-op", application_id, new, event
+                )
+                return new
+            raise InvalidTransition(f"state moved under {event!r} from {current!r}")
+        await audit.insert(
+            AuditLog(
+                entity="application",
+                entity_id=application_id,
+                action=event,
+                comp_id=application.get("comp_id"),
+                from_state=current,
+                to_state=new,
+            )
         )
-    )
-    log.info(
-        "funnel: application {} {} -> {} ({})", application_id, current, new, event
-    )
-    # The injected notifier QUEUES a notification.requested event (see
-    # NotificationRequestPublisher) rather than sending inline, so a transient send
-    # failure is retried by its own consumer (→ DLX) instead of being dropped. BE-#10.
-    if notifier is not None:
-        try:
-            await notifier.notify(application, new, event)
-        except Exception:
-            log.exception("funnel: notification enqueue failed for {}", application_id)
-    return new
+        log.info(
+            "funnel: application {} {} -> {} ({})", application_id, current, new, event
+        )
+        # The injected notifier QUEUES a notification.requested event (see
+        # NotificationRequestPublisher) rather than sending inline, so a transient
+        # send failure is retried by its own consumer (→ DLX), not dropped. BE-#10.
+        if notifier is not None:
+            try:
+                await notifier.notify(application, new, event)
+            except Exception:
+                log.exception(
+                    "funnel: notification enqueue failed for {}", application_id
+                )
+        return new

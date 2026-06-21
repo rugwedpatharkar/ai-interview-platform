@@ -9,7 +9,10 @@ service TalentService {
   rpc GetTalentPool(TalentPoolRequest) returns (TalentPool);
 }
 
-message TalentPoolRequest {}
+message TalentPoolRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
 
 message TalentEntry {
   string candidate_user_id = 1;
@@ -18,4 +21,6 @@ message TalentEntry {
 
 message TalentPool {
   repeated TalentEntry entries = 1;
+  string next_page_token = 2;
+  int64 total_count = 3;
 }

@@ -80,6 +80,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -98,6 +99,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -121,6 +123,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -145,6 +148,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -165,6 +169,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -217,6 +222,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -237,6 +243,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -299,6 +306,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -332,6 +340,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -365,6 +374,7 @@ class DataStore:
                     return rows
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -410,6 +420,7 @@ class DataStore:
                 return False
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -439,6 +450,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -463,6 +475,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -483,6 +496,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -516,6 +530,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -553,6 +568,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -597,6 +613,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -619,6 +636,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
@@ -644,6 +662,7 @@ class DataStore:
                     )
             except Exception:
                 _mongo_errors.labels(op=op).inc()
+                log.exception("mongo.{} failed", op)
                 raise
             finally:
                 _mongo_duration.labels(op=op).observe(_ms(t0))

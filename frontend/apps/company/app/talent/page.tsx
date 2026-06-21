@@ -26,7 +26,7 @@ export default function TalentPage() {
   const [shown, setShown] = useState(PAGE);
   const pool = useAuthedQuery(token, {
     queryKey: ["talent"],
-    queryFn: () => api.talent.getTalentPool({}),
+    queryFn: () => api.talent.getTalentPool({ pageSize: 200, pageToken: "" }),
   });
   const entries = pool.data?.entries ?? [];
   const visible = entries.slice(0, shown);

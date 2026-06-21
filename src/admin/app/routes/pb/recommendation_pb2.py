@@ -4,41 +4,40 @@
 # source: app/routes/pb/recommendation.proto
 # Protobuf Python Version: 6.33.5
 """Generated protocol buffer code."""
+
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 _runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC,
-    6,
-    33,
-    5,
-    '',
-    'app/routes/pb/recommendation.proto'
+    _runtime_version.Domain.PUBLIC, 6, 33, 5, "", "app/routes/pb/recommendation.proto"
 )
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\"app/routes/pb/recommendation.proto\x12\x17\x61\x64min.recommendation.v1\"!\n\x1f\x43\x61ndidateRecommendationsRequest\"\"\n\x10JobRankedRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"R\n\x05Match\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x19\n\x11\x63\x61ndidate_user_id\x18\x02 \x01(\t\x12\r\n\x05score\x18\x03 \x01(\x01\x12\x0f\n\x07reasons\x18\x04 \x03(\t\"<\n\tMatchList\x12/\n\x07matches\x18\x01 \x03(\x0b\x32\x1e.admin.recommendation.v1.Match2\xfd\x01\n\x15RecommendationService\x12{\n\x1bGetCandidateRecommendations\x12\x38.admin.recommendation.v1.CandidateRecommendationsRequest\x1a\".admin.recommendation.v1.MatchList\x12g\n\x16GetJobRankedCandidates\x12).admin.recommendation.v1.JobRankedRequest\x1a\".admin.recommendation.v1.MatchListb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n"app/routes/pb/recommendation.proto\x12\x17\x61\x64min.recommendation.v1"H\n\x1f\x43\x61ndidateRecommendationsRequest\x12\x11\n\tpage_size\x18\x01 \x01(\x05\x12\x12\n\npage_token\x18\x02 \x01(\t""\n\x10JobRankedRequest\x12\x0e\n\x06job_id\x18\x01 \x01(\t"R\n\x05Match\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x19\n\x11\x63\x61ndidate_user_id\x18\x02 \x01(\t\x12\r\n\x05score\x18\x03 \x01(\x01\x12\x0f\n\x07reasons\x18\x04 \x03(\t"j\n\tMatchList\x12/\n\x07matches\x18\x01 \x03(\x0b\x32\x1e.admin.recommendation.v1.Match\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\x12\x13\n\x0btotal_count\x18\x03 \x01(\x03\x32\xfd\x01\n\x15RecommendationService\x12{\n\x1bGetCandidateRecommendations\x12\x38.admin.recommendation.v1.CandidateRecommendationsRequest\x1a".admin.recommendation.v1.MatchList\x12g\n\x16GetJobRankedCandidates\x12).admin.recommendation.v1.JobRankedRequest\x1a".admin.recommendation.v1.MatchListb\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'app.routes.pb.recommendation_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(
+    DESCRIPTOR, "app.routes.pb.recommendation_pb2", _globals
+)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
-  _globals['_CANDIDATERECOMMENDATIONSREQUEST']._serialized_start=63
-  _globals['_CANDIDATERECOMMENDATIONSREQUEST']._serialized_end=96
-  _globals['_JOBRANKEDREQUEST']._serialized_start=98
-  _globals['_JOBRANKEDREQUEST']._serialized_end=132
-  _globals['_MATCH']._serialized_start=134
-  _globals['_MATCH']._serialized_end=216
-  _globals['_MATCHLIST']._serialized_start=218
-  _globals['_MATCHLIST']._serialized_end=278
-  _globals['_RECOMMENDATIONSERVICE']._serialized_start=281
-  _globals['_RECOMMENDATIONSERVICE']._serialized_end=534
+    DESCRIPTOR._loaded_options = None
+    _globals["_CANDIDATERECOMMENDATIONSREQUEST"]._serialized_start = 63
+    _globals["_CANDIDATERECOMMENDATIONSREQUEST"]._serialized_end = 135
+    _globals["_JOBRANKEDREQUEST"]._serialized_start = 137
+    _globals["_JOBRANKEDREQUEST"]._serialized_end = 171
+    _globals["_MATCH"]._serialized_start = 173
+    _globals["_MATCH"]._serialized_end = 255
+    _globals["_MATCHLIST"]._serialized_start = 257
+    _globals["_MATCHLIST"]._serialized_end = 363
+    _globals["_RECOMMENDATIONSERVICE"]._serialized_start = 366
+    _globals["_RECOMMENDATIONSERVICE"]._serialized_end = 619
 # @@protoc_insertion_point(module_scope)

@@ -152,12 +152,7 @@ export function makeApiSettingsClient(api: ApiClients): SettingsClient {
   };
 }
 
-// Mock when NEXT_PUBLIC_MOCK=1 (fixture-driven dev), else the live gRPC client.
-export const USE_MOCK_SETTINGS = process.env.NEXT_PUBLIC_MOCK === "1";
-
-/** Returns the active SettingsClient for the calling component. Live by default; mock when
- *  NEXT_PUBLIC_MOCK=1. The consumer memoizes (`useMemo`) so the mock's in-memory store survives
- *  re-renders. */
+/** Returns the active SettingsClient for the calling component. Always live RPC. */
 export function makeSettingsClient(api: ApiClients): SettingsClient {
-  return USE_MOCK_SETTINGS ? makeMockSettingsClient() : makeApiSettingsClient(api);
+  return makeApiSettingsClient(api);
 }

@@ -32,6 +32,7 @@ import { SettingsService } from "./gen/settings_pb.js";
 import { SourcingService } from "./gen/sourcing_pb.js";
 import { TalentService } from "./gen/talent_pb.js";
 import { TeamService } from "./gen/team_pb.js";
+import { ObservabilityService } from "./gen/observability_pb.js";
 // ai-agents services (interview/chat/jd/practice) — same gRPC-web translator, different origin.
 import { ChatService } from "./gen/chat_pb.js";
 import { InterviewService } from "./gen/interview_pb.js";
@@ -69,6 +70,7 @@ export * from "./gen/scheduling_pb.js";
 export * from "./gen/sourcing_pb.js";
 export * from "./gen/talent_pb.js";
 export * from "./gen/team_pb.js";
+export * from "./gen/observability_pb.js";
 export * from "./gen/chat_pb.js";
 export * from "./gen/interview_pb.js";
 export * from "./gen/jd_pb.js";
@@ -185,6 +187,7 @@ export interface AdminClients {
   jobAlerts: Client<typeof JobAlertsService>;
   messaging: Client<typeof MessagingService>;
   notification: Client<typeof NotificationService>;
+  observability: Client<typeof ObservabilityService>;
   preferences: Client<typeof PreferencesService>;
   savedJobs: Client<typeof SavedJobsService>;
   scheduling: Client<typeof SchedulingService>;
@@ -230,6 +233,7 @@ export function clientsFromTransport(transport: Transport): AdminClients {
     jobAlerts: createClient(JobAlertsService, transport),
     messaging: createClient(MessagingService, transport),
     notification: createClient(NotificationService, transport),
+    observability: createClient(ObservabilityService, transport),
     preferences: createClient(PreferencesService, transport),
     savedJobs: createClient(SavedJobsService, transport),
     scheduling: createClient(SchedulingService, transport),

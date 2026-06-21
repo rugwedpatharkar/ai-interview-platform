@@ -120,6 +120,7 @@ async def embed(texts, *, embedder):
             return result
         except Exception:
             _embed_errors.inc()
+            log.exception("embed failed")
             raise
 
 
@@ -170,6 +171,7 @@ async def kb_search(query, topic, owner, *, embedder, store, redis, k=5):
             return result
         except Exception:
             _kb_search_errors.inc()
+            log.exception("kb_search failed for owner={} topic={}", owner, topic)
             raise
 
 

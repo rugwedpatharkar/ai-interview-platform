@@ -9,6 +9,24 @@ import { createGrpcWebTransport } from "@connectrpc/connect-web";
 
 import type { TokenStore } from "./tokens.js";
 
+// Last correlation ID returned by any unary RPC, for attaching to client-side telemetry.
+let _lastCorrelationId: string | null = null;
+
+export function getLastCorrelationId(): string | null {
+  return _lastCorrelationId;
+}
+
+// Transport quality event hook — avoids a circular import between transport ↔ observability.
+// observability.ts calls registerTransportTracker(track) during initObservability so the
+// interceptors can emit api.timeout and api.unauthorized_refresh without importing observability.
+type QualityEventName = "api.timeout" | "api.unauthorized_refresh";
+type TransportTracker = (name: QualityEventName, props: { service: string; rpc: string }) => void;
+let _transportTracker: TransportTracker | null = null;
+
+export function registerTransportTracker(fn: TransportTracker): void {
+  _transportTracker = fn;
+}
+
 // One in-flight refresh per token store, shared across BOTH transports (admin + ai-agents)
 // that bind the same store. A 401 on an admin RPC and a 401 on an ai-agents RPC that race
 // must share a single rotation instead of each spending the (single-use) refresh token —
@@ -115,15 +133,31 @@ export function createAuthedTransport(
   store: TokenStore,
   onAuthLost: () => void,
 ) {
+  const correlationInterceptor: Interceptor = (next) => async (req) => {
+    const res = await next(req);
+    const cid = res.header.get("x-correlation-id");
+    if (cid) _lastCorrelationId = cid;
+    return res;
+  };
+
   const interceptor: Interceptor = (next) => async (req) => {
     const sent = store.get()?.access;
     // Capture the rotation counter before the RPC so we can detect a concurrent rotation.
     const seenRotation = rotationCount(store);
     if (sent) req.header.set("Authorization", `Bearer ${sent}`);
+    const rpcCtx = {
+      service: req.method.parent.typeName,
+      rpc: req.method.name,
+    };
     try {
       return await next(req);
     } catch (err) {
-      if (!(err instanceof ConnectError) || err.code !== Code.Unauthenticated) throw err;
+      if (!(err instanceof ConnectError)) throw err;
+      if (err.code === Code.DeadlineExceeded) {
+        _transportTracker?.("api.timeout", rpcCtx);
+        throw err;
+      }
+      if (err.code !== Code.Unauthenticated) throw err;
       // A concurrent request may have already refreshed — if the token changed OR the
       // rotation counter advanced, retry with the current token without rotating again
       // (reusing a now-rotated refresh token would fail and spuriously log the user out).
@@ -133,6 +167,7 @@ export function createAuthedTransport(
         return await next(req);
       }
       if (sent && (await refreshToken(store, refreshBaseUrl, onAuthLost))) {
+        _transportTracker?.("api.unauthorized_refresh", rpcCtx);
         const fresh = store.get()?.access;
         if (fresh) req.header.set("Authorization", `Bearer ${fresh}`);
         return await next(req);
@@ -141,7 +176,7 @@ export function createAuthedTransport(
     }
   };
 
-  return createGrpcWebTransport({ baseUrl, interceptors: [interceptor] });
+  return createGrpcWebTransport({ baseUrl, interceptors: [interceptor, correlationInterceptor] });
 }
 
 /**

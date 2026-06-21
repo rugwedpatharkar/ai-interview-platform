@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 from lib.schemas import Role
 
 from app.errors import ForbiddenError, NotFoundError, ValidationError
@@ -87,78 +87,104 @@ def _to_response(job):
 
 
 async def create_job(identity, title, jd_text, *, jobs, marketplace=None):
-    _require_manager(identity)
-    if not title:
-        raise ValidationError("Job title is required")
-    norm = _validate_marketplace(marketplace or {})
-    gate_mode = norm.pop("gate_mode")
-    job_id = await jobs.insert(
-        Job(
-            comp_id=identity["comp_id"],
-            title=title,
-            jd_text=jd_text,
-            aptitude_config=AptitudeConfig(gate_mode=gate_mode),
-            **norm,
+    async with log_context(
+        log,
+        "resource.job.create_job",
+        **bind_ids(comp_id=identity["comp_id"]),
+    ):
+        _require_manager(identity)
+        if not title:
+            raise ValidationError("Job title is required")
+        norm = _validate_marketplace(marketplace or {})
+        gate_mode = norm.pop("gate_mode")
+        job_id = await jobs.insert(
+            Job(
+                comp_id=identity["comp_id"],
+                title=title,
+                jd_text=jd_text,
+                aptitude_config=AptitudeConfig(gate_mode=gate_mode),
+                **norm,
+            )
         )
-    )
-    log.info("job created: comp_id={} job_id={}", identity["comp_id"], job_id)
-    return _to_response(await jobs.get_scoped(job_id, identity["comp_id"]))
+        log.info("job created: comp_id={} job_id={}", identity["comp_id"], job_id)
+        return _to_response(await jobs.get_scoped(job_id, identity["comp_id"]))
 
 
 async def update_job(identity, job_id, title, jd_text, *, jobs, marketplace=None):
-    _require_manager(identity)
-    if not title:
-        raise ValidationError("Job title is required")
-    if await jobs.get_scoped(job_id, identity["comp_id"]) is None:
-        raise NotFoundError("Job not found")
-    norm = _validate_marketplace(marketplace or {})
-    gate_mode = norm.pop("gate_mode")
-    await jobs.update_fields(
-        job_id,
-        identity["comp_id"],
-        {
-            **norm,
-            "title": title,
-            "jd_text": jd_text,
-            "aptitude_config.gate_mode": gate_mode,
-        },
-    )
-    log.info("job updated: comp_id={} job_id={}", identity["comp_id"], job_id)
-    return _to_response(await jobs.get_scoped(job_id, identity["comp_id"]))
-
-
-async def get_job(identity, job_id, *, jobs):
-    _require_manager(identity)
-    job = await jobs.get_scoped(job_id, identity["comp_id"])
-    if job is None:
-        raise NotFoundError("Job not found")
-    return _to_response(job)
-
-
-async def list_jobs(identity, *, jobs):
-    _require_manager(identity)
-    return [_to_response(j) for j in await jobs.list_by_company(identity["comp_id"])]
-
-
-async def publish_job(identity, job_id, *, jobs, publisher):
-    _require_manager(identity)
-    job = await jobs.get_scoped(job_id, identity["comp_id"])
-    if job is None:
-        raise NotFoundError("Job not found")
-    if job["status"] not in ("draft", "published"):
-        raise ValidationError("Only a draft or published job can be published")
-    if job["status"] == "draft":
-        # Stamp posted_at at the flip (drafts have none); re-publish keeps the original.
+    async with log_context(
+        log,
+        "resource.job.update_job",
+        **bind_ids(comp_id=identity["comp_id"], job_id=job_id),
+    ):
+        _require_manager(identity)
+        if not title:
+            raise ValidationError("Job title is required")
+        if await jobs.get_scoped(job_id, identity["comp_id"]) is None:
+            raise NotFoundError("Job not found")
+        norm = _validate_marketplace(marketplace or {})
+        gate_mode = norm.pop("gate_mode")
         await jobs.update_fields(
             job_id,
             identity["comp_id"],
-            {"status": "published", "posted_at": datetime.now(UTC)},
+            {
+                **norm,
+                "title": title,
+                "jd_text": jd_text,
+                "aptitude_config.gate_mode": gate_mode,
+            },
         )
-    # Emit (or re-emit) job.published. The handler is idempotent — split bank/plan
-    # guards — so re-publishing an already-published job rebuilds anything a prior
-    # publish-after-flip failure left missing, closing the bankless-job strand. BE-#8.
-    await publisher.publish(
-        "job.published", {"job_id": job_id, "comp_id": identity["comp_id"]}
-    )
-    log.info("job published: comp_id={} job_id={}", identity["comp_id"], job_id)
-    return _to_response(await jobs.get_scoped(job_id, identity["comp_id"]))
+        log.info("job updated: comp_id={} job_id={}", identity["comp_id"], job_id)
+        return _to_response(await jobs.get_scoped(job_id, identity["comp_id"]))
+
+
+async def get_job(identity, job_id, *, jobs):
+    async with log_context(
+        log,
+        "resource.job.get_job",
+        **bind_ids(comp_id=identity["comp_id"], job_id=job_id),
+    ):
+        _require_manager(identity)
+        job = await jobs.get_scoped(job_id, identity["comp_id"])
+        if job is None:
+            raise NotFoundError("Job not found")
+        return _to_response(job)
+
+
+async def list_jobs(identity, *, jobs):
+    async with log_context(
+        log,
+        "resource.job.list_jobs",
+        **bind_ids(comp_id=identity["comp_id"]),
+    ):
+        _require_manager(identity)
+        return [
+            _to_response(j) for j in await jobs.list_by_company(identity["comp_id"])
+        ]
+
+
+async def publish_job(identity, job_id, *, jobs, publisher):
+    async with log_context(
+        log,
+        "resource.job.publish_job",
+        **bind_ids(comp_id=identity["comp_id"], job_id=job_id),
+    ):
+        _require_manager(identity)
+        job = await jobs.get_scoped(job_id, identity["comp_id"])
+        if job is None:
+            raise NotFoundError("Job not found")
+        if job["status"] not in ("draft", "published"):
+            raise ValidationError("Only a draft or published job can be published")
+        if job["status"] == "draft":
+            # Stamp posted_at at the flip (drafts have none); re-publish keeps original.
+            await jobs.update_fields(
+                job_id,
+                identity["comp_id"],
+                {"status": "published", "posted_at": datetime.now(UTC)},
+            )
+        # Emit (or re-emit) job.published. Idempotent — split bank/plan guards — so
+        # re-publishing rebuilds anything a prior flip failure left missing. BE-#8.
+        await publisher.publish(
+            "job.published", {"job_id": job_id, "comp_id": identity["comp_id"]}
+        )
+        log.info("job published: comp_id={} job_id={}", identity["comp_id"], job_id)
+        return _to_response(await jobs.get_scoped(job_id, identity["comp_id"]))

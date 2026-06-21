@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file notification.proto.
  */
 export const file_notification: GenFile = /*@__PURE__*/
-  fileDesc("ChJub3RpZmljYXRpb24ucHJvdG8SFWFkbWluLm5vdGlmaWNhdGlvbi52MSJ9Cg9Ob3RpZmljYXRpb25EVE8SCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIPCgdzdWJqZWN0GAMgASgJEgwKBGJvZHkYBCABKAkSDAoEbGluaxgFIAEoCRISCgpjcmVhdGVkX2F0GAYgASgJEg8KB3JlYWRfYXQYByABKAkiQwoLTGlzdFJlcXVlc3QSDAoEcGFnZRgBIAEoBRIRCglwYWdlX3NpemUYAiABKAUSEwoLdW5yZWFkX29ubHkYAyABKAgikwEKDExpc3RSZXNwb25zZRI9Cg1ub3RpZmljYXRpb25zGAEgAygLMiYuYWRtaW4ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkRUTxIUCgx1bnJlYWRfY291bnQYAiABKAUSDAoEcGFnZRgDIAEoBRIRCglwYWdlX3NpemUYBCABKAUSDQoFdG90YWwYBSABKAUiKgoPTWFya1JlYWRSZXF1ZXN0EhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCSIUChJNYXJrQWxsUmVhZFJlcXVlc3QiKAoQTWFya1JlYWRSZXNwb25zZRIUCgx1bnJlYWRfY291bnQYASABKAUyswIKE05vdGlmaWNhdGlvblNlcnZpY2USXAoRTGlzdE5vdGlmaWNhdGlvbnMSIi5hZG1pbi5ub3RpZmljYXRpb24udjEuTGlzdFJlcXVlc3QaIy5hZG1pbi5ub3RpZmljYXRpb24udjEuTGlzdFJlc3BvbnNlElsKCE1hcmtSZWFkEiYuYWRtaW4ubm90aWZpY2F0aW9uLnYxLk1hcmtSZWFkUmVxdWVzdBonLmFkbWluLm5vdGlmaWNhdGlvbi52MS5NYXJrUmVhZFJlc3BvbnNlEmEKC01hcmtBbGxSZWFkEikuYWRtaW4ubm90aWZpY2F0aW9uLnYxLk1hcmtBbGxSZWFkUmVxdWVzdBonLmFkbWluLm5vdGlmaWNhdGlvbi52MS5NYXJrUmVhZFJlc3BvbnNlYgZwcm90bzM");
+  fileDesc("ChJub3RpZmljYXRpb24ucHJvdG8SFWFkbWluLm5vdGlmaWNhdGlvbi52MSJ9Cg9Ob3RpZmljYXRpb25EVE8SCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIPCgdzdWJqZWN0GAMgASgJEgwKBGJvZHkYBCABKAkSDAoEbGluaxgFIAEoCRISCgpjcmVhdGVkX2F0GAYgASgJEg8KB3JlYWRfYXQYByABKAkiQwoLTGlzdFJlcXVlc3QSDAoEcGFnZRgBIAEoBRIRCglwYWdlX3NpemUYAiABKAUSEwoLdW5yZWFkX29ubHkYAyABKAgikwEKDExpc3RSZXNwb25zZRI9Cg1ub3RpZmljYXRpb25zGAEgAygLMiYuYWRtaW4ubm90aWZpY2F0aW9uLnYxLk5vdGlmaWNhdGlvbkRUTxIUCgx1bnJlYWRfY291bnQYAiABKAUSDAoEcGFnZRgDIAEoBRIRCglwYWdlX3NpemUYBCABKAUSDQoFdG90YWwYBSABKAUiOgoPTWFya1JlYWRSZXF1ZXN0EhcKD25vdGlmaWNhdGlvbl9pZBgBIAEoCRIOCgZzZXFfbm8YAiABKAMiFAoSTWFya0FsbFJlYWRSZXF1ZXN0IkEKEE1hcmtSZWFkUmVzcG9uc2USFAoMdW5yZWFkX2NvdW50GAEgASgFEhcKD2FjY2VwdGVkX3NlcV9ubxgCIAEoAzKzAgoTTm90aWZpY2F0aW9uU2VydmljZRJcChFMaXN0Tm90aWZpY2F0aW9ucxIiLmFkbWluLm5vdGlmaWNhdGlvbi52MS5MaXN0UmVxdWVzdBojLmFkbWluLm5vdGlmaWNhdGlvbi52MS5MaXN0UmVzcG9uc2USWwoITWFya1JlYWQSJi5hZG1pbi5ub3RpZmljYXRpb24udjEuTWFya1JlYWRSZXF1ZXN0GicuYWRtaW4ubm90aWZpY2F0aW9uLnYxLk1hcmtSZWFkUmVzcG9uc2USYQoLTWFya0FsbFJlYWQSKS5hZG1pbi5ub3RpZmljYXRpb24udjEuTWFya0FsbFJlYWRSZXF1ZXN0GicuYWRtaW4ubm90aWZpY2F0aW9uLnYxLk1hcmtSZWFkUmVzcG9uc2ViBnByb3RvMw");
 
 /**
  * @generated from message admin.notification.v1.NotificationDTO
@@ -139,6 +139,13 @@ export type MarkReadRequest = Message<"admin.notification.v1.MarkReadRequest"> &
    * @generated from field: string notification_id = 1;
    */
   notificationId: string;
+
+  /**
+   * 0 = server picks current+1 (backward-compat default)
+   *
+   * @generated from field: int64 seq_no = 2;
+   */
+  seqNo: bigint;
 };
 
 /**
@@ -171,6 +178,13 @@ export type MarkReadResponse = Message<"admin.notification.v1.MarkReadResponse">
    * @generated from field: int32 unread_count = 1;
    */
   unreadCount: number;
+
+  /**
+   * monotonic high-water mark after this ack
+   *
+   * @generated from field: int64 accepted_seq_no = 2;
+   */
+  acceptedSeqNo: bigint;
 };
 
 /**

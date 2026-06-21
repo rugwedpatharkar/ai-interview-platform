@@ -86,3 +86,61 @@ class DecisionServicer(decision_pb2_grpc.DecisionServiceServicer):
                 )
             except AuthDomainError as exc:
                 await self._abort(context, exc, "OverrideGate")
+
+    async def HoldApplication(self, request, context):
+        _grpc_total.labels(method="HoldApplication").inc()
+        async with (
+            log_context(
+                log,
+                "decision.HoldApplication",
+                **bind_ids(application_id=request.application_id),
+            ),
+            span("decision.HoldApplication", application_id=request.application_id),
+        ):
+            try:
+                identity = await caller_identity(context, self._tokens)
+                result = await decision_res.hold_application(
+                    identity,
+                    request.application_id,
+                    request.reason_code,
+                    request.free_text,
+                    applications=self._applications,
+                    audit=self._audit,
+                    notifier=self._notifier,
+                )
+                return decision_pb2.HoldApplicationResponse(
+                    application_id=result["application_id"],
+                    new_state=result["new_state"],
+                    audited_at_ms=result["audited_at_ms"],
+                )
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "HoldApplication")
+
+    async def RejectApplication(self, request, context):
+        _grpc_total.labels(method="RejectApplication").inc()
+        async with (
+            log_context(
+                log,
+                "decision.RejectApplication",
+                **bind_ids(application_id=request.application_id),
+            ),
+            span("decision.RejectApplication", application_id=request.application_id),
+        ):
+            try:
+                identity = await caller_identity(context, self._tokens)
+                result = await decision_res.reject_application(
+                    identity,
+                    request.application_id,
+                    request.reason_code,
+                    request.free_text,
+                    applications=self._applications,
+                    audit=self._audit,
+                    notifier=self._notifier,
+                )
+                return decision_pb2.RejectApplicationResponse(
+                    application_id=result["application_id"],
+                    new_state=result["new_state"],
+                    audited_at_ms=result["audited_at_ms"],
+                )
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "RejectApplication")

@@ -55,6 +55,11 @@ class BaseServiceSettings(BaseSettings):
     storage_op_timeout_seconds: float = 35.0
     http_client_timeout_seconds: float = 15.0
 
+    # Observability collector wiring — both default to disabled so unit tests don't try
+    # to bind ports or hit a missing OTLP endpoint.
+    metrics_port: int = 0  # 0 disables the /metrics HTTP server
+    otlp_endpoint: str | None = None  # None disables OTLP exporter
+
     @field_validator("jwt_secret")
     @classmethod
     def _jwt_secret_strength(cls, v: str) -> str:

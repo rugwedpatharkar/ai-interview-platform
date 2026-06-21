@@ -29,7 +29,7 @@ export function RecommendedRoles() {
 
   const recs = useAuthedQuery(token, {
     queryKey: ["recommendations"],
-    queryFn: () => api.recommendations.getCandidateRecommendations({}),
+    queryFn: () => api.recommendations.getCandidateRecommendations({ pageSize: 200, pageToken: "" }),
   });
 
   if (recs.isLoading)

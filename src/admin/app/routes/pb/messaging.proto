@@ -62,8 +62,10 @@ message ListMessagesResponse {
 
 message MarkReadRequest {
   string application_id = 1;
+  int64 seq_no = 2;             // 0 = server picks current+1 (backward-compat default)
 }
 message MarkReadResponse {
   string application_id = 1;
   int32 unread = 2;
+  int64 accepted_seq_no = 3;   // monotonic high-water mark after this ack
 }

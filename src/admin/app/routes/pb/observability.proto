@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package admin.observability.v1;
+
+// ObservabilityService — FE → BE pipe for unhandled client errors + analytics events.
+// Both RPCs idempotent on event_id (24h Redis SET dedup). Server-side identity
+// enforcement: the request's context is DISCARDED; user_id/comp_id/role come from
+// the access token (anonymous calls leave them null).
+service ObservabilityService {
+  rpc RecordClientError(RecordClientErrorRequest) returns (RecordClientErrorResponse);
+  rpc RecordClientEvent(RecordClientEventRequest) returns (RecordClientEventResponse);
+}
+
+message ClientErrorPayload {
+  string name = 1;
+  string message = 2;
+  string stack_truncated_8k = 3;
+}
+
+message ClientErrorEvent {
+  string correlation_id = 1;
+  string event_id = 2;
+  int64 occurred_at_ms = 3;
+  string component = 4;
+  string route = 5;
+  string build_sha = 6;
+  string user_agent_hash = 7;
+  ClientErrorPayload error = 8;
+}
+
+message RecordClientErrorRequest {
+  repeated ClientErrorEvent events = 1;
+}
+
+message RecordClientErrorResponse {
+  repeated string accepted_event_ids = 1;
+}
+
+message ClientEvent {
+  string correlation_id = 1;
+  string event_id = 2;
+  int64 occurred_at_ms = 3;
+  string name = 4;
+  string route = 5;
+  string properties_json = 6;
+}
+
+message RecordClientEventRequest {
+  repeated ClientEvent events = 1;
+}
+
+message RecordClientEventResponse {
+  repeated string accepted_event_ids = 1;
+}

@@ -23,6 +23,19 @@ class _FakeMatches:
     async def list_by_candidate(self, candidate_user_id):
         return [r for r in self._rows if r["candidate_user_id"] == candidate_user_id]
 
+    async def list_by_candidate_paginated(
+        self, candidate_user_id, *, page_size, after_id=None
+    ):
+        rows = [r for r in self._rows if r["candidate_user_id"] == candidate_user_id]
+        if after_id is not None:
+            rows = [r for r in rows if r.get("_id", "") > after_id]
+        if len(rows) > page_size:
+            return rows[:page_size], rows[page_size - 1].get("_id")
+        return rows, None
+
+    async def count_by_candidate(self, candidate_user_id):
+        return sum(1 for r in self._rows if r["candidate_user_id"] == candidate_user_id)
+
     async def list_by_job(self, job_id, comp_id):
         return [
             r for r in self._rows if r["job_id"] == job_id and r["comp_id"] == comp_id
@@ -39,15 +52,22 @@ class _FakeJobs:
 
 @pytest.mark.asyncio
 async def test_candidate_sees_own_sorted_by_score():
-    out = await rec.get_candidate_recommendations(CAND, matches=_FakeMatches(_ROWS))
-    assert [m["job_id"] for m in out] == ["j1", "j2"]  # only u1's, score-desc
-    assert out[0]["score"] == 0.9
+    out = await rec.get_candidate_recommendations(
+        CAND, 100, "", matches=_FakeMatches(_ROWS)
+    )
+    assert [m["job_id"] for m in out["matches"]] == [
+        "j1",
+        "j2",
+    ]  # only u1's, score-desc
+    assert out["matches"][0]["score"] == 0.9
 
 
 @pytest.mark.asyncio
 async def test_candidate_role_required():
     with pytest.raises(ForbiddenError):
-        await rec.get_candidate_recommendations(MGR, matches=_FakeMatches(_ROWS))
+        await rec.get_candidate_recommendations(
+            MGR, 100, "", matches=_FakeMatches(_ROWS)
+        )
 
 
 @pytest.mark.asyncio

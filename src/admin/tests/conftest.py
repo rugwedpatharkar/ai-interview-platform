@@ -291,6 +291,89 @@ class FakeApplicationRepo:
             if d["job_id"] == job_id and d["comp_id"] == comp_id
         ]
 
+    async def list_by_job_paginated(self, job_id, comp_id, *, page_size, after_id=None):
+        # Mimic real repo: sort by _id ascending, paginate via _id > after_id.
+        rows = sorted(
+            (
+                d
+                for d in self._docs.values()
+                if d["job_id"] == job_id and d["comp_id"] == comp_id
+            ),
+            key=lambda d: d["_id"],
+        )
+        if after_id is not None:
+            rows = [d for d in rows if d["_id"] > after_id]
+        if len(rows) > page_size:
+            return rows[:page_size], rows[page_size - 1]["_id"]
+        return rows, None
+
+    async def count_by_job(self, job_id, comp_id):
+        return sum(
+            1
+            for d in self._docs.values()
+            if d["job_id"] == job_id and d["comp_id"] == comp_id
+        )
+
+    async def seed_applications(self, *, job_id, comp_id, n):
+        """Test-only helper: insert n stub applications with real ObjectId ids so
+        the opaque cursor round-trips through decode_cursor cleanly.
+        """
+        from bson import ObjectId
+
+        for _ in range(n):
+            oid = ObjectId()
+            self._docs[str(oid)] = {
+                "_id": oid,
+                "job_id": job_id,
+                "comp_id": comp_id,
+                "candidate_user_id": f"u-{oid}",
+                "state": "applied",
+            }
+        return job_id
+
+    async def list_talent_pool_paginated(
+        self, comp_id: str, *, page_size: int, after_user_id: str | None = None
+    ) -> tuple[list[tuple[str, int]], str | None]:
+        from collections import Counter
+
+        rows = [
+            d
+            for d in self._docs.values()
+            if d.get("comp_id") == comp_id and d.get("candidate_user_id")
+        ]
+        counts = Counter(r["candidate_user_id"] for r in rows)
+        entries = sorted(counts.items())
+        if after_user_id is not None:
+            entries = [(uid, cnt) for uid, cnt in entries if uid > after_user_id]
+        if len(entries) > page_size:
+            return entries[:page_size], entries[page_size - 1][0]
+        return entries, None
+
+    async def count_talent_pool(self, comp_id: str) -> int:
+        from collections import Counter
+
+        rows = [
+            d
+            for d in self._docs.values()
+            if d.get("comp_id") == comp_id and d.get("candidate_user_id")
+        ]
+        return len(Counter(r["candidate_user_id"] for r in rows))
+
+    async def seed_talent_pool(self, comp_id: str, n: int) -> None:
+        """Test-only helper: insert n distinct candidates each with 2 applications."""
+        for i in range(n):
+            uid = f"u-talent-{i:04d}"
+            for _ in range(2):
+                self._seq += 1
+                aid = str(self._seq)
+                self._docs[aid] = {
+                    "_id": aid,
+                    "comp_id": comp_id,
+                    "candidate_user_id": uid,
+                    "job_id": "j1",
+                    "state": "applied",
+                }
+
     async def get(self, application_id):
         return self._docs.get(application_id)
 
@@ -310,6 +393,59 @@ class FakeApplicationRepo:
         doc["state"] = new
         doc.setdefault("transitions", []).append({"state": new, "at": _NOW})
         return True
+
+
+class FakeMatchRepo:
+    """In-memory stand-in for MatchResultRepository."""
+
+    def __init__(self):
+        self._docs: dict[str, dict] = {}
+
+    async def list_by_candidate(self, candidate_user_id: str) -> list[dict]:
+        return [
+            d
+            for d in self._docs.values()
+            if d["candidate_user_id"] == candidate_user_id
+        ]
+
+    async def list_by_candidate_paginated(
+        self, candidate_user_id: str, *, page_size: int, after_id=None
+    ) -> tuple[list[dict], object | None]:
+        rows = sorted(
+            (
+                d
+                for d in self._docs.values()
+                if d["candidate_user_id"] == candidate_user_id
+            ),
+            key=lambda d: d["_id"],
+        )
+        if after_id is not None:
+            rows = [d for d in rows if d["_id"] > after_id]
+        if len(rows) > page_size:
+            return rows[:page_size], rows[page_size - 1]["_id"]
+        return rows, None
+
+    async def count_by_candidate(self, candidate_user_id: str) -> int:
+        return sum(
+            1
+            for d in self._docs.values()
+            if d["candidate_user_id"] == candidate_user_id
+        )
+
+    async def seed_matches(self, candidate_user_id: str, n: int) -> None:
+        """Test-only helper: insert n stub matches with real ObjectIds."""
+        from bson import ObjectId
+
+        for i in range(n):
+            oid = ObjectId()
+            self._docs[str(oid)] = {
+                "_id": oid,
+                "candidate_user_id": candidate_user_id,
+                "job_id": f"j-{i}",
+                "comp_id": "c1",
+                "score": 0.5,
+                "reasons": [],
+            }
 
 
 class FakeAuditRepo:
@@ -512,3 +648,28 @@ def fakes():
         "interview_slots": FakeInterviewSlotsRepo(),
         "interview_bookings": FakeInterviewBookingRepo(),
     }
+
+
+@pytest.fixture
+def identity_manager():
+    return {"id": "u-mgr", "role": "company_admin", "comp_id": "c1"}
+
+
+@pytest.fixture
+def identity_candidate():
+    return {"id": "u-cand", "role": "candidate", "comp_id": ""}
+
+
+@pytest.fixture
+def fake_apps_pag():
+    return FakeApplicationRepo()
+
+
+@pytest.fixture
+def fake_matches_pag():
+    return FakeMatchRepo()
+
+
+@pytest.fixture
+def fake_tp_pag():
+    return FakeApplicationRepo()

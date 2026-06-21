@@ -7,7 +7,7 @@ candidate's explicit consent to AI-driven scoring (GDPR Art. 22 territory).
 
 import asyncio
 
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 
 from app.errors import ValidationError
 from app.model.audit import AuditLog
@@ -19,20 +19,32 @@ _SCOPES = {"data_processing", "automated_evaluation"}
 
 
 async def record_consent(identity, scope, terms_version, *, consents):
-    if scope not in _SCOPES:
-        raise ValidationError(f"unknown consent scope: {scope!r}")
-    if not terms_version:
-        raise ValidationError("terms_version is required")
-    user_id = identity["id"]
-    await consents.insert(
-        ConsentRecord(user_id=user_id, scope=scope, terms_version=terms_version)
-    )
-    log.info("consent recorded: user={} scope={} v={}", user_id, scope, terms_version)
-    return {"user_id": user_id, "scope": scope, "terms_version": terms_version}
+    async with log_context(
+        log,
+        "resource.compliance.record_consent",
+        **bind_ids(user_id=identity["id"]),
+    ):
+        if scope not in _SCOPES:
+            raise ValidationError(f"unknown consent scope: {scope!r}")
+        if not terms_version:
+            raise ValidationError("terms_version is required")
+        user_id = identity["id"]
+        await consents.insert(
+            ConsentRecord(user_id=user_id, scope=scope, terms_version=terms_version)
+        )
+        log.info(
+            "consent recorded: user={} scope={} v={}", user_id, scope, terms_version
+        )
+        return {"user_id": user_id, "scope": scope, "terms_version": terms_version}
 
 
 async def list_consent(identity, *, consents):
-    return await consents.list_by_user(identity["id"])
+    async with log_context(
+        log,
+        "resource.compliance.list_consent",
+        **bind_ids(user_id=identity["id"]),
+    ):
+        return await consents.list_by_user(identity["id"])
 
 
 class CandidateEraser:
@@ -88,74 +100,80 @@ class CandidateEraser:
         self._bookings = bookings
 
     async def erase(self, user_id):
-        applications = await self._applications.list_by_candidate(user_id)
-        await self._reports.delete_by_applications(
-            [str(a["_id"]) for a in applications]
-        )
-        # Messaging is keyed by application_id (no candidate field) — cascade per app so
-        # the recruiter's copy of the chat goes too.
-        if self._message_threads is not None:
-            for application in applications:
-                application_id = str(application["_id"])
-                await self._message_threads.delete_by_application(application_id)
-                await self._messages.delete_by_application(application_id)
-        await self._interviews.delete_by_user(user_id)
-        await self._attempts.delete_by_candidate(user_id)
-        if self._coding_attempts is not None:
-            await self._coding_attempts.delete_by_candidate(user_id)
-        # The consent ledger is keyed by user_id (identifying PII); erase it too so a
-        # right-to-erasure leaves no residual linkage back to the candidate.
-        await self._consents.delete_by_user(user_id)
-        if self._notifications is not None:
-            await self._notifications.delete_by_user(user_id)
-        if self._notification_prefs is not None:
-            await self._notification_prefs.delete_by_user(user_id)
-        if self._user_preferences is not None:
-            await self._user_preferences.delete_by_user(user_id)
-        # Practice runs are detached candidate PII keyed by user_id (no application
-        # link), so they cascade by user — not via the applications above.
-        if self._practice is not None:
-            await self._practice.delete_by_user(user_id)
-        # Interview scheduling (slots + bookings) cascades by application_id.
-        if self._slots is not None:
-            application_ids = [str(a["_id"]) for a in applications]
-            await self._slots.delete_by_applications(application_ids)
-            await self._bookings.delete_by_applications(application_ids)
-        profile = await self._profiles.get_by_user(user_id)
-        await self._profiles.delete_by_user(user_id)
-        if profile and profile.get("resume_key"):
-            try:
-                await self._storage.delete_raw(profile["resume_key"])
-            except Exception:
-                log.exception("erase: resume delete failed for {}", user_id)
-        await self._users.anonymize(user_id)
-        await self._audit.insert(
-            AuditLog(entity="candidate", entity_id=user_id, action="erased")
-        )
-        log.info("candidate erased: {}", user_id)
+        async with log_context(
+            log,
+            "resource.compliance.erase",
+            **bind_ids(user_id=user_id),
+        ):
+            applications = await self._applications.list_by_candidate(user_id)
+            await self._reports.delete_by_applications(
+                [str(a["_id"]) for a in applications]
+            )
+            # Messaging is keyed by application_id (no candidate field) — cascade per
+            # app so the recruiter's copy of the chat goes too.
+            if self._message_threads is not None:
+                for application in applications:
+                    application_id = str(application["_id"])
+                    await self._message_threads.delete_by_application(application_id)
+                    await self._messages.delete_by_application(application_id)
+            await self._interviews.delete_by_user(user_id)
+            await self._attempts.delete_by_candidate(user_id)
+            if self._coding_attempts is not None:
+                await self._coding_attempts.delete_by_candidate(user_id)
+            # The consent ledger is keyed by user_id (identifying PII); erase it too so
+            # a right-to-erasure leaves no residual linkage back to the candidate.
+            await self._consents.delete_by_user(user_id)
+            if self._notifications is not None:
+                await self._notifications.delete_by_user(user_id)
+            if self._notification_prefs is not None:
+                await self._notification_prefs.delete_by_user(user_id)
+            if self._user_preferences is not None:
+                await self._user_preferences.delete_by_user(user_id)
+            # Practice runs are detached candidate PII keyed by user_id (no application
+            # link), so they cascade by user — not via the applications above.
+            if self._practice is not None:
+                await self._practice.delete_by_user(user_id)
+            # Interview scheduling (slots + bookings) cascades by application_id.
+            if self._slots is not None:
+                application_ids = [str(a["_id"]) for a in applications]
+                await self._slots.delete_by_applications(application_ids)
+                await self._bookings.delete_by_applications(application_ids)
+            profile = await self._profiles.get_by_user(user_id)
+            await self._profiles.delete_by_user(user_id)
+            if profile and profile.get("resume_key"):
+                try:
+                    await self._storage.delete_raw(profile["resume_key"])
+                except Exception:
+                    log.exception("erase: resume delete failed for {}", user_id)
+            await self._users.anonymize(user_id)
+            await self._audit.insert(
+                AuditLog(entity="candidate", entity_id=user_id, action="erased")
+            )
+            log.info("candidate erased: {}", user_id)
 
     _SWEEP_CONCURRENCY = 10
 
     async def sweep(self, cutoff):
-        users = await self._users.list_candidates_before(cutoff)
-        if not users:
-            log.info("retention sweep erased 0 candidates")
-            return 0
-        sem = asyncio.Semaphore(self._SWEEP_CONCURRENCY)
-        erased = 0
+        async with log_context(log, "resource.compliance.sweep", **bind_ids()):
+            users = await self._users.list_candidates_before(cutoff)
+            if not users:
+                log.info("retention sweep erased 0 candidates")
+                return 0
+            sem = asyncio.Semaphore(self._SWEEP_CONCURRENCY)
+            erased = 0
 
-        async def _erase_one(user):
-            nonlocal erased
-            async with sem:
-                # Per-candidate isolation: one poison record (e.g. a transient repo
-                # failure) must not abort the whole sweep + block every other candidate.
-                # erase() is idempotent, so the next sweep retries this one.
-                try:
-                    await self.erase(str(user["_id"]))
-                    erased += 1
-                except Exception:
-                    log.exception("retention erase failed for {}", user["_id"])
+            async def _erase_one(user):
+                nonlocal erased
+                async with sem:
+                    # Per-candidate isolation: one poison record (e.g. a transient repo
+                    # failure) must not abort the whole sweep + block every other
+                    # candidate. erase() is idempotent, so the next sweep retries.
+                    try:
+                        await self.erase(str(user["_id"]))
+                        erased += 1
+                    except Exception:
+                        log.exception("retention erase failed for {}", user["_id"])
 
-        await asyncio.gather(*(_erase_one(u) for u in users))
-        log.info("retention sweep erased {}/{} candidates", erased, len(users))
-        return erased
+            await asyncio.gather(*(_erase_one(u) for u in users))
+            log.info("retention sweep erased {}/{} candidates", erased, len(users))
+            return erased

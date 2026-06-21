@@ -14,7 +14,7 @@ import {
   cn,
   toast,
 } from "@ip/ui";
-import { errorMessage, isNotFound, useRequireAuth, useRequireRole } from "@ip/shared";
+import { errorMessage, isNotFound, pollingBackoff, useRequireAuth, useRequireRole } from "@ip/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, FileText, Trash2, Upload } from "lucide-react";
 import {
@@ -73,9 +73,13 @@ const ACCEPTED_MIME = new Set([
 const RESUME_ACCEPT =
   ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const MAX_RESUME_BYTES = 10 * 1024 * 1024;
-// Resume parsing is async; cap the poll so a stuck parse offers an exit, not a forever
-// spinner. ~75s at the 2.5s interval.
-const MAX_PARSE_POLLS = 30;
+// Resume parsing is async; ~3 minutes of exponential backoff (500ms → 5s) then stops.
+const resumeParseBackoff = pollingBackoff({
+  initialMs: 500,
+  capMs: 5_000,
+  maxPolls: 24,
+  jitterRatio: 0.2,
+});
 
 export default function ProfilePage() {
   const { api, token, identity, ready } = useAuth();
@@ -85,9 +89,10 @@ export default function ProfilePage() {
   const [form, setForm] = useState<Form>(EMPTY);
   const touched = useRef(false);
   const [validationError, setValidationError] = useState<string | null>(null);
-  // Count parse polls so a stuck extraction stops (and surfaces an exit) instead of
-  // spinning forever. Reset whenever a fresh upload kicks off a new parse.
-  const [parsePolls, setParsePolls] = useState(0);
+  // Guard so the "still parsing" toast fires at most once per upload session.
+  const parseToastFired = useRef(false);
+  // Tracks how many successful fetches have happened during the current parse.
+  const parsePolls = useRef(0);
 
   const profile = useQuery({
     queryKey: ["profile"],
@@ -100,25 +105,33 @@ export default function ProfilePage() {
         throw err;
       }
     },
-    // While the resume is parsing, poll so the extracted data appears automatically —
-    // but stop after MAX_PARSE_POLLS so a stuck parse doesn't spin forever.
+    // Exponential backoff while the resume is parsing — stops automatically at
+    // maxPolls (24) so a stuck parse doesn't spin forever.
     refetchInterval: (query) => {
       const p = query.state.data;
-      const parsing = Boolean(p && p.resumeUploaded && !p.parsed);
-      return parsing && parsePolls < MAX_PARSE_POLLS ? 2500 : false;
+      const stillParsing = Boolean(p && p.resumeUploaded && !p.parsed);
+      return stillParsing ? resumeParseBackoff(query) : false;
     },
   });
 
   const parsing = Boolean(
     profile.data?.resumeUploaded && !profile.data?.parsed,
   );
-  const parseStalled = parsing && parsePolls >= MAX_PARSE_POLLS;
 
-  // Tick the poll counter on each fetch while parsing is still pending.
+  // Tick the ref counter on each successful fetch while parsing is still pending.
+  // Also fire the "still parsing" toast once at the 4th poll (~10 s of backoff).
   useEffect(() => {
-    if (parsing) setParsePolls((n) => n + 1);
+    if (!parsing) return;
+    parsePolls.current += 1;
+    if (parsePolls.current === 4 && !parseToastFired.current) {
+      parseToastFired.current = true;
+      toast.info("Still parsing your resume — this can take a moment.");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.dataUpdatedAt]);
+
+  // maxPolls (24) exhausted while still parsing = stalled.
+  const parseStalled = parsing && parsePolls.current >= 24;
 
   // Sync the form from the server unless the user has unsaved edits.
   useEffect(() => {
@@ -169,8 +182,9 @@ export default function ProfilePage() {
       return api.profile.uploadResume({ data, contentType: file.type });
     },
     onSuccess: () => {
-      // A new upload starts a fresh parse — reset the poll budget.
-      setParsePolls(0);
+      // A new upload starts a fresh parse — reset both guards.
+      parseToastFired.current = false;
+      parsePolls.current = 0;
       toast.success("Résumé uploaded — extracting your details…");
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },

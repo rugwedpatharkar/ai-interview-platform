@@ -10,12 +10,21 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file recommendation.proto.
  */
 export const file_recommendation: GenFile = /*@__PURE__*/
-  fileDesc("ChRyZWNvbW1lbmRhdGlvbi5wcm90bxIXYWRtaW4ucmVjb21tZW5kYXRpb24udjEiIQofQ2FuZGlkYXRlUmVjb21tZW5kYXRpb25zUmVxdWVzdCIiChBKb2JSYW5rZWRSZXF1ZXN0Eg4KBmpvYl9pZBgBIAEoCSJSCgVNYXRjaBIOCgZqb2JfaWQYASABKAkSGQoRY2FuZGlkYXRlX3VzZXJfaWQYAiABKAkSDQoFc2NvcmUYAyABKAESDwoHcmVhc29ucxgEIAMoCSI8CglNYXRjaExpc3QSLwoHbWF0Y2hlcxgBIAMoCzIeLmFkbWluLnJlY29tbWVuZGF0aW9uLnYxLk1hdGNoMv0BChVSZWNvbW1lbmRhdGlvblNlcnZpY2USewobR2V0Q2FuZGlkYXRlUmVjb21tZW5kYXRpb25zEjguYWRtaW4ucmVjb21tZW5kYXRpb24udjEuQ2FuZGlkYXRlUmVjb21tZW5kYXRpb25zUmVxdWVzdBoiLmFkbWluLnJlY29tbWVuZGF0aW9uLnYxLk1hdGNoTGlzdBJnChZHZXRKb2JSYW5rZWRDYW5kaWRhdGVzEikuYWRtaW4ucmVjb21tZW5kYXRpb24udjEuSm9iUmFua2VkUmVxdWVzdBoiLmFkbWluLnJlY29tbWVuZGF0aW9uLnYxLk1hdGNoTGlzdGIGcHJvdG8z");
+  fileDesc("ChRyZWNvbW1lbmRhdGlvbi5wcm90bxIXYWRtaW4ucmVjb21tZW5kYXRpb24udjEiSAofQ2FuZGlkYXRlUmVjb21tZW5kYXRpb25zUmVxdWVzdBIRCglwYWdlX3NpemUYASABKAUSEgoKcGFnZV90b2tlbhgCIAEoCSIiChBKb2JSYW5rZWRSZXF1ZXN0Eg4KBmpvYl9pZBgBIAEoCSJSCgVNYXRjaBIOCgZqb2JfaWQYASABKAkSGQoRY2FuZGlkYXRlX3VzZXJfaWQYAiABKAkSDQoFc2NvcmUYAyABKAESDwoHcmVhc29ucxgEIAMoCSJqCglNYXRjaExpc3QSLwoHbWF0Y2hlcxgBIAMoCzIeLmFkbWluLnJlY29tbWVuZGF0aW9uLnYxLk1hdGNoEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCRITCgt0b3RhbF9jb3VudBgDIAEoAzL9AQoVUmVjb21tZW5kYXRpb25TZXJ2aWNlEnsKG0dldENhbmRpZGF0ZVJlY29tbWVuZGF0aW9ucxI4LmFkbWluLnJlY29tbWVuZGF0aW9uLnYxLkNhbmRpZGF0ZVJlY29tbWVuZGF0aW9uc1JlcXVlc3QaIi5hZG1pbi5yZWNvbW1lbmRhdGlvbi52MS5NYXRjaExpc3QSZwoWR2V0Sm9iUmFua2VkQ2FuZGlkYXRlcxIpLmFkbWluLnJlY29tbWVuZGF0aW9uLnYxLkpvYlJhbmtlZFJlcXVlc3QaIi5hZG1pbi5yZWNvbW1lbmRhdGlvbi52MS5NYXRjaExpc3RiBnByb3RvMw");
 
 /**
  * @generated from message admin.recommendation.v1.CandidateRecommendationsRequest
  */
 export type CandidateRecommendationsRequest = Message<"admin.recommendation.v1.CandidateRecommendationsRequest"> & {
+  /**
+   * @generated from field: int32 page_size = 1;
+   */
+  pageSize: number;
+
+  /**
+   * @generated from field: string page_token = 2;
+   */
+  pageToken: string;
 };
 
 /**
@@ -82,6 +91,16 @@ export type MatchList = Message<"admin.recommendation.v1.MatchList"> & {
    * @generated from field: repeated admin.recommendation.v1.Match matches = 1;
    */
   matches: Match[];
+
+  /**
+   * @generated from field: string next_page_token = 2;
+   */
+  nextPageToken: string;
+
+  /**
+   * @generated from field: int64 total_count = 3;
+   */
+  totalCount: bigint;
 };
 
 /**

@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, type FormEvent, useEffect, useRef, useState } from "react";
 
+import { track } from "@ip/shared";
+
 import {
   AuthShell,
   Field,
@@ -64,9 +66,11 @@ function LoginInner() {
       await login(email, password);
       // Claim the navigation slot before the AuthProvider effect tick can fire.
       navigatingRef.current = true;
+      const role = decodeRoleFromStore() ?? "unknown";
+      track("auth.logged_in", { role, method: "password" });
       // Don't wait for the AuthProvider effect tick — read the role straight
       // from the freshly-persisted token and route.
-      router.push(roleHome(decodeRoleFromStore()));
+      router.push(roleHome(role));
     } catch (err) {
       setError(errorMessage(err));
       setBusy(false);
@@ -113,7 +117,7 @@ function LoginInner() {
             </Link>
           }
         />
-        <PrimaryButton type="submit" busy={busy} busyLabel="Signing you in…">
+        <PrimaryButton type="submit" busy={busy} busyLabel="Signing you in…" disabled={!email.trim() || !password || busy}>
           <span className="inline-flex items-center gap-2">
             Sign in
             <ApIcon name="arrow" className="size-4" />

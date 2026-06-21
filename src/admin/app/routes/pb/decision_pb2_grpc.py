@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from app.routes.pb import decision_pb2 as app_dot_pb_dot_decision__pb2
+from app.routes.pb import decision_pb2 as app_dot_routes_dot_pb_dot_decision__pb2
 
 GRPC_GENERATED_VERSION = '1.81.1'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in app/pb/decision_pb2_grpc.py depends on'
+        + ' but the generated code in app/routes/pb/decision_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -38,13 +38,23 @@ class DecisionServiceStub:
         """
         self.DecideApplication = channel.unary_unary(
                 '/admin.decision.v1.DecisionService/DecideApplication',
-                request_serializer=app_dot_pb_dot_decision__pb2.DecideRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_decision__pb2.DecisionResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_decision__pb2.DecideRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_decision__pb2.DecisionResponse.FromString,
                 _registered_method=True)
         self.OverrideGate = channel.unary_unary(
                 '/admin.decision.v1.DecisionService/OverrideGate',
-                request_serializer=app_dot_pb_dot_decision__pb2.OverrideGateRequest.SerializeToString,
-                response_deserializer=app_dot_pb_dot_decision__pb2.DecisionResponse.FromString,
+                request_serializer=app_dot_routes_dot_pb_dot_decision__pb2.OverrideGateRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_decision__pb2.DecisionResponse.FromString,
+                _registered_method=True)
+        self.HoldApplication = channel.unary_unary(
+                '/admin.decision.v1.DecisionService/HoldApplication',
+                request_serializer=app_dot_routes_dot_pb_dot_decision__pb2.HoldApplicationRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_decision__pb2.HoldApplicationResponse.FromString,
+                _registered_method=True)
+        self.RejectApplication = channel.unary_unary(
+                '/admin.decision.v1.DecisionService/RejectApplication',
+                request_serializer=app_dot_routes_dot_pb_dot_decision__pb2.RejectApplicationRequest.SerializeToString,
+                response_deserializer=app_dot_routes_dot_pb_dot_decision__pb2.RejectApplicationResponse.FromString,
                 _registered_method=True)
 
 
@@ -65,18 +75,40 @@ class DecisionServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def HoldApplication(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RejectApplication(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DecisionServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'DecideApplication': grpc.unary_unary_rpc_method_handler(
                     servicer.DecideApplication,
-                    request_deserializer=app_dot_pb_dot_decision__pb2.DecideRequest.FromString,
-                    response_serializer=app_dot_pb_dot_decision__pb2.DecisionResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_decision__pb2.DecideRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_decision__pb2.DecisionResponse.SerializeToString,
             ),
             'OverrideGate': grpc.unary_unary_rpc_method_handler(
                     servicer.OverrideGate,
-                    request_deserializer=app_dot_pb_dot_decision__pb2.OverrideGateRequest.FromString,
-                    response_serializer=app_dot_pb_dot_decision__pb2.DecisionResponse.SerializeToString,
+                    request_deserializer=app_dot_routes_dot_pb_dot_decision__pb2.OverrideGateRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_decision__pb2.DecisionResponse.SerializeToString,
+            ),
+            'HoldApplication': grpc.unary_unary_rpc_method_handler(
+                    servicer.HoldApplication,
+                    request_deserializer=app_dot_routes_dot_pb_dot_decision__pb2.HoldApplicationRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_decision__pb2.HoldApplicationResponse.SerializeToString,
+            ),
+            'RejectApplication': grpc.unary_unary_rpc_method_handler(
+                    servicer.RejectApplication,
+                    request_deserializer=app_dot_routes_dot_pb_dot_decision__pb2.RejectApplicationRequest.FromString,
+                    response_serializer=app_dot_routes_dot_pb_dot_decision__pb2.RejectApplicationResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -106,8 +138,8 @@ class DecisionService:
             request,
             target,
             '/admin.decision.v1.DecisionService/DecideApplication',
-            app_dot_pb_dot_decision__pb2.DecideRequest.SerializeToString,
-            app_dot_pb_dot_decision__pb2.DecisionResponse.FromString,
+            app_dot_routes_dot_pb_dot_decision__pb2.DecideRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_decision__pb2.DecisionResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -133,8 +165,62 @@ class DecisionService:
             request,
             target,
             '/admin.decision.v1.DecisionService/OverrideGate',
-            app_dot_pb_dot_decision__pb2.OverrideGateRequest.SerializeToString,
-            app_dot_pb_dot_decision__pb2.DecisionResponse.FromString,
+            app_dot_routes_dot_pb_dot_decision__pb2.OverrideGateRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_decision__pb2.DecisionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def HoldApplication(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.decision.v1.DecisionService/HoldApplication',
+            app_dot_routes_dot_pb_dot_decision__pb2.HoldApplicationRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_decision__pb2.HoldApplicationResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RejectApplication(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/admin.decision.v1.DecisionService/RejectApplication',
+            app_dot_routes_dot_pb_dot_decision__pb2.RejectApplicationRequest.SerializeToString,
+            app_dot_routes_dot_pb_dot_decision__pb2.RejectApplicationResponse.FromString,
             options,
             channel_credentials,
             insecure,

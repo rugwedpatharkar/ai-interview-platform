@@ -281,7 +281,17 @@ def main() -> None:
     import asyncio
 
     configure_logging(_settings.service_name, _settings.log_level)
-    init_tracing(_settings.service_name, enabled=_settings.tracing_enabled)
+    if _settings.otlp_endpoint:
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter,
+        )
+
+        init_tracing(
+            _settings.service_name,
+            exporter=OTLPSpanExporter(endpoint=_settings.otlp_endpoint, insecure=True),
+        )
+    else:
+        init_tracing(_settings.service_name, enabled=_settings.tracing_enabled)
     asyncio.run(start_metrics_server(_settings.metrics_port))
     mcp.run(transport="streamable-http")
 

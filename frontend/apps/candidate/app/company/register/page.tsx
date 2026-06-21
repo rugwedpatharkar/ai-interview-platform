@@ -1,7 +1,7 @@
 "use client";
 
 import { ApIcon } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
+import { errorMessage, track } from "@ip/shared";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
@@ -35,6 +35,7 @@ export default function CompanyRegisterPage() {
     setError(null);
     try {
       await api.auth.registerCompany({ companyName, email, password });
+      track("auth.registered", { role: "recruiter" });
       router.push(
         `/verify?email=${encodeURIComponent(email)}&context=company`,
       );
@@ -85,7 +86,7 @@ export default function CompanyRegisterPage() {
           onChange={setPassword}
           placeholder="At least 8 characters"
         />
-        <PrimaryButton type="submit" busy={busy} busyLabel="Creating workspace…">
+        <PrimaryButton type="submit" busy={busy} busyLabel="Creating workspace…" disabled={!companyName.trim() || !email.trim() || !password || busy}>
           <span className="inline-flex items-center gap-2">
             Create workspace
             <ApIcon name="arrow" className="size-4" />

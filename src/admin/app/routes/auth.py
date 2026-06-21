@@ -23,6 +23,7 @@ from app.errors import (
 )
 from app.resources import auth as auth_res
 from app.routes.pb import auth_pb2, auth_pb2_grpc
+from lib import errors as lib_errors
 
 log = get_logger(component="auth.routes")
 
@@ -33,6 +34,10 @@ _grpc_errors = counter(
     ["method"],
 )
 
+# Shared lookup used by this servicer and re-imported by every other route module.
+# Errors with a lib.errors peer are kept here for the other callers; _abort uses
+# lib_errors.to_grpc_status as the primary path and falls back to this dict only for
+# the two no-peer errors (InvalidTokenError, RateLimitedError).
 _STATUS = {
     ConflictError: grpc.StatusCode.ALREADY_EXISTS,
     InvalidTokenError: grpc.StatusCode.INVALID_ARGUMENT,
@@ -95,6 +100,24 @@ async def caller_identity(context, tokens):
         await context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid or expired token")
 
 
+_ANON_IDENTITY = {"user_id": None, "comp_id": "", "role": None}
+
+
+async def caller_identity_optional(context, tokens):
+    """Like caller_identity but anonymous-safe.
+
+    Missing or invalid tokens return an anonymous identity dict rather than aborting —
+    used by RPCs that accept unauthenticated callers (e.g. ObservabilityService).
+    """
+    token = _bearer_from_metadata(context)
+    if token is None:
+        return _ANON_IDENTITY
+    try:
+        return auth_res.identity_from_token(token, tokens=tokens)
+    except InvalidTokenError:
+        return _ANON_IDENTITY
+
+
 class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
     def __init__(
         self,
@@ -128,7 +151,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
         self._secretbox = secretbox
 
     async def _abort(self, context, exc, method="unknown"):
-        code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
+        code = _STATUS.get(type(exc)) or lib_errors.to_grpc_status(exc)[0]
         log_domain_error(log, exc, method=method)
         _grpc_errors.labels(method=method).inc()
         await context.abort(code, str(exc))

@@ -79,7 +79,17 @@ def _dispatcher(grpc_app, oauth_app, public_app):
 async def serve() -> None:
     s = get_settings()
     configure_logging(s.service_name, s.log_level)
-    init_tracing(s.service_name, enabled=s.tracing_enabled)
+    if s.otlp_endpoint:
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter,
+        )
+
+        init_tracing(
+            s.service_name,
+            exporter=OTLPSpanExporter(endpoint=s.otlp_endpoint, insecure=True),
+        )
+    else:
+        init_tracing(s.service_name, enabled=s.tracing_enabled)
     await start_metrics_server(s.metrics_port)
     mongo = MongoManager(
         s.mongo_uri, s.mongo_db_name, s.mongo_max_pool_size, s.mongo_min_pool_size

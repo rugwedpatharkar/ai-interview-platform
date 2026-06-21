@@ -4,39 +4,38 @@
 # source: app/routes/pb/talent.proto
 # Protobuf Python Version: 6.33.5
 """Generated protocol buffer code."""
+
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 _runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC,
-    6,
-    33,
-    5,
-    '',
-    'app/routes/pb/talent.proto'
+    _runtime_version.Domain.PUBLIC, 6, 33, 5, "", "app/routes/pb/talent.proto"
 )
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1a\x61pp/routes/pb/talent.proto\x12\x0f\x61\x64min.talent.v1\"\x13\n\x11TalentPoolRequest\"C\n\x0bTalentEntry\x12\x19\n\x11\x63\x61ndidate_user_id\x18\x01 \x01(\t\x12\x19\n\x11\x61pplication_count\x18\x02 \x01(\x03\";\n\nTalentPool\x12-\n\x07\x65ntries\x18\x01 \x03(\x0b\x32\x1c.admin.talent.v1.TalentEntry2a\n\rTalentService\x12P\n\rGetTalentPool\x12\".admin.talent.v1.TalentPoolRequest\x1a\x1b.admin.talent.v1.TalentPoolb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x1a\x61pp/routes/pb/talent.proto\x12\x0f\x61\x64min.talent.v1":\n\x11TalentPoolRequest\x12\x11\n\tpage_size\x18\x01 \x01(\x05\x12\x12\n\npage_token\x18\x02 \x01(\t"C\n\x0bTalentEntry\x12\x19\n\x11\x63\x61ndidate_user_id\x18\x01 \x01(\t\x12\x19\n\x11\x61pplication_count\x18\x02 \x01(\x03"i\n\nTalentPool\x12-\n\x07\x65ntries\x18\x01 \x03(\x0b\x32\x1c.admin.talent.v1.TalentEntry\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\x12\x13\n\x0btotal_count\x18\x03 \x01(\x03\x32\x61\n\rTalentService\x12P\n\rGetTalentPool\x12".admin.talent.v1.TalentPoolRequest\x1a\x1b.admin.talent.v1.TalentPoolb\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'app.routes.pb.talent_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(
+    DESCRIPTOR, "app.routes.pb.talent_pb2", _globals
+)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
-  _globals['_TALENTPOOLREQUEST']._serialized_start=47
-  _globals['_TALENTPOOLREQUEST']._serialized_end=66
-  _globals['_TALENTENTRY']._serialized_start=68
-  _globals['_TALENTENTRY']._serialized_end=135
-  _globals['_TALENTPOOL']._serialized_start=137
-  _globals['_TALENTPOOL']._serialized_end=196
-  _globals['_TALENTSERVICE']._serialized_start=198
-  _globals['_TALENTSERVICE']._serialized_end=295
+    DESCRIPTOR._loaded_options = None
+    _globals["_TALENTPOOLREQUEST"]._serialized_start = 47
+    _globals["_TALENTPOOLREQUEST"]._serialized_end = 105
+    _globals["_TALENTENTRY"]._serialized_start = 107
+    _globals["_TALENTENTRY"]._serialized_end = 174
+    _globals["_TALENTPOOL"]._serialized_start = 176
+    _globals["_TALENTPOOL"]._serialized_end = 281
+    _globals["_TALENTSERVICE"]._serialized_start = 283
+    _globals["_TALENTSERVICE"]._serialized_end = 380
 # @@protoc_insertion_point(module_scope)

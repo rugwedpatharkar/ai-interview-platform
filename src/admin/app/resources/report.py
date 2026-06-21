@@ -8,7 +8,7 @@ Manager-only.
 
 import io
 
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 from lib.schemas import Role
 from openpyxl import Workbook
 
@@ -42,27 +42,41 @@ def _enrich(application_id, application, report):
 
 
 async def get_report(identity, application_id, *, applications, reports):
-    _require_manager(identity)
-    application = await applications.get(application_id)
-    if application is None or application.get("comp_id") != identity["comp_id"]:
-        raise NotFoundError("Application not found")
-    report = await reports.get_by_application(application_id)
-    if report is None:
-        raise NotFoundError("Report not ready")
-    return _enrich(application_id, application, report)
+    async with log_context(
+        log,
+        "resource.report.get_report",
+        **bind_ids(
+            user_id=identity["id"],
+            comp_id=identity["comp_id"],
+            application_id=application_id,
+        ),
+    ):
+        _require_manager(identity)
+        application = await applications.get(application_id)
+        if application is None or application.get("comp_id") != identity["comp_id"]:
+            raise NotFoundError("Application not found")
+        report = await reports.get_by_application(application_id)
+        if report is None:
+            raise NotFoundError("Report not ready")
+        return _enrich(application_id, application, report)
 
 
 async def list_reports(identity, job_id, *, applications, reports):
-    _require_manager(identity)
-    apps = await applications.list_by_job(job_id, identity["comp_id"])
-    app_by_id = {str(a["_id"]): a for a in apps}
-    report_rows = await reports.list_by_applications(list(app_by_id))
-    report_by_app = {r["application_id"]: r for r in report_rows}
-    return [
-        _enrich(application_id, app, report_by_app[application_id])
-        for application_id, app in app_by_id.items()
-        if application_id in report_by_app
-    ]
+    async with log_context(
+        log,
+        "resource.report.list_reports",
+        **bind_ids(user_id=identity["id"], comp_id=identity["comp_id"], job_id=job_id),
+    ):
+        _require_manager(identity)
+        apps = await applications.list_by_job(job_id, identity["comp_id"])
+        app_by_id = {str(a["_id"]): a for a in apps}
+        report_rows = await reports.list_by_applications(list(app_by_id))
+        report_by_app = {r["application_id"]: r for r in report_rows}
+        return [
+            _enrich(application_id, app, report_by_app[application_id])
+            for application_id, app in app_by_id.items()
+            if application_id in report_by_app
+        ]
 
 
 _HEADERS = [
@@ -99,7 +113,12 @@ def _build_xlsx(rows):
 
 
 async def export_reports(identity, job_id, *, applications, reports):
-    rows = await list_reports(
-        identity, job_id, applications=applications, reports=reports
-    )
-    return _build_xlsx(rows)
+    async with log_context(
+        log,
+        "resource.report.export_reports",
+        **bind_ids(user_id=identity["id"], comp_id=identity["comp_id"], job_id=job_id),
+    ):
+        rows = await list_reports(
+            identity, job_id, applications=applications, reports=reports
+        )
+        return _build_xlsx(rows)

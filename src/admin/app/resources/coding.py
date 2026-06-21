@@ -7,7 +7,7 @@ subprocess). Candidate-owned via the application (the tenant source of truth).
 """
 
 from lib.execution import ExecLimits, run_code
-from lib.logging import get_logger
+from lib.logging import bind_ids, get_logger, log_context
 from pymongo.errors import DuplicateKeyError
 
 from app.errors import NotFoundError, RateLimitedError, ValidationError
@@ -48,11 +48,16 @@ def _public_task(application_id, task):
 
 
 async def get_coding_task(identity, application_id, *, applications, tasks):
-    application = await _owned(identity, application_id, applications)
-    task = await tasks.get_by_job(application["job_id"])
-    if task is None:
-        raise NotFoundError("Coding task not ready")
-    return _public_task(application_id, task)
+    async with log_context(
+        log,
+        "resource.coding.get_coding_task",
+        **bind_ids(user_id=identity["id"], application_id=application_id),
+    ):
+        application = await _owned(identity, application_id, applications)
+        task = await tasks.get_by_job(application["job_id"])
+        if task is None:
+            raise NotFoundError("Coding task not ready")
+        return _public_task(application_id, task)
 
 
 _MAX_SOURCE = 64 * 1024
@@ -102,17 +107,22 @@ async def run_code_attempt(
     limiter,
     executor=run_code,
 ):
-    _, task = await _owned_task(identity, application_id, applications, tasks)
-    _validate(task, language, source)
-    await _rate_limit(limiter, identity, application_id)
-    result = await executor(language, source, stdin, limits=_limits(task))
-    return {
-        "stdout": result.stdout,
-        "stderr": result.stderr,
-        "exit_code": result.exit_code,
-        "time_ms": result.time_ms,
-        "timed_out": result.timed_out,
-    }
+    async with log_context(
+        log,
+        "resource.coding.run_code_attempt",
+        **bind_ids(user_id=identity["id"], application_id=application_id),
+    ):
+        _, task = await _owned_task(identity, application_id, applications, tasks)
+        _validate(task, language, source)
+        await _rate_limit(limiter, identity, application_id)
+        result = await executor(language, source, stdin, limits=_limits(task))
+        return {
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "exit_code": result.exit_code,
+            "time_ms": result.time_ms,
+            "timed_out": result.timed_out,
+        }
 
 
 def _grade_typed(task, typed_answers):
@@ -162,59 +172,70 @@ async def submit_coding(
     limiter,
     executor=run_code,
 ):
-    application, task = await _owned_task(identity, application_id, applications, tasks)
-    _validate(task, language, source)
-    await _rate_limit(limiter, identity, application_id)
-    # Single-attempt: a resubmit returns the recorded result without re-running the
-    # candidate's code. The upfront read is the fast path; the insert's unique-conflict
-    # below closes the concurrent-submit race.
-    existing = await attempts.get_by_application(application_id)
-    if existing is not None:
-        return await _replay_coding(existing, application_id, publisher)
-    limits = _limits(task)
-    hidden = task.get("hidden_cases", [])
-    cases_passed = 0
-    for case in hidden:
-        result = await executor(language, source, case.get("stdin", ""), limits=limits)
-        if _grade_case(result, case.get("expected_stdout", "")):
-            cases_passed += 1
-    typed_correct, typed_total = _grade_typed(task, typed_answers)
-    cases_total = len(hidden)
-    passed = cases_passed == cases_total and typed_correct == typed_total
-    try:
-        await attempts.insert(
-            CodingAttempt(
-                application_id=application_id,
-                comp_id=application["comp_id"],
-                candidate_user_id=identity["id"],
-                job_id=application["job_id"],
-                cases_passed=cases_passed,
-                cases_total=cases_total,
-                typed_correct=typed_correct,
-                typed_total=typed_total,
-                passed=passed,
+    async with log_context(
+        log,
+        "resource.coding.submit_coding",
+        **bind_ids(user_id=identity["id"], application_id=application_id),
+    ):
+        application, task = await _owned_task(
+            identity, application_id, applications, tasks
+        )
+        _validate(task, language, source)
+        await _rate_limit(limiter, identity, application_id)
+        # Single-attempt: a resubmit returns the recorded result without re-running
+        # code. The upfront read is the fast path; the insert's unique-conflict below
+        # closes the concurrent-submit race.
+        existing = await attempts.get_by_application(application_id)
+        if existing is not None:
+            return await _replay_coding(existing, application_id, publisher)
+        limits = _limits(task)
+        hidden = task.get("hidden_cases", [])
+        cases_passed = 0
+        for case in hidden:
+            result = await executor(
+                language, source, case.get("stdin", ""), limits=limits
             )
+            if _grade_case(result, case.get("expected_stdout", "")):
+                cases_passed += 1
+        typed_correct, typed_total = _grade_typed(task, typed_answers)
+        cases_total = len(hidden)
+        passed = cases_passed == cases_total and typed_correct == typed_total
+        try:
+            await attempts.insert(
+                CodingAttempt(
+                    application_id=application_id,
+                    comp_id=application["comp_id"],
+                    candidate_user_id=identity["id"],
+                    job_id=application["job_id"],
+                    cases_passed=cases_passed,
+                    cases_total=cases_total,
+                    typed_correct=typed_correct,
+                    typed_total=typed_total,
+                    passed=passed,
+                )
+            )
+        except DuplicateKeyError:
+            return await _replay_coding(
+                await attempts.get_by_application(application_id),
+                application_id,
+                publisher,
+            )
+        await publisher.publish(
+            "coding.graded", {"application_id": application_id, "passed": passed}
         )
-    except DuplicateKeyError:
-        return await _replay_coding(
-            await attempts.get_by_application(application_id), application_id, publisher
+        log.info(
+            "coding graded: app={} cases={}/{} typed={}/{} passed={}",
+            application_id,
+            cases_passed,
+            cases_total,
+            typed_correct,
+            typed_total,
+            passed,
         )
-    await publisher.publish(
-        "coding.graded", {"application_id": application_id, "passed": passed}
-    )
-    log.info(
-        "coding graded: app={} cases={}/{} typed={}/{} passed={}",
-        application_id,
-        cases_passed,
-        cases_total,
-        typed_correct,
-        typed_total,
-        passed,
-    )
-    return {
-        "passed": passed,
-        "cases_passed": cases_passed,
-        "cases_total": cases_total,
-        "typed_correct": typed_correct,
-        "typed_total": typed_total,
-    }
+        return {
+            "passed": passed,
+            "cases_passed": cases_passed,
+            "cases_total": cases_total,
+            "typed_correct": typed_correct,
+            "typed_total": typed_total,
+        }

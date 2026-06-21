@@ -6,9 +6,13 @@ notifications is a SCHEDULED BACKEND SWEEP (not this request path); `last_run_at
 sweep-written. Boundary rules: frequency must be daily|weekly; a per-candidate cap.
 """
 
+from lib.logging import bind_ids, get_logger, log_context
+
 from app.errors import LimitExceededError, NotFoundError, ValidationError
 from app.model.job_alert import AlertFilters, JobAlert
 from app.resources.discovery import iso
+
+log = get_logger(component="job_alerts.resources")
 
 _VALID_FREQ = {"daily", "weekly"}
 _MAX_ALERTS = 20
@@ -33,34 +37,51 @@ def _alert_dto(doc: dict) -> dict:
 
 
 async def create_alert(candidate_user_id, keyword, filters, frequency, *, alerts):
-    if frequency not in _VALID_FREQ:
-        raise ValidationError("frequency must be 'daily' or 'weekly'")
-    if await alerts.count_by_candidate(candidate_user_id) >= _MAX_ALERTS:
-        raise LimitExceededError(f"at most {_MAX_ALERTS} active alerts")
-    skills = sorted(
-        {s.strip().lower() for s in (filters.get("skills") or []) if s.strip()}
-    )
-    alert = JobAlert(
-        candidate_user_id=candidate_user_id,
-        keyword=keyword or "",
-        filters=AlertFilters(
-            location=filters.get("location") or "",
-            remote_mode=filters.get("remote_mode") or "",
-            employment_type=filters.get("employment_type") or "",
-            experience_level=filters.get("experience_level") or "",
-            skills=skills,
-        ),
-        frequency=frequency,
-    )
-    alert_id = await alerts.create(alert)
-    return _alert_dto(await alerts.get_scoped(alert_id, candidate_user_id))
+    async with log_context(
+        log,
+        "resource.job_alerts.create_alert",
+        **bind_ids(user_id=candidate_user_id),
+    ):
+        if frequency not in _VALID_FREQ:
+            raise ValidationError("frequency must be 'daily' or 'weekly'")
+        if await alerts.count_by_candidate(candidate_user_id) >= _MAX_ALERTS:
+            raise LimitExceededError(f"at most {_MAX_ALERTS} active alerts")
+        skills = sorted(
+            {s.strip().lower() for s in (filters.get("skills") or []) if s.strip()}
+        )
+        alert = JobAlert(
+            candidate_user_id=candidate_user_id,
+            keyword=keyword or "",
+            filters=AlertFilters(
+                location=filters.get("location") or "",
+                remote_mode=filters.get("remote_mode") or "",
+                employment_type=filters.get("employment_type") or "",
+                experience_level=filters.get("experience_level") or "",
+                skills=skills,
+            ),
+            frequency=frequency,
+        )
+        alert_id = await alerts.create(alert)
+        return _alert_dto(await alerts.get_scoped(alert_id, candidate_user_id))
 
 
 async def list_alerts(candidate_user_id, *, alerts):
-    return [_alert_dto(r) for r in await alerts.list_by_candidate(candidate_user_id)]
+    async with log_context(
+        log,
+        "resource.job_alerts.list_alerts",
+        **bind_ids(user_id=candidate_user_id),
+    ):
+        return [
+            _alert_dto(r) for r in await alerts.list_by_candidate(candidate_user_id)
+        ]
 
 
 async def delete_alert(candidate_user_id, alert_id, *, alerts):
-    if not await alerts.delete_scoped(alert_id, candidate_user_id):
-        raise NotFoundError("alert not found")
-    return True
+    async with log_context(
+        log,
+        "resource.job_alerts.delete_alert",
+        **bind_ids(user_id=candidate_user_id),
+    ):
+        if not await alerts.delete_scoped(alert_id, candidate_user_id):
+            raise NotFoundError("alert not found")
+        return True

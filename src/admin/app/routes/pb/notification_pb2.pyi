@@ -22,7 +22,16 @@ class NotificationDTO(_message.Message):
     link: str
     created_at: str
     read_at: str
-    def __init__(self, id: _Optional[str] = ..., kind: _Optional[str] = ..., subject: _Optional[str] = ..., body: _Optional[str] = ..., link: _Optional[str] = ..., created_at: _Optional[str] = ..., read_at: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[str] = ...,
+        kind: _Optional[str] = ...,
+        subject: _Optional[str] = ...,
+        body: _Optional[str] = ...,
+        link: _Optional[str] = ...,
+        created_at: _Optional[str] = ...,
+        read_at: _Optional[str] = ...,
+    ) -> None: ...
 
 class ListRequest(_message.Message):
     __slots__ = ("page", "page_size", "unread_only")
@@ -32,7 +41,12 @@ class ListRequest(_message.Message):
     page: int
     page_size: int
     unread_only: bool
-    def __init__(self, page: _Optional[int] = ..., page_size: _Optional[int] = ..., unread_only: _Optional[bool] = ...) -> None: ...
+    def __init__(
+        self,
+        page: _Optional[int] = ...,
+        page_size: _Optional[int] = ...,
+        unread_only: _Optional[bool] = ...,
+    ) -> None: ...
 
 class ListResponse(_message.Message):
     __slots__ = ("notifications", "unread_count", "page", "page_size", "total")
@@ -46,20 +60,35 @@ class ListResponse(_message.Message):
     page: int
     page_size: int
     total: int
-    def __init__(self, notifications: _Optional[_Iterable[_Union[NotificationDTO, _Mapping]]] = ..., unread_count: _Optional[int] = ..., page: _Optional[int] = ..., page_size: _Optional[int] = ..., total: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        notifications: _Optional[_Iterable[_Union[NotificationDTO, _Mapping]]] = ...,
+        unread_count: _Optional[int] = ...,
+        page: _Optional[int] = ...,
+        page_size: _Optional[int] = ...,
+        total: _Optional[int] = ...,
+    ) -> None: ...
 
 class MarkReadRequest(_message.Message):
-    __slots__ = ("notification_id",)
+    __slots__ = ("notification_id", "seq_no")
     NOTIFICATION_ID_FIELD_NUMBER: _ClassVar[int]
+    SEQ_NO_FIELD_NUMBER: _ClassVar[int]
     notification_id: str
-    def __init__(self, notification_id: _Optional[str] = ...) -> None: ...
+    seq_no: int
+    def __init__(
+        self, notification_id: _Optional[str] = ..., seq_no: _Optional[int] = ...
+    ) -> None: ...
 
 class MarkAllReadRequest(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
 
 class MarkReadResponse(_message.Message):
-    __slots__ = ("unread_count",)
+    __slots__ = ("unread_count", "accepted_seq_no")
     UNREAD_COUNT_FIELD_NUMBER: _ClassVar[int]
+    ACCEPTED_SEQ_NO_FIELD_NUMBER: _ClassVar[int]
     unread_count: int
-    def __init__(self, unread_count: _Optional[int] = ...) -> None: ...
+    accepted_seq_no: int
+    def __init__(
+        self, unread_count: _Optional[int] = ..., accepted_seq_no: _Optional[int] = ...
+    ) -> None: ...
