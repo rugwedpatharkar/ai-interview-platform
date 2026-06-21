@@ -94,11 +94,19 @@ class ApplicationServicer(application_pb2_grpc.ApplicationServiceServicer):
         ):
             try:
                 identity = await caller_identity(context, self._tokens)
-                out = await application_res.list_applicants(
-                    identity, request.job_id, applications=self._applications
+                result = await application_res.list_applicants(
+                    identity,
+                    request.job_id,
+                    request.page_size,
+                    request.page_token,
+                    applications=self._applications,
                 )
                 return application_pb2.ApplicationList(
-                    applications=[_application_response(a) for a in out]
+                    applications=[
+                        _application_response(a) for a in result["applications"]
+                    ],
+                    next_page_token=result["next_page_token"],
+                    total_count=result["total_count"],
                 )
             except AuthDomainError as exc:
                 await self._abort(context, exc, "ListApplicants")
