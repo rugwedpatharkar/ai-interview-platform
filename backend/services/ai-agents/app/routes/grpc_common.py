@@ -1,6 +1,6 @@
 """Shared gRPC route helpers for ai-agents servicers: metadata auth + error mapping.
 
-Mirrors the admin route layer (src/admin/app/routes/auth.py): the caller's identity
+Mirrors the admin route layer (services/admin/app/routes/auth.py): the caller's identity
 comes from the access token carried in gRPC metadata, and `app.errors` domain errors
 map to gRPC status codes. Servicers stay thin adapters over app/resources — the same
 contract the REST routes had, moved onto the shared gRPC-web translator (lib/grpcweb).

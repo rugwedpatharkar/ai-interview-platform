@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Production gate — run from anywhere: bash scripts/check.sh
+# Production gate — run from anywhere: bash backend/scripts/check.sh
 # Format, lint (incl. security S-rules), dependency CVE audit, and tests must all pass.
 # See docs/superpowers/plans/PRODUCTION_STANDARDS.md.
 set -euo pipefail
@@ -26,16 +26,16 @@ echo "==> lib tests"
 (cd lib && "$PY" -m pytest -q)
 
 echo "==> admin tests"
-(cd src/admin && "$PY" -m pytest -q)
+(cd services/admin && "$PY" -m pytest -q)
 
 echo "==> ai-agents tests"
-(cd src/ai-agents && "$PY" -m pytest -q)
+(cd services/ai-agents && "$PY" -m pytest -q)
 
 echo "==> mcp-data tests"
-(cd src/mcp-data && "$PY" -m pytest -q)
+(cd services/mcp-data && "$PY" -m pytest -q)
 
 echo "==> mcp-capability tests"
-(cd src/mcp-capability && "$PY" -m pytest -q)
+(cd services/mcp-capability && "$PY" -m pytest -q)
 
 echo ""
 echo "==> GATE PASSED"

@@ -29,7 +29,7 @@ These rules apply to every Claude session opened in this repo. They override def
 
 ## Commit hygiene
 
-- Stage **explicit paths** when committing — no `git add -A` / `git add .`. The repo has co-located generated files (`frontend/packages/api-client/src/gen/*`, lockfiles) that a blanket add would sweep in.
+- Stage **explicit paths** when committing — no `git add -A` / `git add .`. The repo has co-located generated files (`frontend/packages/api-client/src/gen/*`, lockfiles) and co-located build artifacts (`backend/.venv`, `*.egg-info`, caches) that a blanket add would sweep in.
 - Commit **at each meaningful step** — many small commits beats one big one. Easier to review, easier to revert.
 - One commit = one pattern category. "Drop nested try/except" is one commit; "Inline single-use helpers" is another.
 - Use Conventional Commits (`feat:`, `fix:`, `chore:`, `refactor:`, `docs:`, `test:`). Subject ≤ 70 chars; explain "why" in the body, not "what".
@@ -40,26 +40,33 @@ These rules apply to every Claude session opened in this repo. They override def
 
 ## Workspace layout (high level)
 
-- `src/` — Python backend (admin gRPC services, ai-agents, shared libs). Each service follows `app/model + app/resources (logic) + app/routes (thin RPC)`.
+The repo is a **two-root monorepo**: `backend/` (Python) and `frontend/` (TypeScript) are
+fully separate — own toolchain, own deploy config (`backend/render.yaml`,
+`frontend/apps/candidate/vercel.json`) — but share one git history so an API change and its
+generated client land atomically.
+
+- `backend/` — everything Python:
+  - `services/` — the 4 services: `admin` (gRPC-web API), `ai-agents` (LangGraph/Gemini/LiveKit), `mcp-data`, `mcp-capability`. Each follows `app/model + app/resources (logic) + app/routes (thin RPC)`.
+  - `lib/` — Python shared libs (errors, timeouts, audit, grpcweb translator)
+  - `scripts/` — gate scripts (`check.sh` runs the full backend gate)
+  - `docker/`, `deploy/`, `docker-compose.yml`, `ruff.toml`, `render.yaml`, `Dockerfile`
 - `frontend/` — pnpm + turbo monorepo:
   - `apps/candidate` — the unified user-facing app (hosts both candidate-side `/...` and recruiter-side `/company/...` routes)
   - `apps/company` — legacy standalone recruiter app, kept alive for backward compat
   - `packages/ui` — Aperture Pro design system (`@ip/ui`)
   - `packages/shared` — auth, transport, useAuth (`@ip/shared`)
-  - `packages/api-client` — generated gRPC clients (`@ip/api-client`)
-- `lib/` — Python shared libs (errors, timeouts, audit, grpcweb translator)
-- `scripts/` — gate scripts (`check.sh` runs the full backend gate)
+  - `packages/api-client` — generated gRPC clients (`@ip/api-client`); `pnpm gen` reads protos from `../../../backend/services/{admin,ai-agents}/app/routes/pb`
 - `docs/superpowers/` — specs, plans, issue registers (planning canon)
 - `docs/brand/` — design system + redesign mockups
 
 ## Per-language rules
 
-- **Python:** see `~/.claude/CLAUDE.md` for the global Python ruleset (anti-defensive, anti-nested, trust-the-system). Applies to all `src/`, `lib/`, `scripts/` work.
+- **Python:** see `~/.claude/CLAUDE.md` for the global Python ruleset (anti-defensive, anti-nested, trust-the-system). Applies to all `backend/services/`, `backend/lib/`, `backend/scripts/` work.
 - **TypeScript:** no comments by default — only WHY-not-WHAT for non-obvious constraints. Stage explicit paths. Run `tsc --noEmit` per affected package before commit.
 
 ## Verification gates
 
-- Backend: `bash scripts/check.sh` — 5 suites + ruff + pip-audit + log-coverage + timeouts gates. Must pass.
+- Backend: `bash backend/scripts/check.sh` — 5 suites + ruff + pip-audit + log-coverage + timeouts gates. Must pass. (The venv lives at `backend/.venv`.)
 - Frontend per-package typecheck: `cd frontend && npx pnpm@9.15.0 --filter @ip/<pkg> exec tsc --noEmit`. Must return 0.
 - Frontend per-app build: `cd frontend && npx pnpm@9.15.0 --filter @ip/<app> build`. Never run while a dev server is live on the same app.
 - Browser verification for previewable changes: start dev via `preview_start`, walk the change with `preview_eval` / `preview_snapshot` / `preview_screenshot`. Don't ask the user to test — verify and share proof.

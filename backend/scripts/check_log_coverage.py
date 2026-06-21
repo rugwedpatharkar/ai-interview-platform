@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Gate guard: every `async def` in src/admin/app/resources/*.py must wrap its body in
-`async with log_context(...)`. Allowlist file holds known unwrapped sites that Phase 2
-shrinks file-by-file.
+"""Gate guard: every `async def` in services/admin/app/resources/*.py must wrap its
+body in `async with log_context(...)`. Allowlist file holds known unwrapped sites that
+Phase 2 shrinks file-by-file.
 """
 
 import argparse
@@ -9,7 +9,7 @@ import ast
 import sys
 from pathlib import Path
 
-DEFAULT_RESOURCES_ROOT = "src/admin/app/resources"
+DEFAULT_RESOURCES_ROOT = "services/admin/app/resources"
 
 
 def load_allowlist(path: Path) -> set[str]:

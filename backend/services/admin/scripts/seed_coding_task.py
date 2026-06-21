@@ -5,7 +5,7 @@ seeds a known problem so GetCodingTask returns a real task in a running environm
 LLM authoring is a gated follow-up (see the A6 plan). The seed's hidden cases are the
 server-only answer key — they never reach the candidate.
 
-Run from src/admin:  ../../.venv/bin/python -m scripts.seed_coding_task <job_id>
+Run from services/admin:  ../../.venv/bin/python -m scripts.seed_coding_task <job_id>
 """
 
 import asyncio

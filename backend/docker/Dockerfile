@@ -1,4 +1,4 @@
-# Generic image for any Python service in this monorepo (build context = repo root).
+# Generic image for any Python service in this monorepo (build context = backend/).
 #   docker build -f docker/Dockerfile --build-arg SERVICE=admin -t ip-admin .
 # admin + ai-agents run `app.main` (the default CMD); the MCP servers override the
 # compose `command:` to `app.server`.
@@ -12,9 +12,9 @@ WORKDIR /app
 COPY lib ./lib
 RUN pip install --no-cache-dir ./lib
 
-# Then the target service. (COPY all of src for builder portability; install just one.)
-COPY src ./src
-RUN pip install --no-cache-dir ./src/${SERVICE}
+# Then the target service. (COPY all services for builder portability; install just one.)
+COPY services ./services
+RUN pip install --no-cache-dir ./services/${SERVICE}
 
-WORKDIR /app/src/${SERVICE}
+WORKDIR /app/services/${SERVICE}
 CMD ["python", "-m", "app.main"]

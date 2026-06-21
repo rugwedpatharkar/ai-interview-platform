@@ -25,10 +25,10 @@ from pathlib import Path
 
 DEFAULT_ROOTS = [
     "lib/lib",
-    "src/admin/app",
-    "src/ai-agents/app",
-    "src/mcp-data/app",
-    "src/mcp-capability/app",
+    "services/admin/app",
+    "services/ai-agents/app",
+    "services/mcp-data/app",
+    "services/mcp-capability/app",
 ]
 
 # Exact pymongo verb names — repo wrapper methods (delete_by_*, find_by_*,

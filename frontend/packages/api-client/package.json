@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "gen": "buf generate ../../../src/admin/app/routes/pb && buf generate ../../../src/ai-agents/app/routes/pb",
+    "gen": "buf generate ../../../backend/services/admin/app/routes/pb && buf generate ../../../backend/services/ai-agents/app/routes/pb",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

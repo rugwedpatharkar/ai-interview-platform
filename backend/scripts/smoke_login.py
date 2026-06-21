@@ -19,7 +19,7 @@ from pathlib import Path
 
 import httpx
 
-_ADMIN = str(Path(__file__).resolve().parent.parent / "src" / "admin")
+_ADMIN = str(Path(__file__).resolve().parent.parent / "services" / "admin")
 sys.path.insert(0, _ADMIN)
 
 from app.routes.pb import auth_pb2  # noqa: E402

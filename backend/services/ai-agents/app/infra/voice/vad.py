@@ -271,7 +271,7 @@ class SileroOnnxVad:
         if not path.exists():
             raise FileNotFoundError(
                 f"Silero VAD ONNX model not found at {path}. "
-                "Copy silero_vad.onnx into src/ai-agents/app/infra/voice/ "
+                "Copy silero_vad.onnx into services/ai-agents/app/infra/voice/ "
                 "or pass onnx_path explicitly."
             )
 
