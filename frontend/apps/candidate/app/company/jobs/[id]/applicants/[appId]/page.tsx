@@ -5,6 +5,7 @@ import {
   errorMessage,
   isNotFound,
   isTransient,
+  pollingBackoff,
   useAuthedQuery,
   useRequireRole,
 } from "@ip/shared";
@@ -44,22 +45,32 @@ import { signalLabel } from "./types";
 const mockIntegrity = makeMockIntegrityClient();
 type Tab = "report" | "schedule" | "messages";
 
+// Poll while the report is still being scored (NOT_FOUND) or a transient error occurs.
+// Uses dataUpdateCount for the success path and errorUpdateCount for the NOT_FOUND path,
+// so the cap (60 polls / ~5 min) applies regardless of which state the query is in.
+const reportBackoff = pollingBackoff({
+  initialMs: 3_000,
+  capMs: 10_000,
+  maxPolls: 60,
+  jitterRatio: 0.1,
+});
+
 // Translate the wire report (whose static type doesn't yet carry competencies /
-// integrity scalars) into the FE DTO. Cast through Record<string, unknown> — the
-// runtime values exist (protobuf-es fills defaults), only the static type is thin.
+// integrity scalars) into the FE DTO. Uses explicit type guards per field so a
+// shape mismatch surfaces as a visible zero/empty rather than a silent cast lie.
 function toReportDTO(r: Record<string, unknown>): ReportDTO {
   return {
-    applicationId: (r.applicationId as string) ?? "",
-    state: (r.state as string) ?? "",
-    executiveSummary: (r.executiveSummary as string) ?? "",
-    highlights: (r.highlights as string[]) ?? [],
-    risks: (r.risks as string[]) ?? [],
-    overallScore: (r.overallScore as number) ?? 0,
-    recommendation: (r.recommendation as string) ?? "",
-    competencies: (r.competencies as Competency[]) ?? [],
-    integrityScore: (r.integrityScore as number) ?? 0,
-    integrityFlagCount: (r.integrityFlagCount as number) ?? 0,
-    autoTerminated: (r.autoTerminated as boolean) ?? false,
+    applicationId: typeof r.applicationId === "string" ? r.applicationId : "",
+    state: typeof r.state === "string" ? r.state : "",
+    executiveSummary: typeof r.executiveSummary === "string" ? r.executiveSummary : "",
+    highlights: Array.isArray(r.highlights) ? (r.highlights as string[]) : [],
+    risks: Array.isArray(r.risks) ? (r.risks as string[]) : [],
+    overallScore: typeof r.overallScore === "number" ? r.overallScore : 0,
+    recommendation: typeof r.recommendation === "string" ? r.recommendation : "",
+    competencies: Array.isArray(r.competencies) ? (r.competencies as Competency[]) : [],
+    integrityScore: typeof r.integrityScore === "number" ? r.integrityScore : 0,
+    integrityFlagCount: typeof r.integrityFlagCount === "number" ? r.integrityFlagCount : 0,
+    autoTerminated: typeof r.autoTerminated === "boolean" ? r.autoTerminated : false,
   };
 }
 
@@ -104,9 +115,10 @@ export default function ApplicantReportPage() {
   useEffect(() => setMounted(true), []);
   const [tab, setTab] = useState<Tab>("report");
 
-  // Preserve the 3s poll during the scoring window — Report.GetReport returns
-  // NOT_FOUND until the scorer finishes. isTransient covers blips so a one-off
-  // 5xx doesn't strand the recruiter on the error screen.
+  // Poll while the report is still being scored (NOT_FOUND) or a transient error
+  // occurs. Caps at 60 polls (~5 min) so a permanently-missing report doesn't
+  // poll forever. For the error path (NOT_FOUND) we use errorUpdateCount as the
+  // poll counter since dataUpdateCount never increments until the query succeeds.
   const report = useAuthedQuery(token, {
     queryKey: ["report", appId],
     retry: false,
@@ -115,7 +127,10 @@ export default function ApplicantReportPage() {
     refetchInterval: (q) => {
       if (q.state.status === "success") return false;
       const err = q.state.error;
-      return isNotFound(err) || isTransient(err) ? 3000 : false;
+      if (!isNotFound(err) && !isTransient(err)) return false;
+      // Proxy the relevant counter into the shape reportBackoff expects.
+      const n = Math.max(q.state.dataUpdateCount, q.state.errorUpdateCount);
+      return reportBackoff({ state: { dataUpdateCount: n, status: q.state.status } });
     },
   });
 
@@ -138,6 +153,8 @@ export default function ApplicantReportPage() {
   });
 
   const notReady = report.isError && isNotFound(report.error);
+  // Poll cap exhausted while the report still hasn't landed — offer a manual refresh.
+  const isCapped = report.errorUpdateCount >= 60 && notReady;
 
   // Unread badge — one cheap source the threads query already polls. Resilient on
   // failure: the badge simply doesn't render.
@@ -221,13 +238,28 @@ export default function ApplicantReportPage() {
         <div className="mt-6 grid gap-5">
           {report.isLoading && <LoadingState />}
 
-          {notReady && (
+          {notReady && !isCapped && (
             <div className="ap-cell flex items-center gap-3">
               <Spinner />
               <p className="text-sm text-ink-2">
                 The report is being generated — this updates automatically as soon as
                 scoring finishes.
               </p>
+            </div>
+          )}
+
+          {isCapped && (
+            <div className="ap-cell flex flex-col gap-3">
+              <p className="text-sm text-ink-2">
+                Still scoring — this is taking longer than usual.
+              </p>
+              <button
+                type="button"
+                className="ap-btn ap-btn-ghost ap-btn-sm self-start"
+                onClick={() => report.refetch()}
+              >
+                Check again
+              </button>
             </div>
           )}
 
