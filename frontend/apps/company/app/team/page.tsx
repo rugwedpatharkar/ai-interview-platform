@@ -12,14 +12,14 @@ import { useAuth } from "../../lib/auth";
 import { makeTeamClient } from "./team-client";
 
 export default function TeamPage() {
-  const { identity, ready } = useAuth();
+  const { api, identity, ready } = useAuth();
   // Page-level role guard: redirect non-admins before they can interact with seat mutations
   // (defence in depth — nav-hiding is not enough; the server gates every RPC on team:manage).
   useRequireRole(identity?.role, ["company_admin"], ready);
 
-  // One stable client for the page so the roster + invite dialog share fixture state and
-  // query invalidation. Swap to createTeamClient(api) once `pnpm gen` exposes api.team.
-  const [client] = useState(makeTeamClient);
+  // Live by default; mock when NEXT_PUBLIC_MOCK=1. Stable so roster + invite dialog share
+  // query invalidation; rebuilt only if `api` itself changes (effectively never per session).
+  const [client] = useState(() => makeTeamClient(api));
 
   if (identity?.role !== "company_admin") {
     return (

@@ -1,23 +1,15 @@
 "use client";
 
-import {
-  Button,
-  Card,
-  CardContent,
-  EmptyState,
-  ErrorState,
-  LoadingState,
-  PageHeader,
-} from "@ip/ui";
+import { Button, ErrorState, LoadingState } from "@ip/ui";
 import { errorMessage, useAuthedQuery, useRequireAuth, useRequireRole } from "@ip/shared";
-import { ArrowRight, History } from "lucide-react";
+import { ArrowRight, Eye, History, Lock, Mic, Shield, Sparkles, Video } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { CandidateShell } from "../../components/candidate-shell";
 import { PracticeRunner } from "../../components/practice-runner";
 import { PracticeStartForm } from "../../components/practice-start-form";
-import { practiceClient } from "../../lib/practice-client";
+import { usePracticeClient } from "../../lib/practice-client";
 import { useAuth } from "../../lib/auth";
 import type { PracticeStartResult } from "./types";
 
@@ -29,6 +21,7 @@ export default function PracticePage() {
   useRequireAuth(token, ready);
   useRequireRole(identity?.role, ["candidate"], ready);
 
+  const practiceClient = usePracticeClient();
   const [started, setStarted] = useState<PracticeStartResult | null>(null);
 
   const history = useAuthedQuery(token, {
@@ -41,13 +34,30 @@ export default function PracticePage() {
 
   return (
     <CandidateShell>
-      <PageHeader
-        title="Practice"
-        description="Run a private mock interview and get growth feedback. Nothing here is shared with employers."
-      />
+      <header className="mb-8 flex flex-col gap-3">
+        <span className="ap-eyebrow">
+          <Sparkles className="size-4" aria-hidden /> Practice mode
+        </span>
+        <h1 className="ap-h2">
+          A safe room to rehearse — feedback is for you, not employers.
+        </h1>
+        <p className="ap-lead">
+          Run a private mock interview off a topic or a job description. Get growth feedback after.
+          Nothing in practice is shared with anyone hiring you.
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <span className="ap-pill ap-pill--teal">
+            <Lock className="size-3" aria-hidden /> Detached from your applications
+          </span>
+          <span className="ap-pill">
+            <Shield className="size-3" aria-hidden /> No score · no verdict
+          </span>
+        </div>
+      </header>
 
       {started ? (
-        <div className="flex flex-col gap-4">
+        <div className="ap-cell flex flex-col gap-4">
+          <span className="ap-cell-tag">Live · practice</span>
           <PracticeRunner
             practiceId={started.practice_id}
             firstQuestion={started.question}
@@ -61,13 +71,52 @@ export default function PracticePage() {
           </Button>
         </div>
       ) : (
-        <PracticeStartForm onStarted={setStarted} />
+        <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+          <div className="ap-cell ap-cell--anchor">
+            <span className="ap-cell-tag">Start a session</span>
+            <PracticeStartForm onStarted={setStarted} />
+          </div>
+
+          <aside className="ap-def-panel ap-def-panel--privacy flex flex-col gap-3">
+            <span className="ap-eyebrow">What practice looks like</span>
+            <h3 className="ap-h4">Same shape as the real interview — without the stakes.</h3>
+            <ul className="ap-def-list ap-def-list--privacy">
+              <li>
+                <Video className="size-4" aria-hidden />
+                Camera and mic on — same proctoring engine, no recording shared.
+              </li>
+              <li>
+                <Mic className="size-4" aria-hidden />
+                Iris asks 3–4 questions in your role's competency frame.
+              </li>
+              <li>
+                <Eye className="size-4" aria-hidden />
+                Captions on by default · session is read-only afterwards.
+              </li>
+              <li>
+                <Shield className="size-4" aria-hidden />
+                You see growth feedback. No employer ever does.
+              </li>
+            </ul>
+          </aside>
+        </div>
       )}
 
-      <section className="mt-10 flex flex-col gap-3">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
-          Past practice runs
-        </h2>
+      <section className="mt-10 flex flex-col gap-4">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <span className="ap-eyebrow">
+              <History className="size-4" aria-hidden /> Past practice runs
+            </span>
+            <h2 className="ap-h3 mt-2">Your growth log</h2>
+          </div>
+          {sessions.length > 0 && (
+            <span className="font-mono text-[0.78rem] uppercase tracking-[0.08em] text-ink-3">
+              {sessions.length} {sessions.length === 1 ? "session" : "sessions"}
+            </span>
+          )}
+        </div>
+
         {history.isLoading && <LoadingState />}
         {history.isError && (
           <ErrorState
@@ -76,27 +125,44 @@ export default function PracticePage() {
           />
         )}
         {!history.isLoading && !history.isError && sessions.length === 0 && (
-          <EmptyState
-            icon={History}
-            title="No practice runs yet"
-            description="Finished runs land here so you can revisit your feedback and track progress."
-          />
+          <div className="ap-cell flex flex-col items-start gap-2 text-sm text-ink-2">
+            <span className="ap-pill">Empty</span>
+            <p className="text-ink-2">
+              No practice runs yet. Finished sessions land here so you can revisit feedback and
+              track progress.
+            </p>
+          </div>
         )}
-        <div className="flex flex-col gap-2">
+
+        <div className="grid gap-3">
           {sessions.map((r) => (
-            <Link key={r.practice_id} href={`/feedback/${r.practice_id}`} className="group">
-              <Card hoverable>
-                <CardContent className="flex items-center justify-between gap-3 py-3">
-                  <span className="font-medium text-foreground">{r.role_label}</span>
-                  <span className="flex items-center gap-3 text-sm text-muted-foreground">
-                    {new Date(r.created_at).toLocaleDateString()}
-                    <ArrowRight
-                      className="size-4 transition-transform group-hover:translate-x-0.5"
-                      aria-hidden
-                    />
+            <Link
+              key={r.practice_id}
+              href={`/feedback/${r.practice_id}`}
+              className="group"
+              aria-label={`Open practice feedback for ${r.role_label}`}
+            >
+              <div className="ap-cell flex items-center justify-between gap-4 py-4 transition-colors hover:border-[color-mix(in_oklch,var(--teal)_30%,var(--line))]">
+                <div className="flex flex-col gap-1">
+                  <span className="font-display text-[1rem] font-semibold text-ink-deep">
+                    {r.role_label}
                   </span>
-                </CardContent>
-              </Card>
+                  <span className="font-mono text-[0.72rem] uppercase tracking-[0.08em] text-ink-3">
+                    {new Date(r.created_at).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+                <span className="inline-flex items-center gap-2 text-sm font-medium text-teal-strong">
+                  Open feedback
+                  <ArrowRight
+                    className="size-4 transition-transform group-hover:translate-x-0.5"
+                    aria-hidden
+                  />
+                </span>
+              </div>
             </Link>
           ))}
         </div>

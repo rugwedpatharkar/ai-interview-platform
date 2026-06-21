@@ -1,7 +1,11 @@
-# Backend — Job detail (`/jobs/[id]`) · contract
+# Job detail — Backend contract (v3 · frozen)
 
-> **Screen.** Public job-detail page. **FE consumer:** `frontend_job-detail.md`.
-> **Status.** `EXISTING — reuse v2` (EXTEND). Source: `../../v2-screens/job-detail.md`.
+> **Screen.** Public job-detail page (`/jobs/[id]`). **FE consumer:** [`frontend_job-detail.md`](./frontend_job-detail.md).
+> **Status:** `EXISTING — reuse v2` (EXTEND) · live · proto already extended in v2 (no further delta), no new
+> collections, no new events. Source: `../../v2-screens/job-detail.md`.
+> **Anti-fiction reminder:** Aptura is pre-launch. The DTO carries only fields the FE renders today;
+> no fabricated employer outcomes, no claimed ATS integrations, no unearned certifications — see the
+> anti-fiction rule in [`_design-language.md`](../_design-language.md).
 > **Real-vs-mock today.** The authed gRPC `JobService.GetPublicJob` exists and is extended to the full public DTO;
 > the public REST mirror `GET /public/jobs/{id}` is added on the `/public/*` app (shares `resources/discovery.py`).
 > **Apply** (`api.applications.apply`) is live from day one. FE has a `NEXT_PUBLIC_MOCK` detail fixture.
@@ -88,6 +92,8 @@ export interface JobDetailDTO {
 ## Cross-references
 
 - Restates: `../../v2-screens/job-detail.md` §A.
-- Shares `resources/discovery.py` projection with `../marketplace-search/backend_marketplace-search.md` and
-  `../company-profile/backend_company-profile.md`.
+- Design language: [`../_design-language.md`](../_design-language.md).
+- Demo to match: [`../../../brand/redesign-v3/directions/D-aperture-pro.html`](../../../brand/redesign-v3/directions/D-aperture-pro.html).
+- Shares `resources/discovery.py` projection with [`../marketplace-search/backend_marketplace-search.md`](../marketplace-search/backend_marketplace-search.md)
+  and [`../company-profile/backend_company-profile.md`](../company-profile/backend_company-profile.md).
 - Shared enum: `ApplicationState` (downstream of Apply). Pillar: `../../v2/2026-06-19-job-marketplace.md` Task 7.

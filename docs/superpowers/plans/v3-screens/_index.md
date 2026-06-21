@@ -1,113 +1,186 @@
-# Aptura v3 (Midnight) — Per-Page Implementation Plans · Index
+# Aptura v3 — Per-screen implementation plans · Index
 
-> **What this is.** The detailed expansion of the umbrella v3 plan's **Phase D** ("port each screen") into
-> **one folder per page**, each holding a **frontend plan** + a **backend plan**. The redesign is
-> **appearance-only (zero behavior change)**; the backend plan documents the contract the page consumes so
-> implementation is self-contained.
+> **What this is.** One folder per page, each holding a **frontend plan** + **backend plan**.
+> The redesign is a **complete rebuild** in the **Aperture Pro** design language —
+> NOT a reskin in place. Backend contracts are **frozen** (separate session owns
+> `src/`, `*.proto`, `packages/api-client/src/gen/*`); these docs describe the UI to build
+> and the contracts the UI consumes.
 
-## Folder structure (per page)
+## How to use this folder
+
+When implementing a screen, open its folder:
+1. Read [`_design-language.md`](./_design-language.md) — single source of truth for tokens,
+   type, components, motion, the mandatory revamp rule, the anti-fiction rule, and the
+   **responsive mandate** (every screen must work on iPad / mobile / all aspect ratios).
+2. Read the per-screen `frontend_<slug>.md`.
+3. Read the per-screen `backend_<slug>.md` for the contract.
+4. Build the backend per the contract. Build the frontend per the plan (against a typed
+   mock until the BE lands).
+5. Verify side-by-side against the design language demo +
+   [`screenshots/`](../../../brand/redesign-v3/directions/screenshots/) at the 7 reference
+   viewport sizes. Save proof under
+   [`docs/brand/redesign-v3/verify/`](../../../brand/redesign-v3/verify/).
+
+## Folder structure (per screen)
 
 ```
 docs/superpowers/plans/v3-screens/
-  _index.md                       ← this spine
-  <page-slug>/
-    frontend_<page-slug>.md       ← detailed FE implementation plan (new Midnight UI)
-    backend_<page-slug>.md        ← functionalities, gRPC/RPCs, request/response structures, data required
+  _design-language.md       ← tokens, components, motion, responsive mandate, mandatory rebuild rule
+  _index.md                 ← this spine
+  _missing-pages-audit.md   ← complete flow audit (Tier 1 / 2 / 3)
+  <slug>/
+    frontend_<slug>.md      ← FE implementation plan (UI from scratch in Aperture Pro)
+    backend_<slug>.md       ← contract the FE consumes (frozen)
 ```
-
-34 page folders × 2 files = **68 plan files** + this index. When implementing a page, open its folder: build the
-backend per `backend_<slug>.md`, build the frontend per `frontend_<slug>.md` (against a mock until the BE lands).
 
 ## Prerequisites (assumed by every page)
 
-- **Single-app unification** — `../2026-06-20-aptura-single-app-unification.md` (one URL; company under `/company/*`).
-- **Design system in `@ip/ui`** + per-user **Appearance** (theme `system|light|dark` default device, base, accent)
-  — umbrella v3 plan `../2026-06-20-v3-redesign-and-appearance.md` Phases A–C.
-- Visual source of truth: `../../brand/redesign-v2/*.html` mockups + `tokens.css` + `app.css`.
-- **Execution gating:** screen work waits for the unification + the parallel session's `frontend/` edits to land.
+- **Single-app unification** —
+  [`../2026-06-20-aptura-single-app-unification.md`](../2026-06-20-aptura-single-app-unification.md)
+  (one URL; company area under `/company/*`; role-guarded by `useRequireRole`).
+- **Per-user Appearance** (theme `system | light | dark` default device, base, accent) —
+  the locked Aptura defaults map to `base: aperture` + `accent: teal` from the design
+  language tokens.
+- **Design demo to match 1:1** —
+  [`docs/brand/redesign-v3/directions/D-aperture-pro.html`](../../../brand/redesign-v3/directions/D-aperture-pro.html)
+  + screenshots under
+  [`docs/brand/redesign-v3/directions/screenshots/`](../../../brand/redesign-v3/directions/screenshots/).
 
-## Shared `@ip/ui` component classes (from `redesign-v2/app.css`) — reference, don't redefine
+## The 56 screens — by flow
 
-Shell: `.app · .side · .side .brand · .navlabel · .navitem · .main · .topbar · .content · .page-head`
-Buttons/inputs: `.btn · .btn-primary · .btn-ghost · .btn-sm · .input · .searchbox`
-Containers: `.card · .card.tight · .card-head` · Data: `.kpis · .kpi · .k-label · .k-val · .k-delta(.up/.down)`
-Pills/badges: `.pill(.pill-neutral/-accent/-good/-warn/-bad) · .badge` · Table: `.table-wrap · table.data · .tnum · .who(.nm/.sub)`
-Viz: `.ring · .bar(> i)` · Controls: `.tabs · .toolbar · .chip-toggle` · `.avatar`
-Tokens: `--bg/--surface/--surface-2/--ink/--ink-2/--ink-3/--line/--line-2/--accent/--accent-strong/--accent-soft/--accent-ink`,
-`--font-display(Fraunces)/--font-sans(Geist)/--font-mono(Geist Mono)`, `--step-* --sp-* --r-* --z-* --dur-* --ease-*`.
+### Public / marketing (12)
 
-## `frontend_<slug>.md` template (every FE plan follows this)
+| # | Slug | Route | Status |
+|---|---|---|---|
+| 1 | [`landing`](./landing/frontend_landing.md) | `/` | ✅ |
+| 2 | [`marketplace-search`](./marketplace-search/frontend_marketplace-search.md) | `/jobs` | ✅ live `discovery.searchJobs` |
+| 3 | [`job-detail`](./job-detail/frontend_job-detail.md) | `/jobs/[id]` | ✅ |
+| 4 | [`company-profile`](./company-profile/frontend_company-profile.md) | `/companies/[id]` | ✅ |
+| 5 | [`trust-architecture`](./trust-architecture/frontend_trust-architecture.md) | `/trust` | 🆕 |
+| 6 | [`ai-explainability`](./ai-explainability/frontend_ai-explainability.md) | `/ai-explainability` | 🆕 |
+| 7 | [`what-aptura-doesnt-do`](./what-aptura-doesnt-do/frontend_what-aptura-doesnt-do.md) | `/what-we-dont-do` | 🆕 |
+| 8 | [`sample-report`](./sample-report/frontend_sample-report.md) | `/sample-report` | 🆕 |
+| 9 | [`request-pilot`](./request-pilot/frontend_request-pilot.md) | `/pilot` | 🆕 |
+| 10 | [`waitlist`](./waitlist/frontend_waitlist.md) | `/waitlist` | 🆕 |
+| 11 | [`aptura-vs-take-home`](./aptura-vs-take-home/frontend_aptura-vs-take-home.md) | `/compare/take-home` | 🆕 |
+| 12 | [`accessibility-statement`](./accessibility-statement/frontend_accessibility-statement.md) | `/accessibility` | 🆕 |
 
-- **Header** — screen name + goal; **unified route(s) + role**; **mockup:** `redesign-v2/<file>.html` (or "build in
-  Task 0"); **existing code** it reskins (real `page.tsx` + components, exact paths).
-- **Layout & components** — which shell (`.app` sidebar+topbar / marketing / auth split-panel) and which `@ip/ui`
-  classes/components map to each region; new vs reused components.
-- **Data wiring** — the client/seam it calls (`useAuth().api.<svc>` or the typed mock client), TanStack query keys,
-  and the `backend_<slug>.md` fields it consumes — **kept identical to today** (markup/classes only change).
-- **Tasks (bite-sized, TDD where logic exists):**
-  - **Task 0** (only if mockup ✗): build `docs/brand/redesign-v2/<slug>.html` against `tokens.css`+`app.css`,
-    browser-verify on the :4173 preview, commit.
-  - **Tasks 1..N:** wrap in the shell, swap ad-hoc Tailwind colors → token component classes to match the mockup,
-    keep all handlers/queries identical; per-task build + browser-verify + explicit-path commit.
-- **States & a11y** — loading/empty/error/success (named); responsive breakpoints; **dark + light** (reads
-  `--accent`/base vars, no hardcoded color); focus rings, semantic HTML, contrast ≥4.5:1.
-- **Acceptance** — matches the mockup; build/typecheck green; **zero functional diff**; mock→real path unchanged.
+### Legal / utility (4)
 
-## `backend_<slug>.md` template (every BE plan follows this)
+| # | Slug | Route | Status |
+|---|---|---|---|
+| 13 | [`privacy-policy`](./privacy-policy/frontend_privacy-policy.md) | `/privacy` | 🆕 |
+| 14 | [`terms-of-service`](./terms-of-service/frontend_terms-of-service.md) | `/terms` | 🆕 |
+| 15 | [`dpa`](./dpa/frontend_dpa.md) | `/dpa` | 🆕 |
+| 16 | [`status-page`](./status-page/frontend_status-page.md) | `/status` | 🆕 (status contract TBD) |
 
-- **Header** — screen name; the FE consumer (`frontend_<slug>.md`); **Status:** `EXISTING — reuse v2` (or `NEW`),
-  citing the source `../v2-screens/<doc>.md`; **real-vs-mock today** (e.g. SearchJobs/SavedJobs live; rest mock).
-- **Functionalities** — bullet list of what the backend must provide for this page (verbs: list, get, create, …).
-- **Service & RPCs** — the gRPC service + method signatures (`admin.<svc>.v1.<Service>` / ai-agents REST), one per
-  function, with auth/scope (role, tenant) noted.
-- **Request / Response structures** — the message/JSON shape for each RPC (field names + types, camelCase per
-  protobuf-es on the FE side), including the **FE mock shape** the screen codes against before the RPC lands.
-- **Data required** — collections/fields read or written (Mongo), derived/aggregated values, indexes if relevant.
-- **Errors & edge cases** — status codes (NOT_FOUND/PERMISSION_DENIED/INVALID_ARGUMENT/UNAVAILABLE), empty states.
-- **Cross-references** — the `../v2-screens/<doc>.md` contract this restates; any shared event/enum (e.g.
-  `ApplicationState`, `aptitude.graded`).
+### Auth (7)
 
-## The 34 pages — folder slug · route · role · mockup (✓ exists / ✗ build) · BE source (`../v2-screens/…`)
+| # | Slug | Route | Status |
+|---|---|---|---|
+| 17 | [`login`](./login/frontend_login.md) | `/login` | ✅ |
+| 18 | [`register-candidate`](./register-candidate/frontend_register-candidate.md) | `/register` | ✅ |
+| 19 | [`register-company`](./register-company/frontend_register-company.md) | `/company/register` | ✅ |
+| 20 | [`forgot-password`](./forgot-password/frontend_forgot-password.md) | `/forgot` | ✅ |
+| 21 | [`reset-password`](./reset-password/frontend_reset-password.md) | `/reset` | ✅ |
+| 22 | [`verify-email`](./verify-email/frontend_verify-email.md) | `/verify` | ✅ |
+| 23 | [`auth-callback`](./auth-callback/frontend_auth-callback.md) | `/auth/callback` | ✅ |
 
-| # | Folder slug | Unified route | Role | Mockup | Backend source |
-|---|---|---|---|---|---|
-| 1 | `landing` | `/` (signed-out) | public | ✓ `landing.html` | `landing.md` (+ live `discovery.searchJobs`) |
-| 2 | `marketplace-search` | `/jobs` | public | ✓ `marketplace.html` | `marketplace-search.md` — **live** `/public/jobs` |
-| 3 | `job-detail` | `/jobs/[id]` | public | ✗ | `job-detail.md` — `GetPublicJobDetail` |
-| 4 | `company-profile` | `/companies/[id]` | public | ✗ | `company-profile.md` — `CompanyProfileService` |
-| 5 | `login` | `/login` | auth | ✗ | `auth.md` — `Auth.login` |
-| 6 | `register-candidate` | `/register` | auth | ✗ | `auth.md` — `registerCandidate` |
-| 7 | `register-company` | `/company/register` | auth | ✗ | `auth.md` — `registerCompany` |
-| 8 | `forgot-password` | `/forgot` | auth | ✗ | `auth.md` |
-| 9 | `reset-password` | `/reset` | auth | ✗ | `auth.md` |
-| 10 | `verify-email` | `/verify` | auth | ✗ | `auth.md` |
-| 11 | `auth-callback` | `/auth/callback` | auth | ✗ | `auth.md` (SSO hash → JWT, spinner) |
-| 12 | `candidate-dashboard` | `/` (signed-in) | candidate | ✓ `dashboard-candidate.html` | `candidate-dashboard.md` + `onboarding.md` |
-| 13 | `candidate-profile` | `/profile` | candidate | ✗ | `candidate-profile.md` |
-| 14 | `saved-jobs` | `/saved` | candidate | ✗ | `saved-jobs.md` — **live** `savedJobs.*` |
-| 15 | `job-alerts` | `/alerts` | candidate | ✗ | `job-alerts.md` — `JobAlertsService` |
-| 16 | `messaging-inbox` | `/messages` · `/company/messages` | both | ✗ | `messaging.md` — `MessagingService` |
-| 17 | `message-thread` | `/messages/[applicationId]` | both | ✗ | `messaging.md` |
-| 18 | `notifications` | `/notifications` · `/company/notifications` | both | ✗ | `notifications.md` — `NotificationService` |
-| 19 | `scheduling` | `/schedule` | candidate | ✗ | `scheduling.md` — `SchedulingService` |
-| 20 | `practice` | `/practice` | candidate | ✗ | `practice-feedback.md` — ai-agents practice REST |
-| 21 | `practice-feedback` | `/feedback/[id]` | candidate | ✗ | `practice-feedback.md` |
-| 22 | `coding-assessment` | `/aptitude/[applicationId]` | candidate | ✗ | `coding-assessment.md` — `Aptitude` + `run_code` |
-| 23 | `proctored-interview` | `/interview/[applicationId]` | candidate | ✗ | `proctored-interview.md` — interview gRPC + auto-gate |
-| 24 | `settings` | `/settings` · `/company/settings` | both | ✗ | `settings-security.md` **+ NEW** `PreferencesService` (Appearance) |
-| 25 | `recruiter-dashboard` | `/company` | company | ✓ `dashboard-recruiter.html` | `recruiter-dashboard.md` |
-| 26 | `jobs-list` | `/company/jobs` | company | ✗ | `post-a-job.md` — `Job` list |
-| 27 | `post-a-job` | `/company/jobs/new` | company | ✗ | `post-a-job.md` — `Job`+`UpdateJob`+`gate_mode`, `jd.improveJd` |
-| 28 | `job-pipeline` | `/company/jobs/[id]` | company | ✓ `applicants-pipeline.html` | `applicants-pipeline.md` |
-| 29 | `applicant-report` | `/company/jobs/[id]/applicants/[appId]` | company | ✓ `candidate-report.html` | `candidate-report.md` — `Report.GetIntegrityTimeline` |
-| 30 | `talent-sourcing` | `/company/talent` | company | ✗ | `talent-sourcing.md` — `SourcingService` |
-| 31 | `company-branding` | `/company/branding` | company | ✗ | `company-branding.md` |
-| 32 | `team-permissions` | `/company/team` | company | ✗ | `team-permissions.md` — `TeamService` |
-| 33 | `analytics` | `/company/analytics` | company | ✗ | `recruiter-dashboard.md` — Analytics funnel KPIs |
-| 34 | `rubrics` | `/company/rubrics` | company | ✗ | existing admin Aptitude/rubric service (no v2 doc) |
+### Candidate (15)
+
+| # | Slug | Route | Status |
+|---|---|---|---|
+| 24 | [`candidate-onboarding`](./candidate-onboarding/frontend_candidate-onboarding.md) | `/onboarding` | 🆕 |
+| 25 | [`candidate-dashboard`](./candidate-dashboard/frontend_candidate-dashboard.md) | `/` (signed-in) | ✅ |
+| 26 | [`candidate-profile`](./candidate-profile/frontend_candidate-profile.md) | `/profile` | ✅ |
+| 27 | [`saved-jobs`](./saved-jobs/frontend_saved-jobs.md) | `/saved` | ✅ live `savedJobs.*` |
+| 28 | [`job-alerts`](./job-alerts/frontend_job-alerts.md) | `/alerts` | ✅ |
+| 29 | [`application-detail`](./application-detail/frontend_application-detail.md) | `/applications/[id]` | 🆕 |
+| 30 | [`application-outcome`](./application-outcome/frontend_application-outcome.md) | `/applications/[id]/outcome` | 🆕 |
+| 31 | [`scheduling`](./scheduling/frontend_scheduling.md) | `/schedule` | ✅ |
+| 32 | [`practice`](./practice/frontend_practice.md) | `/practice` | ✅ |
+| 33 | [`practice-feedback`](./practice-feedback/frontend_practice-feedback.md) | `/feedback/[id]` | ✅ |
+| 34 | [`coding-assessment`](./coding-assessment/frontend_coding-assessment.md) | `/aptitude/[applicationId]` | ✅ |
+| 35 | [`interview-lobby`](./interview-lobby/frontend_interview-lobby.md) | `/interview/[id]/lobby` | 🆕 |
+| 36 | [`proctored-interview`](./proctored-interview/frontend_proctored-interview.md) | `/interview/[applicationId]` | ✅ |
+| 37 | [`interview-completed`](./interview-completed/frontend_interview-completed.md) | `/interview/[id]/done` | 🆕 |
+| 38 | [`messaging-inbox`](./messaging-inbox/frontend_messaging-inbox.md) | `/messages` | ✅ (also at `/company/messages`) |
+| 39 | [`message-thread`](./message-thread/frontend_message-thread.md) | `/messages/[applicationId]` | ✅ |
+| 40 | [`notifications`](./notifications/frontend_notifications.md) | `/notifications` | ✅ (also at `/company/notifications`) |
+
+### Company (16)
+
+| # | Slug | Route | Status |
+|---|---|---|---|
+| 41 | [`company-onboarding`](./company-onboarding/frontend_company-onboarding.md) | `/company/onboarding` | 🆕 |
+| 42 | [`recruiter-dashboard`](./recruiter-dashboard/frontend_recruiter-dashboard.md) | `/company` | ✅ |
+| 43 | [`jobs-list`](./jobs-list/frontend_jobs-list.md) | `/company/jobs` | ✅ |
+| 44 | [`post-a-job`](./post-a-job/frontend_post-a-job.md) | `/company/jobs/new` | ✅ |
+| 45 | [`job-edit`](./job-edit/frontend_job-edit.md) | `/company/jobs/[id]/edit` | 🆕 |
+| 46 | [`job-pipeline`](./job-pipeline/frontend_job-pipeline.md) | `/company/jobs/[id]` | ✅ |
+| 47 | [`applicant-report`](./applicant-report/frontend_applicant-report.md) | `/company/jobs/[id]/applicants/[appId]` | ✅ |
+| 48 | [`applicant-schedule`](./applicant-schedule/frontend_applicant-schedule.md) | `…/applicants/[appId]/schedule` | 🆕 |
+| 49 | [`talent-sourcing`](./talent-sourcing/frontend_talent-sourcing.md) | `/company/talent` | ✅ |
+| 50 | [`company-branding`](./company-branding/frontend_company-branding.md) | `/company/branding` | ✅ |
+| 51 | [`team-permissions`](./team-permissions/frontend_team-permissions.md) | `/company/team` | ✅ |
+| 52 | [`analytics`](./analytics/frontend_analytics.md) | `/company/analytics` | ✅ |
+| 53 | [`rubrics`](./rubrics/frontend_rubrics.md) | `/company/rubrics` | ✅ |
+| 54 | [`company-billing`](./company-billing/frontend_company-billing.md) | `/company/billing` | 🆕 (contract TBD) |
+| 55 | [`company-audit-log`](./company-audit-log/frontend_company-audit-log.md) | `/company/audit` | 🆕 (contract TBD or derived) |
+
+### Settings (1, dual-role)
+
+| # | Slug | Route | Status |
+|---|---|---|---|
+| 56 | [`settings`](./settings/frontend_settings.md) | `/settings` + `/company/settings` | ✅ + Appearance tab |
+
+## Status legend
+
+- ✅ — Plan written (existing 34 from the prior wave or carried-forward).
+- 🆕 — Plan written this wave (22 new screens).
+
+## Roll-up
+
+- **Total screens with plans:** 56 (34 + 22).
+- **Total plan files:** 112 (`frontend_*.md` + `backend_*.md` for every screen).
+- **Sequenced for v3 launch:** every screen above ships as part of v3.
+- **Out of scope this wave:** the 8 Tier-2 and 14 Tier-3 pages catalogued in
+  [`_missing-pages-audit.md`](./_missing-pages-audit.md) — held for a follow-up wave
+  pending user sign-off.
+
+## Mandatory rules (re-stated from `_design-language.md`)
+
+1. **Complete rebuild.** This is NOT a reskin in place. Each screen is built from scratch
+   to match the Aperture Pro design language exactly.
+2. **Backend contracts are frozen.** Every existing RPC, message shape, query key, and
+   mock seam is reused verbatim. Backend changes are owned by a separate session.
+3. **Responsive mandate.** Every screen must render correctly on iPhone SE through iPad
+   Pro 12.9" in both orientations, and through 4K desktop. Every frontend plan ends with
+   the verbatim 8-step Responsive verification subtask.
+4. **Anti-fiction posture.** Aptura is pre-launch. No fake customer logos, fake outcomes,
+   fake testimonials, fake certifications, or fake integrations. Sample data is labelled
+   "Sample" / "Example".
+5. **Strict proctored-interview invariants.** Camera + mic required; no mute; no
+   camera-off; fullscreen-locked; on-device detectors only; HIGH-severity auto-end is
+   server-authoritative. The UI must never add a control that violates these.
 
 ## Build order (waves)
 
-marketing (1–4) → auth (5–11) → dashboards (12, 25) → marketplace cluster (3, 4, 14, 15) → interview/coding/report
-(22, 23, 28, 29) → messaging/notifications (16, 17, 18) → settings + appearance (24) → company ops (26, 27, 30–34)
-→ practice/scheduling (19, 20, 21). The 6 mockup-✓ folders skip Task 0.
+1. **Foundation:** `@ip/ui` design system → tokens, sprite, fonts, shared components
+   (from the landing plan's Task 1). All other plans depend on this.
+2. **Public / marketing:** landing → trust-architecture → ai-explainability →
+   what-aptura-doesnt-do → sample-report → request-pilot → waitlist →
+   aptura-vs-take-home → accessibility-statement → privacy-policy / terms / dpa /
+   status-page.
+3. **Auth:** login → register-* → forgot / reset / verify / auth-callback.
+4. **Candidate dashboards:** candidate-onboarding → candidate-dashboard →
+   candidate-profile → saved-jobs → job-alerts.
+5. **Candidate application flow:** application-detail → application-outcome → scheduling.
+6. **Interview ecosystem:** practice → practice-feedback → coding-assessment →
+   interview-lobby → proctored-interview → interview-completed.
+7. **Messaging + notifications:** messaging-inbox → message-thread → notifications.
+8. **Settings (dual-role) + Appearance.**
+9. **Company:** company-onboarding → recruiter-dashboard → jobs-list → post-a-job →
+   job-edit → job-pipeline → applicant-report → applicant-schedule.
+10. **Company ops:** talent-sourcing → company-branding → team-permissions → analytics →
+    rubrics → company-billing → company-audit-log.

@@ -1,36 +1,35 @@
 "use client";
 
 import {
+  ApIcon,
   Alert,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Checkbox,
   ErrorState,
-  Field,
-  Input,
   LoadingState,
-  PageHeader,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Spinner,
+  cn,
   toast,
 } from "@ip/ui";
 import { errorMessage, isNotFound, useRequireAuth } from "@ip/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
-import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
+import { CheckCircle2, FileText, Trash2, Upload } from "lucide-react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { CandidateShell } from "../../components/candidate-shell";
-import { useAuth } from "../../lib/auth";
-import { CompletenessMeter } from "../../components/profile/completeness-meter";
 import { ExperienceRow } from "../../components/profile/experience-row";
-import { ParsedBanner } from "../../components/profile/parsed-banner";
 import { SkillChips } from "../../components/profile/skill-chips";
+import { useAuth } from "../../lib/auth";
 
 interface Exp {
   _key: string;
@@ -71,6 +70,8 @@ const ACCEPTED_MIME = new Set([
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
+const RESUME_ACCEPT =
+  ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const MAX_RESUME_BYTES = 10 * 1024 * 1024;
 // Resume parsing is async; cap the poll so a stuck parse offers an exit, not a forever
 // spinner. ~75s at the 2.5s interval.
@@ -107,7 +108,9 @@ export default function ProfilePage() {
     },
   });
 
-  const parsing = Boolean(profile.data?.resumeUploaded && !profile.data?.parsed);
+  const parsing = Boolean(
+    profile.data?.resumeUploaded && !profile.data?.parsed,
+  );
   const parseStalled = parsing && parsePolls >= MAX_PARSE_POLLS;
 
   // Tick the poll counter on each fetch while parsing is still pending.
@@ -167,7 +170,7 @@ export default function ProfilePage() {
     onSuccess: () => {
       // A new upload starts a fresh parse — reset the poll budget.
       setParsePolls(0);
-      toast.success("Resume uploaded — extracting your details…");
+      toast.success("Résumé uploaded — extracting your details…");
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
     onError: (err) => toast.error(errorMessage(err)),
@@ -194,9 +197,15 @@ export default function ProfilePage() {
     onError: (err) => toast.error(errorMessage(err)),
   });
 
-  if (!token) return null;
-
+  // Completeness drives the anchor ring. Memoize so the ring doesn't re-animate on
+  // unrelated form re-renders — only when the number changes.
   const completeness = profile.data?.completeness ?? 0;
+  const ringStyle = useMemo(
+    () => ({ "--pct": completeness } as React.CSSProperties),
+    [completeness],
+  );
+
+  if (!token) return null;
 
   // A row counts as incomplete if it was started but is missing a required field —
   // company+title for experience, institution+degree for education.
@@ -221,7 +230,7 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_RESUME_BYTES) {
-      toast.error("Resume must be under 10 MB");
+      toast.error("Résumé must be under 10 MB");
       e.target.value = "";
       return;
     }
@@ -239,62 +248,165 @@ export default function ProfilePage() {
     });
   }
 
+  const parsed = Boolean(profile.data?.parsed);
+  const resumeUploaded = Boolean(profile.data?.resumeUploaded);
+  const completenessHint =
+    completeness >= 100
+      ? "Your profile is complete — you'll get the best matches."
+      : completeness >= 60
+        ? "Almost there — add any missing experience or skills."
+        : "Add your experience, education and skills to improve your matches.";
+
   return (
     <CandidateShell>
-      <PageHeader
-        title="Your profile"
-        description="Upload your résumé and review the details we extract."
-        action={
-          <Button
+      <div className="flex flex-col gap-8">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="ap-eyebrow">Profile</p>
+            <h1 className="ap-h2 mt-2">Your profile</h1>
+            <p className="ap-lead mt-2 text-base">
+              Upload your résumé and review what we extract. Recruiters see the same
+              picture you do — what you save is what they see.
+            </p>
+          </div>
+          <button
             type="submit"
             form="profile-form"
             disabled={save.isPending}
-            loading={save.isPending}
+            className={cn(
+              "ap-btn ap-btn-primary shrink-0",
+              save.isPending && "cursor-not-allowed opacity-60",
+            )}
           >
             {save.isPending ? "Saving…" : "Save changes"}
-          </Button>
-        }
-      />
+          </button>
+        </header>
 
-      {profile.isLoading ? (
-        <LoadingState label="Loading your profile…" />
-      ) : profile.isError ? (
-        <ErrorState
-          message={errorMessage(profile.error)}
-          retry={() => profile.refetch()}
-        />
-      ) : (
-        <form
-          id="profile-form"
-          onSubmit={onSubmit}
-          className="mx-auto flex max-w-2xl flex-col gap-6"
-        >
-          <ParsedBanner
-            resumeUploaded={Boolean(profile.data?.resumeUploaded)}
-            parsed={Boolean(profile.data?.parsed)}
-            parsing={parsing && !parseStalled}
-            parseStalled={parseStalled}
-            uploading={upload.isPending}
-            onFile={onFile}
+        {profile.isLoading ? (
+          <LoadingState label="Loading your profile…" />
+        ) : profile.isError ? (
+          <ErrorState
+            message={errorMessage(profile.error)}
+            retry={() => profile.refetch()}
           />
+        ) : (
+          <form
+            id="profile-form"
+            onSubmit={onSubmit}
+            className="flex flex-col gap-6"
+          >
+            {/* Anchor row — completeness ring + résumé status + upload, side-by-side. */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.4fr]">
+              {/* Completeness ring as the page's focal point */}
+              <div className="ap-cell ap-cell--anchor">
+                <span className="ap-cell-tag">A · 01</span>
+                <p className="ap-eyebrow">Completeness</p>
+                <div className="mt-4 flex items-center gap-5">
+                  <div
+                    className="ap-ring shrink-0"
+                    style={ringStyle}
+                    aria-label={`Profile completeness ${completeness}%`}
+                    role="img"
+                  >
+                    <span className="ap-ring-v tabular-nums">
+                      {completeness}%
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="ap-h3 text-lg">
+                      {completeness >= 100
+                        ? "All set."
+                        : completeness >= 60
+                          ? "Almost there."
+                          : "Just getting started."}
+                    </p>
+                    <p className="mt-1 text-sm text-ink-2">{completenessHint}</p>
+                  </div>
+                </div>
+              </div>
 
-          <CompletenessMeter value={completeness} />
+              {/* Résumé status + upload */}
+              <div className="ap-cell">
+                <span className="ap-cell-tag">A · 02</span>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex size-10 items-center justify-center rounded-xl bg-teal-soft text-primary">
+                      <FileText className="size-5" aria-hidden />
+                    </span>
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {resumeUploaded ? "Your résumé" : "Upload your résumé"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-2">
+                        {resumeUploaded
+                          ? "We extract your experience, education & skills with AI."
+                          : "PDF or Word — we'll fill in the rest."}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {parsed && (
+                      <span className="ap-pill ap-pill--good">
+                        <CheckCircle2 className="size-3" aria-hidden />
+                        Parsed
+                      </span>
+                    )}
+                    {(parsing || upload.isPending) && !parseStalled && (
+                      <span className="ap-pill ap-pill--teal">
+                        <Spinner />
+                        {upload.isPending ? "Uploading" : "Parsing"}
+                      </span>
+                    )}
+                    <input
+                      id="resume-file"
+                      type="file"
+                      aria-label="Upload résumé"
+                      accept={RESUME_ACCEPT}
+                      onChange={onFile}
+                      disabled={upload.isPending}
+                      className="sr-only"
+                    />
+                    <label
+                      htmlFor="resume-file"
+                      className={cn(
+                        "ap-btn ap-btn-ghost ap-btn-sm cursor-pointer",
+                        upload.isPending && "pointer-events-none opacity-50",
+                      )}
+                    >
+                      <Upload className="size-4" aria-hidden />
+                      {resumeUploaded ? "Replace" : "Choose file"}
+                    </label>
+                  </div>
+                </div>
+                {parseStalled && (
+                  <Alert tone="warning" className="mt-3">
+                    Extraction is taking longer than expected. Keep filling in your
+                    details below, or re-upload to try again.
+                  </Alert>
+                )}
+              </div>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>General</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <Field label="Full name" htmlFor="fullName">
-                <Input
-                  id="fullName"
-                  value={form.fullName}
-                  onChange={(e) => update({ fullName: e.target.value })}
-                />
-              </Field>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Age" htmlFor="age">
-                  <Input
+            {/* Basics */}
+            <div className="ap-cell">
+              <span className="ap-cell-tag">B · BASICS</span>
+              <h2 className="ap-h3 text-xl">Basics</h2>
+              <p className="mt-1 text-sm text-ink-2">
+                The minimum we need to introduce you. Used on every application.
+              </p>
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5 text-sm">
+                  <span className="text-ink-2">Full name</span>
+                  <input
+                    id="fullName"
+                    value={form.fullName}
+                    onChange={(e) => update({ fullName: e.target.value })}
+                    className="rounded-lg border border-line bg-surface px-3 py-2 text-foreground placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5 text-sm">
+                  <span className="text-ink-2">Age</span>
+                  <input
                     id="age"
                     type="number"
                     min={16}
@@ -302,194 +414,246 @@ export default function ProfilePage() {
                     step={1}
                     value={form.age || ""}
                     onChange={(e) => update({ age: Number(e.target.value) })}
+                    className="rounded-lg border border-line bg-surface px-3 py-2 text-foreground placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-ring"
                   />
-                </Field>
-                <Field label="Location" htmlFor="location">
-                  <Input
+                </label>
+                <label className="flex flex-col gap-1.5 text-sm">
+                  <span className="text-ink-2">Location</span>
+                  <input
                     id="location"
                     value={form.location}
                     onChange={(e) => update({ location: e.target.value })}
+                    placeholder="City, Country"
+                    className="rounded-lg border border-line bg-surface px-3 py-2 text-foreground placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-ring"
                   />
-                </Field>
+                </label>
+                <label className="flex flex-col gap-1.5 text-sm">
+                  <span className="text-ink-2">Job preference</span>
+                  <Select
+                    value={form.jobPreference || undefined}
+                    onValueChange={(v) => update({ jobPreference: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="No preference" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                      <SelectItem value="remote">Remote</SelectItem>
+                      <SelectItem value="onsite">On-site</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </label>
               </div>
-              <label className="flex items-center gap-2.5 text-sm text-foreground">
-                <Checkbox
+              <label className="mt-4 flex items-center gap-2.5 text-sm text-foreground">
+                <input
+                  type="checkbox"
                   checked={form.willingToRelocate}
-                  onCheckedChange={(v) => update({ willingToRelocate: v === true })}
+                  onChange={(e) =>
+                    update({ willingToRelocate: e.target.checked })
+                  }
+                  className="size-4 rounded border-line accent-[var(--teal)]"
                 />
                 Willing to relocate
               </label>
-              <Field label="Job preference">
-                <Select
-                  value={form.jobPreference || undefined}
-                  onValueChange={(v) => update({ jobPreference: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="No preference" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hybrid">Hybrid</SelectItem>
-                    <SelectItem value="remote">Remote</SelectItem>
-                    <SelectItem value="onsite">On-site</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Skills</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SkillChips
-                value={form.skills}
-                onChange={(skills) => update({ skills })}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Experience</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              {form.experience.map((exp, i) => (
-                <ExperienceRow
-                  key={exp._key}
-                  index={i}
-                  value={exp}
-                  onChange={(patch) =>
-                    update({
-                      experience: form.experience.map((x, j) =>
-                        j === i ? { ...x, ...patch } : x,
-                      ),
-                    })
-                  }
-                  onRemove={() =>
-                    update({
-                      experience: form.experience.filter((_, j) => j !== i),
-                    })
-                  }
+            {/* Skills */}
+            <div className="ap-cell">
+              <span className="ap-cell-tag">B · SKILLS</span>
+              <h2 className="ap-h3 text-xl">Skills</h2>
+              <p className="mt-1 text-sm text-ink-2">
+                What you actually use day-to-day. Press Enter or comma to add.
+              </p>
+              <div className="mt-5">
+                <SkillChips
+                  value={form.skills}
+                  onChange={(skills) => update({ skills })}
                 />
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="self-start"
-                onClick={() =>
-                  update({
-                    experience: [
-                      ...form.experience,
-                      { _key: crypto.randomUUID(), company: "", title: "", summary: "" },
-                    ],
-                  })
-                }
-              >
-                Add experience
-              </Button>
-            </CardContent>
-          </Card>
+              </div>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Education</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              {form.education.map((edu, i) => (
-                <fieldset
-                  key={edu._key}
-                  className="flex flex-col gap-3 rounded-md border border-border p-3"
+            {/* Experience */}
+            <div className="ap-cell">
+              <span className="ap-cell-tag">B · EXPERIENCE</span>
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 className="ap-h3 text-xl">Experience</h2>
+                <span
+                  className="text-xs text-ink-3"
+                  style={{ fontFamily: "var(--font-mono)" }}
                 >
-                  <legend className="px-1 text-xs font-medium text-muted-foreground">
-                    Education {i + 1}
-                  </legend>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_6rem]">
-                    <Input
-                      aria-label="Institution"
-                      placeholder="Institution"
-                      value={edu.institution}
-                      onChange={(e) =>
-                        update({
-                          education: form.education.map((x, j) =>
-                            j === i ? { ...x, institution: e.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                    <Input
-                      aria-label="Degree"
-                      placeholder="Degree"
-                      value={edu.degree}
-                      onChange={(e) =>
-                        update({
-                          education: form.education.map((x, j) =>
-                            j === i ? { ...x, degree: e.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                    <Input
-                      aria-label="Year"
-                      placeholder="Year"
-                      value={edu.year}
-                      onChange={(e) =>
-                        update({
-                          education: form.education.map((x, j) =>
-                            j === i ? { ...x, year: e.target.value } : x,
-                          ),
-                        })
-                      }
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    leadingIcon={Trash2}
-                    className="self-end text-danger hover:text-danger"
-                    onClick={() =>
+                  {form.experience.length} role
+                  {form.experience.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <div className="mt-5 flex flex-col gap-4">
+                {form.experience.map((exp, i) => (
+                  <ExperienceRow
+                    key={exp._key}
+                    index={i}
+                    value={exp}
+                    onChange={(patch) =>
                       update({
-                        education: form.education.filter((_, j) => j !== i),
+                        experience: form.experience.map((x, j) =>
+                          j === i ? { ...x, ...patch } : x,
+                        ),
                       })
                     }
+                    onRemove={() =>
+                      update({
+                        experience: form.experience.filter((_, j) => j !== i),
+                      })
+                    }
+                  />
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    update({
+                      experience: [
+                        ...form.experience,
+                        {
+                          _key: crypto.randomUUID(),
+                          company: "",
+                          title: "",
+                          summary: "",
+                        },
+                      ],
+                    })
+                  }
+                  className="ap-btn ap-btn-ghost ap-btn-sm self-start"
+                >
+                  Add experience
+                </button>
+              </div>
+            </div>
+
+            {/* Education */}
+            <div className="ap-cell">
+              <span className="ap-cell-tag">B · EDUCATION</span>
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 className="ap-h3 text-xl">Education</h2>
+                <span
+                  className="text-xs text-ink-3"
+                  style={{ fontFamily: "var(--font-mono)" }}
+                >
+                  {form.education.length} entr
+                  {form.education.length === 1 ? "y" : "ies"}
+                </span>
+              </div>
+              <div className="mt-5 flex flex-col gap-4">
+                {form.education.map((edu, i) => (
+                  <fieldset
+                    key={edu._key}
+                    className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4"
                   >
-                    Remove
-                  </Button>
-                </fieldset>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="self-start"
-                onClick={() =>
-                  update({
-                    education: [
-                      ...form.education,
-                      { _key: crypto.randomUUID(), institution: "", degree: "", year: "" },
-                    ],
-                  })
-                }
+                    <legend className="px-1 text-xs font-medium text-ink-3">
+                      Education {i + 1}
+                    </legend>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_6rem]">
+                      <input
+                        aria-label="Institution"
+                        placeholder="Institution"
+                        value={edu.institution}
+                        onChange={(e) =>
+                          update({
+                            education: form.education.map((x, j) =>
+                              j === i
+                                ? { ...x, institution: e.target.value }
+                                : x,
+                            ),
+                          })
+                        }
+                        className="rounded-lg border border-line bg-surface px-3 py-2 text-foreground placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <input
+                        aria-label="Degree"
+                        placeholder="Degree"
+                        value={edu.degree}
+                        onChange={(e) =>
+                          update({
+                            education: form.education.map((x, j) =>
+                              j === i ? { ...x, degree: e.target.value } : x,
+                            ),
+                          })
+                        }
+                        className="rounded-lg border border-line bg-surface px-3 py-2 text-foreground placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <input
+                        aria-label="Year"
+                        placeholder="Year"
+                        value={edu.year}
+                        onChange={(e) =>
+                          update({
+                            education: form.education.map((x, j) =>
+                              j === i ? { ...x, year: e.target.value } : x,
+                            ),
+                          })
+                        }
+                        className="rounded-lg border border-line bg-surface px-3 py-2 text-foreground placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        update({
+                          education: form.education.filter((_, j) => j !== i),
+                        })
+                      }
+                      className="ap-btn ap-btn-ghost ap-btn-sm self-end text-[color:var(--danger)]"
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                      Remove
+                    </button>
+                  </fieldset>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    update({
+                      education: [
+                        ...form.education,
+                        {
+                          _key: crypto.randomUUID(),
+                          institution: "",
+                          degree: "",
+                          year: "",
+                        },
+                      ],
+                    })
+                  }
+                  className="ap-btn ap-btn-ghost ap-btn-sm self-start"
+                >
+                  Add education
+                </button>
+              </div>
+            </div>
+
+            {validationError && (
+              <Alert tone="danger">{validationError}</Alert>
+            )}
+
+            <div className="flex items-center justify-end gap-3">
+              <p className="text-xs text-ink-3">
+                <ApIcon
+                  name="lock"
+                  className="mr-1 inline size-3 text-ink-3 align-text-bottom"
+                />
+                Only employers you apply to can see this.
+              </p>
+              <button
+                type="submit"
+                disabled={save.isPending}
+                className={cn(
+                  "ap-btn ap-btn-primary",
+                  save.isPending && "cursor-not-allowed opacity-60",
+                )}
               >
-                Add education
-              </Button>
-            </CardContent>
-          </Card>
-
-          {validationError && <Alert tone="danger">{validationError}</Alert>}
-
-          <Button
-            type="submit"
-            disabled={save.isPending}
-            loading={save.isPending}
-            className="self-end"
-          >
-            {save.isPending ? "Saving…" : "Save changes"}
-          </Button>
-        </form>
-      )}
+                {save.isPending ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </CandidateShell>
   );
 }

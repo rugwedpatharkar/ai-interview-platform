@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, BookmarkCheck } from "lucide-react";
 
 import { useAuth } from "../lib/auth";
-import { savedJobsClient } from "../lib/saved-jobs-client";
+import { useSavedJobsClient } from "../lib/saved-jobs-client";
 import { useSavedSet } from "../lib/use-saved-set";
 
 /** Reusable bookmark toggle. Optimistic: flips the `["saved-jobs","ids"]` cache on
@@ -15,6 +15,7 @@ import { useSavedSet } from "../lib/use-saved-set";
 export function SaveJobButton({ jobId }: { jobId: string }) {
   const { token } = useAuth();
   const qc = useQueryClient();
+  const savedJobsClient = useSavedJobsClient();
   const saved = useSavedSet().has(jobId);
 
   const toggle = useMutation({

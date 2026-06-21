@@ -33,6 +33,7 @@ import { CodingSection } from "../../../components/coding-section";
 import {
   makeMockAssessmentClient,
   questionsToSections,
+  useCodingClient,
   type AssessmentSection,
   type RunResult,
   type SectionAnswer,
@@ -102,6 +103,7 @@ export default function AptitudePage() {
   const { api, token, ready } = useAuth();
   useRequireAuth(token, ready);
   const { applicationId } = useParams<{ applicationId: string }>();
+  const coding = useCodingClient();
   const [answers, setAnswers] = useState<Record<string, SectionAnswer>>({});
   const [results, setResults] = useState<Record<string, RunResult>>({});
 
@@ -140,11 +142,16 @@ export default function AptitudePage() {
     mutationFn: (s: AssessmentSection) => {
       const a = answers[s.id];
       const source = a?.kind === "coding" ? a.source : s.starterCode ?? "";
-      return mockClient.run(applicationId, {
+      const args = {
         sectionId: s.id,
         language: s.language ?? "python",
         source,
-      });
+      };
+      // Ephemeral execution against visible cases — the live RunCode never grades and never
+      // carries hidden test bodies; the mock path stays for offline dev.
+      return MOCK
+        ? mockClient.run(applicationId, args)
+        : coding.runCode(applicationId, args);
     },
     onSuccess: (r, s) => setResults((m) => ({ ...m, [s.id]: r })),
     onError: (err) => toast.error(errorMessage(err)),
@@ -158,8 +165,31 @@ export default function AptitudePage() {
         );
         return mockClient.submit(applicationId, tagged);
       }
-      // Live MCQ path — byte-identical to the pre-typed-sections page: positional option
-      // indices keyed by the section id (the adapted question index).
+      // Live: route by section shape. Any coding section -> coding.submitCoding grades hidden
+      // cases + typed-answer keys (the answer key never crosses the wire — input is trimmed
+      // at the client seam). All-MCQ -> the MCQ-only aptitude submit, byte-identical to the
+      // pre-typed-sections page (positional option indices keyed by section id).
+      if (hasCoding) {
+        const codingSection = sections.find((s) => s.kind === "coding");
+        const codingAnswer = codingSection
+          ? answers[codingSection.id]
+          : undefined;
+        const source =
+          codingAnswer?.kind === "coding"
+            ? codingAnswer.source
+            : codingSection?.starterCode ?? "";
+        const language =
+          codingAnswer?.kind === "coding"
+            ? codingAnswer.language
+            : codingSection?.language ?? "python";
+        const typedAnswers = sections
+          .filter((s) => s.kind === "free_text")
+          .map((s) => {
+            const a = answers[s.id];
+            return { id: s.id, answer: a?.kind === "free_text" ? a.text : "" };
+          });
+        return coding.submitCoding(applicationId, { language, source, typedAnswers });
+      }
       const ordered = sections.map((s) => {
         const a = answers[s.id];
         return a?.kind === "mcq" ? a.option : -1;

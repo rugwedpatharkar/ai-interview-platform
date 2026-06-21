@@ -1,97 +1,143 @@
 "use client";
 
-import {
-  Alert,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Field,
-  Input,
-} from "@ip/ui";
+import { ApIcon } from "@ip/ui";
 import { errorMessage } from "@ip/shared";
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, type FormEvent, useEffect, useState } from "react";
 
-import { AuthLayout } from "../../components/auth-layout";
+import {
+  AuthShell,
+  Field,
+  Notice,
+  PrimaryButton,
+} from "../../components/auth/auth-card";
 import { useAuth } from "../../lib/auth";
 
+/* ============================================================
+   APTURA · v3 — Reset password
+   Backend: api.auth.resetPassword({ token, newPassword }).
+   Reads ?token= from the URL; if absent we render an invalid-link
+   state instead of an empty form. On success → /login?notice=password-reset.
+   ============================================================ */
+
 export default function ResetPage() {
-  const { api } = useAuth();
+  return (
+    <Suspense fallback={null}>
+      <ResetInner />
+    </Suspense>
+  );
+}
+
+function ResetInner() {
   const router = useRouter();
+  const sp = useSearchParams();
+  const { api } = useAuth();
+  // null = still mounting (avoids SSR mismatch); "" = no token; otherwise the token.
+  const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
-  // null = still reading from the URL; "" = no token present (invalid link).
-  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setResetToken(new URLSearchParams(window.location.search).get("token") ?? "");
-  }, []);
+    setToken(sp.get("token") ?? "");
+  }, [sp]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (password !== confirm) {
+      setError("The two passwords don't match. Try again.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Use at least 8 characters.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      await api.auth.resetPassword({ token: resetToken ?? "", newPassword: password });
-      router.push("/login");
+      await api.auth.resetPassword({ token: token ?? "", newPassword: password });
+      router.push("/login?notice=password-reset");
     } catch (err) {
       setError(errorMessage(err));
-    } finally {
       setBusy(false);
     }
   }
 
+  if (token === "") {
+    return (
+      <AuthShell
+        eyebrow="Reset password"
+        title="This link is no longer valid."
+        sub="Password reset links expire after 30 minutes. Request a new one to continue."
+      >
+        <div className="mt-6 grid gap-4">
+          <Notice tone="danger" title="Invalid or expired link">
+            The token in this URL is missing or already used. No action was taken on your account.
+          </Notice>
+          <Link
+            href="/forgot"
+            className="ap-btn ap-btn-primary ap-btn-lg w-full justify-center"
+          >
+            Request a new link
+            <ApIcon name="arrow" className="size-4" />
+          </Link>
+          <Link
+            href="/login"
+            className="text-center text-[0.86rem] text-ink-2 underline-offset-4 hover:underline"
+          >
+            Back to sign in
+          </Link>
+        </div>
+      </AuthShell>
+    );
+  }
+
   return (
-    <AuthLayout>
-      <Card>
-        <CardHeader>
-          <CardTitle>Choose a new password</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {resetToken === "" ? (
-            <div className="flex flex-col gap-4">
-              <Alert tone="danger" title="Invalid or expired link">
-                This password reset link is missing or no longer valid. Request a new one
-                to continue.
-              </Alert>
-              <Link
-                href="/forgot"
-                className="inline-flex items-center gap-1.5 self-center text-sm font-medium text-primary underline-offset-4 hover:underline"
-              >
-                <ArrowLeft className="size-4" aria-hidden />
-                Request a new link
-              </Link>
-            </div>
-          ) : (
-            <form onSubmit={onSubmit} className="flex flex-col gap-4">
-              {error && <Alert tone="danger">{error}</Alert>}
-              <Field
-                label="New password"
-                htmlFor="password"
-                hint="At least 8 characters."
-              >
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </Field>
-              <Button type="submit" loading={busy} disabled={resetToken === null}>
-                {busy ? "Updating…" : "Update password"}
-              </Button>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-    </AuthLayout>
+    <AuthShell
+      eyebrow="Reset password"
+      title="Choose a new password."
+      sub="Use something memorable — at least 8 characters with a number or symbol."
+      altPrompt="Changed your mind?"
+      altHref="/login"
+      altLabel="Back to sign in"
+    >
+      <form onSubmit={onSubmit} className="mt-6 grid gap-4" noValidate>
+        {error && <Notice tone="danger">{error}</Notice>}
+        <Field
+          name="password"
+          label="New password"
+          type="password"
+          required
+          autoComplete="new-password"
+          minLength={8}
+          value={password}
+          onChange={setPassword}
+          placeholder="At least 8 characters"
+          disabled={token === null}
+        />
+        <Field
+          name="confirm"
+          label="Confirm new password"
+          type="password"
+          required
+          autoComplete="new-password"
+          minLength={8}
+          value={confirm}
+          onChange={setConfirm}
+          placeholder="Type it again"
+          disabled={token === null}
+        />
+        <PrimaryButton
+          type="submit"
+          busy={busy}
+          busyLabel="Updating password…"
+          disabled={token === null}
+        >
+          Set new password
+        </PrimaryButton>
+      </form>
+    </AuthShell>
   );
 }

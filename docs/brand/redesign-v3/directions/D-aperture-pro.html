@@ -1,0 +1,1587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aptura — Direction D · Aperture Pro (feature-rich)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   APTURA · Direction D — "Aperture Pro"
+   Feature-rich, information-dense, dual-audience landing.
+   Built from research: Linear acts, Stripe bento, Mercury rhythm,
+   Ribbon's live interview HUD, Talview's trust architecture,
+   Vervoe's named bias-audit, Proctorio's privacy inversion,
+   Codility's "integrity = knowing who's at the keyboard" reframe,
+   iMocha's "what you see vs what matters", Honorlock's
+   "Integrity + People".
+   Light-hero by default; teal primary, coral "answered/human"
+   accent, warm gold for integrity-instrument surfaces.
+   ============================================================ */
+
+/* ---------- LIGHT tokens (default) ---------- */
+:root{
+  --bg:        oklch(0.985 0.003 215);
+  --surface:   oklch(1 0 0);
+  --surface-2: oklch(0.965 0.005 215);
+  --surface-3: oklch(0.94 0.008 215);
+  --ink-deep:  oklch(0.15 0.022 230);
+  --ink:       oklch(0.22 0.022 230);
+  --ink-2:     oklch(0.46 0.02 228);
+  --ink-3:     oklch(0.60 0.018 228);
+  --line:      oklch(0.915 0.006 215);
+  --line-2:    oklch(0.85 0.008 215);
+  --line-3:    oklch(0.78 0.01 215);
+
+  --teal:        oklch(0.52 0.10 195);
+  --teal-strong: oklch(0.46 0.10 198);
+  --teal-soft:   oklch(0.52 0.10 195 / 0.10);
+  --teal-glow:   oklch(0.62 0.10 195 / 0.16);
+  --teal-ink:    oklch(0.99 0.01 200);
+
+  --coral:      oklch(0.66 0.17 32);
+  --coral-soft: oklch(0.66 0.17 32 / 0.12);
+  --coral-ink:  oklch(0.99 0.01 60);
+
+  --gold:      oklch(0.72 0.13 78);
+  --gold-soft: oklch(0.72 0.13 78 / 0.16);
+
+  --good:    oklch(0.62 0.13 155);
+  --warn:    oklch(0.74 0.16 75);
+  --danger:  oklch(0.60 0.22 25);
+
+  color-scheme: light;
+}
+
+/* ---------- DARK tokens ---------- */
+.dark{
+  --bg:        oklch(0.165 0.018 225);
+  --surface:   oklch(0.215 0.022 225);
+  --surface-2: oklch(0.27 0.024 225);
+  --surface-3: oklch(0.32 0.026 225);
+  --ink-deep:  oklch(0.98 0.006 210);
+  --ink:       oklch(0.96 0.008 210);
+  --ink-2:     oklch(0.77 0.015 212);
+  --ink-3:     oklch(0.62 0.015 212);
+  --line:      oklch(0.325 0.022 225);
+  --line-2:    oklch(0.40 0.022 225);
+  --line-3:    oklch(0.48 0.022 225);
+
+  --teal:        oklch(0.80 0.12 192);
+  --teal-strong: oklch(0.84 0.11 190);
+  --teal-soft:   oklch(0.80 0.12 192 / 0.16);
+  --teal-glow:   oklch(0.80 0.12 192 / 0.26);
+  --teal-ink:    oklch(0.18 0.04 220);
+
+  --coral:      oklch(0.74 0.15 33);
+  --coral-soft: oklch(0.74 0.15 33 / 0.18);
+  --coral-ink:  oklch(0.20 0.04 30);
+
+  --gold:      oklch(0.84 0.12 86);
+  --gold-soft: oklch(0.84 0.12 86 / 0.20);
+
+  --good:    oklch(0.78 0.14 156);
+  --warn:    oklch(0.82 0.14 78);
+  --danger:  oklch(0.70 0.18 28);
+
+  color-scheme: dark;
+}
+
+/* ---------- Type scale — deliberately larger ---------- */
+:root{
+  --step--2: 0.75rem;      /* 12px micro mono */
+  --step--1: 0.84rem;      /* 13.5px small labels */
+  --step-0:  1.0625rem;    /* 17px body */
+  --step-1:  1.21rem;      /* 19.4px lead */
+  --step-2:  clamp(1.4rem, 1.05rem + 1.2vw, 1.75rem);  /* 22.4–28 — h3 */
+  --step-3:  clamp(1.85rem, 1.35rem + 2.1vw, 2.55rem); /* 30–41 — h2 */
+  --step-4:  clamp(2.4rem, 1.75rem + 3vw, 3.5rem);     /* 38–56 */
+  --display: clamp(2.9rem, 1.6rem + 5.4vw, 5.25rem);   /* 46–84 — h1 */
+  --maxw: 1240px;
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size:var(--step-0); line-height:1.6; font-weight:400;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+.display{ font-family:"Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif; }
+.mono{ font-family:"Geist Mono", ui-monospace, monospace; }
+a{ color:inherit; text-decoration:none; }
+strong{ color:var(--ink-deep); font-weight:600; }
+em{ font-style:normal; color:var(--teal-strong); font-weight:500; }
+.wrap{ width:min(100% - 2.5rem, var(--maxw)); margin-inline:auto; }
+
+/* ---------- Top utility/announcement bar ---------- */
+.toprule{
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg, var(--bg), var(--surface-2), var(--bg));
+  font-size:var(--step--1); color:var(--ink-2);
+}
+.toprule-in{ display:flex; align-items:center; gap:1.2rem; height:36px; }
+.toprule-in .pill-coral{ background:var(--coral-soft); color:var(--coral); padding:2px 8px; border-radius:999px; font-weight:600; font-size:var(--step--2); letter-spacing:.02em; }
+.toprule-in .spacer{ flex:1; }
+.toprule-in a{ color:var(--ink-2); }
+.toprule-in a:hover{ color:var(--ink); }
+
+/* ---------- Mega-nav ---------- */
+header.nav{
+  position:sticky; top:0; z-index:50;
+  backdrop-filter:saturate(140%) blur(14px);
+  background:color-mix(in oklch, var(--bg) 82%, transparent);
+  border-bottom:1px solid var(--line);
+}
+.nav-in{ display:flex; align-items:center; gap:1.8rem; height:72px; }
+.brand{ display:flex; align-items:center; gap:.55rem; font-family:"Schibsted Grotesk",sans-serif; font-weight:700; letter-spacing:-0.025em; font-size:1.25rem; color:var(--ink-deep); }
+.brand svg{ width:28px; height:28px; color:var(--teal); }
+.nav-links{ display:flex; gap:.35rem; margin-left:.4rem; }
+.nav-link{ position:relative; padding:.45rem .7rem; color:var(--ink-2); font-weight:500; font-size:0.96rem; border-radius:8px; cursor:pointer; }
+.nav-link:hover{ color:var(--ink-deep); background:var(--surface-2); }
+.nav-link[data-mega]::after{ content:""; display:inline-block; width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:4px solid currentColor; margin-left:.4rem; transform:translateY(-2px); opacity:.6; }
+.nav-right{ margin-left:auto; display:flex; align-items:center; gap:.6rem; }
+.audience-switch{ display:inline-flex; padding:3px; background:var(--surface-2); border:1px solid var(--line); border-radius:999px; font-size:.84rem; }
+.audience-switch button{ border:0; background:transparent; color:var(--ink-2); padding:.32rem .8rem; border-radius:999px; cursor:pointer; font-family:inherit; font-weight:600; }
+.audience-switch button[aria-pressed="true"]{ background:var(--surface); color:var(--ink-deep); box-shadow:0 1px 0 var(--line); }
+
+/* mega-menu */
+.megapanel{ position:absolute; top:calc(100% + 6px); left:50%; transform:translateX(-50%) translateY(-6px); width:min(960px, calc(100vw - 2rem)); padding:1.8rem;
+  background:var(--surface); border:1px solid var(--line); border-radius:18px; box-shadow:0 30px 80px -30px color-mix(in oklch, var(--ink) 50%, transparent);
+  display:none; opacity:0; transition:opacity .2s ease-out, transform .2s ease-out; z-index:60; }
+.nav-link:hover + .megapanel, .megapanel:hover{ display:grid; opacity:1; transform:translateX(-50%) translateY(0); }
+.mega-platform{ grid-template-columns:1.1fr 1fr 1fr; gap:1.6rem; }
+.mega-col h4{ font-size:.78rem; text-transform:uppercase; letter-spacing:.14em; color:var(--ink-3); font-weight:600; margin-bottom:.7rem; }
+.mega-item{ display:grid; grid-template-columns:32px 1fr; gap:.7rem; padding:.55rem; border-radius:10px; }
+.mega-item:hover{ background:var(--surface-2); }
+.mega-item .ico{ width:32px; height:32px; border-radius:8px; background:var(--teal-soft); color:var(--teal); display:grid; place-items:center; }
+.mega-item .ico svg{ width:18px; height:18px; }
+.mega-item b{ display:block; font-weight:600; color:var(--ink-deep); font-size:.95rem; }
+.mega-item span{ display:block; color:var(--ink-2); font-size:.85rem; line-height:1.35; }
+
+/* ---------- Buttons ---------- */
+.btn{ display:inline-flex; align-items:center; gap:.55rem; height:46px; padding:0 1.25rem;
+  border-radius:12px; font-weight:600; font-size:0.98rem; letter-spacing:-0.005em;
+  border:1px solid transparent; cursor:pointer; font-family:inherit;
+  transition:transform .18s cubic-bezier(.2,.8,.2,1), background .18s, border-color .18s, box-shadow .18s; }
+.btn:active{ transform:translateY(1px); }
+.btn-primary{ background:var(--teal); color:var(--teal-ink); box-shadow:0 1px 0 color-mix(in oklch, var(--teal-strong) 60%, transparent); }
+.btn-primary:hover{ background:var(--teal-strong); }
+.btn-ghost{ border-color:var(--line-2); color:var(--ink-deep); background:transparent; }
+.btn-ghost:hover{ background:var(--surface-2); border-color:var(--ink-3); }
+.btn-coral{ background:var(--coral); color:var(--coral-ink); }
+.btn-coral:hover{ filter:brightness(1.04); }
+.btn-sm{ height:40px; padding:0 1rem; border-radius:10px; font-size:0.93rem; }
+.btn-lg{ height:54px; padding:0 1.6rem; font-size:1.05rem; border-radius:14px; }
+
+/* ---------- Generic chrome ---------- */
+.eyebrow{ display:inline-flex; align-items:center; gap:.5rem; color:var(--teal-strong); font-weight:600; font-size:0.92rem; letter-spacing:-0.005em; }
+.eyebrow::before{ content:""; width:14px; height:1px; background:var(--teal); }
+.section-head{ display:grid; grid-template-columns:1fr; gap:.7rem; max-width:62rem; margin-bottom:2.4rem; }
+.section-head.two-col{ grid-template-columns:1.05fr 1fr; gap:2rem; align-items:end; }
+h2{ font-family:"Schibsted Grotesk",sans-serif; font-weight:700; font-size:var(--step-3); line-height:1.06; letter-spacing:-0.028em; color:var(--ink-deep); text-wrap:balance; }
+h3{ font-family:"Schibsted Grotesk",sans-serif; font-weight:600; font-size:var(--step-2); line-height:1.12; letter-spacing:-0.022em; color:var(--ink-deep); text-wrap:balance; }
+h4{ font-family:"Schibsted Grotesk",sans-serif; font-weight:600; font-size:1.15rem; line-height:1.22; color:var(--ink-deep); }
+.lead{ color:var(--ink-2); font-size:var(--step-1); line-height:1.5; max-width:62ch; }
+section{ padding:clamp(4rem, 7vh, 6rem) 0; }
+.divider{ border-top:1px solid var(--line); }
+
+/* status dot/pill */
+.status{ display:inline-flex; align-items:center; gap:.55rem; padding:.4rem .75rem; background:var(--surface); border:1px solid var(--line); border-radius:999px; font-size:.86rem; color:var(--ink-2); font-weight:500; }
+.status .dot{ width:7px; height:7px; border-radius:50%; background:var(--coral); }
+.status.live .dot{ background:var(--good); box-shadow:0 0 0 0 var(--good); animation:pulse 2.2s ease-out infinite; }
+@keyframes pulse{ 0%{ box-shadow:0 0 0 0 color-mix(in oklch, var(--good) 35%, transparent);} 70%{ box-shadow:0 0 0 9px transparent;} 100%{ box-shadow:0 0 0 0 transparent;} }
+.pill{ display:inline-flex; align-items:center; gap:.4rem; padding:.18rem .55rem; border-radius:999px; font-size:.78rem; font-weight:600; border:1px solid var(--line); background:var(--surface); color:var(--ink-2); }
+.pill-good{ color:var(--good); border-color:color-mix(in oklch, var(--good) 30%, var(--line)); background:color-mix(in oklch, var(--good) 8%, var(--surface)); }
+.pill-warn{ color:color-mix(in oklch, var(--warn) 60%, var(--ink-deep)); border-color:color-mix(in oklch, var(--warn) 30%, var(--line)); background:color-mix(in oklch, var(--warn) 8%, var(--surface)); }
+.pill-danger{ color:var(--danger); border-color:color-mix(in oklch, var(--danger) 30%, var(--line)); background:color-mix(in oklch, var(--danger) 8%, var(--surface)); }
+.pill-teal{ color:var(--teal-strong); border-color:color-mix(in oklch, var(--teal) 30%, var(--line)); background:var(--teal-soft); }
+.pill-coral{ color:var(--coral); border-color:color-mix(in oklch, var(--coral) 30%, var(--line)); background:var(--coral-soft); }
+
+/* =========================================================
+   HERO — split, dual-audience headline + LIVE interview HUD
+   ========================================================= */
+.hero{ position:relative; padding:clamp(3rem,6vh,5rem) 0 clamp(3rem,6vh,5rem); }
+.hero::before{ content:""; position:absolute; inset:-20% -10% 50% -10%; background:radial-gradient(60% 50% at 80% 30%, var(--teal-glow), transparent 70%); pointer-events:none; z-index:-1; }
+.hero-grid{ display:grid; grid-template-columns:1.08fr 1.05fr; gap:clamp(2rem,4vw,3.5rem); align-items:center; }
+.hero h1{ font-family:"Schibsted Grotesk",sans-serif; font-size:var(--display); line-height:1.02; font-weight:800; letter-spacing:-0.035em; text-wrap:balance; margin-top:1.1rem; color:var(--ink-deep); }
+.hero h1 .g{ color:var(--teal); }
+.hero .sub{ font-size:var(--step-1); color:var(--ink-2); max-width:36ch; margin-top:1.2rem; line-height:1.5; }
+.hero .cta-row{ display:flex; gap:.7rem; margin-top:1.8rem; flex-wrap:wrap; }
+.hero .trust-row{ display:flex; flex-wrap:wrap; gap:.5rem 1.4rem; margin-top:2.2rem; color:var(--ink-2); font-size:.94rem; }
+.hero .trust-row span{ display:inline-flex; align-items:center; gap:.5rem; }
+.hero .trust-row svg{ width:16px; height:16px; color:var(--teal); flex:none; }
+
+/* --- The interview HUD (the actual hero visual) --- */
+.hud{ position:relative; background:var(--surface); border:1px solid var(--line); border-radius:24px; padding:1.1rem; box-shadow:0 30px 80px -30px color-mix(in oklch, var(--ink) 35%, transparent); overflow:hidden; }
+.hud-topbar{ display:flex; align-items:center; gap:.8rem; padding-bottom:.85rem; border-bottom:1px solid var(--line); }
+.hud-topbar .title{ font-family:"Schibsted Grotesk",sans-serif; font-weight:600; color:var(--ink-deep); font-size:.98rem; }
+.hud-topbar .meta{ color:var(--ink-3); font-size:.84rem; }
+.hud-topbar .spacer{ flex:1; }
+.hud-topbar .lock{ display:inline-flex; align-items:center; gap:.35rem; font-size:.78rem; color:var(--ink-2); }
+.hud-topbar .lock svg{ width:13px; height:13px; }
+.hud-stage{ position:relative; aspect-ratio:16/9; margin-top:.85rem; border-radius:16px; overflow:hidden;
+  background:linear-gradient(135deg, color-mix(in oklch, var(--ink-deep) 86%, var(--teal-strong)) 0%, color-mix(in oklch, var(--ink-deep) 95%, transparent) 70%);
+  display:flex; align-items:flex-end; padding:.9rem; }
+.hud-stage .interviewer-name{ position:absolute; top:.7rem; left:.85rem; color:#fff; font-size:.82rem; font-weight:600; }
+.hud-stage .interviewer-name .dot{ display:inline-block; width:7px; height:7px; background:var(--good); border-radius:50%; box-shadow:0 0 0 3px color-mix(in oklch, var(--good) 25%, transparent); margin-right:.45rem; vertical-align:middle; }
+.hud-stage .timer{ position:absolute; top:.7rem; right:.85rem; color:#fff; font-family:"Geist Mono",monospace; font-size:.82rem; background:rgba(0,0,0,.32); padding:.18rem .5rem; border-radius:6px; }
+.hud-stage .self{ width:96px; height:64px; border-radius:10px; background:linear-gradient(180deg, color-mix(in oklch, var(--coral) 60%, #000), color-mix(in oklch, var(--coral) 25%, #000)); border:2px solid rgba(255,255,255,.7); align-self:flex-end; }
+.hud-caption{ position:absolute; left:1rem; right:7rem; bottom:.6rem; background:rgba(0,0,0,.55); color:#fff; backdrop-filter:blur(6px); border-radius:10px; padding:.45rem .65rem; font-size:.82rem; line-height:1.4; }
+.hud-caption .who{ color:rgba(255,255,255,.7); font-weight:600; font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; margin-bottom:.1rem; display:block; }
+
+/* HUD integrity strip */
+.hud-strip{ display:grid; grid-template-columns:repeat(4, 1fr); gap:.45rem; padding-top:.85rem; }
+.hud-chip{ display:flex; align-items:center; gap:.5rem; padding:.55rem .65rem; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; font-size:.82rem; }
+.hud-chip .lbl{ color:var(--ink-3); font-family:"Geist Mono",monospace; font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; }
+.hud-chip .val{ color:var(--ink-deep); font-weight:600; margin-left:auto; }
+.hud-chip.good .val::before{ content:""; display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--good); margin-right:.4rem; vertical-align:middle; }
+
+/* Floating "evidence captured" toast on the HUD */
+.hud-toast{ position:absolute; right:-12px; bottom:14%; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:.6rem .8rem; box-shadow:0 14px 40px -16px color-mix(in oklch, var(--ink) 40%, transparent); display:flex; gap:.55rem; align-items:center; font-size:.84rem; }
+.hud-toast .gold-dot{ width:8px; height:8px; background:var(--gold); border-radius:50%; }
+.hud-toast b{ color:var(--ink-deep); }
+
+/* =========================================================
+   STAT/TRUST BAND
+   ========================================================= */
+.bandwrap{ background:var(--surface-2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:2rem 0 2.4rem; }
+.logo-marquee{ display:flex; align-items:center; gap:2.5rem; flex-wrap:wrap; justify-content:space-between; opacity:.85; }
+.logo-marquee .logo{ font-family:"Schibsted Grotesk",sans-serif; font-weight:700; color:var(--ink-2); letter-spacing:-.01em; font-size:1.05rem; white-space:nowrap; }
+.logo-marquee .logo svg{ width:18px; height:18px; margin-right:.45rem; vertical-align:-3px; color:var(--ink-3); }
+.stats-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:0; margin-top:1.6rem; border-top:1px dashed var(--line-2); padding-top:1.6rem; }
+.stat{ padding:0 1.4rem; border-right:1px solid var(--line); }
+.stat:last-child{ border-right:0; }
+.stat .n{ font-family:"Schibsted Grotesk",sans-serif; font-weight:700; font-size:clamp(1.8rem, 1.2rem + 1.8vw, 2.5rem); letter-spacing:-.03em; color:var(--ink-deep); line-height:1; }
+.stat .n .unit{ font-size:0.55em; color:var(--teal); margin-left:.1em; }
+.stat .l{ color:var(--ink-2); font-size:.96rem; margin-top:.5rem; max-width:24ch; }
+
+/* =========================================================
+   "What you see vs what matters" — before/after
+   ========================================================= */
+.flip{ display:grid; grid-template-columns:1fr 1fr; gap:1.6rem; margin-top:2.4rem; align-items:stretch; }
+.flip .panel{ background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:1.4rem; position:relative; }
+.flip .label{ font-size:.76rem; text-transform:uppercase; letter-spacing:.14em; font-weight:600; color:var(--ink-3); }
+.flip .panel.before .label{ color:var(--ink-3); }
+.flip .panel.after .label{ color:var(--teal-strong); }
+.flip .panel.before h3, .flip .panel.after h3{ margin-top:.35rem; }
+.flip .arrow{ position:absolute; right:-22px; top:50%; transform:translateY(-50%); width:44px; height:44px; border-radius:50%; background:var(--coral); color:var(--coral-ink); display:grid; place-items:center; box-shadow:0 6px 20px -6px color-mix(in oklch, var(--coral) 50%, transparent); z-index:2; }
+.flip .panel.before{ background:var(--surface-2); }
+/* fake resume */
+.resume{ margin-top:1.1rem; font-family:"Geist Mono",monospace; font-size:.82rem; color:var(--ink-2); line-height:1.5; background:var(--surface); border:1px dashed var(--line-2); border-radius:14px; padding:1rem; }
+.resume .row{ display:flex; gap:.5rem; }
+.resume .y{ color:var(--ink-3); flex:none; width:5ch; }
+.resume .strike{ text-decoration:line-through; opacity:.7; }
+.resume .head{ font-weight:600; color:var(--ink-deep); margin-bottom:.4rem; }
+/* fake report */
+.report{ margin-top:1.1rem; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:1.1rem; }
+.report .head-row{ display:flex; justify-content:space-between; align-items:center; }
+.report .name{ font-weight:600; color:var(--ink-deep); }
+.report .role{ color:var(--ink-3); font-size:.86rem; }
+.report .score-row{ display:flex; align-items:center; gap:1rem; margin-top:.8rem; }
+.ring{ --pct:86; width:62px; height:62px; border-radius:50%;
+  background:conic-gradient(var(--teal) calc(var(--pct) * 1%), var(--surface-3) 0);
+  display:grid; place-items:center; }
+.ring::after{ content:""; width:48px; height:48px; border-radius:50%; background:var(--surface); }
+.ring .v{ position:absolute; font-family:"Schibsted Grotesk",sans-serif; font-weight:700; color:var(--ink-deep); }
+.score-meta{ display:flex; flex-direction:column; gap:.2rem; }
+.score-meta .label{ font-size:.74rem; color:var(--ink-3); text-transform:uppercase; letter-spacing:.1em; }
+.score-meta .strong{ font-weight:600; color:var(--ink-deep); }
+.bars{ margin-top:.95rem; display:grid; gap:.55rem; }
+.bar{ display:grid; grid-template-columns:1fr auto; gap:.3rem .8rem; align-items:center; font-size:.88rem; }
+.bar .name{ color:var(--ink-2); }
+.bar .v{ color:var(--ink-deep); font-weight:600; font-variant-numeric:tabular-nums; }
+.bar .t{ grid-column:1 / -1; height:5px; background:var(--surface-3); border-radius:999px; overflow:hidden; }
+.bar .t i{ display:block; height:100%; background:var(--teal); border-radius:999px; }
+.integrity-row{ margin-top:.85rem; padding-top:.85rem; border-top:1px solid var(--line); display:flex; gap:.6rem; align-items:center; font-size:.86rem; color:var(--ink-2); }
+.integrity-row svg{ width:16px; height:16px; color:var(--good); }
+
+/* =========================================================
+   Numbered walkthrough — Linear 1.0–5.0 pattern
+   ========================================================= */
+.acts{ display:grid; gap:1.4rem; }
+.act{ display:grid; grid-template-columns:90px 1fr 1.2fr; gap:1.4rem; padding:1.6rem; background:var(--surface); border:1px solid var(--line); border-radius:22px; }
+.act-num{ font-family:"Schibsted Grotesk",sans-serif; font-weight:700; font-size:1.6rem; color:var(--teal); letter-spacing:-.02em; }
+.act-num .step{ display:block; font-size:.7rem; color:var(--ink-3); font-family:"Geist Mono",monospace; letter-spacing:.14em; text-transform:uppercase; font-weight:600; margin-bottom:.2rem; }
+.act h3{ margin-bottom:.45rem; }
+.act p{ color:var(--ink-2); font-size:.96rem; line-height:1.5; max-width:42ch; }
+.act ul{ list-style:none; padding:0; margin-top:.75rem; display:grid; gap:.35rem; }
+.act ul li{ display:flex; gap:.5rem; color:var(--ink-2); font-size:.9rem; }
+.act ul li svg{ width:15px; height:15px; color:var(--teal); flex:none; margin-top:3px; }
+.act-visual{ border-radius:14px; background:var(--surface-2); border:1px dashed var(--line-2); padding:1rem; min-height:160px; display:flex; align-items:stretch; }
+
+/* Mini visuals for each act */
+.mini-identity{ display:grid; grid-template-columns:64px 1fr; gap:.9rem; align-items:center; width:100%; }
+.mini-identity .face{ width:64px; height:64px; border-radius:14px; background:linear-gradient(135deg, color-mix(in oklch, var(--teal) 35%, var(--surface)), color-mix(in oklch, var(--teal) 12%, var(--surface))); display:grid; place-items:center; color:var(--teal); }
+.mini-identity .face svg{ width:30px; height:30px; }
+.mini-identity .rows{ display:grid; gap:.35rem; }
+.mini-identity .rows .r{ display:flex; justify-content:space-between; font-size:.82rem; color:var(--ink-2); }
+.mini-identity .rows .r b{ color:var(--ink-deep); font-weight:600; }
+.mini-identity .rows .r .ok{ color:var(--good); }
+
+.mini-room{ display:flex; flex-wrap:wrap; gap:.4rem; align-content:flex-start; width:100%; align-items:flex-start; }
+.mini-room .tile{ flex:1 1 calc(50% - .4rem); aspect-ratio:16/9; border-radius:8px; background:linear-gradient(135deg, color-mix(in oklch, var(--ink-deep) 80%, var(--teal-strong)), color-mix(in oklch, var(--ink-deep) 92%, transparent)); position:relative; overflow:hidden; }
+.mini-room .tile::after{ content:""; position:absolute; left:8px; bottom:6px; width:8px; height:8px; background:var(--good); border-radius:50%; }
+.mini-room .tile span{ position:absolute; right:6px; top:6px; color:rgba(255,255,255,.85); font-family:"Geist Mono",monospace; font-size:.62rem; }
+
+.mini-timeline{ width:100%; }
+.mini-timeline .track{ position:relative; height:34px; background:linear-gradient(180deg, var(--surface), var(--surface-2)); border-radius:8px; border:1px solid var(--line); margin-top:.7rem; }
+.mini-timeline .pip{ position:absolute; top:50%; width:7px; height:7px; border-radius:50%; transform:translate(-50%, -50%); }
+.mini-timeline .pip.l{ background:var(--good); box-shadow:0 0 0 2px color-mix(in oklch, var(--good) 25%, transparent); }
+.mini-timeline .pip.m{ background:var(--warn); box-shadow:0 0 0 2px color-mix(in oklch, var(--warn) 25%, transparent); }
+.mini-timeline .pip.h{ background:var(--danger); box-shadow:0 0 0 2px color-mix(in oklch, var(--danger) 25%, transparent); }
+.mini-timeline .labels{ display:flex; justify-content:space-between; color:var(--ink-3); font-family:"Geist Mono",monospace; font-size:.66rem; margin-top:.45rem; }
+.mini-timeline .head{ display:flex; gap:.5rem; align-items:center; font-size:.78rem; color:var(--ink-2); }
+.mini-timeline .head .sev{ font-family:"Geist Mono",monospace; font-size:.7rem; color:var(--ink-3); letter-spacing:.06em; }
+
+.mini-rubric{ width:100%; display:grid; gap:.45rem; align-content:center; }
+.mini-rubric .r{ display:grid; grid-template-columns:1fr 60px 30px; gap:.5rem; align-items:center; font-size:.84rem; }
+.mini-rubric .r .nm{ color:var(--ink-2); }
+.mini-rubric .r .t{ height:5px; background:var(--surface-3); border-radius:999px; overflow:hidden; }
+.mini-rubric .r .t i{ display:block; height:100%; background:var(--teal); border-radius:999px; }
+.mini-rubric .r .v{ color:var(--ink-deep); font-weight:600; text-align:right; font-variant-numeric:tabular-nums; }
+
+.mini-decision{ display:flex; gap:.6rem; align-items:center; width:100%; }
+.mini-decision .avatar{ width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg, var(--coral), color-mix(in oklch, var(--coral) 60%, var(--ink-deep))); }
+.mini-decision .col{ flex:1; }
+.mini-decision .col .nm{ font-weight:600; color:var(--ink-deep); font-size:.92rem; }
+.mini-decision .col .role{ color:var(--ink-3); font-size:.78rem; }
+.mini-decision .actions{ display:flex; gap:.35rem; flex-wrap:wrap; }
+.mini-decision .actions .b{ border:1px solid var(--line); border-radius:8px; padding:.3rem .55rem; font-size:.76rem; color:var(--ink-2); background:var(--surface); }
+.mini-decision .actions .b.good{ border-color:color-mix(in oklch, var(--good) 30%, var(--line)); color:var(--good); background:color-mix(in oklch, var(--good) 8%, var(--surface)); }
+
+/* =========================================================
+   Bento — anchor cell + supporting cells
+   ========================================================= */
+.bento{ display:grid; grid-template-columns:repeat(6, 1fr); grid-auto-rows:minmax(160px, auto); gap:1rem; }
+.cell{ position:relative; background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:1.4rem; overflow:hidden; }
+.cell h4{ font-size:1.06rem; }
+.cell p{ color:var(--ink-2); font-size:.92rem; margin-top:.4rem; line-height:1.5; }
+.cell .tag{ position:absolute; top:1rem; right:1rem; font-family:"Geist Mono",monospace; font-size:.66rem; letter-spacing:.1em; color:var(--ink-3); text-transform:uppercase; }
+.cell.anchor{ grid-column:span 4; grid-row:span 2; padding:1.7rem; background:linear-gradient(135deg, color-mix(in oklch, var(--teal) 8%, var(--surface)), var(--surface)); border-color:color-mix(in oklch, var(--teal) 18%, var(--line)); }
+.cell.c1{ grid-column:span 2; }
+.cell.c2{ grid-column:span 2; grid-row:span 2; }
+.cell.c3{ grid-column:span 3; }
+.cell.c4{ grid-column:span 3; }
+.cell.c5{ grid-column:span 4; }
+.cell.c6{ grid-column:span 2; }
+.cell.anchor h3{ font-size:var(--step-2); }
+
+/* platform diagram inside anchor */
+.platform-diag{ position:relative; margin-top:1rem; padding:1.4rem; min-height:240px; background:var(--surface); border:1px solid var(--line); border-radius:18px; display:grid; grid-template-columns:1fr 1.2fr 1fr; gap:1rem; align-items:center; }
+.platform-diag .node{ background:var(--surface-2); border:1px solid var(--line); border-radius:14px; padding:.7rem; text-align:center; font-size:.84rem; color:var(--ink-2); }
+.platform-diag .node b{ display:block; color:var(--ink-deep); font-weight:600; margin-bottom:.2rem; font-size:.88rem; }
+.platform-diag .node.core{ background:linear-gradient(135deg, var(--teal), var(--teal-strong)); color:var(--teal-ink); border-color:var(--teal-strong); padding:1.1rem; box-shadow:0 12px 36px -16px color-mix(in oklch, var(--teal) 60%, transparent); }
+.platform-diag .node.core b{ color:var(--teal-ink); font-family:"Schibsted Grotesk",sans-serif; font-size:1rem; }
+.platform-diag svg.lines{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+/* mini visuals inside small cells */
+.cell-visual{ margin-top:.9rem; padding:.7rem; background:var(--surface-2); border:1px solid var(--line); border-radius:12px; font-family:"Geist Mono",monospace; font-size:.78rem; color:var(--ink-2); display:grid; gap:.35rem; }
+.cell-visual .k{ color:var(--ink-3); }
+.cell-visual .v{ color:var(--ink-deep); font-weight:600; }
+.cell-visual .row{ display:flex; justify-content:space-between; }
+
+.match{ display:grid; gap:.45rem; margin-top:.9rem; }
+.match .card{ display:flex; align-items:center; gap:.7rem; padding:.55rem .7rem; border:1px solid var(--line); border-radius:10px; background:var(--surface-2); }
+.match .card .av{ width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, var(--teal), var(--teal-strong)); }
+.match .card .col{ flex:1; font-size:.84rem; }
+.match .card .col b{ color:var(--ink-deep); font-weight:600; display:block; }
+.match .card .col span{ color:var(--ink-3); font-size:.72rem; }
+.match .card .pct{ font-family:"Geist Mono",monospace; color:var(--teal-strong); font-weight:600; font-size:.84rem; }
+
+/* =========================================================
+   Integrity timeline — interactive-feel scrubber
+   ========================================================= */
+.itl{ background:var(--surface); border:1px solid var(--line); border-radius:24px; padding:1.6rem; }
+.itl-head{ display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+.itl-head h3{ font-size:1.3rem; }
+.itl-head .meta{ color:var(--ink-3); font-size:.86rem; }
+.itl-head .spacer{ flex:1; }
+.itl-head .legend{ display:flex; gap:.9rem; font-size:.78rem; color:var(--ink-2); }
+.itl-head .legend span{ display:inline-flex; align-items:center; gap:.4rem; }
+.itl-head .legend .d{ width:8px; height:8px; border-radius:50%; }
+.itl-track-wrap{ margin-top:1.2rem; }
+.itl-track{ position:relative; height:80px; background:linear-gradient(180deg, var(--surface-2), color-mix(in oklch, var(--surface) 90%, var(--teal-soft))); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+.itl-axis{ position:absolute; left:0; right:0; bottom:0; display:flex; justify-content:space-between; padding:0 .8rem .35rem; color:var(--ink-3); font-family:"Geist Mono",monospace; font-size:.7rem; }
+.itl-line{ position:absolute; left:0; right:0; top:50%; height:1px; background:repeating-linear-gradient(90deg, var(--line-2) 0 4px, transparent 4px 8px); }
+.itl-pip{ position:absolute; top:50%; width:12px; height:12px; border-radius:50%; transform:translate(-50%, -50%); border:2px solid var(--surface); cursor:pointer; }
+.itl-pip.l{ background:var(--good); box-shadow:0 0 0 3px color-mix(in oklch, var(--good) 22%, transparent); }
+.itl-pip.m{ background:var(--warn); box-shadow:0 0 0 3px color-mix(in oklch, var(--warn) 22%, transparent); }
+.itl-pip.h{ background:var(--danger); box-shadow:0 0 0 3px color-mix(in oklch, var(--danger) 22%, transparent); width:14px; height:14px; }
+.itl-scrubber{ position:absolute; top:0; bottom:0; width:2px; background:var(--coral); box-shadow:0 0 0 4px var(--coral-soft); }
+.itl-scrubber::after{ content:""; position:absolute; top:-4px; left:50%; transform:translateX(-50%); width:10px; height:10px; background:var(--coral); border-radius:50%; }
+.itl-events{ display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; margin-top:1.2rem; }
+.event{ padding:1rem; border:1px solid var(--line); border-radius:14px; background:var(--surface-2); }
+.event.expanded{ background:var(--surface); border-color:var(--coral); box-shadow:0 6px 24px -10px color-mix(in oklch, var(--coral) 30%, transparent); }
+.event .stamp{ display:flex; align-items:center; gap:.55rem; font-family:"Geist Mono",monospace; font-size:.78rem; color:var(--ink-3); }
+.event .stamp .d{ width:7px; height:7px; border-radius:50%; background:var(--good); }
+.event.m .stamp .d{ background:var(--warn); }
+.event.h .stamp .d{ background:var(--danger); }
+.event .ttl{ font-family:"Schibsted Grotesk",sans-serif; font-weight:600; color:var(--ink-deep); margin-top:.5rem; font-size:1rem; }
+.event p{ color:var(--ink-2); font-size:.86rem; margin-top:.35rem; }
+.event .clip{ margin-top:.6rem; padding:.45rem .6rem; border-radius:8px; background:color-mix(in oklch, var(--gold) 15%, var(--surface)); border:1px dashed color-mix(in oklch, var(--gold) 35%, var(--line)); font-size:.78rem; color:var(--ink-2); }
+.event .clip b{ color:var(--ink-deep); }
+
+/* =========================================================
+   Built for the AI-copilot era — defense + privacy split
+   ========================================================= */
+.defense{ display:grid; grid-template-columns:1fr 1fr; gap:1.6rem; }
+.def-panel{ background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:1.6rem; }
+.def-panel.detect{ background:linear-gradient(135deg, color-mix(in oklch, var(--gold) 10%, var(--surface)), var(--surface)); border-color:color-mix(in oklch, var(--gold) 25%, var(--line)); }
+.def-panel.privacy{ background:linear-gradient(135deg, color-mix(in oklch, var(--teal) 6%, var(--surface)), var(--surface)); border-color:color-mix(in oklch, var(--teal) 20%, var(--line)); }
+.def-panel h3{ display:flex; align-items:center; gap:.6rem; }
+.def-panel h3 svg{ width:24px; height:24px; }
+.def-panel.detect h3 svg{ color:color-mix(in oklch, var(--gold) 60%, var(--ink)); }
+.def-panel.privacy h3 svg{ color:var(--teal); }
+.def-list{ list-style:none; padding:0; margin-top:1rem; display:grid; gap:.55rem; }
+.def-list li{ display:flex; gap:.6rem; align-items:flex-start; padding:.7rem .9rem; background:var(--surface); border:1px solid var(--line); border-radius:10px; font-size:.92rem; color:var(--ink-2); }
+.def-list li svg{ width:18px; height:18px; flex:none; margin-top:1px; }
+.def-list.blocks li svg{ color:var(--danger); }
+.def-list.privacy li svg{ color:var(--good); }
+.def-list li b{ color:var(--ink-deep); font-weight:600; display:inline; }
+
+/* =========================================================
+   Evidence report deep-dive
+   ========================================================= */
+.evidence{ display:grid; grid-template-columns:1.05fr 1fr; gap:2rem; align-items:start; }
+.evidence-card{ background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:1.6rem; box-shadow:0 18px 56px -28px color-mix(in oklch, var(--ink) 28%, transparent); }
+.evidence-card .head{ display:flex; align-items:center; gap:.8rem; flex-wrap:wrap; }
+.evidence-card .head .av{ width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg, var(--coral), color-mix(in oklch, var(--coral) 60%, var(--ink-deep))); color:#fff; display:grid; place-items:center; font-family:"Schibsted Grotesk",sans-serif; font-weight:700; }
+.evidence-card .head .nm{ font-family:"Schibsted Grotesk",sans-serif; font-weight:600; color:var(--ink-deep); font-size:1.06rem; }
+.evidence-card .head .role{ color:var(--ink-3); font-size:.84rem; }
+.evidence-card .head .pill-coral{ margin-left:auto; }
+.evidence-card .head .reco{ background:color-mix(in oklch, var(--good) 12%, var(--surface)); color:var(--good); border:1px solid color-mix(in oklch, var(--good) 30%, var(--line)); padding:.3rem .6rem; border-radius:999px; font-size:.78rem; font-weight:600; }
+.competency{ margin-top:1.2rem; padding:1rem; border:1px solid var(--line); border-radius:14px; background:var(--surface-2); }
+.competency .top{ display:flex; align-items:center; gap:.7rem; }
+.competency .top .nm{ font-weight:600; color:var(--ink-deep); }
+.competency .top .sc{ margin-left:auto; font-family:"Geist Mono",monospace; color:var(--teal-strong); font-weight:600; }
+.competency .bar{ margin-top:.5rem; height:5px; background:var(--surface-3); border-radius:999px; overflow:hidden; }
+.competency .bar i{ display:block; height:100%; background:var(--teal); border-radius:999px; }
+.competency .why{ margin-top:.85rem; padding:.7rem .85rem; background:var(--surface); border-left:3px solid var(--teal); border-radius:0 8px 8px 0; font-size:.88rem; color:var(--ink); line-height:1.5; }
+.competency .why::before{ content:"\201C"; font-family:"Schibsted Grotesk",sans-serif; color:var(--teal); font-size:1.4em; line-height:0; vertical-align:-.35em; margin-right:.15em; font-weight:700; }
+.competency .why::after{ content:"\201D"; font-family:"Schibsted Grotesk",sans-serif; color:var(--teal); font-size:1.4em; line-height:0; vertical-align:-.35em; margin-left:.1em; font-weight:700; }
+.competency .stamp{ display:block; margin-top:.4rem; font-family:"Geist Mono",monospace; font-size:.74rem; color:var(--ink-3); }
+.evidence-narrative h3{ font-size:1.8rem; }
+.evidence-narrative .lead{ margin-top:.7rem; }
+.evidence-narrative ul{ list-style:none; padding:0; margin-top:1.3rem; display:grid; gap:.7rem; }
+.evidence-narrative ul li{ display:flex; gap:.7rem; align-items:flex-start; color:var(--ink-2); font-size:.96rem; }
+.evidence-narrative ul li svg{ width:18px; height:18px; color:var(--teal); flex:none; margin-top:3px; }
+.evidence-narrative ul li b{ color:var(--ink-deep); }
+.evidence-narrative .download{ margin-top:1.4rem; display:inline-flex; align-items:center; gap:.5rem; padding:.6rem .85rem; border-radius:10px; background:var(--surface); border:1px solid var(--line-2); color:var(--ink-deep); font-weight:600; font-size:.9rem; }
+.evidence-narrative .download svg{ width:16px; height:16px; }
+
+/* =========================================================
+   Advisory gate — AI recommends. Humans decide.
+   ========================================================= */
+.advisory{ display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--line); border-radius:24px; overflow:hidden; }
+.adv{ padding:1.8rem; background:var(--surface); }
+.adv.ai{ background:linear-gradient(135deg, color-mix(in oklch, var(--gold) 8%, var(--surface)), var(--surface)); border-right:1px solid var(--line); }
+.adv.human{ background:linear-gradient(135deg, color-mix(in oklch, var(--coral) 5%, var(--surface)), var(--surface)); }
+.adv .icon{ width:48px; height:48px; border-radius:14px; display:grid; place-items:center; margin-bottom:1rem; }
+.adv.ai .icon{ background:var(--gold-soft); color:color-mix(in oklch, var(--gold) 50%, var(--ink-deep)); }
+.adv.human .icon{ background:var(--coral-soft); color:var(--coral); }
+.adv .icon svg{ width:24px; height:24px; }
+.adv h3{ font-size:1.45rem; }
+.adv p{ color:var(--ink-2); margin-top:.55rem; line-height:1.5; }
+.adv ul{ list-style:none; margin-top:1rem; display:grid; gap:.55rem; }
+.adv ul li{ display:flex; gap:.55rem; color:var(--ink-2); font-size:.92rem; }
+.adv ul li::before{ content:""; width:5px; height:5px; border-radius:50%; background:currentColor; flex:none; margin-top:9px; opacity:.5; }
+
+/* =========================================================
+   Compare — vs the old way
+   ========================================================= */
+.compare-table{ background:var(--surface); border:1px solid var(--line); border-radius:22px; overflow:hidden; }
+.compare-table .row{ display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; align-items:center; }
+.compare-table .row + .row{ border-top:1px solid var(--line); }
+.compare-table .row > div{ padding:1rem 1.2rem; }
+.compare-table .head{ font-family:"Schibsted Grotesk",sans-serif; font-weight:600; color:var(--ink-deep); background:var(--surface-2); }
+.compare-table .head .col{ text-align:center; }
+.compare-table .head .col.us{ color:var(--teal); }
+.compare-table .row > div:not(:first-child){ text-align:center; font-size:.94rem; }
+.compare-table .row > div:first-child{ color:var(--ink-2); font-size:.96rem; }
+.compare-table .yes{ color:var(--good); display:inline-flex; align-items:center; gap:.3rem; font-weight:600; }
+.compare-table .no{ color:var(--ink-3); font-weight:500; }
+.compare-table .mid{ color:var(--warn); font-weight:600; }
+.compare-table .us-col{ background:color-mix(in oklch, var(--teal) 4%, var(--surface)); }
+
+/* =========================================================
+   Customer wins — 4 cards with hard numbers
+   ========================================================= */
+.wins{ display:grid; grid-template-columns:repeat(4, 1fr); gap:1rem; }
+.win{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:1.4rem; display:flex; flex-direction:column; gap:.8rem; }
+.win .logo{ font-family:"Schibsted Grotesk",sans-serif; font-weight:700; color:var(--ink-deep); font-size:1rem; letter-spacing:-.02em; }
+.win .metric{ font-family:"Schibsted Grotesk",sans-serif; font-weight:700; color:var(--ink-deep); font-size:clamp(1.7rem, 1.2rem + 1.3vw, 2.2rem); letter-spacing:-.03em; line-height:1; }
+.win .metric .unit{ color:var(--teal); font-size:.55em; margin-left:.1em; }
+.win .copy{ color:var(--ink-2); font-size:.9rem; line-height:1.45; flex:1; }
+.win .link{ color:var(--teal-strong); font-weight:600; font-size:.86rem; }
+
+/* =========================================================
+   Trust & compliance band
+   ========================================================= */
+.trust-band{ background:var(--surface); border:1px solid var(--line); border-radius:24px; padding:2rem; }
+.trust-grid{ display:grid; grid-template-columns:1.1fr 1fr 1fr 1fr; gap:1.4rem; align-items:flex-start; }
+.trust-grid .col h4{ font-size:1.06rem; }
+.trust-grid .col p{ color:var(--ink-2); font-size:.9rem; margin-top:.4rem; line-height:1.5; }
+.trust-grid .col .a{ color:var(--teal-strong); font-size:.86rem; font-weight:600; margin-top:.6rem; display:inline-block; }
+.badges{ margin-top:1.6rem; display:flex; flex-wrap:wrap; gap:.6rem; padding-top:1.4rem; border-top:1px solid var(--line); }
+.badge{ display:inline-flex; align-items:center; gap:.5rem; padding:.45rem .7rem; border:1px solid var(--line-2); border-radius:10px; color:var(--ink-2); font-size:.84rem; font-weight:500; background:var(--surface-2); }
+.badge svg{ width:14px; height:14px; color:var(--teal); }
+.badge b{ color:var(--ink-deep); font-weight:600; }
+
+/* =========================================================
+   Integrations + verticals
+   ========================================================= */
+.int-grid{ display:grid; grid-template-columns:repeat(6, 1fr); gap:.7rem; }
+.int-cell{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:1rem .85rem; display:flex; align-items:center; gap:.55rem; font-family:"Schibsted Grotesk",sans-serif; font-weight:600; color:var(--ink-deep); font-size:.92rem; }
+.int-cell .ico{ width:24px; height:24px; border-radius:6px; background:var(--surface-2); border:1px solid var(--line); display:grid; place-items:center; flex:none; }
+.int-cell .ico::after{ content:""; width:11px; height:11px; border-radius:3px; background:linear-gradient(135deg, var(--teal), var(--teal-strong)); }
+
+.verticals{ display:grid; grid-template-columns:repeat(8, 1fr); gap:.7rem; margin-top:1.6rem; }
+.vert{ background:var(--surface-2); border:1px solid var(--line); border-radius:14px; padding:1rem .7rem; display:flex; flex-direction:column; align-items:center; gap:.5rem; color:var(--ink-2); font-size:.82rem; text-align:center; }
+.vert svg{ width:22px; height:22px; color:var(--teal); }
+.vert b{ color:var(--ink-deep); font-weight:600; }
+
+/* =========================================================
+   FAQ — 16 items
+   ========================================================= */
+.faq{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+details{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:1.05rem 1.15rem; }
+details + details{ margin-top:0; }
+details > summary{ cursor:pointer; list-style:none; font-family:"Schibsted Grotesk",sans-serif; font-weight:600; color:var(--ink-deep); font-size:1rem; display:flex; align-items:center; gap:.8rem; }
+details > summary::-webkit-details-marker{ display:none; }
+details > summary::after{ content:"+"; margin-left:auto; color:var(--ink-3); font-weight:400; font-size:1.3rem; transition:transform .2s ease-out; }
+details[open] > summary::after{ transform:rotate(45deg); }
+details .a{ margin-top:.7rem; color:var(--ink-2); font-size:.95rem; line-height:1.55; }
+details .audience{ font-family:"Geist Mono",monospace; font-size:.66rem; color:var(--ink-3); letter-spacing:.12em; text-transform:uppercase; padding:.18rem .45rem; border:1px solid var(--line); border-radius:6px; flex:none; }
+details[data-aud="cand"] .audience{ color:var(--coral); border-color:color-mix(in oklch, var(--coral) 25%, var(--line)); background:var(--coral-soft); }
+details[data-aud="comp"] .audience{ color:var(--teal-strong); border-color:color-mix(in oklch, var(--teal) 25%, var(--line)); background:var(--teal-soft); }
+
+/* =========================================================
+   Final CTA + footer
+   ========================================================= */
+.finalcta{ position:relative; background:linear-gradient(135deg, color-mix(in oklch, var(--teal) 12%, var(--surface)), color-mix(in oklch, var(--coral) 6%, var(--surface))); border:1px solid var(--line); border-radius:28px; padding:clamp(2.5rem,6vw,4rem); display:grid; grid-template-columns:1fr 1fr; gap:2rem; align-items:stretch; }
+.cta-side{ background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:1.8rem; display:flex; flex-direction:column; gap:.8rem; }
+.cta-side .eyebrow{ color:var(--ink-3); }
+.cta-side h3{ font-size:1.8rem; }
+.cta-side p{ color:var(--ink-2); font-size:.98rem; }
+.cta-side .btn{ margin-top:auto; align-self:flex-start; }
+.cta-side.candidates{ border-left:0; }
+.cta-side.candidates .eyebrow{ color:var(--coral); }
+.cta-side.companies .eyebrow{ color:var(--teal-strong); }
+
+footer.bigfoot{ background:var(--surface-2); border-top:1px solid var(--line); padding:3.6rem 0 2rem; margin-top:2rem; }
+.foot-cols{ display:grid; grid-template-columns:1.4fr repeat(5, 1fr); gap:1.6rem; }
+.foot-cols .col h5{ font-family:"Schibsted Grotesk",sans-serif; font-weight:600; color:var(--ink-deep); font-size:.9rem; margin-bottom:.85rem; letter-spacing:-.005em; }
+.foot-cols .col a{ display:block; color:var(--ink-2); font-size:.92rem; padding:.18rem 0; }
+.foot-cols .col a:hover{ color:var(--ink-deep); }
+.foot-brand p{ color:var(--ink-2); font-size:.9rem; margin-top:.7rem; max-width:30ch; line-height:1.5; }
+.foot-brand .badges{ margin-top:1.2rem; padding-top:1rem; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; gap:.4rem; }
+.foot-brand .badges .badge{ background:var(--surface); }
+.foot-bottom{ border-top:1px solid var(--line); margin-top:3rem; padding-top:1.4rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; color:var(--ink-3); font-size:.86rem; }
+.foot-bottom .right{ display:flex; gap:1.2rem; }
+.foot-bottom a{ color:var(--ink-3); }
+.foot-bottom a:hover{ color:var(--ink); }
+
+/* =========================================================
+   Preview-only theme toggle (NOT part of design)
+   ========================================================= */
+.preview-toggle{ position:fixed; right:14px; bottom:14px; z-index:99; display:flex; gap:2px;
+  background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:3px; font-size:.78rem;
+  box-shadow:0 10px 30px -10px color-mix(in oklch, var(--ink) 35%, transparent); }
+.preview-toggle button{ border:0; background:transparent; color:var(--ink-2); padding:.32rem .75rem; border-radius:999px; cursor:pointer; font-family:inherit; font-weight:600; }
+.preview-toggle button[aria-pressed="true"]{ background:var(--teal); color:var(--teal-ink); }
+.preview-toggle::after{ content:"preview"; position:absolute; top:-1.1rem; right:.4rem; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+
+/* =========================================================
+   Motion + responsive
+   ========================================================= */
+.rise{ opacity:0; transform:translateY(14px); animation:rise .7s cubic-bezier(.16,1,.3,1) forwards; }
+.d1{animation-delay:.04s}.d2{animation-delay:.1s}.d3{animation-delay:.17s}.d4{animation-delay:.24s}.d5{animation-delay:.31s}.d6{animation-delay:.38s}
+@keyframes rise{ to{ opacity:1; transform:none; } }
+
+@media (max-width:1100px){
+  .bento{ grid-template-columns:repeat(4, 1fr); }
+  .cell.anchor{ grid-column:span 4; }
+  .cell.c1, .cell.c2, .cell.c3, .cell.c4, .cell.c5, .cell.c6{ grid-column:span 2; }
+  .cell.c2{ grid-row:auto; }
+  .stats-grid{ grid-template-columns:repeat(2, 1fr); row-gap:1.6rem; }
+  .stat{ border-right:0; border-bottom:1px solid var(--line); padding-bottom:1rem; }
+  .stat:nth-child(odd){ border-right:1px solid var(--line); }
+  .stat:nth-child(n+3){ padding-top:1rem; }
+  .stat:last-child, .stat:nth-last-child(2){ border-bottom:0; }
+  .verticals{ grid-template-columns:repeat(4, 1fr); }
+  .int-grid{ grid-template-columns:repeat(3, 1fr); }
+  .itl-events{ grid-template-columns:1fr; }
+  .compare-table .row{ grid-template-columns:1.2fr 1fr 1fr 1fr; }
+  .foot-cols{ grid-template-columns:repeat(3, 1fr); }
+  .foot-brand{ grid-column:span 3; }
+}
+@media (max-width:760px){
+  .nav-links{ display:none; }
+  .audience-switch{ display:none; }
+  .hero-grid{ grid-template-columns:1fr; }
+  .hud{ margin-top:1rem; }
+  .flip{ grid-template-columns:1fr; }
+  .flip .arrow{ display:none; }
+  .act{ grid-template-columns:1fr; }
+  .act-num{ font-size:1.3rem; }
+  .defense{ grid-template-columns:1fr; }
+  .evidence{ grid-template-columns:1fr; }
+  .advisory{ grid-template-columns:1fr; }
+  .adv.ai{ border-right:0; border-bottom:1px solid var(--line); }
+  .wins{ grid-template-columns:1fr 1fr; }
+  .trust-grid{ grid-template-columns:1fr 1fr; }
+  .verticals{ grid-template-columns:repeat(3, 1fr); }
+  .int-grid{ grid-template-columns:repeat(2, 1fr); }
+  .faq{ grid-template-columns:1fr; }
+  .finalcta{ grid-template-columns:1fr; padding:1.6rem; }
+  .foot-cols{ grid-template-columns:1fr 1fr; }
+  .foot-brand{ grid-column:span 2; }
+  .compare-table .row{ grid-template-columns:1fr; }
+  .compare-table .row > div:not(:first-child){ text-align:left; padding-top:0; }
+}
+@media (prefers-reduced-motion: reduce){
+  .rise{ animation:none; opacity:1; transform:none; }
+  .status.live .dot{ animation:none; }
+  html{ scroll-behavior:auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Sprite ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="0 0 48 48">
+    <g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="24" cy="24" r="19"/>
+      <g><path d="M24 6 L34.5 22"/><path d="M24 6 L34.5 22" transform="rotate(60 24 24)"/><path d="M24 6 L34.5 22" transform="rotate(120 24 24)"/><path d="M24 6 L34.5 22" transform="rotate(180 24 24)"/><path d="M24 6 L34.5 22" transform="rotate(240 24 24)"/><path d="M24 6 L34.5 22" transform="rotate(300 24 24)"/></g>
+    </g>
+  </symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v5c0 4.4-3 8-7 10-4-2-7-5.6-7-10V6z"/></symbol>
+  <symbol id="shield-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 8-7 10-4-2-7-5.6-7-10V6z"/><path d="M9 12l2 2 4-4"/></g></symbol>
+  <symbol id="eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></g></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 1 1 8 0v3"/></g></symbol>
+  <symbol id="cam" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M22 8l-6 4 6 4z"/></g></symbol>
+  <symbol id="mic" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></g></symbol>
+  <symbol id="bolt" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="user" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></g></symbol>
+  <symbol id="users" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c1.2-3.5 3.6-5.5 7-5.5s5.8 2 7 5.5"/><circle cx="17" cy="10" r="2.5"/><path d="M16 14.5c2.5.4 4 1.9 5 4.5"/></g></symbol>
+  <symbol id="briefcase" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></g></symbol>
+  <symbol id="grid" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></g></symbol>
+  <symbol id="report" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M9 12h6M9 16h6M9 8h3"/></g></symbol>
+  <symbol id="timer" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v5M9 2h6"/></g></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16V11a6 6 0 1 0-12 0v5l-2 3h16l-2-3z"/><path d="M10 21h4"/></g></symbol>
+  <symbol id="globe" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></g></symbol>
+  <symbol id="spark" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 2v6m0 8v6M2 12h6m8 0h6M5 5l4 4m6 6l4 4M5 19l4-4m6-6l4-4"/></symbol>
+  <symbol id="dl" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 5 5-5"/><path d="M5 19h14"/></g></symbol>
+  <symbol id="arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="building" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M15 21V11a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v10"/><path d="M8 7h4M8 11h4M8 15h4"/></g></symbol>
+  <symbol id="heart" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></symbol>
+  <symbol id="academy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-4 9 4-9 4-9-4z"/><path d="M7 11v5c2 1.5 8 1.5 10 0v-5"/></g></symbol>
+  <symbol id="dollar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5c-.5-1.2-1.6-2-3-2-1.7 0-3 1-3 2.3 0 1.4 1.3 2 3 2.4 1.7.4 3 1 3 2.4S13.7 17 12 17c-1.4 0-2.5-.8-3-2"/></g></symbol>
+  <symbol id="bag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16l-1 13H5L4 8z"/><path d="M9 8V5a3 3 0 0 1 6 0v3"/></g></symbol>
+  <symbol id="chip" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></g></symbol>
+</svg>
+
+<!-- ===== Top utility rule ===== -->
+<div class="toprule">
+  <div class="wrap toprule-in">
+    <span class="pill-coral">Pre-launch</span>
+    <span>Aptura is opening pilots with a small set of teams hiring on proven merit.</span>
+    <span class="spacer"></span>
+    <a href="#">Request a pilot →</a>
+  </div>
+</div>
+
+<!-- ===== Mega nav ===== -->
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#"><svg><use href="#mark"/></svg>Aptura</a>
+    <nav class="nav-links" aria-label="Primary">
+      <div style="position:relative">
+        <a class="nav-link" data-mega href="#platform">Platform</a>
+        <div class="megapanel mega-platform">
+          <div class="mega-col">
+            <h4>The product</h4>
+            <a class="mega-item"><span class="ico"><svg><use href="#cam"/></svg></span><div><b>Proctored Interview</b><span>Live, fullscreen-locked. Camera + mic required.</span></div></a>
+            <a class="mega-item"><span class="ico"><svg><use href="#shield-check"/></svg></span><div><b>Integrity Report</b><span>Timeline + severity + evidence clips.</span></div></a>
+            <a class="mega-item"><span class="ico"><svg><use href="#report"/></svg></span><div><b>Evidence-Based Scoring</b><span>Aptura Core 6 rubric with quoted transcript proof.</span></div></a>
+          </div>
+          <div class="mega-col">
+            <h4>Workflow</h4>
+            <a class="mega-item"><span class="ico"><svg><use href="#grid"/></svg></span><div><b>Job Marketplace</b><span>Reach verified talent. Post once, distribute everywhere.</span></div></a>
+            <a class="mega-item"><span class="ico"><svg><use href="#users"/></svg></span><div><b>Pipeline &amp; Decisions</b><span>Advisory recommendations, recruiter decides.</span></div></a>
+            <a class="mega-item"><span class="ico"><svg><use href="#bell"/></svg></span><div><b>Always Answered</b><span>Outcome + feedback to every applicant.</span></div></a>
+          </div>
+          <div class="mega-col">
+            <h4>Trust</h4>
+            <a class="mega-item"><span class="ico"><svg><use href="#shield"/></svg></span><div><b>Trust Architecture</b><span>How proctoring works — and what it doesn't do.</span></div></a>
+            <a class="mega-item"><span class="ico"><svg><use href="#spark"/></svg></span><div><b>AI Explainability Statement</b><span>How recommendations are formed and reviewed.</span></div></a>
+            <a class="mega-item"><span class="ico"><svg><use href="#globe"/></svg></span><div><b>What Aptura does <em>not</em> do</b><span>The constraints we ship by design.</span></div></a>
+          </div>
+        </div>
+      </div>
+      <a class="nav-link" href="#how">How it works</a>
+      <a class="nav-link" href="#integrity">Integrity</a>
+      <a class="nav-link" href="#evidence">Reports</a>
+      <a class="nav-link" href="#customers">Customers</a>
+      <a class="nav-link" href="#pricing">Pricing</a>
+    </nav>
+    <div class="nav-right">
+      <div class="audience-switch" role="group" aria-label="Audience">
+        <button type="button" aria-pressed="true">For Companies</button>
+        <button type="button" aria-pressed="false">For Candidates</button>
+      </div>
+      <a class="btn btn-ghost btn-sm" href="#">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="#">Book a demo</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- =========================================================
+     HERO
+     ========================================================= -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="status live rise d1"><span class="dot"></span> Live · proctored interview in progress</span>
+      <h1 class="rise d2">Hire on <span class="g">proven merit.</span><br>Cheat-proof by design.</h1>
+      <p class="sub rise d3">Aptura is a hiring marketplace where every candidate sits one strictly proctored AI interview — and every applicant gets a real answer. Companies get an evidence-based report with an integrity timeline. Humans decide.</p>
+      <div class="cta-row rise d4">
+        <a class="btn btn-primary btn-lg" href="#">Book a demo</a>
+        <a class="btn btn-ghost btn-lg" href="#"><svg width="16" height="16"><use href="#dl"/></svg> See a sample report</a>
+      </div>
+      <div class="trust-row rise d5">
+        <span><svg><use href="#shield-check"/></svg> Fullscreen-locked, on-device proctoring</span>
+        <span><svg><use href="#check"/></svg> Evidence-based scoring · human decides</span>
+        <span><svg><use href="#user"/></svg> Every applicant answered</span>
+      </div>
+    </div>
+
+    <!-- LIVE HUD -->
+    <div class="hud rise d3" aria-label="Proctored interview UI">
+      <div class="hud-topbar">
+        <span class="title">Sample interview · Senior Product Designer</span>
+        <span class="meta">· demo HUD</span>
+        <span class="spacer"></span>
+        <span class="lock"><svg><use href="#lock"/></svg> Fullscreen locked</span>
+      </div>
+      <div class="hud-stage">
+        <span class="interviewer-name"><span class="dot"></span> Iris · AI Interviewer</span>
+        <span class="timer">14:38</span>
+        <div class="self" aria-hidden="true"></div>
+        <div class="hud-caption">
+          <span class="who">Iris</span>
+          Walk me through a tradeoff you made between speed and accessibility on your last launch. Be specific about the constraint.
+        </div>
+      </div>
+      <div class="hud-strip">
+        <div class="hud-chip good"><span class="lbl">Face</span><span class="val">One</span></div>
+        <div class="hud-chip good"><span class="lbl">Gaze</span><span class="val">On</span></div>
+        <div class="hud-chip good"><span class="lbl">Mic</span><span class="val">Live</span></div>
+        <div class="hud-chip good"><span class="lbl">Integrity</span><span class="val">98</span></div>
+      </div>
+      <div class="hud-toast" aria-hidden="true"><span class="gold-dot"></span><div><b>Evidence captured</b><div style="color:var(--ink-3); font-size:.76rem;">"…I traded a 200ms perf win for WCAG AA…"</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     TRUST MARQUEE + STATS BAND
+     ========================================================= -->
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="bandwrap" style="border-radius:24px; padding:1.8rem 1.8rem 2rem; border:1px solid var(--line);">
+      <div class="section-head" style="margin:0 0 1.4rem; gap:.3rem;">
+        <span class="eyebrow">By design</span>
+        <h3 style="font-size:1.25rem">The architecture, in numbers.</h3>
+        <p style="color:var(--ink-3); font-size:.9rem; max-width:62ch;">Aptura is pre-launch — these are facts about what the product does, not customer outcomes we haven't earned yet.</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat"><div class="n">1</div><div class="l">Proctored AI interview per role. No second takes, no off-platform retries.</div></div>
+        <div class="stat"><div class="n">40<span class="unit">+</span></div><div class="l">On-device proctoring signals. Only typed events leave the browser.</div></div>
+        <div class="stat"><div class="n">0</div><div class="l">Raw frames or audio sent to our servers — ever.</div></div>
+        <div class="stat"><div class="n">100<span class="unit">%</span></div><div class="l">Of applicants get an outcome and a reason. No ghosting.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     "WHAT YOU SEE vs WHAT MATTERS"
+     ========================================================= -->
+<section class="divider">
+  <div class="wrap">
+    <div class="section-head two-col">
+      <div>
+        <span class="eyebrow">The shift</span>
+        <h2>Stop hiring on what the résumé says. Start hiring on what the interview proves.</h2>
+      </div>
+      <p class="lead">Résumés are written. Aptura interviews are <em>observed, recorded, and evidenced</em>. Same role, two different signals — and only one of them tells you whether the person can do the work, today.</p>
+    </div>
+
+    <div class="flip">
+      <div class="panel before">
+        <span class="label">What you see today</span>
+        <h3>A résumé you can't verify.</h3>
+        <div class="resume">
+          <div class="head">Sample candidate — Sr. Product Designer</div>
+          <div class="row"><span class="y">'24–'26</span><span>Lead designer · prior employer — claims unverifiable</span></div>
+          <div class="row"><span class="y">'21–'24</span><span>Sr. designer · prior employer — quotes "drove +38% lift"</span></div>
+          <div class="row"><span class="y">'19–'21</span><span class="strike">Earlier role — undated, ambiguous scope</span></div>
+          <div class="row" style="margin-top:.4rem"><span class="y">Edu</span><span>Design degree · listed certifications · plugin author</span></div>
+          <div class="row" style="margin-top:.4rem"><span class="y">Note</span><span style="color:var(--ink-3)">Cover letter style suggests AI assistance. No way to verify.</span></div>
+        </div>
+      </div>
+      <div class="arrow" aria-hidden="true"><svg width="18" height="18"><use href="#arrow"/></svg></div>
+      <div class="panel after">
+        <span class="label">What matters · Aptura Report</span>
+        <h3>Evidence with timestamps and a verdict.</h3>
+        <div class="report">
+          <div class="head-row">
+            <div><div class="name">Sample candidate</div><div class="role">Sr. Product Designer · sample report</div></div>
+            <span class="pill pill-good">Advance</span>
+          </div>
+          <div class="score-row">
+            <div class="ring" style="--pct:86; position:relative;"><span class="v">86</span></div>
+            <div class="score-meta"><span class="label">Aptura Score</span><span class="strong">Strong evidence</span><span style="color:var(--ink-2); font-size:.84rem">Top 12% for this role</span></div>
+          </div>
+          <div class="bars">
+            <div class="bar"><span class="name">Problem framing</span><span class="v">4.2 / 5</span><span class="t"><i style="width:84%"></i></span></div>
+            <div class="bar"><span class="name">Communication</span><span class="v">4.5 / 5</span><span class="t"><i style="width:90%"></i></span></div>
+            <div class="bar"><span class="name">Tradeoff reasoning</span><span class="v">3.8 / 5</span><span class="t"><i style="width:76%"></i></span></div>
+            <div class="bar"><span class="name">Domain knowledge</span><span class="v">4.1 / 5</span><span class="t"><i style="width:82%"></i></span></div>
+          </div>
+          <div class="integrity-row"><svg><use href="#shield-check"/></svg> Integrity score 98 · 0 high-severity flags · ID-verified · 1 fullscreen exit (24s)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     HOW AN INTERVIEW HAPPENS — 5 acts
+     ========================================================= -->
+<section class="divider" id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">How an Aptura interview happens</span>
+      <h2>One linear, observable process — start to verified decision.</h2>
+      <p class="lead">No second takes. No off-platform retries. Every step is logged, every signal is on-device, every event is severity-stamped server-side.</p>
+    </div>
+
+    <div class="acts">
+      <article class="act">
+        <div class="act-num"><span class="step">Step 01</span>1.0</div>
+        <div>
+          <h3>Invite &amp; identity check</h3>
+          <p>One-tap invite from the marketplace or your ATS. The candidate completes a government-ID match and an environment scan before anything starts.</p>
+          <ul>
+            <li><svg><use href="#check"/></svg>ID match (government photo)</li>
+            <li><svg><use href="#check"/></svg>Selfie liveness, anti-deepfake</li>
+            <li><svg><use href="#check"/></svg>Device, mic and camera pre-flight</li>
+          </ul>
+        </div>
+        <div class="act-visual">
+          <div class="mini-identity">
+            <div class="face"><svg><use href="#user"/></svg></div>
+            <div class="rows">
+              <div class="r"><span>Government ID match</span><b class="ok">Verified</b></div>
+              <div class="r"><span>Selfie liveness</span><b class="ok">Pass</b></div>
+              <div class="r"><span>Camera · Mic</span><b class="ok">Live</b></div>
+              <div class="r"><span>Environment</span><b class="ok">Clear</b></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="act">
+        <div class="act-num"><span class="step">Step 02</span>2.0</div>
+        <div>
+          <h3>Live, strictly proctored interview</h3>
+          <p>Fullscreen-locked. Camera and mic stay on throughout — there is no mute or camera-off button by design. Iris adapts questions to the role's competencies.</p>
+          <ul>
+            <li><svg><use href="#check"/></svg>Adaptive question paths from the rubric</li>
+            <li><svg><use href="#check"/></svg>Live caption + transcript</li>
+            <li><svg><use href="#check"/></svg>40-signal proctoring runs on-device</li>
+          </ul>
+        </div>
+        <div class="act-visual">
+          <div class="mini-room">
+            <div class="tile"><span>CAM</span></div>
+            <div class="tile"><span>MIC</span></div>
+            <div class="tile"><span>SCR</span></div>
+            <div class="tile"><span>ENV</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="act">
+        <div class="act-num"><span class="step">Step 03</span>3.0</div>
+        <div>
+          <h3>Integrity timeline</h3>
+          <p>Every signal is severity-stamped server-side. Low / medium events are surfaced for human review. High-severity events auto-end the session — there is no debate later.</p>
+          <ul>
+            <li><svg><use href="#check"/></svg>Low / Medium → advisory to your reviewer</li>
+            <li><svg><use href="#check"/></svg>High severity → server-authoritative auto-end</li>
+            <li><svg><use href="#check"/></svg>Every event has a clip and a reason</li>
+          </ul>
+        </div>
+        <div class="act-visual">
+          <div class="mini-timeline">
+            <div class="head"><span>Integrity</span><span style="margin-left:auto" class="sev">LOW · MED · HIGH</span></div>
+            <div class="track">
+              <span class="pip l" style="left:8%"></span>
+              <span class="pip l" style="left:24%"></span>
+              <span class="pip m" style="left:42%"></span>
+              <span class="pip l" style="left:58%"></span>
+              <span class="pip l" style="left:70%"></span>
+              <span class="pip h" style="left:88%"></span>
+            </div>
+            <div class="labels"><span>00:00</span><span>10:00</span><span>20:00</span><span>30:00</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="act">
+        <div class="act-num"><span class="step">Step 04</span>4.0</div>
+        <div>
+          <h3>Evidence-based scoring</h3>
+          <p>The Aptura Core 6 rubric scores each competency on the transcript — every score is backed by a quoted line and a timestamp. No black box.</p>
+          <ul>
+            <li><svg><use href="#check"/></svg>Quoted transcript backs every rating</li>
+            <li><svg><use href="#check"/></svg>Calibrated against a bias-audited model</li>
+            <li><svg><use href="#check"/></svg>Re-score on demand — same evidence, new lens</li>
+          </ul>
+        </div>
+        <div class="act-visual">
+          <div class="mini-rubric">
+            <div class="r"><span class="nm">Problem framing</span><span class="t"><i style="width:84%"></i></span><span class="v">4.2</span></div>
+            <div class="r"><span class="nm">Communication</span><span class="t"><i style="width:90%"></i></span><span class="v">4.5</span></div>
+            <div class="r"><span class="nm">Tradeoff reasoning</span><span class="t"><i style="width:76%"></i></span><span class="v">3.8</span></div>
+            <div class="r"><span class="nm">Domain knowledge</span><span class="t"><i style="width:82%"></i></span><span class="v">4.1</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="act">
+        <div class="act-num"><span class="step">Step 05</span>5.0</div>
+        <div>
+          <h3>A human makes the call</h3>
+          <p>Aptura recommends; your hiring manager decides. Every decision is logged with the reviewer's name, the evidence shown, and the reason given.</p>
+          <ul>
+            <li><svg><use href="#check"/></svg>Advisory mode is the default</li>
+            <li><svg><use href="#check"/></svg>Outcome and feedback to <em>every</em> candidate</li>
+            <li><svg><use href="#check"/></svg>Decision audit kept per outcome (reviewer, evidence, reason)</li>
+          </ul>
+        </div>
+        <div class="act-visual">
+          <div class="mini-decision">
+            <div class="avatar"></div>
+            <div class="col">
+              <div class="nm">Hiring Manager</div>
+              <div class="role">Reviewer · signs the outcome</div>
+            </div>
+            <div class="actions">
+              <span class="b good">Advance ✓</span>
+              <span class="b">Hold</span>
+              <span class="b">Decline</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     PLATFORM BENTO
+     ========================================================= -->
+<section class="divider" id="platform">
+  <div class="wrap">
+    <div class="section-head two-col">
+      <div>
+        <span class="eyebrow">One platform</span>
+        <h2>Marketplace, interview, and evidence — joined up.</h2>
+      </div>
+      <p class="lead">Most "AI hiring" stacks pipe résumés through five disconnected vendors. Aptura is one product: the job marketplace feeds the interview; the interview produces the evidence; the evidence drives the decision.</p>
+    </div>
+
+    <div class="bento">
+      <!-- anchor: platform diagram -->
+      <div class="cell anchor">
+        <span class="tag">Aptura · platform</span>
+        <h3>Built around the verified interview.</h3>
+        <p class="lead" style="font-size:1rem; margin-top:.6rem;">Marketplace, identity, proctoring, transcription, rubric, decision audit, and ATS sync — one data layer, one auditable timeline per candidate.</p>
+        <div class="platform-diag">
+          <div>
+            <div class="node"><b>Marketplace</b>Verified jobs &amp; talent</div>
+            <div class="node" style="margin-top:.7rem"><b>Identity</b>ID + liveness</div>
+          </div>
+          <div class="node core">
+            <b>Verified Interview</b>
+            On-device proctoring · transcript · rubric · evidence
+          </div>
+          <div>
+            <div class="node"><b>Integrity report</b>Severity timeline + clips</div>
+            <div class="node" style="margin-top:.7rem"><b>Decision</b>Advisory, human signs</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- supporting cells -->
+      <div class="cell c1">
+        <span class="tag">Marketplace</span>
+        <h4>Hire from a verified pool.</h4>
+        <p>Post once, distribute everywhere. Every candidate arrives ID-verified.</p>
+        <div class="cell-visual">
+          <div class="row"><span class="k">Sample</span><span class="v">view</span></div>
+          <div class="row"><span class="k">Per role</span><span class="v">one interview</span></div>
+          <div class="row"><span class="k">Per applicant</span><span class="v">one answer</span></div>
+        </div>
+      </div>
+
+      <div class="cell c2">
+        <span class="tag">Recommendations</span>
+        <h4>Ranked. Explained. Auditable.</h4>
+        <p>The AI surfaces the strongest matches; the reasons are visible alongside the score.</p>
+        <div class="match">
+          <div class="card"><div class="av"></div><div class="col"><b>Candidate A</b><span>Sr. Product Designer · sample</span></div><span class="pct">94%</span></div>
+          <div class="card"><div class="av" style="background:linear-gradient(135deg, var(--coral), color-mix(in oklch, var(--coral) 60%, var(--ink-deep)));"></div><div class="col"><b>Candidate B</b><span>Sr. Product Designer · sample</span></div><span class="pct">91%</span></div>
+          <div class="card"><div class="av" style="background:linear-gradient(135deg, var(--gold), color-mix(in oklch, var(--gold) 50%, var(--ink-deep)));"></div><div class="col"><b>Candidate C</b><span>Sr. Product Designer · sample</span></div><span class="pct">88%</span></div>
+        </div>
+      </div>
+
+      <div class="cell c3">
+        <span class="tag">Workflow</span>
+        <h4>Stage gates that fit your funnel.</h4>
+        <p>Standalone today, with email and CSV handoff into your existing flow. ATS integrations are on the pilot roadmap.</p>
+      </div>
+
+      <div class="cell c4">
+        <span class="tag">Candidate experience</span>
+        <h4>Practice first. Then the real thing.</h4>
+        <p>Candidates can sit a full practice round, see the rubric, and know exactly what's being evaluated.</p>
+      </div>
+
+      <div class="cell c5">
+        <span class="tag">No ghosting</span>
+        <h4>Every applicant gets an answer — and the reason behind it.</h4>
+        <p>Once your reviewer decides, the system sends an outcome + a competency-level note. Candidates can request a re-score; auditors can see the trail.</p>
+      </div>
+
+      <div class="cell c6">
+        <span class="tag">Global</span>
+        <h4>40+ languages.<br>WCAG 2.2 AA.</h4>
+        <p>Accommodations, captions, screen-reader paths — first-class, not a checkbox.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     INTEGRITY TIMELINE — the killer artifact
+     ========================================================= -->
+<section class="divider" id="integrity">
+  <div class="wrap">
+    <div class="section-head two-col">
+      <div>
+        <span class="eyebrow">Integrity Timeline</span>
+        <h2>Scrub the interview. See the evidence. Decide on facts.</h2>
+      </div>
+      <p class="lead">Borrowed from your video editor — applied to your hiring decision. Click a pip, read the reason, watch the clip. Every event has a name, a severity, and a timestamp.</p>
+    </div>
+
+    <div class="itl">
+      <div class="itl-head">
+        <h3>Sample interview · Sr. Product Designer</h3>
+        <span class="meta">Sample timeline · 28m 12s · for illustration</span>
+        <span class="spacer"></span>
+        <div class="legend">
+          <span><span class="d" style="background:var(--good)"></span>Low</span>
+          <span><span class="d" style="background:var(--warn)"></span>Medium</span>
+          <span><span class="d" style="background:var(--danger)"></span>High · auto-end</span>
+        </div>
+      </div>
+
+      <div class="itl-track-wrap">
+        <div class="itl-track" role="img" aria-label="Interview integrity timeline">
+          <div class="itl-line"></div>
+          <span class="itl-pip l" style="left:6%"></span>
+          <span class="itl-pip l" style="left:18%"></span>
+          <span class="itl-pip m" style="left:32%"></span>
+          <span class="itl-pip l" style="left:44%"></span>
+          <span class="itl-pip l" style="left:58%"></span>
+          <span class="itl-pip l" style="left:71%"></span>
+          <span class="itl-pip m" style="left:83%"></span>
+          <span class="itl-pip l" style="left:95%"></span>
+          <span class="itl-scrubber" style="left:32%"></span>
+          <div class="itl-axis"><span>00:00</span><span>07:00</span><span>14:00</span><span>21:00</span><span>28:12</span></div>
+        </div>
+      </div>
+
+      <div class="itl-events">
+        <article class="event">
+          <div class="stamp"><span class="d"></span><span>00:01:42 · LOW</span></div>
+          <div class="ttl">Background voice (single)</div>
+          <p>One non-candidate voice detected briefly — below the second-voice threshold.</p>
+          <div class="clip"><b>Reason</b> · Single short utterance, &lt;2s. Treated as ambient noise. No action.</div>
+        </article>
+        <article class="event m expanded">
+          <div class="stamp"><span class="d"></span><span>00:09:18 · MEDIUM</span></div>
+          <div class="ttl">Fullscreen exit (24 seconds)</div>
+          <p>Candidate left fullscreen for 24 seconds and returned. Surfaced to reviewer.</p>
+          <div class="clip"><b>Clip</b> · 00:09:14 → 00:09:42 · Reviewer to inspect. No auto-action.</div>
+        </article>
+        <article class="event">
+          <div class="stamp"><span class="d"></span><span>00:23:51 · LOW</span></div>
+          <div class="ttl">Gaze drift to corner</div>
+          <p>Gaze tracked off-frame for 1.8s. Within normal interview range.</p>
+          <div class="clip"><b>Reason</b> · Below threshold. No action.</div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     BUILT FOR AI-COPILOT ERA · what's blocked / what's NOT done
+     ========================================================= -->
+<section class="divider">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Built for the era of AI copilots</span>
+      <h2>Integrity is knowing who is at the keyboard — not policing what they use.</h2>
+      <p class="lead">A new generation of cheating tools advertises "runs invisibly during your interview." We treat that as a category we beat — without making candidates feel watched.</p>
+    </div>
+
+    <div class="defense">
+      <div class="def-panel detect">
+        <h3><svg><use href="#shield"/></svg> What Aptura blocks</h3>
+        <ul class="def-list blocks">
+          <li><svg><use href="#x"/></svg><span><b>Browser overlay copilots</b> that whisper answers during screen-sharing.</span></li>
+          <li><svg><use href="#x"/></svg><span><b>Virtual cameras &amp; deepfakes</b> spoofing identity at the lens.</span></li>
+          <li><svg><use href="#x"/></svg><span><b>Secondary monitors</b> or screen-sharing apps quietly relaying questions.</span></li>
+          <li><svg><use href="#x"/></svg><span><b>Synthetic voice</b> generated audio or lips-out-of-sync with speech.</span></li>
+          <li><svg><use href="#x"/></svg><span><b>Multiple faces, phones in frame, off-screen prompters.</b></span></li>
+          <li><svg><use href="#x"/></svg><span><b>Identity proxies</b> &mdash; a different person sitting the live interview.</span></li>
+        </ul>
+      </div>
+      <div class="def-panel privacy">
+        <h3><svg><use href="#shield-check"/></svg> What Aptura does <em>not</em> do</h3>
+        <ul class="def-list privacy">
+          <li><svg><use href="#check"/></svg><span><b>No real-time human watcher.</b> Reviewers only see flagged events, after the fact.</span></li>
+          <li><svg><use href="#check"/></svg><span><b>No raw video or audio leaves the browser.</b> Detectors run on-device; only typed events are sent.</span></li>
+          <li><svg><use href="#check"/></svg><span><b>No emotion or affect inference.</b> No "candidate looked stressed" scoring. Ever.</span></li>
+          <li><svg><use href="#check"/></svg><span><b>No identity matching beyond the ID check.</b> No voiceprints, no face match against other databases.</span></li>
+          <li><svg><use href="#check"/></svg><span><b>No keystroke surveillance for content.</b> We track tab-switches, not what you type elsewhere.</span></li>
+          <li><svg><use href="#check"/></svg><span><b>Encrypted at rest. Deleted on request.</b> Right-to-erase honored across every Aptura artifact.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     EVIDENCE REPORT DEEP-DIVE
+     ========================================================= -->
+<section class="divider" id="evidence">
+  <div class="wrap">
+    <div class="evidence">
+      <div class="evidence-card">
+        <div class="head">
+          <div class="av">SC</div>
+          <div><div class="nm">Sample candidate</div><div class="role">Sr. Product Designer · sample report</div></div>
+          <span class="reco">Recommended: Advance</span>
+        </div>
+        <div class="competency">
+          <div class="top">
+            <span class="nm">Tradeoff reasoning</span>
+            <span class="sc">3.8 / 5</span>
+          </div>
+          <div class="bar"><i style="width:76%"></i></div>
+          <div class="why">I'd trade a 200ms performance win for WCAG AA every time on a public-facing flow — the accessibility regression is a permanent cost; the perf win we can claw back at the edge.</div>
+          <span class="stamp">Transcript · 00:14:38 — verbatim, time-stamped, untouched.</span>
+        </div>
+        <div class="competency">
+          <div class="top">
+            <span class="nm">Problem framing</span>
+            <span class="sc">4.2 / 5</span>
+          </div>
+          <div class="bar"><i style="width:84%"></i></div>
+          <div class="why">The brief said "make checkout faster," but the actual constraint was returning users on flaky connections — so we reframed the problem as <em>perceived</em> speed and optimistic UI, not raw latency.</div>
+          <span class="stamp">Transcript · 00:08:11 — verbatim, time-stamped, untouched.</span>
+        </div>
+        <div class="competency">
+          <div class="top">
+            <span class="nm">Communication</span>
+            <span class="sc">4.5 / 5</span>
+          </div>
+          <div class="bar"><i style="width:90%"></i></div>
+          <div class="why">Let me restate that so I'm sure — you're asking how I'd defend the decision to engineering after we'd already shipped, not before.
+          </div>
+          <span class="stamp">Transcript · 00:21:02 — verbatim, time-stamped, untouched.</span>
+        </div>
+      </div>
+
+      <div class="evidence-narrative">
+        <span class="eyebrow">Evidence-based scoring</span>
+        <h3>Every score points to a quoted line and a timestamp.</h3>
+        <p class="lead">No "AI vibes." Aptura's Core 6 rubric reads the transcript, picks the candidate's own words as the evidence, and shows them next to the score — so a reviewer can disagree with the rating <em>and</em> see exactly what informed it.</p>
+        <ul>
+          <li><svg><use href="#check"/></svg><span><b>The Aptura Core 6</b> — Problem framing · Communication · Domain knowledge · Tradeoff reasoning · Decision quality · Integrity. Published and versioned.</span></li>
+          <li><svg><use href="#check"/></svg><span><b>Quoted evidence per score.</b> Disagree with the rating? The proof is right there.</span></li>
+          <li><svg><use href="#check"/></svg><span><b>Re-score on demand.</b> New role, new lens — same evidence, recalculated.</span></li>
+          <li><svg><use href="#check"/></svg><span><b>Bias-aware by design.</b> Third-party audit (NYC AEDT-144 methodology or equivalent) is scheduled before public launch.</span></li>
+        </ul>
+        <a class="download" href="#"><svg><use href="#dl"/></svg> Download a sample report (PDF)</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     ADVISORY GATE
+     ========================================================= -->
+<section class="divider">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Advisory by design</span>
+      <h2>AI recommends. Humans decide.</h2>
+      <p class="lead">An interview report is a recommendation, not a verdict. The hiring manager signs every advance or decline — and the audit trail keeps both sides accountable.</p>
+    </div>
+    <div class="advisory">
+      <div class="adv ai">
+        <div class="icon"><svg><use href="#bolt"/></svg></div>
+        <h3>Aptura recommends</h3>
+        <p>The system produces a transparent, evidence-backed recommendation. Strong evidence is labelled "Advance." Weak or thin evidence is labelled "Hold" — never "Reject."</p>
+        <ul>
+          <li>Score, recommendation, and reasoning visible side-by-side</li>
+          <li>Aptura Core 6 rubric drives every rating</li>
+          <li>Transcript quotes anchor every claim</li>
+          <li>Integrity events are surfaced, not buried</li>
+        </ul>
+      </div>
+      <div class="adv human">
+        <div class="icon"><svg><use href="#user"/></svg></div>
+        <h3>Your hiring manager decides</h3>
+        <p>The recruiter or hiring manager reviews the evidence and signs the decision. Aptura never auto-rejects — and every decision is logged with the reviewer's name and reason.</p>
+        <ul>
+          <li>Override the recommendation in one click</li>
+          <li>Reason is captured for the candidate's outcome message</li>
+          <li>Every decision is logged with the reviewer's name and reason</li>
+          <li>Candidate can request a re-score with new context</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     COMPARE — vs the old way
+     ========================================================= -->
+<section class="divider">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">vs. the old way</span>
+      <h2>Resume screen, take-home, and unverified video belong in 2018.</h2>
+    </div>
+    <div class="compare-table">
+      <div class="row head">
+        <div>Capability</div>
+        <div class="col">Resume<br><span style="color:var(--ink-3); font-weight:400; font-size:.84rem">screen + intuition</span></div>
+        <div class="col">Take-home<br><span style="color:var(--ink-3); font-weight:400; font-size:.84rem">+ generic AI tools</span></div>
+        <div class="col us">Aptura<br><span style="color:var(--teal); font-weight:600; font-size:.84rem">verified interview</span></div>
+      </div>
+      <div class="row"><div>Identity is verified before the assessment</div><div><span class="no">No</span></div><div><span class="no">No</span></div><div class="us-col"><span class="yes"><svg width="14" height="14"><use href="#check"/></svg>ID match + liveness</span></div></div>
+      <div class="row"><div>Cheating is detected during the assessment</div><div><span class="no">N/A</span></div><div><span class="no">Not credibly</span></div><div class="us-col"><span class="yes"><svg width="14" height="14"><use href="#check"/></svg>40-signal proctoring</span></div></div>
+      <div class="row"><div>Every score is backed by quoted evidence</div><div><span class="no">No</span></div><div><span class="mid">Partial</span></div><div class="us-col"><span class="yes"><svg width="14" height="14"><use href="#check"/></svg>Transcript-linked</span></div></div>
+      <div class="row"><div>Bias-aware by design (audit on the roadmap)</div><div><span class="no">No</span></div><div><span class="no">Vendor-dependent</span></div><div class="us-col"><span class="yes"><svg width="14" height="14"><use href="#check"/></svg>By design</span></div></div>
+      <div class="row"><div>Every applicant gets a real answer</div><div><span class="no">Rare</span></div><div><span class="mid">Sometimes</span></div><div class="us-col"><span class="yes"><svg width="14" height="14"><use href="#check"/></svg>Always</span></div></div>
+      <div class="row"><div>Decision audit trail preserved</div><div><span class="no">No</span></div><div><span class="no">No</span></div><div class="us-col"><span class="yes"><svg width="14" height="14"><use href="#check"/></svg>Per decision</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     CUSTOMER WINS
+     ========================================================= -->
+<section class="divider" id="customers">
+  <div class="wrap">
+    <div class="section-head two-col">
+      <div>
+        <span class="eyebrow">What you get</span>
+        <h2>One interview. Four artifacts that travel with every candidate.</h2>
+      </div>
+      <p class="lead">Aptura is early. Instead of customer logos we haven't earned, here is exactly what the product produces today — for every candidate, every time.</p>
+    </div>
+    <div class="wins">
+      <article class="win">
+        <span class="logo">↳ Verified identity</span>
+        <div class="metric" style="display:flex; align-items:center;"><svg width="36" height="36" style="color:var(--teal)"><use href="#shield-check"/></svg></div>
+        <p class="copy">Government-ID match + selfie liveness before the interview starts. The person on camera is the person who applied.</p>
+      </article>
+      <article class="win">
+        <span class="logo">↳ Integrity timeline</span>
+        <div class="metric" style="display:flex; align-items:center;"><svg width="36" height="36" style="color:var(--teal)"><use href="#timer"/></svg></div>
+        <p class="copy">Every proctoring signal stamped with severity and timestamp. Low/medium are advisory. HIGH auto-ends — server-authoritative.</p>
+      </article>
+      <article class="win">
+        <span class="logo">↳ Evidence-based report</span>
+        <div class="metric" style="display:flex; align-items:center;"><svg width="36" height="36" style="color:var(--teal)"><use href="#report"/></svg></div>
+        <p class="copy">Per-competency scores with a quoted transcript line as the evidence. Readable in 60 seconds, defensible after a year.</p>
+      </article>
+      <article class="win">
+        <span class="logo">↳ Decision audit</span>
+        <div class="metric" style="display:flex; align-items:center;"><svg width="36" height="36" style="color:var(--teal)"><use href="#user"/></svg></div>
+        <p class="copy">A human reviewer signs every outcome. The reviewer name, the evidence shown, and the reason given are logged for every decision.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     TRUST & COMPLIANCE
+     ========================================================= -->
+<section class="divider">
+  <div class="wrap">
+    <div class="trust-band">
+      <div class="trust-grid">
+        <div class="col">
+          <h4>Trust isn't a badge wall — it's an architecture.</h4>
+          <p>Aptura is pre-launch. We're not claiming certifications we haven't earned. Here are the choices we built into the product on day one — the ones we will be audited against.</p>
+        </div>
+        <div class="col">
+          <span class="eyebrow">Data minimization</span>
+          <h4>Detectors run on-device</h4>
+          <p>Only typed events leave the browser. Raw frames and audio never reach our servers.</p>
+        </div>
+        <div class="col">
+          <span class="eyebrow">Server-authoritative</span>
+          <h4>The client never decides</h4>
+          <p>Severity is assigned server-side. Auto-end is server-ordered. Clients obey the ack.</p>
+        </div>
+        <div class="col">
+          <span class="eyebrow">Advisory by design</span>
+          <h4>A human signs every outcome</h4>
+          <p>Aptura recommends Advance or Hold — never auto-rejects. Every decision is logged.</p>
+        </div>
+      </div>
+      <div class="badges">
+        <span class="badge"><svg><use href="#shield-check"/></svg><b>GDPR</b>design-aligned</span>
+        <span class="badge"><svg><use href="#shield-check"/></svg><b>WCAG 2.2 AA</b>target</span>
+        <span class="badge"><svg><use href="#shield-check"/></svg><b>EU AI Act</b>design-aligned</span>
+        <span class="badge"><svg><use href="#shield-check"/></svg><b>SOC 2</b>on the roadmap</span>
+        <span class="badge"><svg><use href="#shield-check"/></svg><b>Bias audit</b>scheduled pre-launch</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     INTEGRATIONS + VERTICALS
+     ========================================================= -->
+<section class="divider">
+  <div class="wrap">
+    <div class="section-head two-col">
+      <div>
+        <span class="eyebrow">Designed for</span>
+        <h2>Hiring where the answer has to be defensible.</h2>
+      </div>
+      <p class="lead">Aptura is built for any team that needs a verifiable, evidence-based interview — across roles, geographies, and time zones. ATS integrations (Greenhouse, Lever, Ashby, Workday, SuccessFactors) are on the roadmap; the core product runs standalone today, with email and CSV handoff for early pilots.</p>
+    </div>
+
+    <div class="verticals">
+      <div class="vert"><svg><use href="#chip"/></svg><b>Technology</b><span>Engineering, product, design</span></div>
+      <div class="vert"><svg><use href="#dollar"/></svg><b>Financial services</b><span>Banks, fintech, audit-heavy</span></div>
+      <div class="vert"><svg><use href="#heart"/></svg><b>Healthcare</b><span>Clinical, regulated</span></div>
+      <div class="vert"><svg><use href="#bag"/></svg><b>Retail &amp; CPG</b><span>High-volume hiring</span></div>
+      <div class="vert"><svg><use href="#academy"/></svg><b>Education</b><span>Faculty &amp; admin</span></div>
+      <div class="vert"><svg><use href="#building"/></svg><b>Public sector</b><span>Defensible decisions</span></div>
+      <div class="vert"><svg><use href="#globe"/></svg><b>BPO &amp; services</b><span>Distributed, multilingual</span></div>
+      <div class="vert"><svg><use href="#users"/></svg><b>Consulting</b><span>Lateral hires</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     PRICING TEASER (3 tiers — light)
+     ========================================================= -->
+<section class="divider" id="pricing">
+  <div class="wrap">
+    <div class="section-head two-col">
+      <div>
+        <span class="eyebrow">Early access</span>
+        <h2>Aptura is in pre-launch. Talk to us about a pilot.</h2>
+      </div>
+      <p class="lead">Pricing will land when the public launch does. Until then, we're partnering with a small number of teams to run real proctored interviews against real roles — and shaping pricing around what they actually use.</p>
+    </div>
+    <div class="wins" style="grid-template-columns:repeat(2, 1fr); max-width:62rem; margin-inline:auto;">
+      <article class="win" style="background:linear-gradient(135deg, color-mix(in oklch, var(--teal) 6%, var(--surface)), var(--surface)); border-color:color-mix(in oklch, var(--teal) 22%, var(--line));">
+        <span class="pill pill-teal" style="align-self:flex-start">For companies</span>
+        <h4 style="font-family:'Schibsted Grotesk',sans-serif; font-size:1.4rem; letter-spacing:-.02em;">Pilot a verified interview</h4>
+        <p class="copy">Run Aptura on one open role. Get a written summary of what proctoring caught (and didn't), the reports your reviewers actually used, and the integration shape we'd build for you.</p>
+        <a class="btn btn-primary btn-sm" style="align-self:flex-start" href="#">Request a pilot →</a>
+      </article>
+      <article class="win">
+        <span class="pill pill-coral" style="align-self:flex-start">For candidates</span>
+        <h4 style="font-family:'Schibsted Grotesk',sans-serif; font-size:1.4rem; letter-spacing:-.02em;">Join the waitlist</h4>
+        <p class="copy">Be among the first candidates to sit a proctored Aptura interview when roles open. Try the practice round first — no commitment, no scoring.</p>
+        <a class="btn btn-coral btn-sm" style="align-self:flex-start" href="#">Join the waitlist →</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     FAQ
+     ========================================================= -->
+<section class="divider" id="faq">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Questions, answered</span>
+      <h2>The objections recruiters and candidates ask first.</h2>
+    </div>
+    <div class="faq">
+      <details data-aud="comp"><summary><span class="audience">Company</span>What's actually different about Aptura's interview vs. existing AI video tools?</summary><div class="a">It's a <em>live</em>, fullscreen-locked, identity-verified interview with on-device proctoring — not an async video upload. Every score points to a quoted transcript line. Reports include an integrity timeline with severity per event.</div></details>
+      <details data-aud="cand"><summary><span class="audience">Candidate</span>Will a real person watch me during the interview?</summary><div class="a">No. There is no real-time human watcher. Detectors run on your device; only typed events are sent. Reviewers only see flagged events, after the fact, with the recording encrypted at rest.</div></details>
+      <details data-aud="comp"><summary><span class="audience">Company</span>How is bias handled?</summary><div class="a">Aptura's scoring model is bias-aware by design: rubric-driven scoring, evidence-linked ratings, advisory recommendations only, and a human signs every outcome. A third-party audit (NYC AEDT-144 methodology or equivalent) is scheduled before public launch.</div></details>
+      <details data-aud="cand"><summary><span class="audience">Candidate</span>What if I have a disability or need an accommodation?</summary><div class="a">Accommodations are first-class. Extended time, captions, screen-reader-friendly question delivery, and alternative response modes are all available at request — they do not affect your score or appear in your report.</div></details>
+      <details data-aud="comp"><summary><span class="audience">Company</span>What does "human decides" mean operationally?</summary><div class="a">Aptura recommends Advance or Hold — never auto-rejects. A named reviewer signs every outcome. Each decision is logged with the reviewer's name, the evidence shown, and the reason given; retention is configurable per pilot.</div></details>
+      <details data-aud="cand"><summary><span class="audience">Candidate</span>Can I retake the interview if my connection drops?</summary><div class="a">Yes. Connection drops are not penalised. If a session is interrupted unexpectedly, you'll get a one-tap re-entry and a fresh recording — without losing prior responses.</div></details>
+      <details data-aud="comp"><summary><span class="audience">Company</span>What happens to the recording, transcript, and proctoring events?</summary><div class="a">Recordings are encrypted at rest. Retention is configurable per pilot. Right-to-erase is honored across every Aptura artifact — recording, transcript, scoring, and decision metadata.</div></details>
+      <details data-aud="cand"><summary><span class="audience">Candidate</span>Will I get feedback even if I'm not advanced?</summary><div class="a">Yes. Every applicant — advanced or not — receives an outcome message with a competency-level note, the recommendation reason, and an option to request a re-score for a different role.</div></details>
+      <details data-aud="comp"><summary><span class="audience">Company</span>Can I bring our own rubric?</summary><div class="a">Yes — custom rubrics are part of the pilot onboarding. The Aptura Core 6 is the default; you can adapt it to your role and we'll apply the same evidence-linked scoring approach.</div></details>
+      <details data-aud="cand"><summary><span class="audience">Candidate</span>Does Aptura analyse my face for emotion?</summary><div class="a">No. We do not infer emotion, affect, or personality from your face or voice. We detect presence, identity match, and proctoring signals — never feelings.</div></details>
+      <details data-aud="comp"><summary><span class="audience">Company</span>How does it integrate with our ATS?</summary><div class="a">ATS integrations (Greenhouse, Lever, Ashby, Workday, SuccessFactors) are on the roadmap. The core product runs standalone today; pilots typically start with email and CSV handoff into your existing flow. Tell us the ATS you use and we'll build that integration next.</div></details>
+      <details data-aud="cand"><summary><span class="audience">Candidate</span>Can I practice before the real interview?</summary><div class="a">Yes. A full practice round mirrors the real one — same UI, same rubric, no scoring against you. You'll see exactly what's being evaluated before you sit the real interview.</div></details>
+      <details data-aud="comp"><summary><span class="audience">Company</span>What if a HIGH-severity event fires by mistake?</summary><div class="a">A HIGH-severity auto-end can be appealed. The reviewer sees the clip and the reason; if the event was a false positive, the candidate is offered a fresh interview at no cost to either side.</div></details>
+      <details data-aud="cand"><summary><span class="audience">Candidate</span>I don't have a webcam. Can I still apply?</summary><div class="a">A working camera and microphone are required for the proctored interview by design. We'll guide you through low-bandwidth and mobile options. Accommodations are honored.</div></details>
+      <details data-aud="comp"><summary><span class="audience">Company</span>Can we white-label the candidate experience?</summary><div class="a">White-labelling the candidate flow (your branding, your domain) is planned for the post-launch enterprise tier. In a pilot, candidates always see the role and the company name clearly.</div></details>
+      <details data-aud="cand"><summary><span class="audience">Candidate</span>How long is the interview?</summary><div class="a">Most Aptura interviews run between 18 and 35 minutes — sized to the rubric for the role. You'll see the expected duration before you start, and there are no surprise rounds.</div></details>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     FINAL CTA
+     ========================================================= -->
+<section style="padding-bottom:0">
+  <div class="wrap">
+    <div class="finalcta">
+      <div class="cta-side companies">
+        <span class="eyebrow">For companies</span>
+        <h3>Hire on proof. Not pedigree, not polish.</h3>
+        <p>Replace résumé screens, take-homes, and ghost rounds with one verified interview and one auditable decision.</p>
+        <a class="btn btn-primary btn-lg" href="#">Book a demo</a>
+      </div>
+      <div class="cta-side candidates">
+        <span class="eyebrow">For candidates</span>
+        <h3>Get seen. Get interviewed. Get hired.</h3>
+        <p>One fair, proctored interview — and a real answer every time. Practice for free; sit the real round when you're ready.</p>
+        <a class="btn btn-coral btn-lg" href="#">Find roles</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     FOOTER
+     ========================================================= -->
+<footer class="bigfoot">
+  <div class="wrap">
+    <div class="foot-cols">
+      <div class="col foot-brand">
+        <a class="brand" href="#"><svg><use href="#mark"/></svg>Aptura</a>
+        <p>The hiring marketplace built on a verified interview. Cheat-proof by design. Answered, always. Pre-launch.</p>
+        <div class="badges">
+          <span class="badge"><svg><use href="#shield-check"/></svg><b>GDPR</b>design-aligned</span>
+          <span class="badge"><svg><use href="#shield-check"/></svg><b>WCAG 2.2 AA</b>target</span>
+          <span class="badge"><svg><use href="#shield-check"/></svg><b>SOC 2</b>on the roadmap</span>
+        </div>
+      </div>
+      <div class="col">
+        <h5>Platform</h5>
+        <a href="#">Proctored Interview</a>
+        <a href="#">Integrity Report</a>
+        <a href="#">Evidence Scoring</a>
+        <a href="#">Marketplace</a>
+        <a href="#">Decisions</a>
+      </div>
+      <div class="col">
+        <h5>For Candidates</h5>
+        <a href="#">Find roles</a>
+        <a href="#">Practice interview</a>
+        <a href="#">Your Aptura Score</a>
+        <a href="#">Accessibility &amp; accommodations</a>
+        <a href="#">Help center</a>
+      </div>
+      <div class="col">
+        <h5>For Companies</h5>
+        <a href="#">Request a pilot</a>
+        <a href="#">Sample report</a>
+        <a href="#">Integrations roadmap</a>
+        <a href="#">Aptura vs. take-home tests</a>
+      </div>
+      <div class="col">
+        <h5>Trust</h5>
+        <a href="#">Trust Architecture</a>
+        <a href="#">AI Explainability Statement</a>
+        <a href="#">What Aptura does <em>not</em> do</a>
+        <a href="#">Privacy posture</a>
+      </div>
+      <div class="col">
+        <h5>Company</h5>
+        <a href="#">About</a>
+        <a href="#">Customers</a>
+        <a href="#">Newsroom</a>
+        <a href="#">Careers</a>
+        <a href="#">Contact sales</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Aptura, Inc.</span>
+      <span class="right">
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+        <a href="#">Cookies</a>
+        <a href="#">DPA</a>
+        <span class="mono">Direction D · Aperture Pro</span>
+      </span>
+    </div>
+  </div>
+</footer>
+
+</main>
+
+<!-- preview-only theme toggle -->
+<div class="preview-toggle" role="group" aria-label="Preview theme (mockup only)">
+  <button type="button" data-theme="light" aria-pressed="true">Light</button>
+  <button type="button" data-theme="dark" aria-pressed="false">Dark</button>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  var q=new URLSearchParams(location.search).get('theme');
+  function set(t){
+    root.classList.toggle('dark', t==='dark');
+    document.querySelectorAll('.preview-toggle button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.theme===t)); });
+  }
+  if(q==='dark') set('dark'); else set('light');
+  document.querySelectorAll('.preview-toggle button').forEach(function(b){
+    b.addEventListener('click', function(){ set(b.dataset.theme); });
+  });
+})();
+</script>
+
+</body>
+</html>

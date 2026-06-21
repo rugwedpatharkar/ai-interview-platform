@@ -1,3 +1,5 @@
+import type { ApiClients } from "@ip/api-client";
+
 import type {
   NotificationPrefs,
   SessionDTO,
@@ -83,28 +85,6 @@ export function makeMockSettingsClient(): SettingsClient {
   };
 }
 
-// Structural view of the generated `api.settings` surface. Defined locally so the real factory
-// typechecks before `pnpm gen` lands `api.settings` on ApiClients; at integration, swap the
-// param type to `ApiClients` from "@ip/api-client" and drop this interface (one-line change).
-interface SettingsApiLike {
-  settings: {
-    changePassword(req: {
-      currentPassword: string;
-      newPassword: string;
-    }): Promise<{ ok: boolean }>;
-    requestEmailChange(req: { newEmail: string }): Promise<{ ok: boolean }>;
-    verifyEmailChange(req: { token: string }): Promise<{ ok: boolean }>;
-    setupTotp(req: Record<string, never>): Promise<SetupTotpResult>;
-    verifyTotp(req: { code: string }): Promise<VerifyTotpResult>;
-    disableTotp(req: { code: string }): Promise<{ ok: boolean }>;
-    listSessions(req: Record<string, never>): Promise<{ sessions: SessionDTO[] }>;
-    revokeSession(req: { jti: string }): Promise<{ ok: boolean }>;
-    revokeAllSessions(req: Record<string, never>): Promise<{ ok: boolean }>;
-    getNotificationPrefs(req: Record<string, never>): Promise<NotificationPrefs>;
-    setNotificationPrefs(req: NotificationPrefs): Promise<NotificationPrefs>;
-  };
-}
-
 // protobuf map<> + message fields deserialize as a plain object / undefined — normalize to
 // the DTO shape so the view never has to defend against absent fields.
 function normalizePrefs(p: NotificationPrefs): NotificationPrefs {
@@ -116,8 +96,24 @@ function normalizePrefs(p: NotificationPrefs): NotificationPrefs {
   };
 }
 
-// No try/except — the React layer renders ConnectError via errorMessage(...).
-export function createSettingsClient(api: SettingsApiLike): SettingsClient {
+// Gen `SessionDTO` uses `lastSeen` (proto last_seen); the FE seam uses `lastSeenAt`. Remap
+// at this boundary so the rest of the screen reads the seam shape verbatim.
+type GenSession = Omit<SessionDTO, "lastSeenAt"> & { lastSeen: string };
+function adaptSession(s: GenSession): SessionDTO {
+  return {
+    jti: s.jti,
+    ip: s.ip,
+    userAgent: s.userAgent,
+    createdAt: s.createdAt,
+    lastSeenAt: s.lastSeen,
+    current: s.current,
+  };
+}
+
+// Real client over the admin transport. protobuf-es accepts plain object literals at the
+// call boundary, so we don't need the request schemas here. No try/except — the React layer
+// renders ConnectError via errorMessage(...).
+export function makeApiSettingsClient(api: ApiClients): SettingsClient {
   const s = api.settings;
   return {
     changePassword: async (currentPassword, newPassword) => {
@@ -140,24 +136,28 @@ export function createSettingsClient(api: SettingsApiLike): SettingsClient {
     disableTotp: async (code) => {
       await s.disableTotp({ code });
     },
-    listSessions: async () => (await s.listSessions({})).sessions,
+    listSessions: async () =>
+      (await s.listSessions({})).sessions.map((row) => adaptSession(row as GenSession)),
     revokeSession: async (jti) => {
       await s.revokeSession({ jti });
     },
     revokeAllSessions: async () => {
       await s.revokeAllSessions({});
     },
-    getPrefs: async () => normalizePrefs(await s.getNotificationPrefs({})),
-    setPrefs: async (prefs) => normalizePrefs(await s.setNotificationPrefs(prefs)),
+    getPrefs: async () => normalizePrefs((await s.getNotificationPrefs({})) as NotificationPrefs),
+    setPrefs: async (prefs) =>
+      normalizePrefs((await s.setNotificationPrefs(prefs)) as NotificationPrefs),
     sessionsQueryKey: () => SESSIONS_KEY,
     prefsQueryKey: () => PREFS_KEY,
   };
 }
 
-// At integration: drop NEXT_PUBLIC_MOCK (or set =0) and return createSettingsClient(api) —
-// the SettingsClient interface is the seam, so no component changes.
+// Mock when NEXT_PUBLIC_MOCK=1 (fixture-driven dev), else the live gRPC client.
 export const USE_MOCK_SETTINGS = process.env.NEXT_PUBLIC_MOCK === "1";
 
-export function makeSettingsClient(): SettingsClient {
-  return makeMockSettingsClient();
+/** Returns the active SettingsClient for the calling component. Live by default; mock when
+ *  NEXT_PUBLIC_MOCK=1. The consumer memoizes (`useMemo`) so the mock's in-memory store survives
+ *  re-renders. */
+export function makeSettingsClient(api: ApiClients): SettingsClient {
+  return USE_MOCK_SETTINGS ? makeMockSettingsClient() : makeApiSettingsClient(api);
 }

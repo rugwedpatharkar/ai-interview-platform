@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aptura — Direction B · Atrium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   APTURA · Direction B — "Atrium"
+   Trust-forward, humanist, LIGHT register. Cool off-white +
+   deep teal as the single primary; warm coral as the rare
+   "answered/human" note. Schibsted Grotesk (display) + Hanken
+   Grotesk (body/UI). Restraint of Stripe, warmth of Gusto.
+   ============================================================ */
+
+/* LIGHT tokens — the hero look (default). Cool-neutral off-white. */
+:root{
+  --bg:            oklch(0.985 0.003 215);
+  --surface:       oklch(1 0 0);
+  --surface-2:     oklch(0.965 0.005 215);
+  --line:          oklch(0.915 0.006 215);
+  --line-2:        oklch(0.85 0.008 215);
+  --ink:           oklch(0.25 0.02 230);
+  --ink-2:         oklch(0.46 0.02 228);
+  --ink-3:         oklch(0.58 0.018 228);
+  --primary:       oklch(0.52 0.10 195);
+  --primary-strong:oklch(0.46 0.10 198);
+  --primary-ink:   oklch(0.99 0.01 200);
+  --primary-soft:  oklch(0.52 0.10 195 / 0.10);
+  --accent:        oklch(0.66 0.17 32);
+  --accent-soft:   oklch(0.66 0.17 32 / 0.12);
+  --glow:          oklch(0.62 0.10 195 / 0.14);
+  --shadow:        0 10px 40px -16px rgba(20,40,60,.18);
+  --shadow-lg:     0 24px 70px -28px rgba(20,40,60,.30);
+  color-scheme: light;
+}
+/* DARK tokens — deep slate with a teal cast */
+.dark{
+  --bg:            oklch(0.205 0.02 225);
+  --surface:       oklch(0.245 0.022 225);
+  --surface-2:     oklch(0.295 0.024 225);
+  --line:          oklch(0.345 0.02 225);
+  --line-2:        oklch(0.42 0.022 225);
+  --ink:           oklch(0.97 0.008 210);
+  --ink-2:         oklch(0.77 0.015 212);
+  --ink-3:         oklch(0.62 0.015 212);
+  --primary:       oklch(0.80 0.12 192);
+  --primary-strong:oklch(0.84 0.11 190);
+  --primary-ink:   oklch(0.20 0.03 215);
+  --primary-soft:  oklch(0.80 0.12 192 / 0.16);
+  --accent:        oklch(0.74 0.15 33);
+  --accent-soft:   oklch(0.74 0.15 33 / 0.18);
+  --glow:          oklch(0.80 0.12 192 / 0.22);
+  --shadow:        0 12px 44px -16px rgba(0,0,0,.55);
+  --shadow-lg:     0 28px 80px -28px rgba(0,0,0,.65);
+  color-scheme: dark;
+}
+
+/* Type scale — generous, humanist. Modular ~1.25, fluid display. */
+:root{
+  --step--1: 0.8438rem;            /* ~13.5px  small labels (Hanken medium) */
+  --step-0:  1.0625rem;            /* 17px  body  */
+  --step-1:  1.3125rem;            /* 21px  lead  */
+  --step-2:  clamp(1.5rem, 1.1rem + 1.4vw, 1.9rem);    /* 24–30 */
+  --step-3:  clamp(2rem, 1.4rem + 2.4vw, 2.8rem);      /* 32–45 */
+  --display: clamp(2.85rem, 1.55rem + 5.4vw, 5rem);    /* 46–80 */
+  --maxw: 1200px;
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  font-size:var(--step-0); line-height:1.6; font-weight:400;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+.label{ font-family:"Hanken Grotesk", ui-sans-serif, system-ui, sans-serif; font-weight:500; }
+h1,h2,h3,.brand{ font-family:"Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif; }
+a{ color:inherit; text-decoration:none; }
+.wrap{ width:min(100% - 2.5rem, var(--maxw)); margin-inline:auto; }
+
+/* ---- Nav ---- */
+header.nav{
+  position:sticky; top:0; z-index:50;
+  backdrop-filter:saturate(135%) blur(10px);
+  background:color-mix(in oklch, var(--bg) 80%, transparent);
+  border-bottom:1px solid var(--line);
+}
+.nav-in{ display:flex; align-items:center; gap:2rem; height:70px; }
+.brand{ display:flex; align-items:center; gap:.6rem; font-weight:700; letter-spacing:-0.02em; font-size:1.2rem; }
+.brand svg{ width:26px; height:26px; color:var(--primary); }
+.nav-links{ display:flex; gap:1.6rem; margin-left:1rem; color:var(--ink-2); font-size:0.97rem; font-weight:500; }
+.nav-links a:hover{ color:var(--ink); }
+.nav-right{ margin-left:auto; display:flex; align-items:center; gap:1rem; }
+.nav-right .signin{ color:var(--ink-2); font-weight:500; }
+.nav-right .signin:hover{ color:var(--ink); }
+
+/* ---- Buttons ---- */
+.btn{ display:inline-flex; align-items:center; gap:.5rem; height:48px; padding:0 1.3rem;
+  border-radius:14px; font-weight:600; font-size:0.99rem; letter-spacing:-0.005em;
+  border:1px solid transparent; cursor:pointer; transition:transform .18s cubic-bezier(.2,.8,.2,1), background .18s, border-color .18s, box-shadow .18s; }
+.btn:active{ transform:translateY(1px); }
+.btn-primary{ background:var(--primary); color:var(--primary-ink); box-shadow:0 8px 22px -12px var(--glow); }
+.btn-primary:hover{ background:var(--primary-strong); box-shadow:0 12px 28px -12px var(--glow); }
+.btn-ghost{ border-color:var(--line-2); color:var(--ink); background:var(--surface); }
+.btn-ghost:hover{ background:var(--surface-2); border-color:var(--ink-3); }
+.btn-sm{ height:42px; padding:0 1.1rem; border-radius:12px; font-size:0.95rem; }
+
+/* ---- micro status line ---- */
+.status{ display:inline-flex; align-items:center; gap:.55rem; font-size:var(--step--1);
+  letter-spacing:.02em; color:var(--ink-2); font-weight:500; }
+.dot{ width:8px; height:8px; border-radius:50%; background:var(--primary);
+  box-shadow:0 0 0 4px var(--primary-soft); }
+
+/* ---- Hero ---- */
+.hero{ position:relative; padding:clamp(3rem,7vh,6rem) 0 clamp(3rem,6vh,5rem); }
+.hero-grid{ display:grid; grid-template-columns:1.05fr 0.95fr; gap:clamp(2rem,5vw,4.5rem); align-items:center; }
+.hero h1{ font-size:var(--display); line-height:1.04; font-weight:700; letter-spacing:-0.04em; text-wrap:balance; margin-top:1.4rem; }
+.hero h1 .g{ color:var(--primary); }
+.hero p.sub{ font-size:var(--step-1); line-height:1.5; color:var(--ink-2); max-width:38ch; margin-top:1.4rem; }
+.cta-row{ display:flex; gap:.9rem; margin-top:2rem; flex-wrap:wrap; }
+.trust{ display:flex; flex-wrap:wrap; gap:.5rem 1.4rem; margin-top:2.4rem; color:var(--ink-2); font-size:0.95rem; }
+.trust span{ display:inline-flex; align-items:center; gap:.5rem; }
+.trust svg{ width:16px; height:16px; color:var(--primary); flex:none; }
+
+/* ---- Hero visual: floating "Interview report" card ---- */
+.report-stage{ position:relative; width:min(100%, 440px); margin-inline:auto; padding:1rem 0; }
+.report-stage::before{ content:""; position:absolute; inset:-8% -6% -12% -6%; border-radius:50%;
+  background:radial-gradient(60% 55% at 60% 38%, var(--glow), transparent 70%); filter:blur(8px); z-index:0; }
+.report{ position:relative; z-index:1; background:var(--surface); border:1px solid var(--line);
+  border-radius:20px; padding:1.5rem 1.5rem 1.6rem; box-shadow:var(--shadow-lg); }
+.report-head{ display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+.report-head .rh-l{ display:flex; flex-direction:column; gap:.15rem; }
+.report-head .role{ font-family:"Schibsted Grotesk"; font-weight:600; font-size:1.06rem; letter-spacing:-0.015em; color:var(--ink); }
+.report-head .who{ font-size:.85rem; color:var(--ink-3); }
+.pill{ display:inline-flex; align-items:center; gap:.4rem; height:28px; padding:0 .7rem; border-radius:999px;
+  font-size:.8rem; font-weight:600; letter-spacing:.005em; }
+.pill-answered{ background:var(--accent-soft); color:var(--accent); }
+.pill .pdot{ width:7px; height:7px; border-radius:50%; background:var(--accent); }
+
+.score-row{ display:flex; align-items:center; gap:1.1rem; margin-top:1.3rem; }
+.ring{ --v:86; position:relative; width:96px; height:96px; flex:none; border-radius:50%;
+  background:
+    radial-gradient(closest-side, var(--surface) 70%, transparent 71% 100%),
+    conic-gradient(var(--primary) calc(var(--v) * 1%), var(--primary-soft) 0); }
+.ring .rv{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; }
+.ring .rv b{ font-family:"Schibsted Grotesk"; font-weight:700; font-size:1.7rem; line-height:1; letter-spacing:-0.03em; color:var(--ink); }
+.ring .rv s{ text-decoration:none; font-size:.66rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+.score-meta{ display:flex; flex-direction:column; gap:.35rem; }
+.score-meta .sm-t{ font-family:"Schibsted Grotesk"; font-weight:600; font-size:.98rem; color:var(--ink); }
+.score-meta .sm-d{ font-size:.86rem; color:var(--ink-2); line-height:1.4; }
+
+.bars{ margin-top:1.35rem; display:grid; gap:.85rem; }
+.bar .bt{ display:flex; justify-content:space-between; font-size:.82rem; color:var(--ink-2); margin-bottom:.4rem; }
+.bar .bt b{ color:var(--ink); font-weight:600; }
+.bar .track{ height:7px; border-radius:999px; background:var(--surface-2); overflow:hidden; }
+.bar .fill{ height:100%; border-radius:999px; background:var(--primary); }
+
+.integrity{ display:flex; align-items:center; gap:.6rem; margin-top:1.35rem; padding-top:1.1rem;
+  border-top:1px solid var(--line); font-size:.9rem; color:var(--ink-2); }
+.integrity svg{ width:18px; height:18px; color:var(--primary); flex:none; }
+.integrity b{ color:var(--ink); font-weight:600; }
+.integrity .ok{ margin-left:auto; color:var(--primary); font-weight:600; font-size:.86rem; }
+
+/* floating booked chip */
+.booked{ position:absolute; z-index:2; right:-2%; bottom:6%; display:flex; align-items:center; gap:.55rem;
+  background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:.6rem .85rem;
+  font-size:.86rem; font-weight:600; color:var(--ink); box-shadow:var(--shadow); }
+.booked .bdot{ width:8px; height:8px; border-radius:50%; background:var(--accent); }
+
+/* ---- Section frame ---- */
+section{ padding:clamp(3.5rem,8vh,6rem) 0; }
+.eyebrow{ color:var(--primary); font-weight:600; font-size:.95rem; letter-spacing:-0.005em; }
+h2{ font-size:var(--step-3); font-weight:700; letter-spacing:-0.03em; line-height:1.1; text-wrap:balance; }
+.lead{ color:var(--ink-2); font-size:var(--step-1); line-height:1.5; max-width:60ch; margin-top:.9rem; }
+
+/* steps (a real 3-step sequence) */
+.steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.2rem; margin-top:2.6rem; }
+.step{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:1.5rem 1.4rem; box-shadow:var(--shadow); }
+.step .n{ display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:10px;
+  background:var(--primary-soft); color:var(--primary); font-family:"Schibsted Grotesk"; font-weight:600; font-size:.92rem; }
+.step h3{ font-size:var(--step-2); font-weight:600; letter-spacing:-0.02em; margin:.95rem 0 .5rem; }
+.step p{ color:var(--ink-2); font-size:1rem; line-height:1.55; }
+
+/* two-sided */
+.split{ display:grid; grid-template-columns:1fr 1fr; gap:1.4rem; margin-top:2.6rem; }
+.panel{ background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:1.9rem; box-shadow:var(--shadow); }
+.panel h3{ font-size:var(--step-2); font-weight:700; letter-spacing:-0.02em; }
+.panel ul{ list-style:none; margin-top:1.1rem; display:grid; gap:.8rem; }
+.panel li{ display:flex; gap:.7rem; color:var(--ink-2); font-size:1.02rem; line-height:1.5; }
+.panel li svg{ width:19px; height:19px; color:var(--primary); flex:none; margin-top:3px; }
+.panel .btn{ margin-top:1.6rem; }
+
+/* final cta */
+.final{ position:relative; overflow:hidden; text-align:center; border:1px solid var(--line); border-radius:26px;
+  padding:clamp(2.6rem,6vw,4.2rem);
+  background:
+    radial-gradient(120% 150% at 50% -25%, var(--accent-soft), transparent 55%),
+    radial-gradient(120% 150% at 50% 130%, var(--primary-soft), transparent 58%),
+    var(--surface);
+  box-shadow:var(--shadow); }
+.final h2{ margin-inline:auto; max-width:18ch; }
+.final .lead{ margin-inline:auto; margin-top:1rem; }
+.final .cta-row{ justify-content:center; }
+
+footer{ border-top:1px solid var(--line); padding:2.4rem 0; color:var(--ink-3); }
+.foot-in{ display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }
+.foot-in .brand{ font-size:1.05rem; }
+.tagline{ color:var(--ink-2); font-size:.98rem; }
+.foot-tag{ font-size:.82rem; color:var(--ink-3); font-weight:500; }
+
+/* preview-only theme switch (NOT part of the design) */
+.preview-toggle{ position:fixed; right:14px; bottom:14px; z-index:99; display:flex; gap:2px;
+  background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:3px; font-size:.78rem; box-shadow:var(--shadow); }
+.preview-toggle button{ border:0; background:transparent; color:var(--ink-2); padding:.3rem .7rem; border-radius:999px; cursor:pointer; font-family:inherit; font-weight:500; }
+.preview-toggle button[aria-pressed="true"]{ background:var(--primary); color:var(--primary-ink); font-weight:600; }
+.preview-toggle::after{ content:"preview"; position:absolute; top:-1.1rem; right:.4rem; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+
+/* entrance motion */
+.rise{ opacity:0; transform:translateY(14px); animation:rise .7s cubic-bezier(.16,1,.3,1) forwards; }
+.d1{ animation-delay:.05s } .d2{ animation-delay:.13s } .d3{ animation-delay:.21s } .d4{ animation-delay:.29s } .d5{ animation-delay:.37s }
+@keyframes rise{ to{ opacity:1; transform:none; } }
+.fill{ transform-origin:left; animation:grow 1.1s cubic-bezier(.16,1,.3,1) .35s both; }
+@keyframes grow{ from{ transform:scaleX(0); } to{ transform:scaleX(1); } }
+
+@media (max-width:900px){
+  .hero-grid{ grid-template-columns:1fr; } .report-stage{ order:-1; width:min(86%,420px); }
+  .steps{ grid-template-columns:1fr; } .split{ grid-template-columns:1fr; }
+  .nav-links{ display:none; }
+}
+@media (prefers-reduced-motion: reduce){
+  .rise,.fill{ animation:none; opacity:1; transform:none; }
+  html{ scroll-behavior:auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== aperture mark (reused) ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="0 0 48 48">
+    <g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="24" cy="24" r="19"/>
+      <g>
+        <path d="M24 6 L34.5 22"/>
+        <path d="M24 6 L34.5 22" transform="rotate(60 24 24)"/>
+        <path d="M24 6 L34.5 22" transform="rotate(120 24 24)"/>
+        <path d="M24 6 L34.5 22" transform="rotate(180 24 24)"/>
+        <path d="M24 6 L34.5 22" transform="rotate(240 24 24)"/>
+        <path d="M24 6 L34.5 22" transform="rotate(300 24 24)"/>
+      </g>
+    </g>
+  </symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v5c0 4.4-3 8-7 10-4-2-7-5.6-7-10V6z"/></symbol>
+  <symbol id="shield-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 8-7 10-4-2-7-5.6-7-10V6z"/><path d="M9 12l2 2 4-4"/></g></symbol>
+</svg>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#"><svg><use href="#mark"/></svg>Aptura</a>
+    <nav class="nav-links">
+      <a href="#">Find roles</a><a href="#">For companies</a><a href="#">How it works</a><a href="#">Pricing</a>
+    </nav>
+    <div class="nav-right">
+      <a class="signin" href="#">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="#">Get started</a>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="status label rise d1"><span class="dot"></span> One interview · one fair shot</div>
+      <h1 class="rise d2">Get seen.<br>Get interviewed.<br>Get <span class="g">hired.</span></h1>
+      <p class="sub rise d3">One fair, proctored interview — and a real answer every time. No résumé black holes, no ghosting. Aptura is hiring decided on merit.</p>
+      <div class="cta-row rise d4">
+        <a class="btn btn-primary" href="#">Find roles</a>
+        <a class="btn btn-ghost" href="#">For companies →</a>
+      </div>
+      <div class="trust rise d5">
+        <span><svg><use href="#shield"/></svg> Proctored &amp; recorded for integrity</span>
+        <span><svg><use href="#check"/></svg> Evidence-based scoring</span>
+        <span><svg><use href="#check"/></svg> Every applicant answered</span>
+      </div>
+    </div>
+
+    <div class="report-stage rise d3">
+      <div class="report" role="img" aria-label="Sample Aptura interview report: overall score 86, status answered, competency bars, integrity clean.">
+        <div class="report-head">
+          <div class="rh-l">
+            <span class="role">Interview report</span>
+            <span class="who">Product Designer · final review</span>
+          </div>
+          <span class="pill pill-answered"><span class="pdot"></span> Answered</span>
+        </div>
+
+        <div class="score-row">
+          <div class="ring" style="--v:86"><span class="rv"><b>86</b><s>Score</s></span></div>
+          <div class="score-meta">
+            <span class="sm-t">Strong evidence</span>
+            <span class="sm-d">Scored from a live, proctored interview — not a résumé.</span>
+          </div>
+        </div>
+
+        <div class="bars">
+          <div class="bar"><div class="bt"><span>Communication</span><b>91</b></div><div class="track"><div class="fill" style="width:91%"></div></div></div>
+          <div class="bar"><div class="bt"><span>Problem-solving</span><b>84</b></div><div class="track"><div class="fill" style="width:84%"></div></div></div>
+          <div class="bar"><div class="bt"><span>Role knowledge</span><b>82</b></div><div class="track"><div class="fill" style="width:82%"></div></div></div>
+        </div>
+
+        <div class="integrity">
+          <svg><use href="#shield-check"/></svg> Integrity · <b>clean</b>
+          <span class="ok">Verified</span>
+        </div>
+      </div>
+      <div class="booked"><span class="bdot"></span> You're in — interview booked</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">The path</p>
+    <h2>One honest interview, start to finish.</h2>
+    <div class="steps">
+      <div class="step"><div class="n">01</div><h3>Apply in minutes</h3><p>One profile, every role on the marketplace. No résumé black holes.</p></div>
+      <div class="step"><div class="n">02</div><h3>One proctored interview</h3><p>Live video &amp; voice. Integrity monitored on-device, in real time — fair, and the same for everyone.</p></div>
+      <div class="step"><div class="n">03</div><h3>Always hear back</h3><p>An evidence-based outcome with feedback. A human makes the call.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="split">
+      <div class="panel">
+        <h3>Get seen on merit.</h3>
+        <ul>
+          <li><svg><use href="#check"/></svg> One fair interview decides it — not who you know.</li>
+          <li><svg><use href="#check"/></svg> Real feedback every time. Never ghosted.</li>
+          <li><svg><use href="#check"/></svg> Practice first, then go live when you're ready.</li>
+        </ul>
+        <a class="btn btn-ghost btn-sm" href="#">Get seen, interviewed, hired →</a>
+      </div>
+      <div class="panel">
+        <h3>Hire on proof.</h3>
+        <ul>
+          <li><svg><use href="#shield"/></svg> Evidence-based reports with an integrity timeline.</li>
+          <li><svg><use href="#check"/></svg> Cheating caught live — high-severity auto-ends the session.</li>
+          <li><svg><use href="#check"/></svg> Advisory by design: you make the final decision.</li>
+        </ul>
+        <a class="btn btn-primary btn-sm" href="#">Start hiring</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="final">
+      <p class="eyebrow">Get started</p>
+      <h2>A fair interview, and a real answer. Every time.</h2>
+      <p class="lead">Merit over momentum — for everyone in the room.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#">Find roles</a>
+        <a class="btn btn-ghost" href="#">For companies →</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot-in">
+    <a class="brand" href="#"><svg><use href="#mark"/></svg>Aptura</a>
+    <span class="tagline">Get seen. Get interviewed. Get hired.</span>
+    <span class="foot-tag">Direction B · Atrium</span>
+  </div>
+</footer>
+
+<div class="preview-toggle" role="group" aria-label="Preview theme (mockup only)">
+  <button type="button" data-theme="light" aria-pressed="true">Light</button>
+  <button type="button" data-theme="dark" aria-pressed="false">Dark</button>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  var q=new URLSearchParams(location.search).get('theme');
+  function set(t){ root.classList.toggle('dark', t==='dark');
+    document.querySelectorAll('.preview-toggle button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.theme===t)); }); }
+  if(q==='dark') set('dark'); else set('light');
+  document.querySelectorAll('.preview-toggle button').forEach(function(b){ b.addEventListener('click',function(){ set(b.dataset.theme); }); });
+})();
+</script>
+</body>
+</html>

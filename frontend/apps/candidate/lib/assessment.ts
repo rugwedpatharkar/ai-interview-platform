@@ -1,16 +1,22 @@
-// Typed assessment sections + a mock client for the kind-aware candidate assessment page.
+// Typed assessment sections + (mock | live) clients for the kind-aware candidate assessment.
 //
-// These live in the candidate app (this round owns the candidate app only). The live
-// AptitudeService still serves MCQ-only `questions[]` and the scratch `run` endpoint does not
-// exist in the generated client yet; until the backend deltas land + `pnpm gen` regenerates,
-// the typed-sections + coding-run paths are driven by `makeMockAssessmentClient()` (toggle on
-// NEXT_PUBLIC_MOCK=1). The MCQ path stays byte-identical against the real client — the page
-// adapts the real `AptitudeQuestion[]` into `mcq` sections (see `questionsToSections`).
+// Wiring (2026-06-21):
+//   - MCQ path stays on the already-wired admin.aptitude.v1.AptitudeService (the page adapts
+//     live `AptitudeQuestion[]` -> `mcq` sections via `questionsToSections`).
+//   - Coding paths (run + submit) flip to admin.coding.v1.CodingService on the admin transport.
+//     `runCode` is EPHEMERAL (no grade, just execute against visible cases); `submitCoding`
+//     grades hidden cases + typed-answer keys. The answer key never crosses the wire — input
+//     is sanitized at the page seam (string trim) and the BE is the authority.
 //
 // Privacy/anti-cheat invariant: `RunResult` has NO field carrying hidden stdin/expected/diff —
 // only a `hiddenPassed`/`hiddenTotal` aggregate. The candidate can never receive hidden bodies.
+// (The live gRPC `RunResult` carries stdout/stderr/exit_code/time_ms/timed_out — we collapse
+// that into the candidate-shape visible-pass result the editor renders.)
 
-import type { AptitudeQuestion } from "@ip/api-client";
+import { useMemo } from "react";
+import type { AdminClients, AptitudeQuestion } from "@ip/api-client";
+
+import { useAuth } from "./auth";
 
 export type SectionKind = "mcq" | "coding" | "free_text";
 
@@ -63,6 +69,19 @@ export interface RunArgs {
   sectionId: string;
   language: string;
   source: string;
+  stdin?: string;
+}
+
+export interface CodingSubmitArgs {
+  language: string;
+  source: string;
+  /** Free-text answers keyed by section id (typed_questions on the wire). */
+  typedAnswers: { id: string; answer: string }[];
+}
+
+export interface CodingSubmitResult {
+  passed: boolean;
+  score: number; // 0..100 — derived from (casesPassed + typedCorrect) / (casesTotal + typedTotal)
 }
 
 // Adapt the live MCQ-only test (gRPC `AptitudeQuestion[]`) into typed `mcq` sections so the
@@ -79,9 +98,24 @@ export function questionsToSections(questions: AptitudeQuestion[]): AssessmentSe
   }));
 }
 
+/** Cheap derivation from the gRPC RunResult into the candidate-visible pass result. The wire
+ *  carries stdout/stderr/exit_code/time_ms/timed_out; we surface a single "Case 1" pass when
+ *  exit_code === 0 and no timeout — full per-case grading lives in submitCoding. */
+function gRpcRunToVisible(stdout: string, exitCode: number, timedOut: boolean): RunResult {
+  const passed = !timedOut && exitCode === 0;
+  return {
+    compileOk: !timedOut, // surface a compile error as a non-pass; the editor message uses it
+    cases: [{ visible: true, passed, name: timedOut ? "Timed out" : stdout ? "Ran" : "No output" }],
+    hiddenPassed: 0,
+    hiddenTotal: 0,
+  };
+}
+
+// ---- mock (NEXT_PUBLIC_MOCK=1) ----------------------------------------------------
+
 // Mock client: one MCQ + one coding section (hidden tests masked to a count), and a scripted
 // `run()` returning some visible pass/fail + a hidden aggregate. Lets the page + editor +
-// results panel build and preview before the proto regenerates or the sandbox lands.
+// results panel build and preview before the sandbox is hot.
 export function makeMockAssessmentClient() {
   const test: AssessmentTest = {
     sections: [
@@ -131,3 +165,53 @@ export function makeMockAssessmentClient() {
 }
 
 export type MockAssessmentClient = ReturnType<typeof makeMockAssessmentClient>;
+
+// ---- live coding client (admin.coding.v1.CodingService) ---------------------------
+
+export interface CodingClient {
+  runCode(applicationId: string, args: RunArgs): Promise<RunResult>;
+  submitCoding(applicationId: string, args: CodingSubmitArgs): Promise<CodingSubmitResult>;
+}
+
+export const USE_MOCK = process.env.NEXT_PUBLIC_MOCK === "1";
+
+export function makeApiCodingClient(api: AdminClients): CodingClient {
+  return {
+    async runCode(applicationId, args) {
+      // RunCode is ephemeral — no grade. The wire carries stdout/stderr/exit_code/time_ms;
+      // we collapse that into the editor's visible-pass shape.
+      const r = await api.coding.runCode({
+        applicationId,
+        language: args.language,
+        source: args.source,
+        stdin: args.stdin ?? "",
+      });
+      return gRpcRunToVisible(r.stdout, r.exitCode, r.timedOut);
+    },
+    async submitCoding(applicationId, args) {
+      // typed-answer keys are server-side only; we just send the user's text. Sanitize the
+      // user input client-side (trim) so a stray newline never miscounts a typed answer.
+      const typedAnswers = args.typedAnswers.map((t) => ({
+        id: t.id,
+        answer: t.answer.trim(),
+      }));
+      const r = await api.coding.submitCoding({
+        applicationId,
+        language: args.language,
+        source: args.source,
+        typedAnswers,
+      });
+      const total = r.casesTotal + r.typedTotal;
+      const correct = r.casesPassed + r.typedCorrect;
+      const score = total > 0 ? Math.round((correct / total) * 100) : 0;
+      return { passed: r.passed, score };
+    },
+  };
+}
+
+/** Hook: returns the live coding client. The mock path lives in `makeMockAssessmentClient`
+ *  on the page (kept for offline dev under NEXT_PUBLIC_MOCK=1). */
+export function useCodingClient(): CodingClient {
+  const { api } = useAuth();
+  return useMemo(() => makeApiCodingClient(api), [api]);
+}

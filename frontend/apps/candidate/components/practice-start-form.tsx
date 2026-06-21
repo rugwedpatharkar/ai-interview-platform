@@ -20,7 +20,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
 import { useRef, useState } from "react";
 
-import { practiceClient } from "../lib/practice-client";
+import { usePracticeClient } from "../lib/practice-client";
 import type { PracticeStartResult } from "../app/practice/types";
 
 /** Start a detached mock interview from a topic OR a pasted JD (exactly one). Private framing is
@@ -31,6 +31,7 @@ export function PracticeStartForm({
 }: {
   onStarted: (res: PracticeStartResult) => void;
 }) {
+  const practiceClient = usePracticeClient();
   const [mode, setMode] = useState<"topic" | "jd">("topic");
   const [topic, setTopic] = useState("");
   const [jdText, setJdText] = useState("");
