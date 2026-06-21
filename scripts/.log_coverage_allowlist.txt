@@ -48,17 +48,6 @@ src/admin/app/resources/application.py:77:list_my_applications
 src/admin/app/resources/application.py:85:list_applicants
 src/admin/app/resources/application.py:94:withdraw_application
 src/admin/app/resources/recommend.py:13:fan_out_match
-src/admin/app/resources/settings.py:63:get_notification_prefs
-src/admin/app/resources/settings.py:68:set_notification_prefs
-src/admin/app/resources/settings.py:97:setup_totp
-src/admin/app/resources/settings.py:108:verify_totp
-src/admin/app/resources/settings.py:124:disable_totp
-src/admin/app/resources/settings.py:142:change_password
-src/admin/app/resources/settings.py:179:request_email_change
-src/admin/app/resources/settings.py:207:verify_email_change
-src/admin/app/resources/settings.py:238:list_sessions
-src/admin/app/resources/settings.py:254:revoke_session
-src/admin/app/resources/settings.py:264:revoke_all_sessions
 src/admin/app/resources/aptitude.py:47:get_aptitude_test
 src/admin/app/resources/aptitude.py:90:grade_aptitude
 src/admin/app/resources/scheduling.py:185:propose_slots
