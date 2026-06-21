@@ -116,3 +116,27 @@ def test_check_log_coverage_seed_prints_violations(tmp_path):
     )
     assert result.returncode == 0
     assert "naked_fn" in result.stdout
+
+
+def test_function_with_docstring_then_log_context_passes(tmp_path):
+    repo = Path(__file__).resolve().parents[2]
+    target_dir = tmp_path / "resources"
+    target_dir.mkdir()
+    (target_dir / "x.py").write_text(
+        "async def wrapped_with_docstring():\n"
+        '    """Module docstring."""\n'
+        '    async with log_context(log, "x.wrapped_with_docstring"):\n'
+        "        return 1\n"
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(repo / "scripts/check_log_coverage.py"),
+            "--resources-root",
+            str(tmp_path),
+        ],
+        capture_output=True,
+        text=True,
+        cwd=repo,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr

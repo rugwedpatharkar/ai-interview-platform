@@ -28,6 +28,15 @@ def _starts_with_log_context(fn: ast.AsyncFunctionDef) -> bool:
     if not fn.body:
         return False
     first = fn.body[0]
+    # Allow a leading docstring; log_context must be the next statement.
+    if (
+        isinstance(first, ast.Expr)
+        and isinstance(first.value, ast.Constant)
+        and isinstance(first.value.value, str)
+    ):
+        if len(fn.body) < 2:
+            return False
+        first = fn.body[1]
     if isinstance(first, ast.AsyncWith):
         for item in first.items:
             call = item.context_expr
