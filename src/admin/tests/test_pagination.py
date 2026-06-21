@@ -1,4 +1,4 @@
-"""Cursor pagination tests for application.list_applicants — TDD.
+"""Cursor pagination tests for list_applicants, get_candidate_recommendations, get_talent_pool — TDD.
 
 Tests are written to fail until the resource + repo implementations are added.
 """
@@ -130,3 +130,123 @@ async def test_candidate_cannot_list_applicants(fake_apps_pag):
         await application.list_applicants(
             _CAND, "j7", 10, "", applications=fake_apps_pag
         )
+
+
+# ── Recommendation pagination tests ──────────────────────────────────────────
+
+from app.resources import recommendations as rec_res  # noqa: E402
+
+_CAND_REC = {"id": "u-cand", "role": "candidate", "comp_id": ""}
+_MGR_REC = {"id": "u-mgr", "role": "recruiter", "comp_id": "c1"}
+
+
+@pytest.mark.asyncio
+async def test_rec_first_page_returns_total_count(fake_matches_pag):
+    """First page (no page_token) must include total_count."""
+    await fake_matches_pag.seed_matches("u-cand", 30)
+    result = await rec_res.get_candidate_recommendations(
+        _CAND_REC, 10, "", matches=fake_matches_pag
+    )
+    assert len(result["matches"]) == 10
+    assert result["next_page_token"] != ""
+    assert result["total_count"] == 30
+
+
+@pytest.mark.asyncio
+async def test_rec_subsequent_page_omits_total_count(fake_matches_pag):
+    """Subsequent pages (non-empty page_token) set total_count to 0."""
+    await fake_matches_pag.seed_matches("u-cand", 15)
+    first = await rec_res.get_candidate_recommendations(
+        _CAND_REC, 10, "", matches=fake_matches_pag
+    )
+    token = first["next_page_token"]
+    assert token != ""
+    second = await rec_res.get_candidate_recommendations(
+        _CAND_REC, 10, token, matches=fake_matches_pag
+    )
+    assert second["total_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_rec_empty_pool_returns_empty(fake_matches_pag):
+    """Empty match store: empty list, total_count 0, no next token."""
+    result = await rec_res.get_candidate_recommendations(
+        _CAND_REC, 10, "", matches=fake_matches_pag
+    )
+    assert result["matches"] == []
+    assert result["total_count"] == 0
+    assert result["next_page_token"] == ""
+
+
+@pytest.mark.asyncio
+async def test_rec_invalid_cursor_raises_validation_error(fake_matches_pag):
+    """A malformed page_token raises ValidationError."""
+    with pytest.raises(ValidationError):
+        await rec_res.get_candidate_recommendations(
+            _CAND_REC, 10, "not-base64!@#", matches=fake_matches_pag
+        )
+
+
+@pytest.mark.asyncio
+async def test_rec_non_candidate_raises_forbidden(fake_matches_pag):
+    """Non-candidates are forbidden from viewing recommendations."""
+    with pytest.raises(ForbiddenError):
+        await rec_res.get_candidate_recommendations(
+            _MGR_REC, 10, "", matches=fake_matches_pag
+        )
+
+
+# ── Talent pool pagination tests ──────────────────────────────────────────────
+
+from app.resources import talent as talent_res  # noqa: E402
+
+_MGR_TP = {"id": "u-mgr", "role": "company_admin", "comp_id": "c1"}
+_CAND_TP = {"id": "u-cand", "role": "candidate", "comp_id": ""}
+
+
+@pytest.mark.asyncio
+async def test_tp_first_page_returns_total_count(fake_tp_pag):
+    """First page (no page_token) must include total_count."""
+    await fake_tp_pag.seed_talent_pool("c1", 30)
+    result = await talent_res.get_talent_pool(_MGR_TP, 10, "", applications=fake_tp_pag)
+    assert len(result["entries"]) == 10
+    assert result["next_page_token"] != ""
+    assert result["total_count"] == 30
+
+
+@pytest.mark.asyncio
+async def test_tp_subsequent_page_omits_total_count(fake_tp_pag):
+    """Subsequent pages (non-empty page_token) set total_count to 0."""
+    await fake_tp_pag.seed_talent_pool("c1", 15)
+    first = await talent_res.get_talent_pool(_MGR_TP, 10, "", applications=fake_tp_pag)
+    token = first["next_page_token"]
+    assert token != ""
+    second = await talent_res.get_talent_pool(
+        _MGR_TP, 10, token, applications=fake_tp_pag
+    )
+    assert second["total_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_tp_empty_pool_returns_empty(fake_tp_pag):
+    """Empty application store: empty entries, total_count 0, no next token."""
+    result = await talent_res.get_talent_pool(_MGR_TP, 10, "", applications=fake_tp_pag)
+    assert result["entries"] == []
+    assert result["total_count"] == 0
+    assert result["next_page_token"] == ""
+
+
+@pytest.mark.asyncio
+async def test_tp_invalid_cursor_raises_validation_error(fake_tp_pag):
+    """A malformed page_token raises ValidationError."""
+    with pytest.raises(ValidationError):
+        await talent_res.get_talent_pool(
+            _MGR_TP, 10, "not-base64!@#", applications=fake_tp_pag
+        )
+
+
+@pytest.mark.asyncio
+async def test_tp_non_manager_raises_forbidden(fake_tp_pag):
+    """Candidates are forbidden from viewing the talent pool."""
+    with pytest.raises(ForbiddenError):
+        await talent_res.get_talent_pool(_CAND_TP, 10, "", applications=fake_tp_pag)

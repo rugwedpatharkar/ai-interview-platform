@@ -352,6 +352,59 @@ class FakeApplicationRepo:
         return True
 
 
+class FakeMatchRepo:
+    """In-memory stand-in for MatchResultRepository."""
+
+    def __init__(self):
+        self._docs: dict[str, dict] = {}
+
+    async def list_by_candidate(self, candidate_user_id: str) -> list[dict]:
+        return [
+            d
+            for d in self._docs.values()
+            if d["candidate_user_id"] == candidate_user_id
+        ]
+
+    async def list_by_candidate_paginated(
+        self, candidate_user_id: str, *, page_size: int, after_id=None
+    ) -> tuple[list[dict], object | None]:
+        rows = sorted(
+            (
+                d
+                for d in self._docs.values()
+                if d["candidate_user_id"] == candidate_user_id
+            ),
+            key=lambda d: d["_id"],
+        )
+        if after_id is not None:
+            rows = [d for d in rows if d["_id"] > after_id]
+        if len(rows) > page_size:
+            return rows[:page_size], rows[page_size - 1]["_id"]
+        return rows, None
+
+    async def count_by_candidate(self, candidate_user_id: str) -> int:
+        return sum(
+            1
+            for d in self._docs.values()
+            if d["candidate_user_id"] == candidate_user_id
+        )
+
+    async def seed_matches(self, candidate_user_id: str, n: int) -> None:
+        """Test-only helper: insert n stub matches with real ObjectIds."""
+        from bson import ObjectId
+
+        for i in range(n):
+            oid = ObjectId()
+            self._docs[str(oid)] = {
+                "_id": oid,
+                "candidate_user_id": candidate_user_id,
+                "job_id": f"j-{i}",
+                "comp_id": "c1",
+                "score": 0.5,
+                "reasons": [],
+            }
+
+
 class FakeAuditRepo:
     """In-memory stand-in for AuditLogRepository."""
 
@@ -567,3 +620,8 @@ def identity_candidate():
 @pytest.fixture
 def fake_apps_pag():
     return FakeApplicationRepo()
+
+
+@pytest.fixture
+def fake_matches_pag():
+    return FakeMatchRepo()
