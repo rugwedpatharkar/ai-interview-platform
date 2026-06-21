@@ -9,6 +9,13 @@ import { createGrpcWebTransport } from "@connectrpc/connect-web";
 
 import type { TokenStore } from "./tokens.js";
 
+// Last correlation ID returned by any unary RPC, for attaching to client-side telemetry.
+let _lastCorrelationId: string | null = null;
+
+export function getLastCorrelationId(): string | null {
+  return _lastCorrelationId;
+}
+
 // One in-flight refresh per token store, shared across BOTH transports (admin + ai-agents)
 // that bind the same store. A 401 on an admin RPC and a 401 on an ai-agents RPC that race
 // must share a single rotation instead of each spending the (single-use) refresh token —
@@ -115,6 +122,13 @@ export function createAuthedTransport(
   store: TokenStore,
   onAuthLost: () => void,
 ) {
+  const correlationInterceptor: Interceptor = (next) => async (req) => {
+    const res = await next(req);
+    const cid = res.header.get("x-correlation-id");
+    if (cid) _lastCorrelationId = cid;
+    return res;
+  };
+
   const interceptor: Interceptor = (next) => async (req) => {
     const sent = store.get()?.access;
     // Capture the rotation counter before the RPC so we can detect a concurrent rotation.
@@ -141,7 +155,7 @@ export function createAuthedTransport(
     }
   };
 
-  return createGrpcWebTransport({ baseUrl, interceptors: [interceptor] });
+  return createGrpcWebTransport({ baseUrl, interceptors: [interceptor, correlationInterceptor] });
 }
 
 /**
