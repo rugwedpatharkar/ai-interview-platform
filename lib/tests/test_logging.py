@@ -300,3 +300,4 @@ async def _check_log_domain_error_context(sink: _Sink):
     err = AuthError("token expired")
     log_domain_error(log, err, user_id="u9")
     assert any("token expired" in m for m in sink.messages())
+    assert sink.records[0]["extra"].get("user_id") == "u9"
