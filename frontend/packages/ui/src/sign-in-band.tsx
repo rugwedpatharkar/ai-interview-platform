@@ -9,9 +9,13 @@ import type { LandingAudience } from "./aperture-chrome.js";
 
 export interface SignInBandProps {
   audience: LandingAudience;
-  /** Injected by the consumer because @ip/ui can't import the app's useAuth hook. */
+  /** Injected by the consumer because @ip/ui can't import the app's useAuth hook.
+   *  `resolveHome` is called synchronously after `login()` resolves and decides
+   *  the post-login destination from the actual identity, not the band's audience —
+   *  so an applicant who signs in on /hiring-teams lands on /, not /company. */
   useAuthHook: () => {
     login: (email: string, password: string) => Promise<void>;
+    resolveHome: () => string;
   };
 }
 
@@ -27,7 +31,6 @@ const COPY = {
     accent: "coral",
     signupHref: "/register",
     signupLabel: "Create one →",
-    nextRoute: "/",
   },
   "hiring-teams": {
     eyebrow: "Returning?",
@@ -40,12 +43,11 @@ const COPY = {
     accent: "teal",
     signupHref: "/company/register",
     signupLabel: "Create one →",
-    nextRoute: "/company",
   },
 } as const;
 
 export function SignInBand({ audience, useAuthHook }: SignInBandProps) {
-  const { login } = useAuthHook();
+  const { login, resolveHome } = useAuthHook();
   const router = useRouter();
   const copy = COPY[audience];
 
@@ -61,7 +63,7 @@ export function SignInBand({ audience, useAuthHook }: SignInBandProps) {
     setError(null);
     try {
       await login(email, password);
-      router.push(copy.nextRoute);
+      router.push(resolveHome());
     } catch (err) {
       setError(errorMessage(err));
       setSubmitting(false);

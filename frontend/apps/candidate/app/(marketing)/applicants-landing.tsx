@@ -1,7 +1,7 @@
 "use client";
 
 import { MarketingShell, SignInBand } from "@ip/ui";
-import { useAuth } from "../../lib/auth";
+import { useSignInBandAuth } from "../../lib/sign-in-band-auth";
 import { ApplicantsHero } from "../../components/marketing/applicants-hero";
 import { ApplicantJourney } from "../../components/marketing/applicant-journey";
 import { NoGhostingPromise } from "../../components/marketing/no-ghosting-promise";
@@ -55,7 +55,7 @@ export function ApplicantsLanding() {
           <SampleReportCard />
         </div>
       </section>
-      <SignInBand audience="applicants" useAuthHook={useAuth} />
+      <SignInBand audience="applicants" useAuthHook={useSignInBandAuth} />
       <ApplicantsFaq />
       <ApplicantFinalCta />
     </MarketingShell>

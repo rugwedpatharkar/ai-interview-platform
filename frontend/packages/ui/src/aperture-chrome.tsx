@@ -89,6 +89,7 @@ export function MegaNav({ audience = "applicants", links }: MegaNavProps) {
             type="button"
             aria-label="Open menu"
             aria-expanded={mobileOpen}
+            aria-controls="ap-mobile-nav"
             onClick={() => setMobileOpen((v) => !v)}
             className="ap-btn ap-btn-ghost ap-btn-sm flex h-10 w-10 items-center justify-center p-0 lg:hidden"
           >
@@ -98,7 +99,7 @@ export function MegaNav({ audience = "applicants", links }: MegaNavProps) {
       </div>
 
       {mobileOpen && (
-        <nav className="ap-wrap border-t border-line py-4 lg:hidden" aria-label="Primary mobile">
+        <nav id="ap-mobile-nav" className="ap-wrap border-t border-line py-4 lg:hidden" aria-label="Primary mobile">
           <ul className="flex flex-col gap-1">
             {navLinks.map((link) => (
               <li key={link.label}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { MarketingShell, SignInBand } from "@ip/ui";
-import { useAuth } from "../../lib/auth";
+import { useSignInBandAuth } from "../../lib/sign-in-band-auth";
 import { HiringTeamsHero } from "../../components/marketing/hiring-teams-hero";
 import { HiringTeamsFinalCta } from "../../components/marketing/hiring-teams-final-cta";
 import {
@@ -38,7 +38,7 @@ export default function HiringTeamsPage() {
       <TrustBand />
       <DesignedFor />
       <EarlyAccess />
-      <SignInBand audience="hiring-teams" useAuthHook={useAuth} />
+      <SignInBand audience="hiring-teams" useAuthHook={useSignInBandAuth} />
       <HiringTeamsFaq />
       <HiringTeamsFinalCta />
     </MarketingShell>
