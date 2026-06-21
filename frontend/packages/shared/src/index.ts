@@ -26,6 +26,7 @@ export {
 export { downloadBytes, XLSX_MIME } from "./download.js";
 export { TERMINAL_STATES, TERMS_VERSION } from "./constants.js";
 export { decodeJwtPayload } from "./jwt.js";
+export { pollingBackoff, type PollingBackoffOptions } from "./polling";
 
 // De-duplicated app logic (lifted from candidate + company)
 export {
