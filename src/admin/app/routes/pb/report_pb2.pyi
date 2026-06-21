@@ -1,10 +1,25 @@
 from google.protobuf.internal import containers as _containers
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from collections.abc import Iterable as _Iterable, Mapping as _Mapping
 from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
+
+class FlagSeverity(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    FLAG_SEVERITY_UNSPECIFIED: _ClassVar[FlagSeverity]
+    FLAG_SEVERITY_LOW: _ClassVar[FlagSeverity]
+    FLAG_SEVERITY_MED: _ClassVar[FlagSeverity]
+    FLAG_SEVERITY_HIGH: _ClassVar[FlagSeverity]
+    FLAG_SEVERITY_CRITICAL: _ClassVar[FlagSeverity]
+
+FLAG_SEVERITY_UNSPECIFIED: FlagSeverity
+FLAG_SEVERITY_LOW: FlagSeverity
+FLAG_SEVERITY_MED: FlagSeverity
+FLAG_SEVERITY_HIGH: FlagSeverity
+FLAG_SEVERITY_CRITICAL: FlagSeverity
 
 class GetIntegrityTimelineRequest(_message.Message):
     __slots__ = ("application_id",)
@@ -20,19 +35,34 @@ class ProctorFlag(_message.Message):
         VALUE_FIELD_NUMBER: _ClassVar[int]
         key: str
         value: str
-        def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
+        def __init__(
+            self, key: _Optional[str] = ..., value: _Optional[str] = ...
+        ) -> None: ...
+
     TYPE_FIELD_NUMBER: _ClassVar[int]
     SEVERITY_FIELD_NUMBER: _ClassVar[int]
     AT_FIELD_NUMBER: _ClassVar[int]
     META_FIELD_NUMBER: _ClassVar[int]
     type: str
-    severity: str
+    severity: FlagSeverity
     at: str
     meta: _containers.ScalarMap[str, str]
-    def __init__(self, type: _Optional[str] = ..., severity: _Optional[str] = ..., at: _Optional[str] = ..., meta: _Optional[_Mapping[str, str]] = ...) -> None: ...
+    def __init__(
+        self,
+        type: _Optional[str] = ...,
+        severity: _Optional[_Union[FlagSeverity, str]] = ...,
+        at: _Optional[str] = ...,
+        meta: _Optional[_Mapping[str, str]] = ...,
+    ) -> None: ...
 
 class IntegrityTimeline(_message.Message):
-    __slots__ = ("integrity_score", "flags", "recording_url", "auto_terminated", "terminated_reason")
+    __slots__ = (
+        "integrity_score",
+        "flags",
+        "recording_url",
+        "auto_terminated",
+        "terminated_reason",
+    )
     INTEGRITY_SCORE_FIELD_NUMBER: _ClassVar[int]
     FLAGS_FIELD_NUMBER: _ClassVar[int]
     RECORDING_URL_FIELD_NUMBER: _ClassVar[int]
@@ -43,7 +73,14 @@ class IntegrityTimeline(_message.Message):
     recording_url: str
     auto_terminated: bool
     terminated_reason: str
-    def __init__(self, integrity_score: _Optional[int] = ..., flags: _Optional[_Iterable[_Union[ProctorFlag, _Mapping]]] = ..., recording_url: _Optional[str] = ..., auto_terminated: _Optional[bool] = ..., terminated_reason: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        integrity_score: _Optional[int] = ...,
+        flags: _Optional[_Iterable[_Union[ProctorFlag, _Mapping]]] = ...,
+        recording_url: _Optional[str] = ...,
+        auto_terminated: _Optional[bool] = ...,
+        terminated_reason: _Optional[str] = ...,
+    ) -> None: ...
 
 class GetReportRequest(_message.Message):
     __slots__ = ("application_id",)
@@ -63,7 +100,9 @@ class Evidence(_message.Message):
     TURN_INDEX_FIELD_NUMBER: _ClassVar[int]
     quote: str
     turn_index: int
-    def __init__(self, quote: _Optional[str] = ..., turn_index: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self, quote: _Optional[str] = ..., turn_index: _Optional[int] = ...
+    ) -> None: ...
 
 class CompetencyScore(_message.Message):
     __slots__ = ("competency", "score", "rationale", "evidence")
@@ -75,7 +114,13 @@ class CompetencyScore(_message.Message):
     score: float
     rationale: str
     evidence: _containers.RepeatedCompositeFieldContainer[Evidence]
-    def __init__(self, competency: _Optional[str] = ..., score: _Optional[float] = ..., rationale: _Optional[str] = ..., evidence: _Optional[_Iterable[_Union[Evidence, _Mapping]]] = ...) -> None: ...
+    def __init__(
+        self,
+        competency: _Optional[str] = ...,
+        score: _Optional[float] = ...,
+        rationale: _Optional[str] = ...,
+        evidence: _Optional[_Iterable[_Union[Evidence, _Mapping]]] = ...,
+    ) -> None: ...
 
 class IntegritySummary(_message.Message):
     __slots__ = ("score", "flags", "auto_terminated")
@@ -85,10 +130,26 @@ class IntegritySummary(_message.Message):
     score: float
     flags: _containers.RepeatedScalarFieldContainer[str]
     auto_terminated: bool
-    def __init__(self, score: _Optional[float] = ..., flags: _Optional[_Iterable[str]] = ..., auto_terminated: _Optional[bool] = ...) -> None: ...
+    def __init__(
+        self,
+        score: _Optional[float] = ...,
+        flags: _Optional[_Iterable[str]] = ...,
+        auto_terminated: _Optional[bool] = ...,
+    ) -> None: ...
 
 class InterviewReport(_message.Message):
-    __slots__ = ("application_id", "candidate_user_id", "state", "executive_summary", "highlights", "risks", "overall_score", "recommendation", "competency_scores", "integrity")
+    __slots__ = (
+        "application_id",
+        "candidate_user_id",
+        "state",
+        "executive_summary",
+        "highlights",
+        "risks",
+        "overall_score",
+        "recommendation",
+        "competency_scores",
+        "integrity",
+    )
     APPLICATION_ID_FIELD_NUMBER: _ClassVar[int]
     CANDIDATE_USER_ID_FIELD_NUMBER: _ClassVar[int]
     STATE_FIELD_NUMBER: _ClassVar[int]
@@ -109,13 +170,29 @@ class InterviewReport(_message.Message):
     recommendation: str
     competency_scores: _containers.RepeatedCompositeFieldContainer[CompetencyScore]
     integrity: IntegritySummary
-    def __init__(self, application_id: _Optional[str] = ..., candidate_user_id: _Optional[str] = ..., state: _Optional[str] = ..., executive_summary: _Optional[str] = ..., highlights: _Optional[_Iterable[str]] = ..., risks: _Optional[_Iterable[str]] = ..., overall_score: _Optional[float] = ..., recommendation: _Optional[str] = ..., competency_scores: _Optional[_Iterable[_Union[CompetencyScore, _Mapping]]] = ..., integrity: _Optional[_Union[IntegritySummary, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        application_id: _Optional[str] = ...,
+        candidate_user_id: _Optional[str] = ...,
+        state: _Optional[str] = ...,
+        executive_summary: _Optional[str] = ...,
+        highlights: _Optional[_Iterable[str]] = ...,
+        risks: _Optional[_Iterable[str]] = ...,
+        overall_score: _Optional[float] = ...,
+        recommendation: _Optional[str] = ...,
+        competency_scores: _Optional[
+            _Iterable[_Union[CompetencyScore, _Mapping]]
+        ] = ...,
+        integrity: _Optional[_Union[IntegritySummary, _Mapping]] = ...,
+    ) -> None: ...
 
 class ReportList(_message.Message):
     __slots__ = ("reports",)
     REPORTS_FIELD_NUMBER: _ClassVar[int]
     reports: _containers.RepeatedCompositeFieldContainer[InterviewReport]
-    def __init__(self, reports: _Optional[_Iterable[_Union[InterviewReport, _Mapping]]] = ...) -> None: ...
+    def __init__(
+        self, reports: _Optional[_Iterable[_Union[InterviewReport, _Mapping]]] = ...
+    ) -> None: ...
 
 class ReportExport(_message.Message):
     __slots__ = ("filename", "content")
@@ -123,4 +200,6 @@ class ReportExport(_message.Message):
     CONTENT_FIELD_NUMBER: _ClassVar[int]
     filename: str
     content: bytes
-    def __init__(self, filename: _Optional[str] = ..., content: _Optional[bytes] = ...) -> None: ...
+    def __init__(
+        self, filename: _Optional[str] = ..., content: _Optional[bytes] = ...
+    ) -> None: ...

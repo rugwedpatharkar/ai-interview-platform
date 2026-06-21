@@ -1,12 +1,12 @@
 """gRPC RubricService routes — thin adapter over resources/rubric."""
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import rubric as rubric_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import rubric_pb2, rubric_pb2_grpc
 
 log = get_logger(component="rubric.routes")
@@ -40,14 +40,15 @@ class RubricServicer(rubric_pb2_grpc.RubricServiceServicer):
         self._tokens = tokens
 
     async def _abort(self, context, exc, method="unknown"):
+        code, msg = to_grpc_status(exc)
         log.warning(
             "rubric.routes.{}: {} code={}",
             method,
             exc,
-            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
+            code.name,
         )
         _grpc_errors.labels(method=method).inc()
-        await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
+        await context.abort(code, msg)
 
     async def CreateRubric(self, request, context):
         _grpc_total.labels(method="CreateRubric").inc()

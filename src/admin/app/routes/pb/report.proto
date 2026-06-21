@@ -13,13 +13,21 @@ service ReportService {
   rpc GetIntegrityTimeline(GetIntegrityTimelineRequest) returns (IntegrityTimeline);
 }
 
+enum FlagSeverity {
+  FLAG_SEVERITY_UNSPECIFIED = 0;
+  FLAG_SEVERITY_LOW = 1;
+  FLAG_SEVERITY_MED = 2;
+  FLAG_SEVERITY_HIGH = 3;
+  FLAG_SEVERITY_CRITICAL = 4;
+}
+
 message GetIntegrityTimelineRequest {
   string application_id = 1;
 }
 
 message ProctorFlag {
   string type = 1;                 // ProctoringEventType
-  string severity = 2;             // "low" | "medium" | "high" (server-authoritative)
+  FlagSeverity severity = 2;       // server-authoritative
   string at = 3;                   // ISO timestamp
   map<string, string> meta = 4;    // small typed context (never raw media)
 }

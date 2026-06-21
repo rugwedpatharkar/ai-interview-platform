@@ -20,6 +20,7 @@ import {
   errorMessage,
   isNotFound,
   isTransient,
+  track,
   useRequireAuth,
 } from "@ip/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -106,6 +107,8 @@ export default function AptitudePage() {
   const coding = useCodingClient();
   const [answers, setAnswers] = useState<Record<string, SectionAnswer>>({});
   const [results, setResults] = useState<Record<string, RunResult>>({});
+  const startTracked = useRef(false);
+  const startMs = useRef(Date.now());
 
   const test = useQuery({
     queryKey: ["aptitude", applicationId],
@@ -124,6 +127,13 @@ export default function AptitudePage() {
         ? 3000
         : false,
   });
+
+  // Fire aptitude.started once per mount — the assessment is a one-shot gated surface.
+  useEffect(() => {
+    if (startTracked.current) return;
+    startTracked.current = true;
+    track("aptitude.started", { application_id: applicationId });
+  }, [applicationId]);
 
   // Jump to the top once the test lands — the candidate may have scrolled the "preparing"
   // message while polling, and the test should start from question one.
@@ -195,6 +205,12 @@ export default function AptitudePage() {
         return a?.kind === "mcq" ? a.option : -1;
       });
       return api.aptitude.submitAptitude({ applicationId, answers: ordered });
+    },
+    onSuccess: () => {
+      track("aptitude.submitted", {
+        application_id: applicationId,
+        duration_ms: Date.now() - startMs.current,
+      });
     },
     onError: (err) => toast.error(errorMessage(err)),
   });

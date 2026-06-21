@@ -31,7 +31,7 @@ import type {
   ProctorFlag,
   ReportDTO,
 } from "./types";
-import { signalLabel } from "./types";
+import { FlagSeverity, signalLabel } from "./types";
 
 /* ============================================================
    APTURA · v3 — Applicant report (`/company/jobs/[id]/applicants/[appId]`)
@@ -82,16 +82,24 @@ function recommendationPill(rec: string): string {
   return "ap-pill";
 }
 
-function sevClass(sev: string): string {
-  if (sev === "high") return "ap-itl-pip ap-itl-pip--h";
-  if (sev === "medium") return "ap-itl-pip ap-itl-pip--m";
+function sevClass(sev: FlagSeverity): string {
+  if (sev === FlagSeverity.HIGH || sev === FlagSeverity.CRITICAL) return "ap-itl-pip ap-itl-pip--h";
+  if (sev === FlagSeverity.MED) return "ap-itl-pip ap-itl-pip--m";
   return "ap-itl-pip ap-itl-pip--l";
 }
 
-function sevTone(sev: string): string {
-  if (sev === "high") return "var(--danger)";
-  if (sev === "medium") return "var(--warn)";
+function sevTone(sev: FlagSeverity): string {
+  if (sev === FlagSeverity.HIGH || sev === FlagSeverity.CRITICAL) return "var(--danger)";
+  if (sev === FlagSeverity.MED) return "var(--warn)";
   return "var(--good)";
+}
+
+function sevLabel(sev: FlagSeverity): string {
+  if (sev === FlagSeverity.CRITICAL) return "CRITICAL";
+  if (sev === FlagSeverity.HIGH) return "HIGH";
+  if (sev === FlagSeverity.MED) return "MED";
+  if (sev === FlagSeverity.LOW) return "LOW";
+  return "UNSPECIFIED";
 }
 
 function pipPosition(flagAt: string, flags: ProctorFlag[]): string {
@@ -147,7 +155,7 @@ export default function ApplicantReportPage() {
         integrityScore: w.integrityScore,
         flags: w.flags.map((f) => ({
           type: f.type,
-          severity: f.severity as ProctorFlag["severity"],
+          severity: f.severity,
           at: f.at,
           meta: f.meta,
         })),
@@ -215,6 +223,7 @@ export default function ApplicantReportPage() {
       return input.action;
     },
     onSuccess: (action) => {
+      track("decision.made", { application_id: appId, decision: action });
       if (action === "advance") toast.success("Candidate advanced");
       if (action === "hold") toast.success("Candidate placed on hold");
       if (action === "reject") toast.success("Candidate declined");
@@ -645,7 +654,7 @@ function IntegrityBandSection({
                   key={`${i}-${f.at}-${f.type}`}
                   className={sevClass(f.severity)}
                   style={{ left: pipPosition(f.at, sorted) }}
-                  title={`${signalLabel(f.type)} · ${f.severity}`}
+                  title={`${signalLabel(f.type)} · ${sevLabel(f.severity)}`}
                 />
               ))}
               <div className="ap-itl-axis">
@@ -668,7 +677,7 @@ function IntegrityBandSection({
                       style={{ background: sevTone(f.severity) }}
                     />
                     <span>
-                      {new Date(f.at).toLocaleTimeString()} · {f.severity.toUpperCase()}
+                      {new Date(f.at).toLocaleTimeString()} · {sevLabel(f.severity)}
                     </span>
                   </div>
                   <div

@@ -46,8 +46,6 @@ export default function ThreadPage() {
   const threads = useQuery({
     queryKey: listQueryKey(),
     queryFn: () => client.listThreads(),
-    refetchInterval: 30_000,
-    refetchIntervalInBackground: false,
     enabled: Boolean(token),
   });
   const meta = threads.data?.find((t) => t.applicationId === applicationId) ?? null;

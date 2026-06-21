@@ -4,13 +4,13 @@ Authed; caller_identity drives both authz (candidate-owner / recruiter-tenant) a
 sender identity. Mirrors decision.py's _abort shape.
 """
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import messaging as msg_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import messaging_pb2, messaging_pb2_grpc
 
 log = get_logger(component="messaging.routes")
@@ -71,10 +71,10 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
         self._tokens = tokens
 
     async def _abort(self, context, exc, method):
-        code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
+        code, msg = to_grpc_status(exc)
         log.warning("messaging.routes.{}: {} code={}", method, exc, code.name)
         _grpc_errors.labels(method=method).inc()
-        await context.abort(code, str(exc))
+        await context.abort(code, msg)
 
     async def SendMessage(self, request, context):
         _grpc_total.labels(method="SendMessage").inc()
@@ -149,3 +149,26 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
                 )
             except AuthDomainError as exc:
                 await self._abort(context, exc, "MarkRead")
+
+    async def StreamMessages(self, request, context):
+        _grpc_total.labels(method="StreamMessages").inc()
+        ident = await caller_identity(context, self._tokens)
+        async with (
+            log_context(
+                log,
+                "messaging.StreamMessages",
+                **bind_ids(application_id=request.application_id),
+            ),
+            span("messaging.StreamMessages", application_id=request.application_id),
+        ):
+            try:
+                async for msg in msg_res.stream_messages(
+                    request.application_id,
+                    request.since_id,
+                    identity=ident,
+                    applications=self._deps["applications"],
+                    messages=self._deps["messages"],
+                ):
+                    yield _message(msg)
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "StreamMessages")

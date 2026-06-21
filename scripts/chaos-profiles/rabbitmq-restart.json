@@ -1,0 +1,16 @@
+{
+  "name": "rabbitmq-restart",
+  "description": "Close all RabbitMQ connections abruptly (simulates broker restart). Tests Phase 2 idempotent consumers and DLX setup. Messages in-flight should either be re-delivered (at-least-once) or reach the DLX; consumers must reconnect and resume without duplicating side effects.",
+  "proxy": "rabbit",
+  "toxics": [
+    {
+      "name": "rabbitmq-reset",
+      "type": "reset_peer",
+      "stream": "downstream",
+      "toxicity": 1.0,
+      "attributes": {
+        "timeout": 0
+      }
+    }
+  ]
+}

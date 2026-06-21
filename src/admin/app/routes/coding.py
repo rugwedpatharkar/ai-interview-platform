@@ -1,12 +1,12 @@
 """gRPC CodingService — thin adapter over resources/coding (candidate-owned)."""
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter
 
 from app.errors import AuthDomainError
 from app.resources import coding as coding_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import coding_pb2, coding_pb2_grpc
 
 log = get_logger(component="coding.routes")
@@ -29,14 +29,10 @@ class CodingServicer(coding_pb2_grpc.CodingServiceServicer):
         self._tokens = tokens
 
     async def _abort(self, context, exc, method):
-        log.warning(
-            "coding.routes.{}: {} code={}",
-            method,
-            exc,
-            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
-        )
+        code, msg = to_grpc_status(exc)
+        log.warning("coding.routes.{}: {} code={}", method, exc, code.name)
         _grpc_errors.labels(method=method).inc()
-        await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
+        await context.abort(code, msg)
 
     async def GetCodingTask(self, request, context):
         _grpc_total.labels(method="GetCodingTask").inc()

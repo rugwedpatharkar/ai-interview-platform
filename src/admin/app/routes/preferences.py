@@ -1,12 +1,12 @@
 """gRPC PreferencesService — thin adapter over resources/preferences (token-scoped)."""
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter
 
 from app.errors import AuthDomainError
 from app.resources import preferences as preferences_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import preferences_pb2, preferences_pb2_grpc
 
 log = get_logger(component="preferences.routes")
@@ -34,14 +34,15 @@ class PreferencesServicer(preferences_pb2_grpc.PreferencesServiceServicer):
         self._tokens = tokens
 
     async def _abort(self, context, exc, method):
+        code, msg = to_grpc_status(exc)
         log.warning(
             "preferences.routes.{}: {} code={}",
             method,
             exc,
-            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
+            code.name,
         )
         _grpc_errors.labels(method=method).inc()
-        await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
+        await context.abort(code, msg)
 
     async def GetAppearance(self, request, context):
         _grpc_total.labels(method="GetAppearance").inc()

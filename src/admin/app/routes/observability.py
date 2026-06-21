@@ -1,12 +1,12 @@
 """gRPC ObservabilityService route layer."""
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import observability as obs_res
-from app.routes.auth import _STATUS, caller_identity_optional
+from app.routes.auth import caller_identity_optional
 from app.routes.pb import observability_pb2, observability_pb2_grpc
 
 log = get_logger(component="observability.routes")
@@ -27,14 +27,15 @@ class ObservabilityServicer(observability_pb2_grpc.ObservabilityServiceServicer)
         self._tokens = tokens
 
     async def _abort(self, context, exc, method="unknown"):
+        code, msg = to_grpc_status(exc)
         log.warning(
             "observability.routes.{}: {} code={}",
             method,
             exc,
-            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
+            code.name,
         )
         _grpc_errors.labels(method=method).inc()
-        await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
+        await context.abort(code, msg)
 
     async def RecordClientError(self, request, context):
         _grpc_total.labels(method="RecordClientError").inc()

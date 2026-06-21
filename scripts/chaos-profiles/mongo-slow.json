@@ -1,0 +1,17 @@
+{
+  "name": "mongo-slow",
+  "description": "500ms latency (+/-50ms jitter) on every Mongo round-trip. Tests that Phase 1 timeout wrappers fire DEADLINE_EXCEEDED rather than hanging, and that clients receive at most a 503 with retry-after metadata.",
+  "proxy": "mongo",
+  "toxics": [
+    {
+      "name": "mongo-latency",
+      "type": "latency",
+      "stream": "downstream",
+      "toxicity": 1.0,
+      "attributes": {
+        "latency": 500,
+        "jitter": 50
+      }
+    }
+  ]
+}

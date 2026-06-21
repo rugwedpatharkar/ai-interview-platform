@@ -9,6 +9,7 @@ service MessagingService {
   rpc ListThreads(ListThreadsRequest) returns (ListThreadsResponse);
   rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
   rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
+  rpc StreamMessages(StreamMessagesRequest) returns (stream MessageDTO);
 }
 
 message SendMessageRequest {
@@ -68,4 +69,9 @@ message MarkReadResponse {
   string application_id = 1;
   int32 unread = 2;
   int64 accepted_seq_no = 3;   // monotonic high-water mark after this ack
+}
+
+message StreamMessagesRequest {
+  string application_id = 1;
+  string since_id = 2;  // "" = start from beginning; otherwise resume after this message _id
 }

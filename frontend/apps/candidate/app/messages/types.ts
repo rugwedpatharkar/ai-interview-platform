@@ -53,6 +53,11 @@ export interface MessagesClient {
     queryKey: readonly unknown[];
     queryFn: () => Promise<MessageDTO[]>;
   };
+  streamMessages(
+    applicationId: string,
+    sinceId: string,
+    signal: AbortSignal,
+  ): AsyncIterable<MessageDTO>;
 }
 
 // Mirror the server cap (the server stays the authority).

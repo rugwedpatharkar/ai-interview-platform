@@ -4,13 +4,13 @@ The caller is the token (caller_identity -> identity["id"]); no request carries 
 user_id. This slice serves notification preferences.
 """
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import settings as settings_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import settings_pb2, settings_pb2_grpc
 
 log = get_logger(component="settings.routes")
@@ -64,10 +64,10 @@ class SettingsServicer(settings_pb2_grpc.SettingsServiceServicer):
         self._audit = audit
 
     async def _abort(self, context, exc, method):
-        code = _STATUS.get(type(exc), grpc.StatusCode.INTERNAL)
+        code, msg = to_grpc_status(exc)
         log.warning("settings.routes.{}: {} code={}", method, exc, code.name)
         _grpc_errors.labels(method=method).inc()
-        await context.abort(code, str(exc))
+        await context.abort(code, msg)
 
     async def GetNotificationPrefs(self, request, context):
         _grpc_total.labels(method="GetNotificationPrefs").inc()

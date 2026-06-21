@@ -4,13 +4,13 @@ Authenticates from the access token, maps proto<->resource, and translates app.e
 gRPC status via routes/auth._STATUS. All authz/CAS/gate logic stays in the resource.
 """
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import scheduling as sched
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import scheduling_pb2, scheduling_pb2_grpc
 
 log = get_logger(component="scheduling.routes")
@@ -85,14 +85,10 @@ class SchedulingServicer(scheduling_pb2_grpc.SchedulingServiceServicer):
         self._limiter = limiter
 
     async def _abort(self, context, exc, method):
-        log.warning(
-            "scheduling.routes.{}: {} code={}",
-            method,
-            exc,
-            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
-        )
+        code, msg = to_grpc_status(exc)
+        log.warning("scheduling.routes.{}: {} code={}", method, exc, code.name)
         _grpc_errors.labels(method=method).inc()
-        await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
+        await context.abort(code, msg)
 
     def _ctx(self, method, application_id=""):
         _grpc_total.labels(method=method).inc()

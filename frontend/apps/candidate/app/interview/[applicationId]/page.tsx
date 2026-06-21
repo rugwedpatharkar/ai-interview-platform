@@ -5,6 +5,7 @@ import {
   Code,
   ConnectError,
   startProctoring,
+  track,
   useRequireAuth,
 } from "@ip/shared";
 import { ArrowLeft, Captions, CaptionsOff, Lock } from "lucide-react";
@@ -105,6 +106,7 @@ export default function InterviewPage() {
   // is the only path that releases the camera + mic (so the invariant holds).
   const endSession = useCallback(
     (reason: string) => {
+      track("interview.completed", { application_id: applicationId, end_reason: reason });
       setEndReason(reason);
       detach.current.forEach((d) => d());
       detach.current = [];
@@ -199,6 +201,7 @@ export default function InterviewPage() {
       if (audioTrack) {
         detach.current.push(await startAudioDetector(audioTrack, emitSignal));
       }
+      track("interview.started", { application_id: applicationId });
       setPhase("live");
     } catch (err) {
       starting.current = false;

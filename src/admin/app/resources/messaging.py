@@ -8,6 +8,7 @@ The recipient's unread counter is the badge truth (read_at is advisory). A best-
 boundary (trimmed, non-empty, <= MAX_BODY). The funnel is untouched.
 """
 
+import asyncio
 from datetime import UTC, datetime
 
 from lib.logging import bind_ids, get_logger, log_context
@@ -280,3 +281,22 @@ async def mark_read(
             "unread": 0,
             "accepted_seq_no": accepted_seq_no,
         }
+
+
+async def stream_messages(
+    application_id, since_id, *, identity, applications, messages
+):
+    """Yield new MessageDTOs as they arrive (1s poll). Caller cancels on disconnect."""
+    async with log_context(
+        log,
+        "resource.messaging.stream_messages",
+        **bind_ids(application_id=application_id),
+    ):
+        await _authorize(identity, application_id, applications)
+        last_id = since_id
+        while True:
+            new_msgs = await messages.list_after(application_id, last_id, limit=100)
+            for m in new_msgs:
+                yield _message_dto(m)
+                last_id = str(m["_id"])
+            await asyncio.sleep(1.0)

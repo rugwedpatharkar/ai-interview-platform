@@ -1,13 +1,13 @@
 """gRPC ReportService route layer — a thin adapter over app/resources/report."""
 
-import grpc
+from lib.errors import to_grpc_status
 from lib.logging import bind_ids, get_logger, log_context
 from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import integrity as integrity_res
 from app.resources import report as report_res
-from app.routes.auth import _STATUS, caller_identity
+from app.routes.auth import caller_identity
 from app.routes.pb import report_pb2, report_pb2_grpc
 
 log = get_logger(component="report.routes")
@@ -58,12 +58,26 @@ def _to_proto(r):
     )
 
 
+_SEVERITY_MAP = {
+    "low": report_pb2.FLAG_SEVERITY_LOW,
+    "med": report_pb2.FLAG_SEVERITY_MED,
+    "medium": report_pb2.FLAG_SEVERITY_MED,
+    "high": report_pb2.FLAG_SEVERITY_HIGH,
+    "critical": report_pb2.FLAG_SEVERITY_CRITICAL,
+}
+
+
 def _timeline_proto(t):
     return report_pb2.IntegrityTimeline(
         integrity_score=t["integrity_score"],
         flags=[
             report_pb2.ProctorFlag(
-                type=f["type"], severity=f["severity"], at=f["at"], meta=f["meta"]
+                type=f["type"],
+                severity=_SEVERITY_MAP.get(
+                    f["severity"].lower(), report_pb2.FLAG_SEVERITY_UNSPECIFIED
+                ),
+                at=f["at"],
+                meta=f["meta"],
             )
             for f in t["flags"]
         ],
@@ -92,14 +106,10 @@ class ReportServicer(report_pb2_grpc.ReportServiceServicer):
         self._storage = storage
 
     async def _abort(self, context, exc, method="unknown"):
-        log.warning(
-            "report.routes.{}: {} code={}",
-            method,
-            exc,
-            _STATUS.get(type(exc), grpc.StatusCode.INTERNAL).name,
-        )
+        code, msg = to_grpc_status(exc)
+        log.warning("report.routes.{}: {} code={}", method, exc, code.name)
         _grpc_errors.labels(method=method).inc()
-        await context.abort(_STATUS.get(type(exc), grpc.StatusCode.INTERNAL), str(exc))
+        await context.abort(code, msg)
 
     async def GetReport(self, request, context):
         _grpc_total.labels(method="GetReport").inc()

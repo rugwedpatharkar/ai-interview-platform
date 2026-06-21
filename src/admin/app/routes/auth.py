@@ -151,10 +151,11 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
         self._secretbox = secretbox
 
     async def _abort(self, context, exc, method="unknown"):
-        code = _STATUS.get(type(exc)) or lib_errors.to_grpc_status(exc)[0]
+        code, msg = lib_errors.to_grpc_status(exc)
+        code = _STATUS.get(type(exc)) or code
         log_domain_error(log, exc, method=method)
         _grpc_errors.labels(method=method).inc()
-        await context.abort(code, str(exc))
+        await context.abort(code, msg)
 
     async def RegisterCompany(self, request, context):
         _grpc_total.labels(method="RegisterCompany").inc()

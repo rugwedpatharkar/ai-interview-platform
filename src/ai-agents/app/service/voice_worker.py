@@ -344,7 +344,17 @@ def _build_webhook_app(
 async def serve() -> None:
     s = get_settings()
     configure_logging(s.service_name, s.log_level)
-    init_tracing(s.service_name, enabled=s.tracing_enabled)
+    if s.otlp_endpoint:
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter,
+        )
+
+        init_tracing(
+            s.service_name,
+            exporter=OTLPSpanExporter(endpoint=s.otlp_endpoint, insecure=True),
+        )
+    else:
+        init_tracing(s.service_name, enabled=s.tracing_enabled)
     await start_metrics_server(s.metrics_port)
     log.info("voice-worker starting on port {}", s.voice_worker_http_port)
 

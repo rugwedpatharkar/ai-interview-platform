@@ -6,7 +6,8 @@
 import { errorMessage, useThreadMessages } from "@ip/shared";
 import { MessageThreadView as SharedMessageThreadView, toast } from "@ip/ui";
 import { Building2 } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   USE_MOCK,
@@ -24,6 +25,7 @@ export function MessageThreadView({
   side: SenderSide;
 }) {
   const { api } = useAuth();
+  const qc = useQueryClient();
   const client = useMemo(
     () => (USE_MOCK ? makeMockMessagesClient(applicationId, side) : createMessagesClient(api)),
     [api, applicationId, side],
@@ -31,6 +33,20 @@ export function MessageThreadView({
   const thread = useThreadMessages(applicationId, side, client, (e) =>
     toast.error(errorMessage(e)),
   );
+
+  useEffect(() => {
+    const abort = new AbortController();
+    (async () => {
+      try {
+        for await (const _ of client.streamMessages(applicationId, "", abort.signal)) {
+          void qc.invalidateQueries({ queryKey: client.threadQueryKey(applicationId) });
+        }
+      } catch {
+        // Abort on unmount or network drop; useThreadMessages poll recovers.
+      }
+    })();
+    return () => abort.abort();
+  }, [applicationId, client, qc]);
 
   return (
     <SharedMessageThreadView
