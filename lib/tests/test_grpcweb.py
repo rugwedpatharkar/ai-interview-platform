@@ -3,6 +3,7 @@
 import grpc
 from lib.errors import AuthError, NotFoundError, ValidationError
 from lib.grpcweb import _translate_exception_to_status
+from lib.resilience import OperationTimeout
 
 
 def test_translate_app_error_uses_to_grpc_status():
@@ -31,7 +32,6 @@ def test_translate_unavailable_error_still_unavailable():
     # OperationTimeout is in _STATUS_MAP → DEADLINE_EXCEEDED via to_grpc_status;
     # the isinstance(exc, (AppError, OperationTimeout)) branch fires before
     # the legacy _UNAVAILABLE_ERRORS fallback, so UNAVAILABLE is not returned.
-    from lib.resilience import OperationTimeout
 
     code, _ = _translate_exception_to_status(OperationTimeout("op", 1.0))
     assert (
