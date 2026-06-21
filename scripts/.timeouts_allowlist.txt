@@ -1,26 +1,5 @@
 # Allowed-for-now uninstrumented external calls. Phase 1 deletes from this file.
 # Format: absolute/path/to/file.py:LINE (as printed by check_timeouts.py)
-/Users/rugwedpatharkar/Projects/Project/lib/lib/audit.py:43
-/Users/rugwedpatharkar/Projects/Project/lib/lib/audit.py:46
-/Users/rugwedpatharkar/Projects/Project/lib/lib/audit.py:55
-/Users/rugwedpatharkar/Projects/Project/lib/lib/audit.py:63
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/infra/notifier.py:28
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:92
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:100
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:101
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:102
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:103
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:105
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:108
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:110
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:112
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:114
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:118
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:122
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:123
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:125
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:128
-/Users/rugwedpatharkar/Projects/Project/src/admin/app/resources/compliance.py:132
 /Users/rugwedpatharkar/Projects/Project/src/ai-agents/app/infra/sessions.py:64
 /Users/rugwedpatharkar/Projects/Project/src/ai-agents/app/infra/sessions.py:83
 /Users/rugwedpatharkar/Projects/Project/src/ai-agents/app/infra/sessions.py:119
