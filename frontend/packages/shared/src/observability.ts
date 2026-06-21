@@ -1,6 +1,6 @@
 import type { ApiClients } from "@ip/api-client";
 
-import { getLastCorrelationId } from "./transport.js";
+import { getLastCorrelationId, registerTransportTracker } from "./transport.js";
 
 export type ClientEventName =
   | "auth.registered"
@@ -95,6 +95,7 @@ const _redactProps = (props: Record<string, unknown>): string => {
 export function initObservability(opts: InitOptions): void {
   _buildSha = opts.buildSha;
   _client = opts.client;
+  registerTransportTracker((name, props) => track(name, props));
   if (_flushTimer) clearInterval(_flushTimer);
   _flushTimer = setInterval(() => void _flushNow(), _FLUSH_INTERVAL_MS);
   if (typeof window === "undefined") return;
@@ -168,4 +169,5 @@ export function _resetForTest(): void {
     clearInterval(_flushTimer);
     _flushTimer = null;
   }
+  registerTransportTracker(() => {});
 }
