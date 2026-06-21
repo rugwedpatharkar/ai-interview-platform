@@ -11,6 +11,7 @@ from lib.logging import bind_ids, get_logger, log_context
 from app.errors import NotFoundError
 from app.model.notification import Notification
 from app.resources.discovery import iso
+from app.resources.mark_read import mark_thread_read
 
 log = get_logger(component="notification.resources")
 
@@ -65,7 +66,15 @@ async def list_notifications(
         }
 
 
-async def mark_read(user_id, notification_id, *, notifications):
+async def mark_read(
+    user_id,
+    notification_id,
+    *,
+    notifications,
+    read_state=None,
+    seq_no: int = 0,
+    comp_id: str = "",
+):
     async with log_context(
         log,
         "resource.notification.mark_read",
@@ -73,6 +82,15 @@ async def mark_read(user_id, notification_id, *, notifications):
     ):
         if not await notifications.mark_read(user_id, notification_id):
             raise NotFoundError("notification not found")
+        if read_state is not None:
+            await mark_thread_read(
+                comp_id,
+                user_id,
+                "notification",
+                notification_id,
+                seq_no,
+                store=read_state,
+            )
         return await notifications.unread_count(user_id)
 
 

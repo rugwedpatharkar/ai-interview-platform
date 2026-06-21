@@ -17,6 +17,7 @@ from app.errors import ValidationError
 from app.resources.aptitude import _owned
 from app.resources.decision import _scoped
 from app.resources.discovery import iso
+from app.resources.mark_read import mark_thread_read
 from app.resources.notification import notify_event
 
 log = get_logger(component="messaging.resources")
@@ -251,13 +252,31 @@ async def mark_read(
     jobs,
     companies,
     notifications=None,
+    read_state=None,
+    seq_no: int = 0,
 ):
     async with log_context(
         log,
         "resource.messaging.mark_read",
         **bind_ids(user_id=identity["id"], application_id=application_id),
     ):
-        _, caller_side = await _authorize(identity, application_id, applications)
+        application, caller_side = await _authorize(
+            identity, application_id, applications
+        )
         await threads.mark_read(application_id, caller_side)
         await messages.mark_other_side_read(application_id, caller_side)
-        return {"application_id": application_id, "unread": 0}
+        accepted_seq_no = 0
+        if read_state is not None:
+            accepted_seq_no = await mark_thread_read(
+                application["comp_id"],
+                identity["id"],
+                "thread",
+                application_id,
+                seq_no,
+                store=read_state,
+            )
+        return {
+            "application_id": application_id,
+            "unread": 0,
+            "accepted_seq_no": accepted_seq_no,
+        }
