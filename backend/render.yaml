@@ -1,0 +1,62 @@
+# Render Blueprint — consolidated Aptura backend (one container, all 4 services + nginx).
+# Render → New → Blueprint → point at this repo; it reads this file. Secret VALUES are
+# NEVER in git: every env var below is `sync: false`, meaning you paste it once in the
+# Render dashboard (or bulk-paste a .env — see backend/.env.example).
+#
+# Databases live OUTSIDE this container (all free, no credit card): MongoDB Atlas, Upstash
+# Redis, CloudAMQP RabbitMQ, Qdrant Cloud. This container is just the stateless app tier.
+#
+# Memory: the 4 Python services idle ~360 MB; Render free = 512 MB → ~130 MB headroom.
+# Fine for a demo / single-tester. Under sustained multi-user load it may OOM-restart —
+# bump to the Starter instance ($7/mo, 512 MB→2 GB) when you have real traffic.
+services:
+  - type: web
+    name: aptura-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon          # free tier; change to frankfurt/singapore/ohio if closer
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      # --- Secrets / connection strings (set in dashboard; never committed) ---
+      - key: JWT_SECRET            # `openssl rand -hex 32`
+        sync: false
+      - key: MONGO_URI            # Atlas: mongodb+srv://…?retryWrites=true&w=majority
+        sync: false
+      - key: REDIS_URL            # Upstash: rediss://default:…@….upstash.io:6379
+        sync: false
+      - key: RABBITMQ_URL         # CloudAMQP: amqps://…@….cloudamqp.com/…
+        sync: false
+      - key: GEMINI_API_KEY       # aistudio.google.com/apikey
+        sync: false
+      - key: QDRANT_URL           # Qdrant Cloud: https://….cloud.qdrant.io:6333
+        sync: false
+      - key: QDRANT_API_KEY       # Qdrant Cloud cluster API key
+        sync: false
+      - key: CORS_ALLOW_ORIGIN    # your Vercel URL, e.g. https://aptura.vercel.app
+        sync: false
+      # --- Object storage (Cloudflare R2, S3-compatible) ---
+      - key: S3_ENDPOINT_URL      # https://<account-id>.r2.cloudflarestorage.com
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_BUCKET
+        value: interview-platform
+      - key: S3_REGION
+        value: auto
+      # --- Email (Resend SMTP; optional — without it, verify links only hit the logs) ---
+      - key: SMTP_HOST
+        value: smtp.resend.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        value: resend
+      - key: SMTP_PASS            # Resend API key
+        sync: false
+      - key: SMTP_FROM            # noreply@yourdomain.com (verified Resend sender)
+        sync: false
