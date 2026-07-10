@@ -170,7 +170,7 @@ export function CandidateBody() {
         </div>
       </section>
 
-      {/* INTERVIEW HUD — folds in the applicants-hero showcase */}
+      {/* INTERVIEW HUD — the candidate hero showcase */}
       <section className="section-pad" id="interview" aria-labelledby="interview-h">
         <div className="wrap">
           <div className="showcase">
