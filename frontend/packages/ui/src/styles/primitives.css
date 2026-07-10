@@ -431,6 +431,14 @@
 .lucent .field input{ width: 100%; height: 52px; padding: 0 14px 0 42px; border-radius: 12px; background: rgba(255,255,255,0.7); border: 1px solid var(--line-glass); color: var(--ink); font-size: 1rem; transition: border-color .25s var(--ease), background .25s var(--ease), box-shadow .25s var(--ease); }
 .lucent .field input::placeholder{ color: var(--placeholder); }
 .lucent .field input:focus-visible{ outline: none; background: #fff; border-color: color-mix(in oklch, var(--focus) 60%, var(--line-glass)); box-shadow: 0 0 0 3px oklch(0.55 0.15 258 / 0.16); }
+
+/* Keyboard focus — one branded ring for every landing interactive (buttons, the
+   audience switch, nav links, the fork, FAQ summaries). Only fires for keyboard
+   (:focus-visible), never mouse; outline (not box-shadow) so it never clobbers a
+   button's own shadow. @ip/ui Button/Input/Select carry their own focus ring. */
+.lucent a:focus-visible,
+.lucent button:focus-visible,
+.lucent summary:focus-visible{ outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--rad-xs); }
 .lucent .search .btn{ height: 52px; }
 .lucent .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
 

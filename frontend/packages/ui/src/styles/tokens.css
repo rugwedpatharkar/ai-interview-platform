@@ -17,7 +17,11 @@
   --ink-deep:  oklch(0.16 0.012 265);
   --ink:       oklch(0.20 0.012 265);
   --ink-2:     oklch(0.42 0.014 265);
-  --ink-3:     oklch(0.56 0.014 265);
+  /* --ink-3 is the muted-label tier (small mono kickers/axis/timestamps). Held at
+     0.52 (not lighter) so it clears AA 4.5:1 with margin on glass — glass is 62%
+     white over the aurora, and at 0.56 muted labels landed at 4.56 (razor-thin)
+     / 3.96 over a strong aurora blob. See Phase 4 contrast audit. */
+  --ink-3:     oklch(0.52 0.014 265);
   --line:      oklch(0.90 0.006 265);
   --line-2:    oklch(0.83 0.008 265);
   --line-3:    oklch(0.76 0.010 265);
