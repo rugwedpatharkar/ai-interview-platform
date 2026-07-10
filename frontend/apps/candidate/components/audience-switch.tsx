@@ -1,29 +1,35 @@
 "use client";
 
-import Link from "next/link";
-
 /**
- * Audience switcher for the two primary landings — Candidates (/) is primary,
- * Hiring Teams (/hiring-teams) is one tap away. Rendered inside the `.lucent` nav
- * of both landings; styled by `.lucent .aud-switch` in globals.css.
+ * Audience switcher for the consolidated Lucent landing. Toggles the landing body
+ * IN PLACE (via `onSelect`) — no route navigation. Rendered inside the `.lucent`
+ * nav of `landing-page.tsx`; styled by `.lucent .aud-switch` in globals.css.
  */
-export function AudienceSwitch({ active }: { active: "candidates" | "hiring" }) {
+export function AudienceSwitch({
+  active,
+  onSelect,
+}: {
+  active: "candidates" | "hiring";
+  onSelect: (a: "candidates" | "hiring") => void;
+}) {
   return (
     <div className="aud-switch" role="group" aria-label="Choose what you're here for">
-      <Link
-        href="/"
+      <button
+        type="button"
         className={active === "candidates" ? "on" : undefined}
-        aria-current={active === "candidates" ? "page" : undefined}
+        aria-pressed={active === "candidates"}
+        onClick={() => onSelect("candidates")}
       >
         For candidates
-      </Link>
-      <Link
-        href="/hiring-teams"
+      </button>
+      <button
+        type="button"
         className={active === "hiring" ? "on" : undefined}
-        aria-current={active === "hiring" ? "page" : undefined}
+        aria-pressed={active === "hiring"}
+        onClick={() => onSelect("hiring")}
       >
         For hiring teams
-      </Link>
+      </button>
     </div>
   );
 }

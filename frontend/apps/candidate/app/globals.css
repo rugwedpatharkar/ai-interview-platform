@@ -607,7 +607,10 @@ input, select, textarea { font-size: 16px; }
 .lucent .aud-switch a{ padding: 7px 13px; border-radius: 9px; font-size: .9rem; font-weight: 500; color: var(--ink-2); text-decoration: none; white-space: nowrap; transition: color .25s var(--ease), background .25s var(--ease); }
 .lucent .aud-switch a.on{ color: var(--ink); background: var(--surface-glass-2); box-shadow: inset 0 1px 0 var(--sheen), var(--shadow-sm); }
 .lucent .aud-switch a:not(.on):hover{ color: var(--ink); }
-@media (max-width: 640px){ .lucent .aud-switch a{ padding: 7px 10px; font-size: .84rem; } }
+.lucent .aud-switch button{ font: inherit; border: 0; cursor: pointer; background: transparent; padding: 7px 13px; border-radius: 9px; font-size: .9rem; font-weight: 500; color: var(--ink-2); white-space: nowrap; transition: color .25s var(--ease), background .25s var(--ease); }
+.lucent .aud-switch button.on{ color: var(--ink); background: var(--surface-glass-2); box-shadow: inset 0 1px 0 var(--sheen), var(--shadow-sm); }
+.lucent .aud-switch button:not(.on):hover{ color: var(--ink); }
+@media (max-width: 640px){ .lucent .aud-switch a, .lucent .aud-switch button{ padding: 7px 10px; font-size: .84rem; } }
 
 /* Hero + 3D lens */
 .lucent .hero{ position: relative; padding-top: clamp(28px, 6vh, 70px); padding-bottom: clamp(40px, 8vh, 96px); }
