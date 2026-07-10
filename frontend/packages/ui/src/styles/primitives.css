@@ -294,8 +294,24 @@
 
 /* ---------- global base: default border color + reduced motion ---------- */
 * { border-color: var(--border); }
+
+/* ===========================================================================
+   REDUCED MOTION — single authoritative gate. The universal rule zeroes every
+   CSS animation/transition; the explicit resets force the motion-entrance
+   elements (reveals, hero stagger, lens, float chips, the audience crossfade)
+   to their resting visible state and remove the cursor blush entirely. JS-driven
+   motion (ApertureLens, CursorGlow, landing crossfade + reveal observer) is
+   separately gated on matchMedia in those components.
+   ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  .lucent .reveal, .lucent .hero-content > *, .lucent .lens-stage, .lucent .float-chip {
+    opacity: 1 !important; filter: none !important; transform: none !important; animation: none !important;
+  }
+  .lucent .lens-stage { transform: translate(-50%, -52%) !important; }
+  .lucent .landing-body { transition: none !important; }
+  .lucent .landing-body.is-leaving { opacity: 1 !important; transform: none !important; filter: none !important; }
+  .cursor-glow { display: none !important; }
 }
 
 .lucent{ position: relative; min-height: 100vh; font-family: 'General Sans','Hanken Grotesk',system-ui,sans-serif; color: var(--ink); }
@@ -553,10 +569,6 @@
 @media (max-width: 400px){
   .lucent .fork{ width: 100%; } .lucent .fork button{ flex: 1; padding-inline: 8px; }
 }
-@media (prefers-reduced-motion: reduce){
-  .lucent .reveal, .lucent .hero-content > *, .lucent .lens-stage, .lucent .float-chip{ opacity: 1 !important; filter: none !important; transform: none !important; animation: none !important; }
-  .lucent .lens-stage{ transform: translate(-50%,-52%) !important; }
-}
 
 /* ===========================================================================
    LUCENT v4 — informative landing sections. Real content from the applicants
@@ -730,17 +742,12 @@
   opacity: 0; transition: opacity .6s ease;
   will-change: transform;
 }
-@media (prefers-reduced-motion: reduce){ .cursor-glow{ display: none !important; } }
 
 /* Landing audience crossfade — the nav switch swaps CandidateBody/CompanyBody in
    place with a fade+lift; the URL never changes. */
 .lucent .landing-body{ position: relative; z-index: var(--z-content);
-  transition: opacity .26s var(--ease), transform .3s var(--ease), filter .3s var(--ease); }
+  transition: opacity var(--dur-2) var(--ease), transform .3s var(--ease), filter .3s var(--ease); }
 .lucent .landing-body.is-leaving{ opacity: 0; transform: translateY(10px) scale(0.995); filter: blur(6px); }
-@media (prefers-reduced-motion: reduce){
-  .lucent .landing-body{ transition: none !important; }
-  .lucent .landing-body.is-leaving{ opacity: 1 !important; transform: none !important; filter: none !important; }
-}
 
 /* ===========================================================================
    LUCENT v4 — COMPANY (hiring-teams) landing sections. Real content from the
