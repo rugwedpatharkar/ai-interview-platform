@@ -355,11 +355,20 @@
 /* Buttons */
 .btn{ display: inline-flex; align-items: center; justify-content: center; gap: .5em; min-height: 48px; padding: 0 22px; border-radius: 12px; font-weight: 500; font-size: 1rem; letter-spacing: -0.01em; border: 1px solid transparent; cursor: pointer; text-decoration: none; position: relative; transition: transform .5s var(--ease), box-shadow .35s var(--ease), background .35s var(--ease); will-change: transform; }
 .btn:active{ transform: scale(.975); transition-duration: .08s; }
-.btn-primary{ background: var(--grad-cta); background-size: 200% 200%; color: #fff; font-weight: 600; box-shadow: var(--shadow-sm), 0 14px 30px -12px oklch(0.54 0.22 300 / 0.55), inset 0 1px 0 rgba(255,255,255,.24); animation: ctaflow 9s ease-in-out infinite; }
-.btn-primary::before{ content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; background: var(--irid); opacity:.55; pointer-events:none;
+/* ANCHOR THE VIOLET (Phase 6): the default primary button is SOLID --brand —
+   matches @ip/ui <Button variant="primary"> and keeps the spectral gradient from
+   being sprayed across every CTA app-wide (~38 files use .btn-primary). The
+   gradient is reserved for the signature hero CTA via the .btn-hero modifier
+   below, so it reads as special. filter:brightness hover works for both. */
+.btn-primary{ background: var(--brand); color: #fff; font-weight: 600; box-shadow: var(--shadow-sm), 0 14px 30px -12px oklch(0.54 0.22 300 / 0.5), inset 0 1px 0 rgba(255,255,255,.22); }
+.btn-primary:hover{ box-shadow: var(--shadow-lift), 0 18px 40px -12px oklch(0.54 0.22 300 / 0.58), inset 0 1px 0 rgba(255,255,255,.28); filter: brightness(1.07); }
+
+/* Reserved signature CTA — spectral gradient + slow flow + iridescent edge.
+   Add alongside .btn-primary on the landing hero call-to-action only. */
+.btn-hero{ background: var(--grad-cta); background-size: 200% 200%; animation: ctaflow 9s ease-in-out infinite; }
+.btn-hero::before{ content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; background: var(--irid); opacity:.55; pointer-events:none;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor; mask-composite: exclude; }
-.btn-primary:hover{ box-shadow: var(--shadow-lift), 0 18px 40px -12px oklch(0.54 0.22 300 / 0.6), inset 0 1px 0 rgba(255,255,255,.28); }
 .btn-glass{ background: var(--surface-glass-2); color: var(--ink); border-color: var(--line-glass); box-shadow: var(--shadow-sm), inset 0 1px 0 var(--sheen); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 .btn-glass:hover{ background: var(--surface); border-color: color-mix(in oklch, var(--ink) 22%, var(--line-glass)); }
 .btn-ghost{ background: transparent; color: var(--ink); border-color: var(--line-glass); }

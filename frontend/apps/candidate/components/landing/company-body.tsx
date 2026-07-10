@@ -371,7 +371,7 @@ export function CompanyBody() {
               <p className="lede">Aptura runs one strictly proctored AI interview per role — and gives you an evidence-based report with an integrity timeline. Humans decide.</p>
 
               <div className="pills" style={{ gap: 12 }}>
-                <Link href="/pilot" className="btn btn-primary">Book a pilot</Link>
+                <Link href="/pilot" className="btn btn-primary btn-hero">Book a pilot</Link>
                 <Link href="/login" className="btn btn-glass">Sign in</Link>
               </div>
 

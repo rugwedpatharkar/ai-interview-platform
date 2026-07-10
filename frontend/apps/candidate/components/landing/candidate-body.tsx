@@ -157,7 +157,7 @@ export function CandidateBody() {
                   <label className="sr-only" htmlFor="loc">Location</label>
                   <input id="loc" value={loc} onChange={(e) => setLoc(e.target.value)} type="text" placeholder="Location" autoComplete="off" />
                 </div>
-                <button className="btn btn-primary" type="submit">{hiring ? "Start hiring" : "Search"}</button>
+                <button className="btn btn-primary btn-hero" type="submit">{hiring ? "Start hiring" : "Search"}</button>
               </form>
 
               <div className="pills">
