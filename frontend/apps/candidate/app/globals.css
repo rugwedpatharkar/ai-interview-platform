@@ -963,3 +963,92 @@ input, select, textarea { font-size: 16px; }
   will-change: transform;
 }
 @media (prefers-reduced-motion: reduce){ .cursor-glow{ display: none !important; } }
+
+/* ===========================================================================
+   LUCENT v4 — COMPANY (hiring-teams) landing sections. Real content from the
+   hiring-teams marketing components (hero HUD, stats, evidence flip, how-it-
+   happens acts, platform bento, integrity timeline, defense split, evidence
+   report, advisory gate, compare table, what-you-get, trust, designed-for,
+   early access, FAQ, final CTA) re-skinned in the Lucent language: frosted
+   glass, hairline borders, spectral accents. Light-only. Token-driven .ap-*
+   instruments (ap-ring, ap-bar, ap-itl-*, ap-compare-*, ap-cell-*, ap-defense)
+   are reused verbatim inside these glass sections and are NOT restyled here.
+   ========================================================================== */
+
+/* Two-column section head (eyebrow+h2 | lede) — pairs with .head-row */
+.lucent .head-two{ grid-template-columns: 1.05fr 1fr; gap: 2rem; align-items: end; }
+.lucent .head-two .head-two-l{ display: grid; gap: 8px; }
+@media (max-width: 900px){ .lucent .head-two{ grid-template-columns: 1fr; gap: 14px; } }
+
+/* Hero — folded sample-interview HUD sits under the CTA-led hero content */
+.lucent .hero-hud{ width: min(100%, 620px); margin-top: clamp(30px, 5vw, 56px); }
+
+/* Evidence flip — résumé (left) vs report (right) with a center arrow badge */
+.lucent .ev-flip{ position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.lucent .ev-col{ padding: clamp(22px, 3vw, 30px); border-radius: 20px; }
+.lucent .ev-kicker{ font-family:'Geist Mono',monospace; font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color: var(--ink-3); }
+.lucent .ev-kicker.hot{ color: var(--teal-strong); }
+.lucent .ev-arrow{ position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--coral); color: var(--coral-ink); box-shadow: var(--shadow-lift); }
+.lucent .resume{ margin-top: 20px; padding: 16px; border-radius: 14px; background: var(--surface-glass); border: 1px dashed var(--line-glass); font-family:'Geist Mono',monospace; font-size:.82rem; line-height: 1.6; color: var(--ink-2); }
+.lucent .resume .hd{ font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+.lucent .resume .rr{ display: flex; gap: 8px; margin-top: 4px; }
+.lucent .resume .rr .y{ width: 5ch; flex: 0 0 auto; color: var(--ink-3); }
+.lucent .resume .rr.strike span:last-child{ text-decoration: line-through; opacity: .7; }
+.lucent .resume .rr.muted span:last-child{ color: var(--ink-3); }
+.lucent .ev-report{ margin-top: 20px; padding: 18px; border-radius: 16px; background: var(--surface-glass-2); border: 1px solid var(--line-glass); box-shadow: inset 0 1px 0 var(--sheen); }
+.lucent .ev-report .foot{ margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--hair); display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: .86rem; }
+@media (max-width: 900px){ .lucent .ev-flip{ grid-template-columns: 1fr; } .lucent .ev-arrow{ display: none; } }
+
+/* How it happens — acts reuse .journey/.j-row; visual box lives in the 3rd col.
+   At <=980 the shared .j-row collapses to 2 cols, so span the visual full-width
+   (mirrors how .j-bullets spans on the candidate journey). */
+.lucent .act-visual{ display: grid; place-items: center; min-height: 150px; padding: 16px; border-radius: 14px; background: var(--surface-glass); border: 1px dashed var(--line-glass); }
+@media (max-width: 980px){ .lucent .act-visual{ grid-column: 1 / -1; } }
+
+/* Advisory gate — two-half glass panel */
+.lucent .advisory{ display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; border-radius: 24px; }
+.lucent .advisory .side{ padding: clamp(24px, 3vw, 34px); display: grid; gap: 10px; align-content: start; }
+.lucent .advisory .side + .side{ border-left: 1px solid var(--hair); }
+.lucent .advisory .g-ic{ width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; margin-bottom: 6px; }
+.lucent .advisory .g-ic.gold{ background: var(--gold-soft); color: color-mix(in oklch, var(--gold) 55%, var(--ink-deep)); }
+.lucent .advisory .g-ic.coral{ background: var(--coral-soft); color: var(--coral); }
+.lucent .advisory h3{ color: var(--ink); } .lucent .advisory > .side > p{ color: var(--ink-2); }
+.lucent .advisory ul{ list-style: none; padding: 0; margin-top: 6px; display: grid; gap: 8px; }
+.lucent .advisory li{ display: flex; gap: 10px; color: var(--ink-2); font-size: .94rem; line-height: 1.45; }
+.lucent .advisory li::before{ content:""; margin-top: 9px; width: 5px; height: 5px; flex: 0 0 auto; border-radius: 50%; background: var(--ink-3); }
+@media (max-width: 900px){ .lucent .advisory{ grid-template-columns: 1fr; } .lucent .advisory .side + .side{ border-left: 0; border-top: 1px solid var(--hair); } }
+
+/* What you get — four artifact cards */
+.lucent .get-grid{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.lucent .get-card{ padding: 24px; border-radius: 18px; display: grid; gap: 14px; align-content: start; min-height: 210px; }
+.lucent .get-card .tag{ font-family:'Clash Display','Sora',sans-serif; font-weight: 600; letter-spacing: -0.02em; font-size: 1.02rem; color: var(--ink); }
+.lucent .get-card .gi{ color: var(--teal-strong); }
+.lucent .get-card p{ color: var(--ink-2); font-size: .92rem; line-height: 1.5; }
+@media (max-width: 900px){ .lucent .get-grid{ grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px){ .lucent .get-grid{ grid-template-columns: 1fr; } }
+
+/* Designed for — vertical chips */
+.lucent .verticals{ display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
+.lucent .vert{ padding: 16px 12px; border-radius: 16px; display: grid; justify-items: center; gap: 8px; text-align: center; background: var(--surface-glass-2); border: 1px solid var(--line-glass); box-shadow: var(--shadow-sm), inset 0 1px 0 var(--sheen); }
+.lucent .vert svg{ color: var(--teal-strong); }
+.lucent .vert b{ color: var(--ink); font-weight: 600; font-size: .9rem; }
+.lucent .vert span{ color: var(--ink-2); font-size: .8rem; line-height: 1.3; }
+@media (max-width: 1080px){ .lucent .verticals{ grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 640px){ .lucent .verticals{ grid-template-columns: repeat(2, 1fr); } }
+
+/* Trust band — columns + badge row (glass panel) */
+.lucent .trust-cols{ display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr; gap: 20px; align-items: start; }
+.lucent .trust-col h4{ font-family:'Clash Display','Sora',sans-serif; font-weight: 500; letter-spacing: -0.02em; font-size: 1.08rem; color: var(--ink); margin-top: 4px; }
+.lucent .trust-col p, .lucent .trust-intro p{ margin-top: 6px; color: var(--ink-2); font-size: .9rem; line-height: 1.45; }
+.lucent .trust-intro h4{ font-family:'Clash Display','Sora',sans-serif; font-weight: 500; letter-spacing: -0.02em; font-size: 1.12rem; color: var(--ink); }
+.lucent .trust-badge-row{ margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--hair); display: flex; flex-wrap: wrap; gap: 10px; }
+.lucent .trust-badge{ display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px; background: var(--surface-glass-2); border: 1px solid var(--line-glass); box-shadow: var(--shadow-sm), inset 0 1px 0 var(--sheen); font-size: .86rem; color: var(--ink-2); }
+.lucent .trust-badge svg{ color: var(--teal-strong); flex: 0 0 auto; }
+.lucent .trust-badge b{ color: var(--ink); font-weight: 600; }
+@media (max-width: 900px){ .lucent .trust-cols{ grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px){ .lucent .trust-cols{ grid-template-columns: 1fr; } }
+
+/* Pilot card (early access) */
+.lucent .pilot{ width: min(100%, 40rem); margin-inline: auto; padding: clamp(24px, 3vw, 36px); border-radius: 22px; display: grid; gap: 14px; justify-items: start; }
+.lucent .pilot h4{ font-family:'Clash Display','Sora',sans-serif; font-weight: 500; letter-spacing:-0.02em; font-size: 1.4rem; color: var(--ink); }
+.lucent .pilot p{ color: var(--ink-2); font-size: .96rem; line-height: 1.5; }
