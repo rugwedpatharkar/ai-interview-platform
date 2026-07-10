@@ -128,7 +128,7 @@ export function SidebarShell({
           {mobileItems.map((item) => renderMobileLink(item))}
         </nav>
 
-        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-6xl px-6 py-8 focus:outline-none">
+        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1600px] px-6 py-8 lg:px-10 focus:outline-none">
           {children}
         </main>
       </div>
