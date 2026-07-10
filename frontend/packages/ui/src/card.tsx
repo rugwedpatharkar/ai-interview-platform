@@ -11,9 +11,11 @@ export function Card({ className, hoverable, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-surface shadow-sm",
+        // Lucent card standard — matches the .ap-cell primitive (22px radius +
+        // --elev-1 depth) so every product card reads consistently app-wide.
+        "rounded-[var(--rad-xl)] border border-border bg-surface shadow-elev-1",
         hoverable &&
-          "transition-[box-shadow,transform] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] active:shadow-sm",
+          "transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-elev-2 active:scale-[0.99] active:shadow-elev-1",
         className,
       )}
       {...props}
