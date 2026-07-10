@@ -18,7 +18,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fakeStream } from "../rtc-room";
 import { useAuth } from "../../../../lib/auth";
-import { AppearanceToggle } from "../../../../components/appearance-toggle";
 
 const MOCK = process.env.NEXT_PUBLIC_MOCK === "1";
 
@@ -181,7 +180,6 @@ export default function InterviewLobbyPage() {
             <ArrowLeft className="size-4" aria-hidden />
             Back to applications
           </Link>
-          <AppearanceToggle />
         </div>
       </header>
 

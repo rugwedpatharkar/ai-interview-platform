@@ -40,7 +40,7 @@ export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowEle
   return (
     <tr
       className={cn(
-        "border-b border-border transition-colors last:border-0 hover:bg-surface-muted/60 data-[state=selected]:bg-brand-50 dark:data-[state=selected]:bg-brand-500/10",
+        "border-b border-border transition-colors last:border-0 hover:bg-surface-muted/60 data-[state=selected]:bg-brand-50",
         className,
       )}
       {...props}

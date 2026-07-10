@@ -26,12 +26,6 @@ import {
   type ThemeMode,
 } from "../../app/settings/appearance-client";
 
-const MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
-  { value: "system", label: "Device default" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-];
-
 /** Shared Appearance subsection — mounted by both the candidate and company settings pages.
  *  Persists to localStorage so the choice survives a refresh before the backend RPC lands,
  *  and applies the chosen tokens to <html> via data-theme / data-base / data-accent so the
@@ -85,43 +79,6 @@ export function AppearanceTab({
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Theme</CardTitle>
-          <CardDescription>
-            Choose how Aptura looks. Device default follows your operating system.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div
-            role="radiogroup"
-            aria-label="Theme mode"
-            className="inline-flex items-center gap-1 rounded-xl border border-line bg-surface-2 p-1"
-          >
-            {MODE_OPTIONS.map((opt) => {
-              const on = prefs.mode === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => patch({ mode: opt.value })}
-                  className={cn(
-                    "rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                    on
-                      ? "bg-surface text-ink-deep shadow-sm"
-                      : "text-ink-2 hover:text-ink-deep",
-                  )}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>Base theme</CardTitle>

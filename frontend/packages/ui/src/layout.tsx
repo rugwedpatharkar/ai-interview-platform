@@ -132,7 +132,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-surface/50 px-6 py-14 text-center">
-      <span className="flex size-12 items-center justify-center rounded-full bg-brand-100 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+      <span className="flex size-12 items-center justify-center rounded-full bg-brand-100 text-brand-600">
         <IconComponent className="size-6" aria-hidden />
       </span>
       <p className="font-medium text-foreground">{title}</p>

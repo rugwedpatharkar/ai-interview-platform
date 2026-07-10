@@ -41,7 +41,9 @@ export const APPEARANCE_QUERY_KEY = ["preferences", "appearance"] as const;
 export const APPEARANCE_STORAGE_KEY = "aptura.appearance.v1";
 
 export const DEFAULT_APPEARANCE: AppearancePrefs = {
-  mode: "system",
+  // Light-only (2026-07-10): the app is locked to light; `mode` is retained on the wire
+  // (PreferencesService enum still has system|light|dark) but has no visual effect.
+  mode: "light",
   base: "midnight",
   accent: "cyan",
   accentHue: 0,
@@ -141,17 +143,10 @@ export function applyAppearance(prefs: AppearancePrefs): void {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
 
-  // Mode — keep the legacy `dark` class in sync so existing selectors continue to work, and let
-  // "system" fall back to the prefers-color-scheme media query.
-  root.dataset.theme = prefs.mode;
-  if (prefs.mode === "system") {
-    const prefersDark =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches;
-    root.classList.toggle("dark", prefersDark);
-  } else {
-    root.classList.toggle("dark", prefs.mode === "dark");
-  }
+  // Light-only: never add the `dark` class. Clear any stale one and pin data-theme to light so
+  // the token blocks resolve to the single light palette regardless of the saved `mode`.
+  root.classList.remove("dark");
+  root.dataset.theme = "light";
 
   root.dataset.base = prefs.base;
   root.dataset.accent = prefs.accent;
@@ -233,18 +228,19 @@ export function makeAppearanceClient(): AppearanceClient {
 }
 
 /**
- * Pre-paint inline script — drop into <head> via dangerouslySetInnerHTML BEFORE React hydrates
- * so the data-theme / data-base / data-accent attributes (and the --teal custom hue) are on
- * <html> at first paint. No FOUC. Reads the same APPEARANCE_STORAGE_KEY the client writes.
+ * Pre-paint inline script — light-only. If mounted in <head> before hydration it only ever
+ * ensures light (clears any stale `dark` class, pins colorScheme/data-theme to light) and paints
+ * the base/accent palette from APPEARANCE_STORAGE_KEY. Retained as a stable export; currently
+ * unmounted (layout.tsx no longer injects it), so it is effectively a no-op safeguard.
  */
 export const appearanceScript = `(function(){try{
 var raw=localStorage.getItem(${JSON.stringify(APPEARANCE_STORAGE_KEY)});
 var p=${JSON.stringify(DEFAULT_APPEARANCE)};
 if(raw){try{var j=JSON.parse(raw);if(j&&typeof j==='object'){p=Object.assign(p,j);if(typeof j.customHue==='number'&&typeof j.accentHue!=='number')p.accentHue=j.customHue;}}catch(_){}}
 var r=document.documentElement;
-r.dataset.theme=p.mode;
-if(p.mode==='system'){var d=window.matchMedia('(prefers-color-scheme: dark)').matches;r.classList.toggle('dark',d);r.style.colorScheme=d?'dark':'light';}
-else{r.classList.toggle('dark',p.mode==='dark');r.style.colorScheme=p.mode;}
+r.classList.remove('dark');
+r.dataset.theme='light';
+r.style.colorScheme='light';
 r.dataset.base=p.base;
 r.dataset.accent=p.accent;
 var hueMap={cyan:195,lime:125,emerald:155,amber:75,coral:32,azure:260};

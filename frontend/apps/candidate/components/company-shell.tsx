@@ -16,7 +16,6 @@ import {
   sidebarNavItemClass,
 } from "@ip/ui";
 
-import { AppearanceToggle } from "./appearance-toggle";
 import {
   BarChart3,
   Briefcase,
@@ -152,7 +151,6 @@ export function CompanyShell({ children }: { children: ReactNode }) {
             Pre-launch · company workspace
           </span>
           <div className="ml-auto flex items-center gap-2">
-            <AppearanceToggle />
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring">
                 <Avatar name={label} size="sm" />
