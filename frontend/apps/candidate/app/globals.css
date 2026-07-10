@@ -791,3 +791,23 @@ input, select, textarea { font-size: 16px; }
   .lucent .reveal, .lucent .hero-content > *, .lucent .lens-stage, .lucent .float-chip{ opacity: 1 !important; filter: none !important; transform: none !important; animation: none !important; }
   .lucent .lens-stage{ transform: translate(-50%,-52%) !important; }
 }
+
+/* ===========================================================================
+   Cursor blush — a vibrant spectral glow that trails the pointer app-wide.
+   Positioned by JS (--x/--y) in components/cursor-glow.tsx. Additive blend so it
+   lights the surface without obscuring content; hidden on touch / reduced-motion.
+   ========================================================================== */
+.cursor-glow{
+  position: fixed; top: 0; left: 0; z-index: 1; pointer-events: none;
+  width: 620px; height: 620px; margin: -310px 0 0 -310px;
+  transform: translate3d(var(--x, 50vw), var(--y, 40vh), 0);
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    oklch(0.70 0.24 292 / 0.24), oklch(0.72 0.19 250 / 0.15) 40%,
+    oklch(0.74 0.19 335 / 0.09) 62%, transparent 72%);
+  filter: blur(22px);
+  mix-blend-mode: plus-lighter;
+  opacity: 0; transition: opacity .6s ease;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce){ .cursor-glow{ display: none !important; } }

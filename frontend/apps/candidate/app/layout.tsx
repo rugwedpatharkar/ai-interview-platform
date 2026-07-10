@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import "./globals.css";
 import { Providers } from "./providers";
+import { CursorGlow } from "../components/cursor-glow";
 
 // Lucent v4 — display + body via Fontshare (Clash Display / General Sans, loaded in <head>
 // below); Geist Mono for data labels via next/font. Light mode only (no dark, no appearance
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         {/* Aperture mark + icon sprite mounted once for <svg><use href="#…" /></svg>. */}
         <ApertureSprite />
+        <CursorGlow />
         <Providers>{children}</Providers>
         <Toaster richColors closeButton position="top-center" />
       </body>
