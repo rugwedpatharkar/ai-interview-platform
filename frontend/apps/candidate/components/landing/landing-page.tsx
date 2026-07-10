@@ -8,8 +8,8 @@ import { CompanyBody } from "./company-body";
 
 // Single consolidated Lucent landing. Owns the `.lucent` shell (aurora bg-field,
 // grain, glass nav, footer) and swaps the audience body IN PLACE when the nav
-// switch is clicked — no route navigation. Both `/` (candidates) and
-// `/hiring-teams` (hiring) render this component, so deep-links + SEO are kept.
+// switch is clicked — pure client state, NO route navigation and NO URL change.
+// There is one landing page; /hiring-teams just resolves here.
 
 const AptMark = ({ size = 30, spin = false }: { size?: number; spin?: boolean }) => (
   <svg className="mark" width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Aptura">
@@ -22,15 +22,17 @@ const AptMark = ({ size = 30, spin = false }: { size?: number; spin?: boolean })
   </svg>
 );
 
-export function LandingPage({ initialAudience }: { initialAudience: "candidates" | "hiring" }) {
-  const [audience, setAudience] = useState(initialAudience);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const firstRun = useRef(true);
+const TRANSITION_MS = 260;
 
-  // Scroll reveal — visible by default; arm the hidden state + observe only when
-  // motion is allowed, so JS-off / prerender / reduced-motion never gate content.
-  // Keyed on `audience` (with the body wrapper remounting) so it re-queries and
-  // re-observes the freshly-mounted body's `.reveal` elements on every switch.
+export function LandingPage({ initialAudience }: { initialAudience: "candidates" | "hiring" }) {
+  const [audience, setAudience] = useState(initialAudience); // selected — drives the switch highlight
+  const [shown, setShown] = useState(initialAudience);       // body currently rendered
+  const [leaving, setLeaving] = useState(false);             // mid-crossfade
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Scroll reveal — visible by default; arm + observe only when motion is allowed
+  // (JS-off / prerender / reduced-motion never gate content). Keyed on the SHOWN
+  // body (it remounts on `shown`) so it re-observes the fresh `.reveal` elements.
   useEffect(() => {
     const root = rootRef.current;
     if (!root || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -52,19 +54,24 @@ export function LandingPage({ initialAudience }: { initialAudience: "candidates"
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, [audience]);
+  }, [shown]);
 
-  // Reflect the audience in the URL for shareability — replaceState, NOT a Next
-  // navigation, so the single component stays mounted. Scroll to top only on an
-  // actual switch, never on first mount (preserves browser scroll restoration).
-  useEffect(() => {
-    window.history.replaceState(null, "", audience === "hiring" ? "/hiring-teams" : "/");
-    if (firstRun.current) {
-      firstRun.current = false;
+  // Toggle the body in place with a crossfade — no navigation, no URL change.
+  function select(next: "candidates" | "hiring") {
+    if (next === audience || leaving) return;
+    setAudience(next); // switch highlights + footer flip instantly
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setShown(next);
+      window.scrollTo(0, 0);
       return;
     }
-    window.scrollTo(0, 0);
-  }, [audience]);
+    setLeaving(true); // fade the current body out
+    window.setTimeout(() => {
+      setShown(next); // swap while invisible (no flash)
+      window.scrollTo(0, 0);
+      setLeaving(false); // fade the new body in
+    }, TRANSITION_MS);
+  }
 
   return (
     <div className="lucent" ref={rootRef}>
@@ -75,7 +82,7 @@ export function LandingPage({ initialAudience }: { initialAudience: "candidates"
         <div className="wrap">
           <nav className="nav" aria-label="Primary">
             <Link className="brand" href="/" aria-label="Aptura — home"><AptMark spin />Aptura</Link>
-            <AudienceSwitch active={audience} onSelect={setAudience} />
+            <AudienceSwitch active={audience} onSelect={select} />
             <div className="nav-links">
               <a href="#how">How it works</a>
               <Link href="/login">Sign in</Link>
@@ -87,16 +94,18 @@ export function LandingPage({ initialAudience }: { initialAudience: "candidates"
         </div>
       </div>
 
-      <Fragment key={audience}>
-        {audience === "candidates" ? <CandidateBody /> : <CompanyBody />}
-      </Fragment>
+      <div className={leaving ? "landing-body is-leaving" : "landing-body"}>
+        <Fragment key={shown}>
+          {shown === "candidates" ? <CandidateBody /> : <CompanyBody />}
+        </Fragment>
+      </div>
 
       <footer>
         <div className="wrap">
           <div className="foot">
             <span className="brand" style={{ fontSize: "1.1rem" }}><AptMark size={26} />Aptura</span>
             <div className="foot-right">
-              <span>{audience === "hiring" ? "Hire on proven merit. Cheat-proof by design." : "Get seen. Get interviewed. Get hired."}</span>
+              <span>{shown === "hiring" ? "Hire on proven merit. Cheat-proof by design." : "Get seen. Get interviewed. Get hired."}</span>
               <span>© Aptura</span>
             </div>
           </div>

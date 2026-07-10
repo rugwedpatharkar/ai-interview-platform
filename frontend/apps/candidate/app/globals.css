@@ -960,18 +960,30 @@ input, select, textarea { font-size: 16px; }
    ========================================================================== */
 .cursor-glow{
   position: fixed; top: 0; left: 0; z-index: 1; pointer-events: none;
-  width: 620px; height: 620px; margin: -310px 0 0 -310px;
+  width: 540px; height: 540px; margin: -270px 0 0 -270px;
   transform: translate3d(var(--x, 50vw), var(--y, 40vh), 0);
   border-radius: 50%;
+  /* Dark spectral tint of the brand (deep violet core) — multiply darkens/tints the
+     surface toward the theme colour instead of the old additive white glow. */
   background: radial-gradient(circle,
-    oklch(0.70 0.24 292 / 0.24), oklch(0.72 0.19 250 / 0.15) 40%,
-    oklch(0.74 0.19 335 / 0.09) 62%, transparent 72%);
-  filter: blur(22px);
-  mix-blend-mode: plus-lighter;
+    oklch(0.50 0.24 298 / 0.22), oklch(0.53 0.20 268 / 0.13) 44%,
+    oklch(0.56 0.19 332 / 0.06) 64%, transparent 72%);
+  filter: blur(24px);
+  mix-blend-mode: multiply;
   opacity: 0; transition: opacity .6s ease;
   will-change: transform;
 }
 @media (prefers-reduced-motion: reduce){ .cursor-glow{ display: none !important; } }
+
+/* Landing audience crossfade — the nav switch swaps CandidateBody/CompanyBody in
+   place with a fade+lift; the URL never changes. */
+.lucent .landing-body{ position: relative; z-index: var(--z-content);
+  transition: opacity .26s var(--ease), transform .3s var(--ease), filter .3s var(--ease); }
+.lucent .landing-body.is-leaving{ opacity: 0; transform: translateY(10px) scale(0.995); filter: blur(6px); }
+@media (prefers-reduced-motion: reduce){
+  .lucent .landing-body{ transition: none !important; }
+  .lucent .landing-body.is-leaving{ opacity: 1 !important; transform: none !important; filter: none !important; }
+}
 
 /* ===========================================================================
    LUCENT v4 — COMPANY (hiring-teams) landing sections. Real content from the

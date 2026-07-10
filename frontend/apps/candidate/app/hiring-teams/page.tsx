@@ -1,8 +1,9 @@
-import { LandingPage } from "../../components/landing/landing-page";
+import { redirect } from "next/navigation";
 
-// The /hiring-teams deep-link into the single consolidated landing. Renders the
-// same component with the hiring body active; the nav audience switch toggles to
-// the candidate body in place (updating the URL via replaceState, no navigation).
+// There is a SINGLE landing at `/`. The nav "For candidates | For hiring teams"
+// switch toggles the two audiences in place (no navigation, no URL change) — there
+// is no separate hiring landing page. This route is kept only so old/inbound links
+// to /hiring-teams don't 404; it resolves to the one landing.
 export default function HiringTeamsPage() {
-  return <LandingPage initialAudience="hiring" />;
+  redirect("/");
 }
