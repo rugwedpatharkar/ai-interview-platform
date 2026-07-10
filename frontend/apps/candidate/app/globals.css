@@ -793,6 +793,158 @@ input, select, textarea { font-size: 16px; }
 }
 
 /* ===========================================================================
+   LUCENT v4 — informative landing sections. Real content from the applicants
+   marketing components (interview HUD, journey, no-ghosting, practice, sample
+   report, privacy, accommodations, FAQ, final CTA) re-skinned in the Lucent
+   language: frosted glass, hairline borders, spectral accents. Light-only.
+   The self-contained .ap-ring + .ap-itl-* widgets are reused as-is (not
+   modified) inside the sample report.
+   ========================================================================== */
+
+/* Shared — section lede (referenced by MERIT but previously undefined) + link */
+.lucent .section-lede{ color: var(--ink-2); font-size: clamp(1.05rem, 1rem + .4vw, 1.24rem); line-height: 1.55; max-width: 60ch; }
+.lucent .link{ display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--teal-strong); text-decoration: none; }
+.lucent .link:hover{ text-decoration: underline; text-underline-offset: 3px; }
+
+/* Big glass panel + two-col split (no-ghosting, practice, final CTA) */
+.lucent .panel{ padding: clamp(28px, 4vw, 52px); border-radius: 26px; }
+.lucent .split{ display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(24px, 4vw, 52px); align-items: center; }
+.lucent .practice-note{ display: grid; place-items: center; text-align: center; padding: 32px; border-radius: 18px; background: var(--surface-glass); border: 1px dashed var(--line-glass); color: var(--ink-2); font-size: .95rem; line-height: 1.5; }
+
+/* Mini glass card (no-ghosting sub-cards, accommodations) */
+.lucent .mini{ padding: 20px 22px; border-radius: 16px; background: var(--surface-glass-2); border: 1px solid var(--line-glass); box-shadow: var(--shadow-sm), inset 0 1px 0 var(--sheen); }
+.lucent .mini h4{ font-family:'Clash Display','Sora',sans-serif; font-weight: 500; letter-spacing: -0.02em; font-size: 1.08rem; color: var(--ink); }
+.lucent .mini p{ margin-top: 6px; color: var(--ink-2); font-size: .94rem; line-height: 1.45; }
+.lucent .info-3{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.lucent .info-2{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+
+/* Bulleted check list (journey bullets, practice bullets) */
+.lucent .checks{ list-style: none; padding: 0; display: grid; gap: 10px; }
+.lucent .checks li{ display: flex; align-items: flex-start; gap: 10px; color: var(--ink-2); font-size: .96rem; line-height: 1.45; }
+.lucent .checks li svg{ flex: 0 0 auto; margin-top: 2px; color: var(--good); }
+
+/* Interview HUD showcase */
+.lucent .showcase{ display: grid; grid-template-columns: 1.02fr 1.05fr; gap: clamp(28px, 4vw, 56px); align-items: center; }
+.lucent .showcase .feats{ display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 22px; }
+.lucent .showcase .feats span{ display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: .94rem; }
+.lucent .showcase .feats svg{ color: var(--good); flex: 0 0 auto; }
+.lucent .hud{ padding: 14px; border-radius: 22px; }
+.lucent .hud-top{ display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px 6px 12px; border-bottom: 1px solid var(--hair); }
+.lucent .hud-top .t{ font-family:'Clash Display','Sora',sans-serif; font-weight: 500; letter-spacing: -0.02em; color: var(--ink); font-size: 1rem; }
+.lucent .hud-top .m{ color: var(--ink-3); font-size: .84rem; }
+.lucent .hud-top .lock{ margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: .8rem; }
+.lucent .hud-stage{ position: relative; aspect-ratio: 16/9; margin-top: 12px; border-radius: 14px; overflow: hidden; display: flex; align-items: flex-end; padding: 14px;
+  background: radial-gradient(120% 80% at 20% -10%, oklch(0.42 0.06 262 / .7) 0%, transparent 60%), linear-gradient(135deg, oklch(0.22 0.03 262) 0%, oklch(0.13 0.02 262) 72%); }
+.lucent .hud-stage .who{ position: absolute; top: 12px; left: 14px; color: #fff; font-size: .82rem; font-weight: 600; }
+.lucent .hud-stage .who .live{ display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px color-mix(in oklch, var(--good) 25%, transparent); margin-right: 7px; vertical-align: middle; }
+.lucent .hud-stage .timer{ position: absolute; top: 12px; right: 14px; color: #fff; font-family:'Geist Mono',monospace; font-size: .82rem; background: rgba(0,0,0,.34); padding: 3px 8px; border-radius: 7px; }
+.lucent .hud-stage .self{ width: 96px; height: 62px; border-radius: 10px; align-self: flex-end; background: linear-gradient(180deg, oklch(0.62 0.16 34), oklch(0.4 0.1 34)); border: 2px solid rgba(255,255,255,.72); }
+.lucent .hud-cap{ position: absolute; left: 14px; right: 120px; bottom: 14px; background: rgba(0,0,0,.55); color: #fff; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border-radius: 11px; padding: 8px 11px; font-size: .82rem; line-height: 1.4; }
+.lucent .hud-cap b{ display: block; color: rgba(255,255,255,.72); font-weight: 600; font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 2px; }
+.lucent .hud-strip{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding-top: 12px; }
+.lucent .hud-chip{ display: flex; align-items: center; gap: 8px; padding: 10px 11px; border-radius: 11px; background: var(--surface-glass-2); border: 1px solid var(--line-glass); box-shadow: inset 0 1px 0 var(--sheen); }
+.lucent .hud-chip .l{ font-family:'Geist Mono',monospace; font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.lucent .hud-chip .v{ margin-left: auto; font-weight: 600; color: var(--ink); font-size: .9rem; }
+.lucent .hud-chip .v::before{ content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--good); margin-right: 6px; vertical-align: middle; }
+
+/* Journey — five acts */
+.lucent .journey{ display: grid; gap: 14px; }
+.lucent .j-row{ padding: 24px; border-radius: 20px; display: grid; grid-template-columns: 96px 1fr 1.15fr; gap: 24px; align-items: start; transition: transform .5s var(--ease), background .35s var(--ease); }
+.lucent .j-row:hover{ transform: translateY(-4px); background: var(--surface-glass-2); }
+.lucent .j-step{ font-family:'Geist Mono',monospace; font-size: .7rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+.lucent .j-n{ display: block; margin-top: 4px; font-family:'Clash Display','Sora',sans-serif; font-weight: 600; font-size: 1.7rem; letter-spacing: -0.03em; background: var(--grad-cta); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lucent .j-body{ color: var(--ink-2); font-size: .96rem; line-height: 1.5; max-width: 44ch; margin-top: 6px; }
+.lucent .j-bullets{ padding: 16px 18px; border-radius: 14px; background: var(--surface-glass); border: 1px dashed var(--line-glass); }
+
+/* Privacy — everything we chose not to build */
+.lucent .privacy{ padding: clamp(26px, 3.5vw, 44px); border-radius: 24px; }
+.lucent .privacy h3{ display: flex; align-items: center; gap: 10px; color: var(--ink); }
+.lucent .privacy h3 svg{ color: var(--good); flex: 0 0 auto; }
+.lucent .privacy h3 em{ font-style: normal; font-weight: 600; color: var(--teal-strong); }
+.lucent .privacy-list{ list-style: none; padding: 0; margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lucent .privacy-list li{ display: flex; gap: 11px; align-items: flex-start; padding: 14px 16px; border-radius: 13px; background: var(--surface-glass-2); border: 1px solid var(--line-glass); box-shadow: inset 0 1px 0 var(--sheen); font-size: .94rem; color: var(--ink-2); line-height: 1.45; }
+.lucent .privacy-list li svg{ flex: 0 0 auto; margin-top: 1px; color: var(--good); }
+.lucent .privacy-list li b{ color: var(--ink); font-weight: 600; }
+
+/* Sample report — glass frame; reuses .ap-ring + .ap-itl-* widgets */
+.lucent .report{ border-radius: 24px; overflow: hidden; }
+.lucent .report .sect{ padding: clamp(22px, 3vw, 34px); }
+.lucent .report .sect + .sect{ border-top: 1px solid var(--hair); }
+.lucent .rep-head{ display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.lucent .rep-avatar{ width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-family:'Clash Display','Sora',sans-serif; font-weight: 600; background: var(--grad-cta); box-shadow: var(--shadow-sm); }
+.lucent .rep-name{ font-family:'Clash Display','Sora',sans-serif; font-weight: 500; letter-spacing: -0.02em; font-size: 1.2rem; color: var(--ink); }
+.lucent .rep-sub{ color: var(--ink-3); font-size: .86rem; margin-top: 2px; }
+.lucent .rep-badge{ display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: .84rem; font-weight: 600; color: var(--success-foreground); border: 1px solid color-mix(in oklch, var(--good) 40%, var(--line-glass)); background: color-mix(in oklch, var(--good) 14%, transparent); }
+.lucent .rep-badge svg{ color: var(--good); }
+.lucent .rep-badge.ml{ margin-left: auto; }
+.lucent .rep-score{ display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; }
+.lucent .rep-score-h{ font-family:'Clash Display','Sora',sans-serif; font-weight: 500; letter-spacing: -0.02em; font-size: 1.35rem; color: var(--ink); margin-top: 4px; }
+.lucent .rep-score p{ margin-top: 8px; color: var(--ink-2); font-size: .95rem; line-height: 1.5; max-width: 70ch; }
+.lucent .comp{ display: grid; gap: 12px; }
+.lucent .comp-card{ padding: 16px 18px; border-radius: 14px; background: var(--surface-glass-2); border: 1px solid var(--line-glass); box-shadow: inset 0 1px 0 var(--sheen); }
+.lucent .comp-top{ display: flex; align-items: center; gap: 12px; }
+.lucent .comp-top .nm{ font-weight: 600; color: var(--ink); }
+.lucent .comp-top .sc{ margin-left: auto; font-family:'Geist Mono',monospace; font-weight: 600; color: var(--teal-strong); }
+.lucent .comp-bar{ margin-top: 10px; height: 5px; border-radius: 999px; overflow: hidden; background: color-mix(in oklch, var(--ink) 8%, transparent); }
+.lucent .comp-bar i{ display: block; height: 100%; border-radius: 999px; background: var(--grad-cta); }
+.lucent .comp-quote{ margin-top: 14px; padding: 10px 14px; border-left: 3px solid var(--teal); border-radius: 0 10px 10px 0; background: var(--surface-glass); color: var(--ink); font-size: .92rem; line-height: 1.5; }
+.lucent .comp-quote .q{ font-family:'Clash Display','Sora',sans-serif; font-size: 1.4em; line-height: 0; color: var(--teal-strong); }
+.lucent .comp-stamp{ margin-top: 8px; display: block; font-family:'Geist Mono',monospace; font-size: .72rem; color: var(--ink-3); }
+.lucent .rep-legend{ margin-left: auto; display: flex; gap: 14px; color: var(--ink-2); font-size: .78rem; }
+.lucent .rep-legend span{ display: inline-flex; align-items: center; gap: 6px; }
+.lucent .rep-legend i{ width: 8px; height: 8px; border-radius: 50%; }
+.lucent .events{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+.lucent .event{ padding: 16px; border-radius: 16px; background: var(--surface-glass-2); border: 1px solid var(--line-glass); }
+.lucent .event.flag{ border-color: color-mix(in oklch, var(--coral) 45%, var(--line-glass)); box-shadow: 0 6px 24px -12px color-mix(in oklch, var(--coral) 40%, transparent); }
+.lucent .event .st{ display: flex; align-items: center; gap: 8px; font-family:'Geist Mono',monospace; font-size: .74rem; color: var(--ink-3); }
+.lucent .event .st i{ width: 7px; height: 7px; border-radius: 50%; }
+.lucent .event h4{ margin-top: 6px; font-family:'Clash Display','Sora',sans-serif; font-weight: 500; letter-spacing: -0.02em; font-size: 1rem; color: var(--ink); }
+.lucent .event p{ margin-top: 4px; color: var(--ink-2); font-size: .86rem; line-height: 1.4; }
+.lucent .event .clip{ margin-top: 10px; padding: 8px 11px; border-radius: 9px; font-size: .78rem; color: var(--ink-2); border: 1px dashed color-mix(in oklch, var(--gold) 42%, var(--line-glass)); background: color-mix(in oklch, var(--gold) 14%, transparent); }
+.lucent .rep-decide{ display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.lucent .rep-decide .who{ display: flex; align-items: center; gap: 10px; }
+.lucent .rep-decide .dot{ width: 36px; height: 36px; border-radius: 50%; background: var(--grad-cta); }
+.lucent .rep-decide .who .nm{ font-weight: 600; color: var(--ink); }
+.lucent .rep-decide .who .rl{ color: var(--ink-3); font-size: .78rem; }
+
+/* FAQ — native details/summary */
+.lucent .faq{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.lucent .faq-item{ padding: 18px 20px; border-radius: 16px; }
+.lucent .faq-q{ display: flex; align-items: center; gap: 14px; cursor: pointer; list-style: none; font-family:'Clash Display','Sora',sans-serif; font-weight: 500; letter-spacing: -0.02em; font-size: 1.04rem; color: var(--ink); }
+.lucent .faq-q::-webkit-details-marker{ display: none; }
+.lucent .faq-mark{ margin-left: auto; flex: 0 0 auto; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--surface-glass); border: 1px solid var(--line-glass); color: var(--ink-2); font-size: 1.15rem; line-height: 1; transition: transform .4s var(--ease), background .3s var(--ease); }
+.lucent .faq-item[open] .faq-mark{ transform: rotate(45deg); background: var(--grad-cta); color: #fff; border-color: transparent; }
+.lucent .faq-a{ margin-top: 12px; color: var(--ink-2); font-size: .94rem; line-height: 1.55; }
+
+/* Final CTA */
+.lucent .final{ display: grid; gap: 20px; justify-items: start; text-align: left; }
+.lucent .final h3{ font-family:'Clash Display','Sora',sans-serif; font-weight: 500; letter-spacing: -0.03em; line-height: 1.04; font-size: clamp(1.9rem, 1.3rem + 2.4vw, 3rem); color: var(--ink); max-width: 18ch; }
+.lucent .final p{ color: var(--ink-2); max-width: 56ch; font-size: 1.05rem; line-height: 1.5; }
+.lucent .final .row{ display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.lucent .final .txt-link{ font-weight: 600; color: var(--ink-2); text-decoration: none; }
+.lucent .final .txt-link:hover{ color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+
+/* Responsive — new sections */
+@media (max-width: 980px){
+  .lucent .showcase{ grid-template-columns: 1fr; }
+  .lucent .split{ grid-template-columns: 1fr; }
+  .lucent .info-3{ grid-template-columns: 1fr 1fr; }
+  .lucent .j-row{ grid-template-columns: 72px 1fr; }
+  .lucent .j-bullets{ grid-column: 1 / -1; }
+  .lucent .privacy-list{ grid-template-columns: 1fr; }
+  .lucent .events{ grid-template-columns: 1fr; }
+  .lucent .faq{ grid-template-columns: 1fr; }
+}
+@media (max-width: 640px){
+  .lucent .info-3, .lucent .info-2{ grid-template-columns: 1fr; }
+  .lucent .hud-strip{ grid-template-columns: 1fr 1fr; }
+  .lucent .hud-cap{ right: 14px; }
+  .lucent .j-row{ grid-template-columns: 1fr; gap: 14px; }
+  .lucent .rep-score{ grid-template-columns: 1fr; }
+  .lucent .rep-legend{ margin-left: 0; flex-wrap: wrap; }
+}
+
+/* ===========================================================================
    Cursor blush — a vibrant spectral glow that trails the pointer app-wide.
    Positioned by JS (--x/--y) in components/cursor-glow.tsx. Additive blend so it
    lights the surface without obscuring content; hidden on touch / reduced-motion.

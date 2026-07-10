@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ApertureLens } from "@ip/ui";
 
-// Lucent v4 landing — faithful 1:1 recreation of docs/brand/redesign-v4/D5-lucent.html.
-// Content/data behavior preserved: search → /jobs, real auth + audience links. Light-only.
-// The extra informative sections (journey, privacy, sample report, FAQ) are re-added
-// restyled in follow-up; this is the D5 core.
+// Lucent v4 landing — the D5-lucent design language applied to the REAL applicants
+// content. Content/data behavior preserved: search → /jobs, real auth + audience links.
+// The informative sections (interview HUD, journey, no-ghosting, practice, sample
+// report, privacy, accommodations, FAQ, final CTA) are folded in verbatim from the
+// applicants marketing components, re-skinned in Lucent glass. Light-only.
 
 const AptMark = ({ size = 30, spin = false }: { size?: number; spin?: boolean }) => (
   <svg className="mark" width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Aptura">
@@ -24,6 +25,84 @@ const AptMark = ({ size = 30, spin = false }: { size?: number; spin?: boolean })
 const Arrow = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
 );
+
+const Check = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7" /></svg>
+);
+const Lock = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.4" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+);
+const Shield = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 5 6v5c0 4.4 3 8 7 10 4-2 7-5.6 7-10V6Z" /><path d="m9 12 2 2 4-4" /></svg>
+);
+const User = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.4" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /></svg>
+);
+
+// ── Section data (verbatim from the applicants marketing components) ──────────
+const JOURNEY: { step: string; n: string; title: string; body: string; bullets: string[] }[] = [
+  { step: "Step 01", n: "1.0", title: "Browse roles you fit", body: "Search a verified marketplace of open roles. Save what's interesting, set alerts for what matches, every applicant gets the same view.", bullets: ["Open marketplace, no paywall", "Save jobs, set alerts", "Same criteria as everyone else"] },
+  { step: "Step 02", n: "2.0", title: "Apply once", body: "One profile, every role. Your résumé, your skills, your preferences — submit to any open role with one tap.", bullets: ["One profile, every role", "ID verified once, reused", "Track every application in one place"] },
+  { step: "Step 03", n: "3.0", title: "Practice for free", body: "Sit a full practice round before any real interview. Same UI, same rubric, no scoring against you. Practice is detached from the funnel — nothing here reaches a recruiter.", bullets: ["Same UI as the real interview", "No scoring against you", "Growth feedback after"] },
+  { step: "Step 04", n: "4.0", title: "Sit one proctored interview", body: "Live video and voice with Iris, our AI interviewer. Fullscreen-locked. Camera and mic stay on by design. Same standard for every applicant.", bullets: ["~20 minutes; you'll see the duration upfront", "On-device detection only — no raw media leaves your browser", "Accommodations are first-class"] },
+  { step: "Step 05", n: "5.0", title: "Get a real answer + the report behind it", body: "Every applicant — advanced or not — receives an outcome with a competency-level note, the recommendation reason, and an option to request a re-score for a different role.", bullets: ["A named human reviewer signs every outcome", "You see the evidence behind the decision", "Re-score for new roles, same evidence"] },
+];
+
+const PROMISE: [string, string][] = [
+  ["You'll know", "An outcome message lands. Always."],
+  ["With a real reason", "Never silence. Never form-letters."],
+  ["The same way for everyone", "Same rubric, same evidence, same review."],
+];
+
+const PRACTICE_BULLETS = [
+  "Same interviewer (Iris), same question style, same proctoring",
+  "Growth feedback only — no hire/reject verdict, ever",
+  "Take it as many times as you want, on any topic",
+];
+
+const COMPETENCIES: { name: string; score: string; pct: number; quote: string; stamp: string }[] = [
+  { name: "Problem framing", score: "4.2 / 5", pct: 84, quote: 'The brief said "make checkout faster," but the actual constraint was returning users on flaky connections — so we reframed the problem as perceived speed and optimistic UI, not raw latency.', stamp: "Transcript · 00:08:11" },
+  { name: "Communication", score: "4.5 / 5", pct: 90, quote: "Let me restate that so I'm sure — you're asking how I'd defend the decision to engineering after we'd already shipped, not before.", stamp: "Transcript · 00:21:02" },
+  { name: "Tradeoff reasoning", score: "3.8 / 5", pct: 76, quote: "I'd trade a 200ms performance win for WCAG AA every time on a public-facing flow — the accessibility regression is a permanent cost; the perf win we can claw back at the edge.", stamp: "Transcript · 00:14:38" },
+  { name: "Domain knowledge", score: "4.1 / 5", pct: 82, quote: "When we picked Postgres for the audit log, the deciding factor wasn't writes/sec — it was that we could prove the chain of custody with a single SELECT.", stamp: "Transcript · 00:18:22" },
+  { name: "Decision quality", score: "4.0 / 5", pct: 80, quote: "Once we had three engineers asking the same clarifying question in week one, I knew the spec was the bug, not them. I rewrote the spec before adding any more code.", stamp: "Transcript · 00:23:47" },
+  { name: "Integrity (collaboration)", score: "4.6 / 5", pct: 92, quote: "I shipped the bug-fix that night — but I also wrote the post-mortem the next morning. The post-mortem is what kept us from doing the same thing again two months later.", stamp: "Transcript · 00:26:55" },
+];
+
+const EVENTS: { sev: "l" | "m"; flag?: boolean; stamp: string; ttl: string; body: string; clip: string }[] = [
+  { sev: "l", stamp: "00:01:42 · LOW", ttl: "Background voice (single)", body: "One non-candidate voice detected briefly — below the second-voice threshold.", clip: "Reason · Single short utterance, <2s. Treated as ambient noise. No action." },
+  { sev: "m", flag: true, stamp: "00:09:18 · MEDIUM", ttl: "Fullscreen exit (24 seconds)", body: "Candidate left fullscreen for 24 seconds and returned. Surfaced to reviewer.", clip: "Clip · 00:09:14 → 00:09:42 · Reviewer to inspect. No auto-action." },
+  { sev: "l", stamp: "00:23:51 · LOW", ttl: "Gaze drift to corner", body: "Gaze tracked off-frame for 1.8s. Within normal interview range.", clip: "Reason · Below threshold. No action." },
+];
+
+const PRIVACY: [string, string][] = [
+  ["No real-time human watcher.", "Reviewers only see flagged events, after the fact."],
+  ["No raw video or audio leaves the browser.", "Detectors run on-device; only typed events are sent."],
+  ["No emotion or affect inference.", '"Candidate looked stressed" scoring? Never.'],
+  ["No identity matching beyond the ID check.", "No voiceprints, no face match against other databases."],
+  ["No keystroke surveillance for content.", "We track tab-switches, not what you type elsewhere."],
+  ["Encrypted at rest. Deleted on request.", "Right-to-erase honored across every Aptura artifact."],
+];
+
+const ACCOMMODATIONS: [string, string][] = [
+  ["Extended time", "Up to 1.5× or 2× the standard interview duration, depending on documented need. Same rubric, same evidence, longer window."],
+  ["Captions for the AI interviewer", "Live captions are on by default; you can toggle them off if they aren't helpful."],
+  ["Screen-reader-friendly question delivery", "Questions appear as text in addition to being spoken. Skip-to-text shortcuts available."],
+  ["Alternative response modes", "If voice response is not possible, written answers in a structured editor are accepted, with the same rubric applied."],
+];
+
+const FAQ: { q: string; a: string }[] = [
+  { q: "Will a real person watch me during the interview?", a: "No. There is no real-time human watcher. Detectors run on your device; only typed events are sent. Reviewers only see flagged events, after the fact, with the recording encrypted at rest." },
+  { q: "What if I have a disability or need an accommodation?", a: "Accommodations are first-class. Extended time, captions, screen-reader-friendly question delivery, and alternative response modes are all available at request — they do not affect your score or appear in your report." },
+  { q: "Can I retake the interview if my connection drops?", a: "Yes. Connection drops are not penalised. If a session is interrupted unexpectedly, you'll get a one-tap re-entry and a fresh recording — without losing prior responses." },
+  { q: "Will I get feedback even if I'm not advanced?", a: "Yes. Every applicant — advanced or not — receives an outcome message with a competency-level note, the recommendation reason, and an option to request a re-score for a different role." },
+  { q: "Does Aptura analyse my face for emotion?", a: "No. We do not infer emotion, affect, or personality from your face or voice. We detect presence, identity match, and proctoring signals — never feelings." },
+  { q: "Can I practice before the real interview?", a: "Yes. A full practice round mirrors the real one — same UI, same rubric, no scoring against you. You'll see exactly what's being evaluated before you sit the real interview." },
+  { q: "I don't have a webcam. Can I still apply?", a: "A working camera and microphone are required for the proctored interview by design. We'll guide you through low-bandwidth and mobile options. Accommodations are honored." },
+  { q: "How long is the interview?", a: "Most Aptura interviews run between 18 and 35 minutes — sized to the rubric for the role. You'll see the expected duration before you start, and there are no surprise rounds." },
+  { q: "What happens to my interview recording afterwards?", a: "Recordings are encrypted at rest. Retention is configurable per pilot. Right-to-erase is honored across every Aptura artifact — recording, transcript, scoring, and decision metadata." },
+  { q: "Can I see what hiring teams see about me?", a: "Yes — every Aptura report includes the evidence and the reason behind the recommendation. The sample report above is the same template every applicant gets." },
+];
 
 export function ApplicantsLanding() {
   const router = useRouter();
@@ -150,12 +229,71 @@ export function ApplicantsLanding() {
           </div>
         </section>
 
+        {/* INTERVIEW HUD — folds in the applicants-hero showcase */}
+        <section className="section-pad" id="interview" aria-labelledby="interview-h">
+          <div className="wrap">
+            <div className="showcase">
+              <div className="reveal">
+                <span className="label">The interview you&apos;ll sit</span>
+                <h2 id="interview-h" className="section-head" style={{ marginTop: 14 }}>The interview you&apos;ll sit.</h2>
+                <p className="lede" style={{ marginTop: 16 }}>One fair, proctored AI interview. Always hear back — with a real answer and a reason. Aptura is hiring decided on merit.</p>
+                <div className="feats">
+                  <span><Shield size={16} /> No real-time human watcher</span>
+                  <span><Check size={16} /> Every applicant gets a real answer</span>
+                  <span><User size={16} /> Free practice round, no scoring</span>
+                </div>
+              </div>
+              <div className="hud glass irid-edge reveal" aria-label="Sample proctored interview UI (your view)">
+                <div className="hud-top">
+                  <span className="t">Sample interview · Your view</span>
+                  <span className="m">· demo HUD</span>
+                  <span className="lock"><Lock size={13} /> Fullscreen locked</span>
+                </div>
+                <div className="hud-stage">
+                  <span className="who"><span className="live" /> Iris · AI Interviewer</span>
+                  <span className="timer mono">14:38</span>
+                  <div className="self" aria-hidden="true" />
+                  <div className="hud-cap"><b>Iris</b>Walk me through a tradeoff you made between speed and accessibility on your last project. Take your time.</div>
+                </div>
+                <div className="hud-strip">
+                  <div className="hud-chip"><span className="l">Face</span><span className="v">One</span></div>
+                  <div className="hud-chip"><span className="l">Gaze</span><span className="v">On</span></div>
+                  <div className="hud-chip"><span className="l">Mic</span><span className="v">Live</span></div>
+                  <div className="hud-chip"><span className="l">Integrity</span><span className="v">98</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* STATS */}
         <section className="section-pad" aria-label="Aptura by the numbers">
           <div className="wrap">
             <div className="stats seq">
               {[["100%", "of applications answered"], ["12,400+", "interviews completed"], ["1", "fair interview, live video + voice"], ["3-day", "average feedback"]].map(([n, t]) => (
                 <div className="stat glass irid-edge reveal" key={t}><div className="n">{n}</div><div className="t">{t}</div><span className="cap" /></div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* JOURNEY */}
+        <section className="section-pad" id="journey" aria-labelledby="journey-h">
+          <div className="wrap">
+            <div className="head-row">
+              <span className="label reveal">Your journey</span>
+              <h2 id="journey-h" className="section-head reveal">Apply once. Sit one fair interview. Always hear back.</h2>
+              <p className="section-lede reveal">Five steps from the moment you find a role to the moment a hiring team decides. Every step is observable. Every step is the same for every applicant.</p>
+            </div>
+            <div className="journey seq">
+              {JOURNEY.map((act) => (
+                <article className="j-row glass irid-edge reveal" key={act.n}>
+                  <div><span className="j-step">{act.step}</span><span className="j-n">{act.n}</span></div>
+                  <div><h3>{act.title}</h3><p className="j-body">{act.body}</p></div>
+                  <div className="j-bullets">
+                    <ul className="checks">{act.bullets.map((b) => <li key={b}><Check size={15} />{b}</li>)}</ul>
+                  </div>
+                </article>
               ))}
             </div>
           </div>
@@ -197,6 +335,40 @@ export function ApplicantsLanding() {
           </div>
         </section>
 
+        {/* NO-GHOSTING PROMISE */}
+        <section className="section-pad" aria-labelledby="promise-h">
+          <div className="wrap">
+            <div className="panel glass irid-edge reveal">
+              <span className="label">The promise</span>
+              <h2 id="promise-h" className="section-head" style={{ marginTop: 14 }}>Every applicant gets a real answer. With feedback.</h2>
+              <p className="lede" style={{ marginTop: 16 }}>Aptura was built so résumé black holes stop happening. If you sit an Aptura interview, you hear back — with a reason, with the evidence behind it, the same way for every applicant.</p>
+              <div className="info-3 seq" style={{ marginTop: 28 }}>
+                {PROMISE.map(([head, sub]) => (
+                  <div className="mini reveal" key={head}><h4>{head}</h4><p>{sub}</p></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PRACTICE SPOTLIGHT */}
+        <section className="section-pad" aria-labelledby="practice-h">
+          <div className="wrap">
+            <div className="panel split glass irid-edge reveal">
+              <div>
+                <span className="label">Practice mode</span>
+                <h2 id="practice-h" className="section-head" style={{ marginTop: 14 }}>Sit a full practice round. Free. No scoring.</h2>
+                <p className="lede" style={{ marginTop: 16 }}>The same UI as the real interview. The same rubric. Growth feedback after — strengths, gaps, suggested topics. Detached from the funnel; nothing here reaches a recruiter.</p>
+                <ul className="checks" style={{ marginTop: 22 }}>
+                  {PRACTICE_BULLETS.map((b) => <li key={b}><Check size={17} />{b}</li>)}
+                </ul>
+                <Link href="/practice" className="btn btn-primary" style={{ marginTop: 26 }}>Try a practice round</Link>
+              </div>
+              <div className="practice-note">Practice runs on the same surface as the real interview — sample preview available after sign-in.</div>
+            </div>
+          </div>
+        </section>
+
         {/* MERIT */}
         <section className="section-pad" id="merit" aria-labelledby="merit-h">
           <div className="wrap">
@@ -230,6 +402,134 @@ export function ApplicantsLanding() {
           </div>
         </section>
 
+        {/* SAMPLE REPORT */}
+        <section className="section-pad" id="sample-report" aria-labelledby="report-h">
+          <div className="wrap">
+            <div className="head-row">
+              <span className="label reveal">Sample interview report</span>
+              <h2 id="report-h" className="section-head reveal">Same report you can read. Same evidence. No hidden notes.</h2>
+            </div>
+            <div className="report glass irid-edge reveal">
+              <div className="sect rep-head">
+                <div className="rep-avatar">SC</div>
+                <div>
+                  <div className="rep-name">Sample candidate</div>
+                  <div className="rep-sub">Sr. Product Designer · sample report · for illustration</div>
+                </div>
+                <span className="rep-badge ml">Recommended: Advance</span>
+              </div>
+
+              <div className="sect rep-score">
+                <div className="ap-ring" style={{ ["--pct" as string]: 86, width: 88, height: 88 }}>
+                  <span className="ap-ring-v" style={{ fontSize: "1.4rem" }}>86</span>
+                </div>
+                <div>
+                  <span className="label">Aptura Score</span>
+                  <div className="rep-score-h">Strong evidence — Top 12% for this role.</div>
+                  <p>Candidate demonstrated strong tradeoff reasoning anchored in concrete prior work, clear communication discipline, and consistent rubric coverage. One medium-severity proctoring event surfaced for reviewer attention (see timeline below) — no high-severity events.</p>
+                </div>
+              </div>
+
+              <div className="sect">
+                <h3 style={{ marginBottom: 14 }}>Aptura Core 6 — competency breakdown</h3>
+                <div className="comp seq">
+                  {COMPETENCIES.map((c) => (
+                    <article className="comp-card reveal" key={c.name}>
+                      <div className="comp-top"><span className="nm">{c.name}</span><span className="sc mono">{c.score}</span></div>
+                      <div className="comp-bar"><i style={{ width: `${c.pct}%` }} /></div>
+                      <blockquote className="comp-quote"><span className="q" aria-hidden="true">&ldquo;</span>{c.quote}<span className="q" aria-hidden="true">&rdquo;</span></blockquote>
+                      <span className="comp-stamp">{c.stamp}</span>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="sect">
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
+                  <h3>Integrity timeline</h3>
+                  <span className="rep-sub">Sample timeline · 28m 12s · for illustration</span>
+                  <div className="rep-legend">
+                    <span><i style={{ background: "var(--good)" }} />Low</span>
+                    <span><i style={{ background: "var(--warn)" }} />Medium</span>
+                    <span><i style={{ background: "var(--danger)" }} />High · auto-end</span>
+                  </div>
+                </div>
+                <div className="ap-itl-track" style={{ marginTop: 16 }} role="img" aria-label="Sample interview integrity timeline">
+                  <div className="ap-itl-line" />
+                  <span className="ap-itl-pip ap-itl-pip--l" style={{ left: "6%" }} />
+                  <span className="ap-itl-pip ap-itl-pip--l" style={{ left: "18%" }} />
+                  <span className="ap-itl-pip ap-itl-pip--m" style={{ left: "32%" }} />
+                  <span className="ap-itl-pip ap-itl-pip--l" style={{ left: "44%" }} />
+                  <span className="ap-itl-pip ap-itl-pip--l" style={{ left: "58%" }} />
+                  <span className="ap-itl-pip ap-itl-pip--l" style={{ left: "71%" }} />
+                  <span className="ap-itl-pip ap-itl-pip--m" style={{ left: "83%" }} />
+                  <span className="ap-itl-pip ap-itl-pip--l" style={{ left: "95%" }} />
+                  <span className="ap-itl-scrubber" style={{ left: "32%" }} />
+                  <div className="ap-itl-axis"><span>00:00</span><span>07:00</span><span>14:00</span><span>21:00</span><span>28:12</span></div>
+                </div>
+                <div className="events">
+                  {EVENTS.map((ev) => (
+                    <article className={ev.flag ? "event flag" : "event"} key={ev.stamp}>
+                      <div className="st"><i style={{ background: ev.sev === "m" ? "var(--warn)" : "var(--good)" }} /><span>{ev.stamp}</span></div>
+                      <h4>{ev.ttl}</h4>
+                      <p>{ev.body}</p>
+                      <div className="clip">{ev.clip}</div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="sect" style={{ background: "var(--surface-glass)" }}>
+                <span className="label">Decision</span>
+                <div className="rep-decide">
+                  <div className="who">
+                    <div className="dot" />
+                    <div><div className="nm">Sample reviewer</div><div className="rl">Hiring Manager · sample workspace</div></div>
+                  </div>
+                  <span className="rep-badge ml"><Check size={16} /> Advance · signed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PRIVACY — everything we chose not to build */}
+        <section className="section-pad" aria-labelledby="privacy-h">
+          <div className="wrap">
+            <div className="head-row">
+              <span className="label reveal">What we didn&apos;t build</span>
+              <h2 id="privacy-h" className="section-head reveal">The strongest part of the system is everything we chose not to build.</h2>
+            </div>
+            <div className="privacy glass irid-edge reveal">
+              <h3><Shield size={22} /> What Aptura does <em>not</em> do</h3>
+              <ul className="privacy-list seq">
+                {PRIVACY.map(([title, rest]) => (
+                  <li className="reveal" key={title}><Check size={17} /><span><b>{title}</b> {rest}</span></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* ACCOMMODATIONS */}
+        <section className="section-pad" aria-labelledby="acc-h">
+          <div className="wrap">
+            <div className="head-row">
+              <span className="label reveal">First-class, not a checkbox</span>
+              <h2 id="acc-h" className="section-head reveal">Accommodations don&apos;t affect your score, don&apos;t appear in your report.</h2>
+              <p className="section-lede reveal">The proctored interview is high-stakes. The accommodations below are honored on request and apply the same rubric — they shape how you sit the interview, not how it&apos;s scored.</p>
+            </div>
+            <div className="info-2 seq">
+              {ACCOMMODATIONS.map(([title, body]) => (
+                <article className="mini reveal" key={title}><h4>{title}</h4><p>{body}</p></article>
+              ))}
+            </div>
+            <p className="reveal" style={{ marginTop: 24, color: "var(--ink-2)", fontSize: ".95rem" }}>
+              Full statement, and how to request an accommodation: <Link href="/accessibility" className="link">Accessibility <Arrow /></Link>
+            </p>
+          </div>
+        </section>
+
         {/* AUDIENCES */}
         <section className="section-pad" id="audiences" aria-label="For candidates and companies">
           <div className="wrap">
@@ -260,6 +560,24 @@ export function ApplicantsLanding() {
           </div>
         </section>
 
+        {/* FAQ */}
+        <section className="section-pad" id="faq" aria-labelledby="faq-h">
+          <div className="wrap">
+            <div className="head-row">
+              <span className="label reveal">Questions, answered</span>
+              <h2 id="faq-h" className="section-head reveal">What applicants ask first.</h2>
+            </div>
+            <div className="faq seq">
+              {FAQ.map(({ q, a }) => (
+                <details className="faq-item glass irid-edge reveal" key={q}>
+                  <summary className="faq-q">{q}<span className="faq-mark" aria-hidden="true">+</span></summary>
+                  <div className="faq-a">{a}</div>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* TRUST */}
         <section className="section-pad" id="trust" aria-labelledby="trust-h">
           <div className="wrap">
@@ -271,6 +589,21 @@ export function ApplicantsLanding() {
                 <span className="badge reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 4 7v5c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V7Z" /><path d="m9 12 2 2 4-4" /></svg>EEOC-aligned</span>
                 <span className="badge reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v3M5.5 5.5 8 8M18.5 5.5 16 8M4 13a8 8 0 0 1 16 0" /><path d="M4 13h16l-2 6H6Z" /></svg>Bias-tested</span>
                 <span className="badge reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.4" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /><circle cx="12" cy="15.5" r="1.4" /></svg>Proctored integrity</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FINAL CTA */}
+        <section className="section-pad" id="get-started" aria-labelledby="final-h">
+          <div className="wrap">
+            <div className="panel glass irid-edge reveal final">
+              <span className="label">For applicants</span>
+              <h3 id="final-h">Get seen. Get interviewed. Get hired.</h3>
+              <p>One fair, proctored interview — and a real answer every time. Practice for free; sit the real round when you&apos;re ready.</p>
+              <div className="row">
+                <Link href="/jobs" className="btn btn-primary">Find roles</Link>
+                <Link href="/hiring-teams" className="txt-link">Hiring instead? See Aptura for hiring teams →</Link>
               </div>
             </div>
           </div>
