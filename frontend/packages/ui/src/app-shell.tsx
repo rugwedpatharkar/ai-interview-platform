@@ -118,7 +118,7 @@ export function SidebarShell({
 
       {/* Main column */}
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-border bg-surface/80 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
+        <header className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-border bg-surface/85 px-6 py-3 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-surface/75">
           {mobileBrand}
           {topbar}
         </header>

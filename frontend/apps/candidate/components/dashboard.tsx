@@ -162,7 +162,7 @@ export function Dashboard() {
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <p className="ap-eyebrow">Dashboard</p>
-            <h1 className="ap-h2 mt-2">Welcome back, {greetName}.</h1>
+            <h1 className="txt-h1 mt-2">Welcome back, {greetName}.</h1>
             <p className="ap-lead mt-2 text-base">
               {inFlightCount} application{inFlightCount === 1 ? "" : "s"} in flight
               {interviewApps.length > 0 && (
@@ -188,7 +188,7 @@ export function Dashboard() {
             the dashboard's vertical rhythm stable. */}
         <section
           aria-label="At-a-glance"
-          className="rounded-[22px] border border-line bg-surface p-6"
+          className="rounded-[var(--rad-xl)] border border-line bg-surface p-6"
         >
           <p className="ap-eyebrow">At a glance</p>
           <div className="ap-stats mt-6" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
@@ -226,7 +226,7 @@ export function Dashboard() {
             <div className="ap-cell ap-cell--anchor">
               <span className="ap-cell-tag">A · 01</span>
               <div className="flex items-center justify-between gap-3">
-                <h2 className="ap-h3 flex items-center gap-2">
+                <h2 className="txt-h2 flex items-center gap-2">
                   <Briefcase className="size-5 text-primary" aria-hidden />
                   Your applications
                 </h2>
@@ -295,7 +295,7 @@ export function Dashboard() {
                 The marketplace is the primary path; this is the fallback for invite links. */}
             <div className="ap-cell">
               <span className="ap-cell-tag">A · 02</span>
-              <h3 className="ap-h3 text-xl">Have a job ID from an invite?</h3>
+              <h3 className="txt-h2">Have a job ID from an invite?</h3>
               <p className="mt-1 text-sm text-ink-2">
                 Paste it below to apply directly. AI-assisted screening is enabled
                 by default — review our{" "}
@@ -341,7 +341,7 @@ export function Dashboard() {
               <div className="ap-cell ap-cell--anchor">
                 <span className="ap-cell-tag">B · UP NEXT</span>
                 <div className="flex items-center justify-between gap-2">
-                  <h2 className="ap-h3 text-lg">Up next</h2>
+                  <h2 className="txt-h3">Up next</h2>
                   <span className="ap-pill ap-pill--good">
                     <ApIcon name="shield-check" className="size-3" />
                     Proctored
@@ -376,7 +376,7 @@ export function Dashboard() {
                 rendered inline here so the right rail stays self-contained. */}
             <div className="ap-cell">
               <span className="ap-cell-tag">B · 01</span>
-              <h2 className="ap-h3 flex items-center gap-2 text-lg">
+              <h2 className="txt-h3 flex items-center gap-2">
                 <Sparkles className="size-4 text-primary" aria-hidden />
                 Recommended
               </h2>
@@ -440,7 +440,7 @@ export function Dashboard() {
 
             <div className="ap-cell">
               <span className="ap-cell-tag">B · 02</span>
-              <h2 className="ap-h3 flex items-center gap-2 text-lg">
+              <h2 className="txt-h3 flex items-center gap-2">
                 <Dumbbell className="size-4 text-primary" aria-hidden />
                 Practice
               </h2>
