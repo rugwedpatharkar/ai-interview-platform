@@ -157,8 +157,8 @@ export function Marketplace({
         <aside className="order-last lg:order-none">
           <div className="ap-cell sticky top-24 flex flex-col gap-4">
             <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-teal" aria-hidden />
-              <h2 className="ap-h4 text-base">Why these results</h2>
+              <Sparkles className="size-4 text-brand" aria-hidden />
+              <h2 className="txt-h3">Why these results</h2>
             </div>
             <p className="text-sm text-ink-2">
               {params.q
@@ -167,14 +167,14 @@ export function Marketplace({
             </p>
             <ul className="grid gap-2 text-sm text-ink-2">
               <li className="flex items-start gap-2">
-                <Compass className="mt-0.5 size-4 shrink-0 text-teal" aria-hidden />
+                <Compass className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
                 <span>
                   Filters narrow the catalog deterministically — same filters, same
                   results, always.
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <Sparkles className="mt-0.5 size-4 shrink-0 text-teal" aria-hidden />
+                <Sparkles className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
                 <span>
                   Sign in to save roles and get a feed weighted by your interview history.
                 </span>

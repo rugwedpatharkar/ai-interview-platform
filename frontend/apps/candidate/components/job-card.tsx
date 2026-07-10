@@ -67,7 +67,9 @@ export function JobCard({
       hoverable
       className={cn(
         "relative",
-        bestMatch && "border-primary shadow-[0_0_0_1px_var(--primary)]",
+        // Best match keeps the violet border for emphasis but retains the Card's
+        // --elev-1 depth (a shadow-[…] override here would erase it).
+        bestMatch && "border-primary",
       )}
     >
       {bestMatch && (
