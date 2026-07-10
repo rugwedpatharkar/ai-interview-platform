@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "re
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ApertureLens } from "@ip/ui";
+import { AudienceSwitch } from "../../components/audience-switch";
 
 // Lucent v4 landing — the D5-lucent design language applied to the REAL applicants
 // content. Content/data behavior preserved: search → /jobs, real auth + audience links.
@@ -168,8 +169,8 @@ export function ApplicantsLanding() {
         <div className="wrap">
           <nav className="nav" aria-label="Primary">
             <Link className="brand" href="/" aria-label="Aptura — home"><AptMark spin />Aptura</Link>
+            <AudienceSwitch active="candidates" />
             <div className="nav-links">
-              <Link href="/hiring-teams">For companies</Link>
               <a href="#how">How it works</a>
               <Link href="/login">Sign in</Link>
             </div>

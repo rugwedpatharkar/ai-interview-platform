@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { ApertureLens, ApIcon, type ApIconName } from "@ip/ui";
 import { PrivacyPanel } from "../../components/marketing/privacy-panel";
+import { AudienceSwitch } from "../../components/audience-switch";
 
 // Lucent v4 company landing — the D5-lucent design language applied to the REAL
 // hiring-teams content. Every section from the previous MarketingShell page
@@ -403,8 +404,8 @@ export default function HiringTeamsPage() {
         <div className="wrap">
           <nav className="nav" aria-label="Primary">
             <Link className="brand" href="/" aria-label="Aptura — home"><AptMark spin />Aptura</Link>
+            <AudienceSwitch active="hiring" />
             <div className="nav-links">
-              <Link href="/">For candidates</Link>
               <a href="#how">How it works</a>
               <Link href="/login">Sign in</Link>
             </div>
