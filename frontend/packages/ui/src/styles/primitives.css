@@ -122,12 +122,17 @@
   .ap-cell {
     position: relative; background: var(--surface); border: 1px solid var(--line);
     border-radius: var(--rad-xl); padding: 1.4rem; overflow: hidden;
+    box-shadow: var(--elev-1);
+    transition: box-shadow var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
   }
   .ap-cell--anchor {
     padding: 1.7rem;
     background: linear-gradient(135deg, color-mix(in oklch, var(--brand) 8%, var(--surface)), var(--surface));
     border-color: color-mix(in oklch, var(--brand) 18%, var(--line));
   }
+  /* Interactive cell (wraps a link/button) — lifts on hover for tactility. */
+  .ap-cell--link { cursor: pointer; }
+  .ap-cell--link:hover { transform: translateY(-2px); box-shadow: var(--elev-2); border-color: var(--line-2); }
   .ap-cell-tag {
     position: absolute; top: 1rem; right: 1rem;
     font-family: var(--font-mono); font-size: .66rem; letter-spacing: .1em;

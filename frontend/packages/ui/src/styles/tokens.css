@@ -233,6 +233,13 @@
   --color-info-foreground: var(--info-foreground);
   --color-info-border: var(--info-border);
 
+  /* Elevation as Tailwind shadow utilities — shadow-elev-1 / shadow-elev-2,
+     composable with variants (hover:shadow-elev-2). Custom keys, so no collision
+     with Tailwind's reserved --shadow-{sm,md,lg,…}. Arbitrary shadow-[var(--elev-1)]
+     does NOT work (Tailwind can't parse a bare var() as a shadow) — use these. */
+  --shadow-elev-1: var(--elev-1);
+  --shadow-elev-2: var(--elev-2);
+
   /* Fonts wired via next/font + Fontshare <link> in layout.tsx —
      Clash Display (display) / General Sans (body) / Geist Mono (data). */
   --font-sans:

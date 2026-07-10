@@ -188,7 +188,7 @@ export function Dashboard() {
             the dashboard's vertical rhythm stable. */}
         <section
           aria-label="At-a-glance"
-          className="rounded-[var(--rad-xl)] border border-line bg-surface p-6"
+          className="rounded-[var(--rad-xl)] border border-line bg-surface p-6 shadow-elev-1"
         >
           <p className="ap-eyebrow">At a glance</p>
           <div className="ap-stats mt-6" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
@@ -348,7 +348,7 @@ export function Dashboard() {
                   </span>
                 </div>
                 <div className="my-4 flex items-center gap-3">
-                  <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-teal-soft text-primary">
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-primary">
                     <Video className="size-5" aria-hidden />
                   </span>
                   <div className="min-w-0">
@@ -410,7 +410,7 @@ export function Dashboard() {
                     key={m.jobId}
                     href={`/jobs/${m.jobId}`}
                     style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
-                    className="animate-rise-in flex flex-col gap-2 rounded-xl border border-line bg-surface p-4 transition-colors hover:bg-surface-2"
+                    className="animate-rise-in flex flex-col gap-2 rounded-xl border border-line bg-surface p-4 shadow-elev-1 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-line-2 hover:shadow-elev-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <p className="font-medium text-foreground">
@@ -515,7 +515,7 @@ function DashboardApplicationRow({
 
   return (
     <div
-      className="animate-rise-in flex flex-col gap-3 rounded-xl border border-line bg-surface p-4 transition-colors hover:bg-surface-2 sm:flex-row sm:items-center sm:justify-between"
+      className="animate-rise-in flex flex-col gap-3 rounded-xl border border-line bg-surface p-4 shadow-elev-1 transition-colors hover:border-line-2 sm:flex-row sm:items-center sm:justify-between"
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex min-w-0 items-center gap-3">
