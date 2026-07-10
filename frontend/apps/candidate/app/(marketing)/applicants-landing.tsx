@@ -531,35 +531,9 @@ export function ApplicantsLanding() {
           </div>
         </section>
 
-        {/* AUDIENCES */}
-        <section className="section-pad" id="audiences" aria-label="For candidates and companies">
-          <div className="wrap">
-            <div className="aud">
-              <article className="aud-card candidate glass-2 glass irid-edge reveal">
-                <span className="aud-glow" aria-hidden="true" />
-                <div><span className="kicker">For candidates</span><h3 className="display">Your shot, in focus.</h3></div>
-                <div className="aud-feats">
-                  <div className="feat"><span className="fic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8Z" /><rect x="2" y="6" width="14" height="12" rx="2.4" /></svg></span>Live video + voice interview</div>
-                  <div className="feat"><span className="fic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m8 12 3 3 5-6" /><circle cx="12" cy="12" r="9" /></svg></span>Private practice runs</div>
-                  <div className="feat"><span className="fic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19V5M4 19h16M8 16v-4M12 16V8M16 16v-6" /></svg></span>Skill-gap feedback</div>
-                  <div className="feat"><span className="fic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 7v5l3 2" /><circle cx="12" cy="12" r="9" /></svg></span>Real-time application status</div>
-                </div>
-                <Link href="/jobs" className="aud-cta">Find your next job <Arrow /></Link>
-              </article>
-              <article className="aud-card company glass irid-edge reveal">
-                <span className="aud-glow" aria-hidden="true" />
-                <div><span className="kicker">For companies</span><h3 className="display">Hire on evidence.</h3></div>
-                <div className="aud-feats">
-                  <div className="feat"><span className="fic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 13a8 8 0 0 1 16 0" /><path d="M12 3v3" /><path d="M4 13h16l-2 6H6Z" /></svg></span>Merit-based screening</div>
-                  <div className="feat"><span className="fic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.2" /><path d="M6 20a6 6 0 0 1 12 0" /></svg></span>Advisory gate — you decide</div>
-                  <div className="feat"><span className="fic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z" /><path d="M15 4v5h5M9 13h6M9 16h4" /></svg></span>Evidence-based reports</div>
-                  <div className="feat"><span className="fic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19V5M4 19h16M8 15l3-3 2 2 4-5" /></svg></span>No-ghosting analytics</div>
-                </div>
-                <Link href="/hiring-teams" className="aud-cta">Start hiring on merit <Arrow /></Link>
-              </article>
-            </div>
-          </div>
-        </section>
+        {/* Cross-audience "For candidates / For companies" cards removed — content
+            bifurcated: this landing is candidate-only, and the nav "For candidates |
+            For hiring teams" switch routes to /hiring-teams for the company story. */}
 
         {/* FAQ */}
         <section className="section-pad" id="faq" aria-labelledby="faq-h">
