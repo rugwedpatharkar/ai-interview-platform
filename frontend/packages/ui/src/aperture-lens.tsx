@@ -35,6 +35,7 @@ export function ApertureLens({ className }: { className?: string }) {
     let cx = 0; // current, lerped
     let cy = 0;
     let raf = 0;
+    let paused = false;
     const start = performance.now();
 
     const frame = (now: number) => {
@@ -45,9 +46,21 @@ export function ApertureLens({ className }: { className?: string }) {
       cy += (ty - cy) * 0.08;
       lens.style.setProperty("--rx", `${cx.toFixed(2)}deg`);
       lens.style.setProperty("--ry", `${(-cy).toFixed(2)}deg`);
-      raf = requestAnimationFrame(frame);
+      raf = paused ? 0 : requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
+
+    // Pause the loop while the lens is scrolled out of view — no wasted style
+    // recalc past the hero. (Hidden tabs are already rAF-throttled by the browser.)
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e) return;
+        paused = !e.isIntersecting;
+        if (!paused && !raf) raf = requestAnimationFrame(frame);
+      },
+      { threshold: 0 },
+    );
+    io.observe(lens);
 
     const onMove = (e: PointerEvent) => {
       px = (e.clientX / window.innerWidth - 0.5) * 20; // up to ~±10deg
@@ -62,6 +75,7 @@ export function ApertureLens({ className }: { className?: string }) {
 
     return () => {
       cancelAnimationFrame(raf);
+      io.disconnect();
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerleave", onLeave);
     };

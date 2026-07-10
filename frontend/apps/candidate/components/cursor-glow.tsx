@@ -25,7 +25,29 @@ export function CursorGlow() {
     let x = tx;
     let y = ty;
     let raf = 0;
+    let running = false;
     let shown = false;
+
+    const loop = () => {
+      x += (tx - x) * 0.14;
+      y += (ty - y) * 0.14;
+      el.style.setProperty("--x", `${x}px`);
+      el.style.setProperty("--y", `${y}px`);
+      // Converged on the target → stop the loop; onMove kicks it back. Keeps rAF
+      // at zero whenever the cursor is still (the common case).
+      if (Math.abs(tx - x) < 0.5 && Math.abs(ty - y) < 0.5) {
+        running = false;
+        raf = 0;
+        return;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    const kick = () => {
+      if (!running) {
+        running = true;
+        raf = requestAnimationFrame(loop);
+      }
+    };
 
     const onMove = (e: PointerEvent) => {
       tx = e.clientX;
@@ -34,17 +56,10 @@ export function CursorGlow() {
         shown = true;
         el.style.opacity = "1";
       }
-    };
-    const loop = () => {
-      x += (tx - x) * 0.14;
-      y += (ty - y) * 0.14;
-      el.style.setProperty("--x", `${x}px`);
-      el.style.setProperty("--y", `${y}px`);
-      raf = requestAnimationFrame(loop);
+      kick();
     };
 
     window.addEventListener("pointermove", onMove, { passive: true });
-    raf = requestAnimationFrame(loop);
 
     return () => {
       cancelAnimationFrame(raf);
