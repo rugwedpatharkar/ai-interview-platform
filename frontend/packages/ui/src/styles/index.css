@@ -1,0 +1,4 @@
+/* Aptura Lucent shared stylesheet — one import surface for apps.
+   Order matters: tokens (:root + @theme) before primitives that consume them. */
+@import "./tokens.css";
+@import "./primitives.css";

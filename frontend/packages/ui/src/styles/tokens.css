@@ -1,0 +1,254 @@
+/* =============================================================================
+   Aptura Lucent — design TOKENS (shared).
+   Moved out of apps/candidate/app/globals.css so every app inherits one source
+   of truth. Light-only. OKLCH throughout. The brand hue is a deep spectral
+   VIOLET (historically mis-named --teal; --teal* is kept below as a back-compat
+   alias so existing screens + appearance-client.ts keep working).
+
+   Tailwind v4 flattens @import before processing, so the `@theme inline` mapping
+   at the bottom of this file resolves in-app even though it lives in @ip/ui.
+   ============================================================================= */
+:root {
+  /* ---------- Surfaces / ink / lines ---------- */
+  --bg:        oklch(0.985 0.004 265);
+  --surface:   oklch(1 0 0);
+  --surface-2: oklch(0.965 0.006 265);
+  --surface-3: oklch(0.945 0.007 265);
+  --ink-deep:  oklch(0.16 0.012 265);
+  --ink:       oklch(0.20 0.012 265);
+  --ink-2:     oklch(0.42 0.014 265);
+  --ink-3:     oklch(0.56 0.014 265);
+  --line:      oklch(0.90 0.006 265);
+  --line-2:    oklch(0.83 0.008 265);
+  --line-3:    oklch(0.76 0.010 265);
+
+  /* ---------- Brand = deep spectral violet (solid; white-legible). ----------
+     Renamed from --teal* (which held violet, not teal). The spectral GRADIENT
+     lives in --grad-cta / --irid and is signature-only. */
+  --brand:        oklch(0.53 0.24 300);
+  --brand-strong: oklch(0.49 0.26 300);
+  --brand-soft:   oklch(0.60 0.22 300 / 0.10);
+  --brand-glow:   oklch(0.64 0.22 300 / 0.16);
+  --brand-ink:    oklch(0.99 0.005 300);
+
+  /* Back-compat aliases — app screens (arbitrary values, inline styles) and the
+     JS accent-hue writer (appearance-client.ts) still read/set --teal*. */
+  --teal:        var(--brand);
+  --teal-strong: var(--brand-strong);
+  --teal-soft:   var(--brand-soft);
+  --teal-glow:   var(--brand-glow);
+  --teal-ink:    var(--brand-ink);
+
+  --coral:      oklch(0.67 0.16 34);
+  --coral-soft: oklch(0.67 0.16 34 / 0.12);
+  --coral-ink:  oklch(0.99 0.01 45);
+
+  --gold:      oklch(0.74 0.14 70);
+  --gold-soft: oklch(0.74 0.14 70 / 0.16);
+
+  /* Status — --good/--warn/--danger are canonical; --success/--warning alias below. */
+  --good:    oklch(0.60 0.14 150);
+  --warn:    oklch(0.70 0.15 70);
+  --danger:  oklch(0.58 0.20 25);
+
+  /* ---------- Glass · spectral · 3D lens · depth ---------- */
+  --surface-glass:   rgba(255,255,255,0.62);
+  --surface-glass-2: rgba(255,255,255,0.80);
+  --line-glass: rgba(22,24,40,0.10);
+  --hair:       rgba(22,24,40,0.06);
+  --focus:      oklch(0.55 0.15 258);
+  --irid: linear-gradient(115deg, oklch(0.70 0.19 250), oklch(0.64 0.24 292), oklch(0.68 0.23 335), oklch(0.80 0.16 40));
+  --grad-cta: linear-gradient(120deg, oklch(0.56 0.20 258), oklch(0.53 0.25 300), oklch(0.58 0.23 340));
+  --lens-core:   oklch(0.60 0.22 262);
+  --lens-glow-1: oklch(0.70 0.20 262 / 0.55);
+  --lens-glow-2: oklch(0.68 0.22 330 / 0.44);
+  --shadow-sm:   0 1px 2px rgba(38,44,76,0.05), 0 4px 12px -5px rgba(38,44,76,0.10);
+  --shadow-lift: 0 2px 6px -2px rgba(38,44,76,0.07), 0 16px 34px -14px rgba(38,44,76,0.13), 0 42px 80px -52px rgba(38,44,76,0.22);
+  --sheen: rgba(255,255,255,0.92);
+  --placeholder: oklch(0.47 0.014 265);
+  --btn-ink: #ffffff;
+
+  /* ---------- Motion easings + z-scale (consolidated from the landing :root) ---------- */
+  --ease:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-2: cubic-bezier(0.22, 1, 0.36, 1);
+  --z-bg: 0; --z-base: 1; --z-lens: 2; --z-content: 3; --z-nav: 40;
+
+  /* ---------- Scale tokens ----------
+     RADIUS: named --rad-* (NOT --radius-*). Tailwind v4 reserves the
+     --radius-{xs,sm,md,lg,xl,2xl,3xl} theme keys for its rounded-* utilities;
+     an unlayered :root override of those names would silently resize every
+     rounded-* in the app. --rad-* is collision-free and feeds only our own
+     classes (.surface/.card/.ap-*). */
+  --rad-xs:  8px;
+  --rad-sm:  10px;
+  --rad-md:  12px;
+  --rad-lg:  16px;
+  --rad-xl:  22px;
+  --rad-2xl: 26px;
+  --rad-pill: 999px;
+
+  /* ELEVATION: --elev-1 = the old --shadow-sm, --elev-3 = the old --shadow-lift,
+     --elev-2 = a new mid step. (--shadow-sm/--shadow-lift are kept too — the
+     Lucent primitives reference them directly.) */
+  --elev-1: var(--shadow-sm);
+  --elev-2: 0 2px 8px -3px rgba(38,44,76,.08), 0 12px 26px -12px rgba(38,44,76,.14);
+  --elev-3: var(--shadow-lift);
+
+  /* DURATION */
+  --dur-1: 150ms;
+  --dur-2: 260ms;
+  --dur-3: 400ms;
+
+  /* ---------- Back-compat alias tokens (legacy components keep rendering) ---------- */
+  --background: var(--bg);
+  --surface-muted: var(--surface-2);
+  --border: var(--line);
+  --input: var(--line-2);
+  --foreground: var(--ink-deep);
+  --muted-foreground: var(--ink-2);
+  --primary: var(--brand);
+  --primary-hover: var(--brand-strong);
+  --primary-foreground: var(--brand-ink);
+  --ring: var(--brand);
+
+  /* Numbered brand ramp (legacy components: auth-split-panel, register, etc.) */
+  --brand-50:  oklch(0.97 0.02 300);
+  --brand-100: oklch(0.93 0.05 300);
+  --brand-200: oklch(0.88 0.09 300);
+  --brand-300: oklch(0.80 0.14 300);
+  --brand-400: oklch(0.68 0.20 300);
+  --brand-500: oklch(0.60 0.24 300);
+  --brand-600: oklch(0.53 0.24 300);
+  --brand-700: oklch(0.47 0.23 300);
+  --brand-800: oklch(0.40 0.20 302);
+  --brand-900: oklch(0.32 0.16 305);
+  --brand-950: oklch(0.22 0.10 308);
+
+  --success: var(--good);
+  --success-surface: color-mix(in oklch, var(--good) 12%, var(--surface));
+  --success-foreground: oklch(0.30 0.08 155);
+  --success-border: color-mix(in oklch, var(--good) 30%, var(--line));
+  --warning: var(--warn);
+  --warning-surface: color-mix(in oklch, var(--warn) 12%, var(--surface));
+  --warning-foreground: oklch(0.36 0.11 75);
+  --warning-border: color-mix(in oklch, var(--warn) 30%, var(--line));
+  --danger-surface: color-mix(in oklch, var(--danger) 10%, var(--surface));
+  --danger-foreground: oklch(0.38 0.14 25);
+  --danger-border: color-mix(in oklch, var(--danger) 30%, var(--line));
+  --info: oklch(0.55 0.13 230);
+  --info-surface: color-mix(in oklch, oklch(0.55 0.13 230) 10%, var(--surface));
+  --info-foreground: oklch(0.32 0.10 230);
+  --info-border: color-mix(in oklch, oklch(0.55 0.13 230) 30%, var(--line));
+
+  /* ---------- Type scale — deliberately larger (landing display scale) ---------- */
+  --step--2: 0.75rem;     /* 12px micro mono */
+  --step--1: 0.84rem;     /* 13.5px small labels */
+  --step-0:  1.0625rem;   /* 17px body */
+  --step-1:  1.21rem;     /* 19.4px lead */
+  --step-2:  clamp(1.4rem, 1.05rem + 1.2vw, 1.75rem);
+  --step-3:  clamp(1.85rem, 1.35rem + 2.1vw, 2.55rem);
+  --step-4:  clamp(2.4rem, 1.75rem + 3vw, 3.5rem);
+  --display: clamp(2.9rem, 1.6rem + 5.4vw, 5.25rem);
+  --maxw:    1240px;
+}
+
+/* =============================================================================
+   Map raw tokens onto Tailwind v4 color utilities + reusable design tokens.
+   ============================================================================= */
+@theme inline {
+  --color-background: var(--bg);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-muted: var(--surface-2);
+  --color-border: var(--line);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-line-3: var(--line-3);
+  --color-input: var(--input);
+  --color-foreground: var(--ink-deep);
+  --color-ink: var(--ink);
+  --color-ink-deep: var(--ink-deep);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-muted-foreground: var(--ink-2);
+
+  --color-primary: var(--brand);
+  --color-primary-hover: var(--brand-strong);
+  --color-primary-foreground: var(--brand-ink);
+
+  /* Canonical brand utilities (bg-brand / text-brand / border-brand …). */
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-ink: var(--brand-ink);
+
+  /* Back-compat teal-* utilities kept, now pointing at brand. */
+  --color-teal: var(--brand);
+  --color-teal-strong: var(--brand-strong);
+  --color-teal-soft: var(--brand-soft);
+  --color-teal-ink: var(--brand-ink);
+  --color-coral: var(--coral);
+  --color-coral-soft: var(--coral-soft);
+  --color-coral-ink: var(--coral-ink);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+
+  --color-ring: var(--brand);
+
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-border: var(--success-border);
+  --color-warning: var(--warning);
+  --color-warning-surface: var(--warning-surface);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-border: var(--warning-border);
+  --color-danger-surface: var(--danger-surface);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-border: var(--danger-border);
+  --color-info: var(--info);
+  --color-info-surface: var(--info-surface);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-border: var(--info-border);
+
+  /* Fonts wired via next/font + Fontshare <link> in layout.tsx —
+     Clash Display (display) / General Sans (body) / Geist Mono (data). */
+  --font-sans:
+    "General Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-display: "Clash Display", "General Sans", sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Motion utilities (enter/exit) keyed off Radix data-[state]. */
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-fade-out: fade-out 120ms ease-in;
+  --animate-zoom-in: zoom-in 150ms ease-out;
+  --animate-zoom-out: zoom-out 120ms ease-in;
+  --animate-slide-up: slide-up 200ms ease-out;
+  --animate-slide-down: slide-down 200ms ease-out;
+  --animate-overlay-in: fade-in 150ms ease-out;
+  --animate-overlay-out: fade-out 120ms ease-in;
+  --animate-scale-in: scale-in 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-check-pop: check-pop 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+  --animate-rise-in: rise-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pulse-soft: pulse-soft 2.6s ease-out infinite;
+}
