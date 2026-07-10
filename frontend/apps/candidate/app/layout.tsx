@@ -1,26 +1,13 @@
 import { ApertureSprite, Toaster } from "@ip/ui";
-import { Hanken_Grotesk, Schibsted_Grotesk, Geist_Mono } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
-import { appearanceScript } from "./settings/appearance-client";
 import { Providers } from "./providers";
 
-// Aperture Pro · v3 — humanist body, geometric display, mono for data labels.
-const sans = Hanken_Grotesk({
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-sans",
-});
-
-const display = Schibsted_Grotesk({
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-display",
-});
-
+// Lucent v4 — display + body via Fontshare (Clash Display / General Sans, loaded in <head>
+// below); Geist Mono for data labels via next/font. Light mode only (no dark, no appearance
+// toggle) — see globals.css and PRODUCT.md (decided 2026-07-10).
 const mono = Geist_Mono({
   subsets: ["latin"],
   display: "swap",
@@ -37,34 +24,26 @@ export const metadata = {
   applicationName: "Aptura",
 };
 
-// Next 15: theme-color + colorScheme live in the viewport export, not metadata.
+// Light-only: a single professional light theme.
 export const viewport = {
-  colorScheme: "light dark" as const,
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#15161e" },
-    { media: "(prefers-color-scheme: light)", color: "#f7f7f9" },
-  ],
+  colorScheme: "light" as const,
+  themeColor: "#f7f8fb",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${sans.variable} ${display.variable} ${mono.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang="en" className={mono.variable} suppressHydrationWarning>
       <head>
-        {/* Pre-paint script — reads aptura.appearance.v1 from localStorage and applies mode +
-            base + accent (incl. custom hue) onto <html> BEFORE React hydrates. No FOUC. */}
-        <script dangerouslySetInnerHTML={{ __html: appearanceScript }} />
+        {/* Lucent type — Clash Display (display) + General Sans (body) via Fontshare. */}
+        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="" />
+        <link
+          href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&f[]=general-sans@400,500,600&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-        {/* Aperture mark + lucide-style icons mounted once for use via <svg><use href="#…" /></svg> */}
+        {/* Aperture mark + icon sprite mounted once for <svg><use href="#…" /></svg>. */}
         <ApertureSprite />
-        {/* Light/dark + palette is owned end-to-end by System B (aptura.appearance.v1):
-            the pre-paint appearanceScript above, the Settings → Appearance tab, and the
-            header AppearanceToggle. No ThemeProvider here — it would be a second, conflicting
-            source of truth for the `.dark` class. */}
         <Providers>{children}</Providers>
         <Toaster richColors closeButton position="top-center" />
       </body>
