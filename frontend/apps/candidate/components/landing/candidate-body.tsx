@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ApertureLens } from "@ip/ui";
@@ -93,27 +93,11 @@ const FAQ: { q: string; a: string }[] = [
 
 export function CandidateBody() {
   const router = useRouter();
-  const [hiring, setHiring] = useState(false);
-  const forkRef = useRef<HTMLDivElement>(null);
-  const jobBtn = useRef<HTMLButtonElement>(null);
-  const hireBtn = useRef<HTMLButtonElement>(null);
-  const pill = useRef<HTMLDivElement>(null);
   const [q, setQ] = useState("");
   const [loc, setLoc] = useState("");
 
-  // Slide the fork pill under the selected tab (measured, so it fits each label).
-  useLayoutEffect(() => {
-    const el = hiring ? hireBtn.current : jobBtn.current;
-    const p = pill.current;
-    const f = forkRef.current;
-    if (!el || !p || !f) return;
-    p.style.width = `${el.offsetWidth}px`;
-    p.style.transform = `translateX(${el.offsetLeft - 5}px)`;
-  }, [hiring]);
-
   function onSearch(e: FormEvent) {
     e.preventDefault();
-    if (hiring) return router.push("/hiring-teams");
     const params = new URLSearchParams();
     if (q.trim()) params.set("q", q.trim());
     if (loc.trim()) params.set("location", loc.trim());
@@ -140,24 +124,18 @@ export function CandidateBody() {
               <h1 id="hero-h1" className="hero">Get seen. Get interviewed. Get hired.</h1>
               <p className="lede">One place to apply, interview, and hear back — on a result you can trust.</p>
 
-              <div className="fork" role="tablist" aria-label="Choose your path" ref={forkRef}>
-                <div className="fork-pill" ref={pill} aria-hidden="true" />
-                <button ref={jobBtn} role="tab" aria-selected={!hiring} type="button" onClick={() => setHiring(false)}>I&apos;m looking for a job</button>
-                <button ref={hireBtn} role="tab" aria-selected={hiring} type="button" tabIndex={hiring ? 0 : -1} onClick={() => setHiring(true)}>I&apos;m hiring</button>
-              </div>
-
               <form className="search glass irid-edge" role="search" aria-label="Search roles" onSubmit={onSearch}>
                 <div className="field">
                   <span className="fi" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></svg></span>
-                  <label className="sr-only" htmlFor="q">{hiring ? "Role you're hiring for" : "Job title or skill"}</label>
-                  <input id="q" value={q} onChange={(e) => setQ(e.target.value)} type="text" placeholder={hiring ? "Role you're hiring for" : "Job title or skill"} autoComplete="off" />
+                  <label className="sr-only" htmlFor="q">Job title or skill</label>
+                  <input id="q" value={q} onChange={(e) => setQ(e.target.value)} type="text" placeholder="Job title or skill" autoComplete="off" />
                 </div>
                 <div className="field">
                   <span className="fi" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 5-8 11-8 11s-8-6-8-11a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="2.6" /></svg></span>
                   <label className="sr-only" htmlFor="loc">Location</label>
                   <input id="loc" value={loc} onChange={(e) => setLoc(e.target.value)} type="text" placeholder="Location" autoComplete="off" />
                 </div>
-                <button className="btn btn-primary btn-hero" type="submit">{hiring ? "Start hiring" : "Search"}</button>
+                <button className="btn btn-primary btn-hero" type="submit">Search</button>
               </form>
 
               <div className="pills">
