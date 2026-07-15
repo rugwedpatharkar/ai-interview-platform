@@ -390,7 +390,7 @@
 .lucent .brand{ display: flex; align-items: center; gap: 10px; font-family:'Clash Display','Sora',sans-serif; font-weight: 600; font-size: 1.2rem; letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
 .lucent .brand .mark .spin{ transform-box: fill-box; transform-origin: center; animation: markspin 34s linear infinite; }
 .lucent .nav-links{ display: flex; align-items: center; gap: 4px; margin-left: auto; }
-.lucent .nav-links a{ padding: 8px 14px; border-radius: 10px; color: var(--ink-2); font-size: .98rem; font-weight: 500; text-decoration: none; transition: color .25s var(--ease), background .25s var(--ease); }
+.lucent .nav-links a{ padding: 8px 14px; border-radius: 10px; color: var(--ink-2); font-size: .98rem; font-weight: 500; white-space: nowrap; text-decoration: none; transition: color .25s var(--ease), background .25s var(--ease); }
 .lucent .nav-links a:hover{ color: var(--ink); background: var(--surface-glass); }
 .lucent .nav-cta{ display: flex; align-items: center; gap: 8px; }
 /* Audience switcher — flip between the Candidates (/) and Hiring Teams (/hiring-teams) landings */
@@ -403,6 +403,39 @@
 .lucent .aud-switch button.on{ color: var(--brand-strong); font-weight: 600; background: linear-gradient(180deg, #fff, color-mix(in oklch, var(--brand) 6%, #fff)); box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(38,44,76,.10), 0 6px 16px -6px oklch(0.53 0.24 300 / 0.30); }
 .lucent .aud-switch button:active{ transform: scale(.97); }
 @media (max-width: 640px){ .lucent .aud-switch a, .lucent .aud-switch button{ padding: 7px 10px; font-size: .84rem; } }
+
+/* Sign-in — ghost link paired with the primary CTA in nav-cta */
+.lucent .nav-signin{ padding: 8px 14px; border-radius: 10px; color: var(--ink-2); font-size: .98rem; font-weight: 500; text-decoration: none; transition: color .2s var(--ease), background .2s var(--ease); }
+.lucent .nav-signin:hover{ color: var(--ink); background: var(--surface-glass); }
+
+/* Platform ▾ mega-menu (hiring nav) — opens on hover or keyboard focus-within */
+.lucent .nav-mega{ position: relative; }
+.lucent .nav-links .nav-mega-trigger{ display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.lucent .nav-mega-trigger svg{ transition: transform .25s var(--ease); }
+.lucent .nav-mega:hover .nav-mega-trigger, .lucent .nav-mega:focus-within .nav-mega-trigger{ color: var(--ink); background: var(--surface-glass); }
+.lucent .nav-mega:hover .nav-mega-trigger svg, .lucent .nav-mega:focus-within .nav-mega-trigger svg{ transform: rotate(180deg); }
+.lucent .mega-panel{ position: absolute; top: calc(100% + 14px); left: 50%; width: min(520px, 90vw); padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border-radius: 18px; background: var(--surface-glass-2); border: 1px solid var(--line-glass); box-shadow: 0 30px 70px -28px rgba(38,44,76,.44), inset 0 1px 0 var(--sheen); -webkit-backdrop-filter: blur(22px) saturate(1.5); backdrop-filter: blur(22px) saturate(1.5); opacity: 0; visibility: hidden; pointer-events: none; transform: translateX(-50%) translateY(-8px); transition: opacity .22s var(--ease), transform .22s var(--ease); z-index: 60; }
+.lucent .mega-panel::before{ content: ""; position: absolute; top: -14px; left: 0; right: 0; height: 14px; }
+.lucent .nav-mega:hover .mega-panel, .lucent .nav-mega:focus-within .mega-panel{ opacity: 1; visibility: visible; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+.lucent .mega-item{ display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 12px; text-decoration: none; transition: background .18s var(--ease); }
+.lucent .mega-item:hover{ background: var(--surface-glass); }
+.lucent .mega-ic{ display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px; background: color-mix(in oklch, var(--brand) 10%, var(--surface)); color: var(--brand-strong); box-shadow: inset 0 1px 0 var(--sheen); }
+.lucent .mega-tx{ display: grid; gap: 2px; }
+.lucent .mega-tx b{ font-size: .92rem; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+.lucent .mega-tx > span{ font-size: .8rem; color: var(--ink-3); line-height: 1.32; }
+
+/* Announcement bar — slim strip above the floating nav pill (dismissible) */
+.lucent .nav-banner{ position: relative; z-index: 1; max-width: 1560px; margin: 12px auto 0; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 40px; border-radius: 12px; font-size: .86rem; color: var(--ink-2); background: color-mix(in oklch, var(--brand) 8%, var(--surface-glass-2)); border: 1px solid color-mix(in oklch, var(--brand) 15%, var(--line-glass)); box-shadow: inset 0 1px 0 var(--sheen), 0 10px 26px -18px var(--brand-glow); -webkit-backdrop-filter: blur(14px) saturate(1.3); backdrop-filter: blur(14px) saturate(1.3); }
+.lucent .nav-banner .nb-in{ display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.lucent .nb-tag{ display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: .66rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: linear-gradient(180deg, color-mix(in oklch, var(--brand) 88%, white), var(--brand-strong)); box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
+.lucent .nb-link{ display: inline-flex; align-items: center; gap: 4px; color: var(--brand-strong); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.lucent .nb-link:hover{ text-decoration: underline; }
+.lucent .nb-x{ position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-3); cursor: pointer; transition: color .2s var(--ease), background .2s var(--ease); }
+.lucent .nb-x:hover{ color: var(--ink); background: var(--surface-glass); }
+/* Narrow-width degrade (no hamburger yet): drop the middle links on tablet, then
+   the ghost sign-in on mobile, so the floating pill never overflows its row. */
+@media (max-width: 1024px){ .lucent .nav-links{ display: none; } }
+@media (max-width: 720px){ .lucent .nav-banner{ font-size: .8rem; padding: 8px 34px; } .lucent .nav-signin{ display: none; } .lucent .nav{ gap: 12px; } .lucent .mega-panel{ grid-template-columns: 1fr; width: min(320px, 88vw); } }
 
 /* Hero + 3D lens */
 .lucent .hero{ position: relative; padding-top: clamp(28px, 6vh, 70px); padding-bottom: clamp(40px, 8vh, 96px); }

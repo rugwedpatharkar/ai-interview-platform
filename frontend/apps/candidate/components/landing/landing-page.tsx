@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { AudienceSwitch } from "../audience-switch";
 import { CandidateBody } from "./candidate-body";
@@ -22,12 +22,28 @@ const AptMark = ({ size = 30, spin = false }: { size?: number; spin?: boolean })
   </svg>
 );
 
+const Chevron = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+);
+const Arrow = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+);
+
+// Hiring-side "Platform ▾" mega-menu — each item jumps to a real hiring section.
+const PLATFORM_ITEMS: { href: string; title: string; desc: string; icon: ReactNode }[] = [
+  { href: "#how", title: "The verified interview", desc: "One proctored AI interview per role", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3 5 6v5c0 4.4 3 8 7 10 4-2 7-5.6 7-10V6Z" /><path d="m9 12 2 2 4-4" /></svg> },
+  { href: "#platform", title: "One joined-up platform", desc: "Marketplace → interview → evidence", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.6" /><rect x="14" y="3" width="7" height="7" rx="1.6" /><rect x="3" y="14" width="7" height="7" rx="1.6" /><rect x="14" y="14" width="7" height="7" rx="1.6" /></svg> },
+  { href: "#integrity", title: "Integrity timeline", desc: "Severity-stamped proctoring events", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h4l2.5-7 4 15 2.5-8H21" /></svg> },
+  { href: "#evidence", title: "Evidence-based reports", desc: "Every score quotes the transcript", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M15 3v5h5" /><path d="M9 13h6M9 16.5h4" /></svg> },
+];
+
 const TRANSITION_MS = 260;
 
 export function LandingPage({ initialAudience }: { initialAudience: "candidates" | "hiring" }) {
   const [audience, setAudience] = useState(initialAudience); // selected — drives the switch highlight
   const [shown, setShown] = useState(initialAudience);       // body currently rendered
   const [leaving, setLeaving] = useState(false);             // mid-crossfade
+  const [showBar, setShowBar] = useState(true);              // announcement bar
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Scroll reveal — visible by default; arm + observe only when motion is allowed
@@ -80,15 +96,53 @@ export function LandingPage({ initialAudience }: { initialAudience: "candidates"
 
       <div className="nav-outer">
         <div className="wrap">
+          {showBar && (
+            <div className="nav-banner" role="region" aria-label="Announcement">
+              <span className="nb-in">
+                <span className="nb-tag">New</span>
+                <span>AI-proctored interviews are live — one fair round, evidence you can trust.</span>
+                <a className="nb-link" href={audience === "hiring" ? "#platform" : "#how"}>See how <Arrow /></a>
+              </span>
+              <button type="button" className="nb-x" onClick={() => setShowBar(false)} aria-label="Dismiss announcement">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              </button>
+            </div>
+          )}
           <nav className="nav" aria-label="Primary">
             <Link className="brand" href="/" aria-label="Aptura — home"><AptMark spin />Aptura</Link>
             <AudienceSwitch active={audience} onSelect={select} />
-            <div className="nav-links">
-              <a href="#how">How it works</a>
-              <Link href="/login">Sign in</Link>
-            </div>
+
+            {audience === "candidates" ? (
+              <div className="nav-links">
+                <Link href="/jobs">Find jobs</Link>
+                <Link href="/practice">Practice</Link>
+                <a href="#how">How it works</a>
+              </div>
+            ) : (
+              <div className="nav-links">
+                <div className="nav-mega">
+                  <a className="nav-mega-trigger" href="#platform" aria-haspopup="true">Platform <Chevron /></a>
+                  <div className="mega-panel" role="menu" aria-label="Platform">
+                    {PLATFORM_ITEMS.map((it) => (
+                      <a className="mega-item" role="menuitem" href={it.href} key={it.href}>
+                        <span className="mega-ic">{it.icon}</span>
+                        <span className="mega-tx"><b>{it.title}</b><span>{it.desc}</span></span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+                <a href="#why">Why Aptura</a>
+                <a href="#pricing">Pricing</a>
+              </div>
+            )}
+
             <div className="nav-cta">
-              <Link href="/register" className="btn btn-primary btn-sm">Get started</Link>
+              <Link href="/login" className="nav-signin">Sign in</Link>
+              {audience === "candidates" ? (
+                <Link href="/register" className="btn btn-primary btn-sm">Get started</Link>
+              ) : (
+                <Link href="/pilot" className="btn btn-primary btn-sm">Book a pilot</Link>
+              )}
             </div>
           </nav>
         </div>
