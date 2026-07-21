@@ -77,3 +77,21 @@ async def test_ssrf_guard_rejects_literal_private_ip():
         await _validate_url("https://127.0.0.1/admin")
     with pytest.raises(SsrfBlocked):
         await _validate_url("https://10.0.0.1/")
+
+
+def test_pin_url_to_ip_v4_v6_and_ports():
+    from app.seams.fetcher import _pin_url_to_ip
+
+    # H3 completion — pinning must preserve path/query and port; IPv6 needs brackets.
+    assert _pin_url_to_ip("https://example.com/foo?q=1", "1.2.3.4") == (
+        "https://1.2.3.4/foo?q=1",
+        "example.com",
+    )
+    assert _pin_url_to_ip("https://example.com:8443/x", "1.2.3.4") == (
+        "https://1.2.3.4:8443/x",
+        "example.com:8443",
+    )
+    assert _pin_url_to_ip("https://example.com/x", "2001:db8::1") == (
+        "https://[2001:db8::1]/x",
+        "example.com",
+    )
