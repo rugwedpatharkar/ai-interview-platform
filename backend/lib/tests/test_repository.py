@@ -26,6 +26,9 @@ class _Cursor:
         self._docs = self._docs[:n]
         return self
 
+    def max_time_ms(self, _n):
+        return self
+
     def __aiter__(self):
         async def gen():
             for d in self._docs:
@@ -49,10 +52,10 @@ class FakeCollection:
         self.docs.append(doc)
         return _InsertResult(doc["_id"])
 
-    async def find_one(self, query):
+    async def find_one(self, query, **_kw):
         return next((d for d in self.docs if self._match(d, query)), None)
 
-    def find(self, query):
+    def find(self, query, **_kw):
         return _Cursor([d for d in self.docs if self._match(d, query)])
 
     async def update_one(self, query, update):
@@ -65,7 +68,7 @@ class FakeCollection:
         if doc:
             self.docs.remove(doc)
 
-    async def count_documents(self, query):
+    async def count_documents(self, query, **_kw):
         return sum(1 for d in self.docs if self._match(d, query))
 
 
