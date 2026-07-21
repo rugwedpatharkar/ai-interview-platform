@@ -55,17 +55,20 @@ services:
         value: interview-platform
       - key: S3_REGION
         value: auto
-      # --- Email (Resend SMTP; required for verification / password reset emails) ---
+      # --- Email (Gmail direct — Path A) — required for verification / reset emails.
+      # 2FA on aptura0ai@gmail.com + a Google App Password from
+      # myaccount.google.com/apppasswords. Cap ~500 emails/day (personal Gmail).
+      # For higher volume switch SMTP_HOST to smtp.resend.com and set SMTP_USER=resend.
       - key: SMTP_HOST
-        value: smtp.resend.com
+        value: smtp.gmail.com
       - key: SMTP_PORT
         value: "587"
       - key: SMTP_USER
-        value: resend
-      - key: SMTP_PASS            # Resend API key
+        value: aptura0ai@gmail.com
+      - key: SMTP_PASS            # 16-char Google App Password (spaces optional)
         sync: false
-      - key: SMTP_FROM            # noreply@yourdomain.com (verified Resend sender)
-        sync: false
+      - key: SMTP_FROM
+        value: aptura0ai@gmail.com
       # --- Runtime posture ---
       # Marks this as a production deployment. The lib.config sentinel validator refuses
       # to start when a known dev-only secret (JWT_SECRET, LIVEKIT_API_SECRET) matches
