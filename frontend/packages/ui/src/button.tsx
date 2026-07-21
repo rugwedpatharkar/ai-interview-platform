@@ -1,9 +1,22 @@
 import { type VariantProps, cva } from "class-variance-authority";
 import { type LucideIcon } from "lucide-react";
-import { type ButtonHTMLAttributes, forwardRef } from "react";
+import {
+  type ButtonHTMLAttributes,
+  type ReactElement,
+  cloneElement,
+  forwardRef,
+  isValidElement,
+} from "react";
 
 import { cn } from "./cn.js";
 import { Loader2Icon } from "./internal-icons.js";
+
+// This is the PRODUCT/app button tier (compact CVA). The Lucent LANDING deliberately
+// keeps its own larger marketing button set (.btn / .btn-hero / .btn-glass in
+// primitives.css) with signature spectral-gradient + glass styles that don't belong on
+// product screens; the Aperture .ap-btn-* set is a third product-instrument tier. These
+// are intentional tiers, not duplication to merge. Use `asChild` to style a <Link> as a
+// product button without nesting an <a> in a <button>.
 
 const buttonVariants = cva(
   "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0",
@@ -40,6 +53,10 @@ type BaseButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   trailingIcon?: LucideIcon;
   /** Shows a spinner and disables the button while truthy. */
   loading?: boolean;
+  /** Render the single child element (e.g. a Next <Link>) styled as this button
+   *  instead of a <button>. leadingIcon/trailingIcon/loading are ignored here —
+   *  the child owns its content, href, and events. */
+  asChild?: boolean;
 };
 
 type NonIconButtonProps = BaseButtonProps &
@@ -69,11 +86,21 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       trailingIcon: TrailingIcon,
       loading = false,
       disabled,
+      asChild = false,
       children,
       ...props
     },
     ref,
   ) {
+    // asChild: paint the button styles onto the child element (e.g. a <Link>) so a
+    // link-CTA reads as a product button without an <a>-inside-<button>.
+    if (asChild && isValidElement(children)) {
+      const child = children as ReactElement<{ className?: string }>;
+      return cloneElement(child, {
+        className: cn(buttonVariants({ variant, size }), className, child.props.className),
+      });
+    }
+
     const px = iconSize[size ?? "default"];
     return (
       <button
