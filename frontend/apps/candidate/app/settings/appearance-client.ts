@@ -151,15 +151,15 @@ export function applyAppearance(prefs: AppearancePrefs): void {
   root.dataset.base = prefs.base;
   root.dataset.accent = prefs.accent;
 
-  // Derive a teal-replacement palette from the selected hue so existing .ap-btn-primary /
-  // .ap-pill--teal classes "just work" without per-class rewrites.
+  // Derive the brand palette from the selected hue so every brand-tokened surface
+  // (buttons, pills, accents) re-tints uniformly without per-class rewrites.
   const hue =
     prefs.accent === "custom"
       ? prefs.accentHue
       : ACCENT_HUES[prefs.accent];
-  root.style.setProperty("--teal", `oklch(0.55 0.12 ${hue})`);
-  root.style.setProperty("--teal-strong", `oklch(0.48 0.12 ${hue})`);
-  root.style.setProperty("--teal-soft", `oklch(0.55 0.12 ${hue} / 0.12)`);
+  root.style.setProperty("--brand", `oklch(0.55 0.12 ${hue})`);
+  root.style.setProperty("--brand-strong", `oklch(0.48 0.12 ${hue})`);
+  root.style.setProperty("--brand-soft", `oklch(0.55 0.12 ${hue} / 0.12)`);
 }
 
 /** Local-only mock: persists in localStorage and re-paints on every set. Mirrors the live RPC's
@@ -245,7 +245,7 @@ r.dataset.base=p.base;
 r.dataset.accent=p.accent;
 var hueMap={cyan:195,lime:125,emerald:155,amber:75,coral:32,azure:260};
 var h=p.accent==='custom'?p.accentHue:hueMap[p.accent];if(typeof h!=='number')h=195;
-r.style.setProperty('--teal','oklch(0.55 0.12 '+h+')');
-r.style.setProperty('--teal-strong','oklch(0.48 0.12 '+h+')');
-r.style.setProperty('--teal-soft','oklch(0.55 0.12 '+h+' / 0.12)');
+r.style.setProperty('--brand','oklch(0.55 0.12 '+h+')');
+r.style.setProperty('--brand-strong','oklch(0.48 0.12 '+h+')');
+r.style.setProperty('--brand-soft','oklch(0.55 0.12 '+h+' / 0.12)');
 }catch(_){}})();`;
