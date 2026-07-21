@@ -67,15 +67,24 @@ async def get_aptitude_test(
         delivery = await deliveries.get_by_application(application_id)
         if delivery is None:
             order = permute(len(questions))
-            await deliveries.insert(
-                AptitudeDelivery(
-                    application_id=application_id,
-                    comp_id=application["comp_id"],
-                    job_id=application["job_id"],
-                    order=order,
-                    delivered_at=clock(),
+            try:
+                await deliveries.insert(
+                    AptitudeDelivery(
+                        application_id=application_id,
+                        comp_id=application["comp_id"],
+                        job_id=application["job_id"],
+                        order=order,
+                        delivered_at=clock(),
+                    )
                 )
-            )
+            except DuplicateKeyError:
+                # Second tab / concurrent fetch — the unique index on application_id
+                # rejected our insert; re-read the winner's delivery and use its order
+                # so both tabs render the same pinned questions.
+                delivery = await deliveries.get_by_application(application_id)
+                if delivery is None:  # shouldn't happen, but fail safe
+                    raise
+                order = delivery["order"]
         else:
             order = delivery["order"]
         return {
