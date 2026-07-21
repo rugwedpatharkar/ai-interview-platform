@@ -5,9 +5,9 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { Providers } from "./providers";
 
-// Lucent v4 — display + body via Fontshare (Clash Display / General Sans, loaded in <head>
-// below); Geist Mono for data labels via next/font. Light mode only (no dark, no appearance
-// toggle) — see globals.css and PRODUCT.md (decided 2026-07-10).
+// Lucent v4 — display + body self-hosted (Clash Display / General Sans in app/fonts.css,
+// preloaded in <head> below); Geist Mono for data labels via next/font. Light mode only
+// (no dark, no appearance toggle) — see globals.css and PRODUCT.md (decided 2026-07-10).
 const mono = Geist_Mono({
   subsets: ["latin"],
   display: "swap",
@@ -34,12 +34,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={mono.variable} suppressHydrationWarning>
       <head>
-        {/* Lucent type — Clash Display (display) + General Sans (body) via Fontshare. */}
-        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="" />
-        <link
-          href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&f[]=general-sans@400,500,600&display=swap"
-          rel="stylesheet"
-        />
+        {/* Lucent type — Clash Display (display) + General Sans (body), self-hosted in
+            app/fonts.css so they load under the prod CSP `font-src 'self'` (Fontshare's
+            CDN is blocked there). Preload the two above-the-fold faces to cut FOUT. */}
+        <link rel="preload" href="/fonts/general-sans-400.woff2" as="font" type="font/woff2" crossOrigin="" />
+        <link rel="preload" href="/fonts/clash-display-600.woff2" as="font" type="font/woff2" crossOrigin="" />
       </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         {/* Aperture mark + icon sprite mounted once for <svg><use href="#…" /></svg>. */}

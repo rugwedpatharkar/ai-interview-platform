@@ -224,7 +224,6 @@ export function Dashboard() {
           {/* LEFT — applications + apply form */}
           <section className="flex flex-col gap-6">
             <div className="ap-cell ap-cell--anchor">
-              <span className="ap-cell-tag">A · 01</span>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="txt-h2 flex items-center gap-2">
                   <Briefcase className="size-5 text-primary" aria-hidden />
@@ -294,7 +293,6 @@ export function Dashboard() {
             {/* Apply by ID — minimal seam preserved so the existing apply mutation still works.
                 The marketplace is the primary path; this is the fallback for invite links. */}
             <div className="ap-cell">
-              <span className="ap-cell-tag">A · 02</span>
               <h3 className="txt-h2">Have a job ID from an invite?</h3>
               <p className="mt-1 text-sm text-ink-2">
                 Paste it below to apply directly. AI-assisted screening is enabled
@@ -339,7 +337,6 @@ export function Dashboard() {
           <aside className="flex flex-col gap-6">
             {nextInterview && (
               <div className="ap-cell ap-cell--anchor">
-                <span className="ap-cell-tag">B · UP NEXT</span>
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="txt-h3">Up next</h2>
                   <span className="ap-pill ap-pill--good">
@@ -375,7 +372,6 @@ export function Dashboard() {
             {/* Recommended — keep the existing query key + matches shape verbatim;
                 rendered inline here so the right rail stays self-contained. */}
             <div className="ap-cell">
-              <span className="ap-cell-tag">B · 01</span>
               <h2 className="txt-h3 flex items-center gap-2">
                 <Sparkles className="size-4 text-primary" aria-hidden />
                 Recommended
@@ -439,7 +435,6 @@ export function Dashboard() {
             </div>
 
             <div className="ap-cell">
-              <span className="ap-cell-tag">B · 02</span>
               <h2 className="txt-h3 flex items-center gap-2">
                 <Dumbbell className="size-4 text-primary" aria-hidden />
                 Practice

@@ -20,7 +20,8 @@ export function AudienceSwitch({
         aria-pressed={active === "candidates"}
         onClick={() => onSelect("candidates")}
       >
-        For candidates
+        <span className="aud-lbl-full">For candidates</span>
+        <span className="aud-lbl-short">Candidates</span>
       </button>
       <button
         type="button"
@@ -28,7 +29,8 @@ export function AudienceSwitch({
         aria-pressed={active === "hiring"}
         onClick={() => onSelect("hiring")}
       >
-        For hiring teams
+        <span className="aud-lbl-full">For hiring teams</span>
+        <span className="aud-lbl-short">Hiring</span>
       </button>
     </div>
   );

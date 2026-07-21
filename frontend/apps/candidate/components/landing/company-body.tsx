@@ -74,7 +74,7 @@ function KvRow({ label, value, ok }: { label: string; value: string; ok?: boolea
   return (
     <div className="flex justify-between">
       <span>{label}</span>
-      <b className={ok ? "font-semibold text-good" : "font-semibold text-ink-deep"}>{value}</b>
+      <b className={ok ? "font-semibold text-success-foreground" : "font-semibold text-ink-deep"}>{value}</b>
     </div>
   );
 }
@@ -179,7 +179,7 @@ function MiniDecision() {
         <div className="text-[0.78rem] text-ink-3">Reviewer · signs the outcome</div>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        <span className="rounded-md border border-good/40 bg-good/10 px-2 py-1 text-[0.76rem] font-medium text-good">Advance ✓</span>
+        <span className="rounded-md border border-good/40 bg-good/10 px-2 py-1 text-[0.76rem] font-medium text-success-foreground">Advance ✓</span>
         <span className="rounded-md border border-line bg-surface px-2 py-1 text-[0.76rem] text-ink-2">Hold</span>
         <span className="rounded-md border border-line bg-surface px-2 py-1 text-[0.76rem] text-ink-2">Decline</span>
       </div>

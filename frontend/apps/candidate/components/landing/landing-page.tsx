@@ -28,6 +28,11 @@ const Chevron = () => (
 const Arrow = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
 );
+const Burger = ({ open }: { open: boolean }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+    {open ? <><path d="M6 6l12 12" /><path d="M18 6 6 18" /></> : <><path d="M3 6h18" /><path d="M3 12h18" /><path d="M3 18h18" /></>}
+  </svg>
+);
 
 // Hiring-side "Platform ▾" mega-menu — each item jumps to a real hiring section.
 const PLATFORM_ITEMS: { href: string; title: string; desc: string; icon: ReactNode }[] = [
@@ -44,6 +49,7 @@ export function LandingPage({ initialAudience }: { initialAudience: "candidates"
   const [shown, setShown] = useState(initialAudience);       // body currently rendered
   const [leaving, setLeaving] = useState(false);             // mid-crossfade
   const [showBar, setShowBar] = useState(true);              // announcement bar
+  const [menuOpen, setMenuOpen] = useState(false);           // mobile hamburger menu
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Scroll reveal — visible by default; arm + observe only when motion is allowed
@@ -72,9 +78,27 @@ export function LandingPage({ initialAudience }: { initialAudience: "candidates"
     return () => io.disconnect();
   }, [shown]);
 
+  // Close the mobile menu on Escape or when the viewport grows back to desktop.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    const onResize = () => {
+      if (window.innerWidth >= 1024) setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [menuOpen]);
+
   // Toggle the body in place with a crossfade — no navigation, no URL change.
   function select(next: "candidates" | "hiring") {
     if (next === audience || leaving) return;
+    setMenuOpen(false); // dismiss the mobile menu if the switch was tapped from it
     setAudience(next); // switch highlights + footer flip instantly
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setShown(next);
@@ -109,7 +133,7 @@ export function LandingPage({ initialAudience }: { initialAudience: "candidates"
             </div>
           )}
           <nav className="nav" aria-label="Primary">
-            <Link className="brand" href="/" aria-label="Aptura — home"><AptMark spin />Aptura</Link>
+            <Link className="brand" href="/" aria-label="Aptura — home"><AptMark spin /><span className="brand-tx">Aptura</span></Link>
             <AudienceSwitch active={audience} onSelect={select} />
 
             {audience === "candidates" ? (
@@ -144,7 +168,55 @@ export function LandingPage({ initialAudience }: { initialAudience: "candidates"
                 <Link href="/pilot" className="btn btn-primary btn-sm">Book a pilot</Link>
               )}
             </div>
+
+            <button
+              type="button"
+              className="nav-burger"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+              aria-controls="landing-mobile-menu"
+              onClick={() => setMenuOpen((o) => !o)}
+            >
+              <Burger open={menuOpen} />
+            </button>
           </nav>
+
+          {menuOpen && (
+            <div className="nav-menu" id="landing-mobile-menu">
+              {audience === "candidates" ? (
+                <>
+                  <Link href="/jobs" onClick={() => setMenuOpen(false)}>Find jobs</Link>
+                  <Link href="/practice" onClick={() => setMenuOpen(false)}>Practice</Link>
+                  <a href="#how" onClick={() => setMenuOpen(false)}>How it works</a>
+                </>
+              ) : (
+                <>
+                  <span className="nav-menu-label">Platform</span>
+                  {PLATFORM_ITEMS.map((it) => (
+                    <a href={it.href} key={it.href} onClick={() => setMenuOpen(false)}>
+                      {it.title}
+                    </a>
+                  ))}
+                  <a href="#why" onClick={() => setMenuOpen(false)}>Why Aptura</a>
+                  <a href="#pricing" onClick={() => setMenuOpen(false)}>Pricing</a>
+                </>
+              )}
+              <div className="nav-menu-cta">
+                <Link href="/login" className="nav-signin" onClick={() => setMenuOpen(false)}>
+                  Sign in
+                </Link>
+                {audience === "candidates" ? (
+                  <Link href="/register" className="btn btn-primary btn-sm" onClick={() => setMenuOpen(false)}>
+                    Get started
+                  </Link>
+                ) : (
+                  <Link href="/pilot" className="btn btn-primary btn-sm" onClick={() => setMenuOpen(false)}>
+                    Book a pilot
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

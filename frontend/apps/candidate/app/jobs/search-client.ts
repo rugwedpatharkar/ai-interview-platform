@@ -222,7 +222,7 @@ const facetsOf = (jobs: JobCardDTO[]) => {
 export function makeMockSearchClient() {
   return async (p: SearchJobsParams): Promise<SearchJobsResult> => {
     const needle = p.q?.toLowerCase();
-    const jobs = FIXTURE.filter((j) => {
+    const matched = FIXTURE.filter((j) => {
       if (needle && !`${j.title} ${j.companyName} ${j.snippet}`.toLowerCase().includes(needle))
         return false;
       if (p.location && !j.location.toLowerCase().includes(p.location.toLowerCase()))
@@ -232,14 +232,19 @@ export function makeMockSearchClient() {
       if (p.skills?.length && !p.skills.every((s) => j.skills.includes(s))) return false;
       return true;
     });
+    // Slice to the requested page so the mock mirrors the real paged endpoint
+    // (total = full match count; jobs = just this page).
+    const page = p.page ?? 1;
+    const pageSize = p.pageSize ?? 24;
+    const start = (page - 1) * pageSize;
     return {
-      jobs,
+      jobs: matched.slice(start, start + pageSize),
       // Facets reflect the full catalog (so toggling one filter doesn't make the
       // others vanish) — same semantics a `$facet` aggregation gives server-side.
       facets: facetsOf(FIXTURE),
-      total: jobs.length,
-      page: p.page ?? 1,
-      pageSize: p.pageSize ?? 24,
+      total: matched.length,
+      page,
+      pageSize,
     };
   };
 }

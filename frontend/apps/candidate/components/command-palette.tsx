@@ -95,6 +95,7 @@ export function CommandPalette({
             role="combobox"
             aria-expanded
             aria-controls="command-palette-list"
+            aria-activedescendant={items.length ? `cmd-opt-${active}` : undefined}
             aria-label="Search commands and jobs"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -117,7 +118,7 @@ export function CommandPalette({
           {items.map((item, i) => {
             const selected = i === active;
             return (
-              <li key={item.kind === "nav" ? item.href : "search"} role="option" aria-selected={selected}>
+              <li id={`cmd-opt-${i}`} key={item.kind === "nav" ? item.href : "search"} role="option" aria-selected={selected}>
                 <button
                   type="button"
                   onClick={() => run(i)}

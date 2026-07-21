@@ -156,7 +156,7 @@ function Field({
 }) {
   const id = `f-${name}`;
   const baseInput =
-    "w-full rounded-lg border border-line-2 bg-surface px-3.5 py-2.5 text-[1rem] text-ink placeholder:text-ink-3 transition-colors focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal-soft";
+    "w-full rounded-lg border border-line-2 bg-surface px-3.5 py-2.5 text-[1rem] text-ink placeholder:text-ink-3 transition-colors focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/45";
   return (
     <div>
       <label htmlFor={id} className="block text-[0.86rem] font-medium text-ink-deep">

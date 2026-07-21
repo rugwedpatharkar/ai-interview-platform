@@ -9,7 +9,7 @@ import {
 } from "@ip/ui";
 import { errorMessage, useAuthedQuery, useRequireRole } from "@ip/shared";
 import type { FunnelAnalytics } from "@ip/api-client";
-import { Activity, BarChart3, Clock, ShieldCheck, Users } from "lucide-react";
+import { Activity, BarChart3, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { CompanyShell } from "../../../components/company-shell";
@@ -46,7 +46,7 @@ export default function AnalyticsPage() {
           <p className="ap-eyebrow">Analytics</p>
           <h1 className="ap-h2">Your hiring, in numbers.</h1>
           <p className="ap-lead mt-3 text-base">
-            Funnel KPIs and integrity signals across every published role.
+            Funnel and conversion metrics across every published role.
           </p>
         </div>
         <RangeChips value={range} onChange={setRange} />
@@ -119,7 +119,7 @@ function FunnelView({ data }: { data: FunnelAnalytics }) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* KPI stat band — funnel + integrity in one sweep. RPCs not yet generated render "—". */}
+      {/* KPI stat band — the funnel + conversion metrics that exist today. */}
       <div className="ap-cell">
         <div className="ap-stats">
           <Stat
@@ -133,12 +133,10 @@ function FunnelView({ data }: { data: FunnelAnalytics }) {
             l="Conversion to hire (applied → hired)."
             icon={Activity}
           />
-          <Stat n="—" l="Integrity flag rate. RPC pending." icon={ShieldCheck} />
-          <Stat n="—" l="Decision turnaround. RPC pending." icon={Clock} />
         </div>
       </div>
 
-      {/* Bento: anchor funnel cell + three supporting cells. */}
+      {/* Bento: anchor funnel cell + conversion-by-stage breakdown. */}
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="ap-cell ap-cell--anchor lg:col-span-2">
           <span className="ap-cell-tag">FUNNEL</span>
@@ -189,28 +187,12 @@ function FunnelView({ data }: { data: FunnelAnalytics }) {
           </ul>
         </div>
 
-        <div className="ap-cell">
-          <span className="ap-cell-tag">DECISIONS</span>
-          <h3 className="ap-h4">Recent decisions</h3>
-          <p className="mt-1 text-sm text-ink-2">
-            Hire, reject, shortlist — last seven days.
-          </p>
-          <p className="mt-4 text-sm text-ink-3">
-            Audit-feed RPC pending. The audit log shows individual decisions today.
-          </p>
-        </div>
-
-        <div className="ap-cell lg:col-span-2">
-          <span className="ap-cell-tag">INTEGRITY</span>
-          <h3 className="ap-h4">Integrity events trend</h3>
-          <p className="mt-1 text-sm text-ink-2">
-            On-device proctoring signals per interview, normalised.
-          </p>
-          <p className="mt-4 text-sm text-ink-3">
-            Trend chart wires up after the integrity time-series RPC lands.
-          </p>
-        </div>
       </div>
+
+      <p className="text-sm text-ink-3">
+        More metrics — integrity flag rate, decision turnaround, and the events trend
+        — arrive as interview data accrues.
+      </p>
     </div>
   );
 }

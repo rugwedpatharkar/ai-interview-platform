@@ -114,7 +114,7 @@ export function Field({
 }) {
   const id = `f-${name}`;
   const base =
-    "w-full rounded-lg border border-line-2 bg-surface px-3.5 py-2.5 text-[1rem] text-ink placeholder:text-ink-3 transition-colors focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal-soft disabled:cursor-not-allowed disabled:opacity-60";
+    "w-full rounded-lg border border-line-2 bg-surface px-3.5 py-2.5 text-[1rem] text-ink placeholder:text-ink-3 transition-colors focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/45 disabled:cursor-not-allowed disabled:opacity-60";
   return (
     <div>
       <div className="flex items-center justify-between">

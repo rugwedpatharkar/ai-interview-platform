@@ -116,7 +116,7 @@
     padding: .18rem .55rem; border-radius: var(--rad-pill); font-size: .78rem; font-weight: 600;
     border: 1px solid var(--line); background: var(--surface); color: var(--ink-2);
   }
-  .ap-pill--good   { color: var(--good); border-color: color-mix(in oklch, var(--good) 30%, var(--line)); background: color-mix(in oklch, var(--good) 8%, var(--surface)); }
+  .ap-pill--good   { color: var(--success-foreground); border-color: color-mix(in oklch, var(--good) 30%, var(--line)); background: color-mix(in oklch, var(--good) 8%, var(--surface)); }
   .ap-pill--warn   { color: color-mix(in oklch, var(--warn) 60%, var(--ink-deep)); border-color: color-mix(in oklch, var(--warn) 30%, var(--line)); background: color-mix(in oklch, var(--warn) 8%, var(--surface)); }
   .ap-pill--danger { color: var(--danger); border-color: color-mix(in oklch, var(--danger) 30%, var(--line)); background: color-mix(in oklch, var(--danger) 8%, var(--surface)); }
   .ap-pill--teal   { color: var(--brand-strong); border-color: color-mix(in oklch, var(--brand) 30%, var(--line)); background: var(--brand-soft); }
@@ -266,7 +266,7 @@
   .ap-compare-head .col.us { color: var(--brand); }
   .ap-compare-row > div:not(:first-child) { text-align: center; font-size: .94rem; }
   .ap-compare-row > div:first-child { color: var(--ink-2); font-size: .96rem; }
-  .ap-compare-yes { color: var(--good); display: inline-flex; align-items: center; gap: .3rem; font-weight: 600; }
+  .ap-compare-yes { color: var(--success-foreground); display: inline-flex; align-items: center; gap: .3rem; font-weight: 600; }
   .ap-compare-no { color: var(--ink-3); font-weight: 500; }
   .ap-compare-mid { color: color-mix(in oklch, var(--warn) 60%, var(--ink-deep)); font-weight: 600; }
   .ap-compare-us { background: color-mix(in oklch, var(--brand) 4%, var(--surface)); }
@@ -354,14 +354,14 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
 /* Glass */
-.glass{ position: relative; background: var(--surface-glass); -webkit-backdrop-filter: blur(20px) saturate(1.45); backdrop-filter: blur(20px) saturate(1.45); border-radius: 20px; border: 1px solid var(--line-glass); box-shadow: var(--shadow-lift), inset 0 1px 0 var(--sheen); }
+.glass{ position: relative; background: var(--surface-glass); -webkit-backdrop-filter: blur(16px) saturate(1.45); backdrop-filter: blur(16px) saturate(1.45); border-radius: 20px; border: 1px solid var(--line-glass); box-shadow: var(--shadow-lift), inset 0 1px 0 var(--sheen); }
 .glass-2{ background: var(--surface-glass-2); }
 .irid-edge::before{ content:""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; background: var(--irid); opacity: .5; pointer-events: none;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor; mask-composite: exclude; }
 
 /* Buttons */
-.btn{ display: inline-flex; align-items: center; justify-content: center; gap: .5em; min-height: 48px; padding: 0 22px; border-radius: 12px; font-weight: 500; font-size: 1rem; letter-spacing: -0.01em; border: 1px solid transparent; cursor: pointer; text-decoration: none; position: relative; transition: transform .5s var(--ease), box-shadow .35s var(--ease), background .35s var(--ease); will-change: transform; }
+.btn{ display: inline-flex; align-items: center; justify-content: center; gap: .5em; min-height: 48px; padding: 0 22px; border-radius: 12px; font-weight: 500; font-size: 1rem; letter-spacing: -0.01em; border: 1px solid transparent; cursor: pointer; text-decoration: none; position: relative; transition: transform .5s var(--ease), box-shadow .35s var(--ease), background .35s var(--ease); }
 .btn:active{ transform: scale(.975); transition-duration: .08s; }
 /* ANCHOR THE VIOLET (Phase 6): the default primary button is SOLID --brand —
    matches @ip/ui <Button variant="primary"> and keeps the spectral gradient from
@@ -373,7 +373,8 @@
 
 /* Reserved signature CTA — spectral gradient + slow flow + iridescent edge.
    Add alongside .btn-primary on the landing hero call-to-action only. */
-.btn-hero{ background: var(--grad-cta); background-size: 200% 200%; animation: ctaflow 9s ease-in-out infinite; }
+.btn-hero{ background: var(--grad-cta); background-size: 200% 200%; }
+.btn-hero:hover{ animation: ctaflow 7s ease-in-out infinite; }
 .btn-hero::before{ content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; background: var(--irid); opacity:.55; pointer-events:none;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor; mask-composite: exclude; }
@@ -385,7 +386,7 @@
 
 /* Nav */
 .lucent .nav-outer{ position: sticky; top: 0; z-index: var(--z-nav); }
-.lucent .nav{ margin: 14px auto 0; max-width: 1560px; display: flex; align-items: center; gap: 20px; padding: 10px 12px 10px 18px; border-radius: 16px; background: var(--surface-glass-2); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); border: 1px solid var(--line-glass); box-shadow: 0 10px 30px -18px rgba(38,44,76,.32), inset 0 1px 0 var(--sheen); }
+.lucent .nav{ margin: 14px auto 0; max-width: 1560px; display: flex; align-items: center; gap: 20px; padding: 10px 12px 10px 18px; border-radius: 16px; background: var(--surface-glass-2); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4); border: 1px solid var(--line-glass); box-shadow: 0 10px 30px -18px rgba(38,44,76,.32), inset 0 1px 0 var(--sheen); }
 .lucent .brand{ display: flex; align-items: center; gap: 10px; font-family:'Clash Display','Sora',sans-serif; font-weight: 600; font-size: 1.2rem; letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
 .lucent .brand .mark .spin{ transform-box: fill-box; transform-origin: center; animation: markspin 34s linear infinite; }
 .lucent .nav-links{ display: flex; align-items: center; gap: 4px; margin-left: 22px; }
@@ -433,10 +434,38 @@
 .lucent .nb-link:hover{ text-decoration: underline; }
 .lucent .nb-x{ position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-3); cursor: pointer; transition: color .2s var(--ease), background .2s var(--ease); }
 .lucent .nb-x:hover{ color: var(--ink); background: var(--surface-glass); }
-/* Narrow-width degrade (no hamburger yet): drop the middle links on tablet, then
-   the ghost sign-in on mobile, so the floating pill never overflows its row. */
-@media (max-width: 1024px){ .lucent .nav-links{ display: none; } }
-@media (max-width: 720px){ .lucent .nav-banner{ font-size: .8rem; padding: 8px 34px; } .lucent .nav-signin{ display: none; } .lucent .nav{ gap: 12px; } .lucent .mega-panel{ grid-template-columns: 1fr; width: min(320px, 88vw); } }
+/* Hamburger button — base hidden; the max-width rule below reveals it < 1024px.
+   (Base MUST precede the media override: equal specificity, later-in-source wins.) */
+.lucent .nav-burger{ display: none; place-items: center; margin-left: auto; flex: 0 0 auto; width: 42px; height: 42px; border: 1px solid var(--line-glass); border-radius: 11px; background: var(--surface-glass); color: var(--ink); cursor: pointer; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); transition: background .2s var(--ease), border-color .2s var(--ease); }
+.lucent .nav-burger:hover{ background: var(--surface-glass-2); border-color: color-mix(in oklch, var(--ink) 20%, var(--line-glass)); }
+
+/* Mobile menu sheet — opaque glass panel under the nav pill (rendered only when open
+   by landing-page.tsx, and only reachable < 1024px). Opaque so nothing bleeds through. */
+.lucent .nav-menu{ margin-top: 8px; display: grid; gap: 2px; padding: 10px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line-glass); box-shadow: 0 30px 70px -28px rgba(38,44,76,.44), inset 0 1px 0 var(--sheen); animation: slide-down .2s var(--ease); }
+.lucent .nav-menu a{ padding: 12px 14px; border-radius: 11px; color: var(--ink-2); font-size: 1rem; font-weight: 500; text-decoration: none; transition: color .2s var(--ease), background .2s var(--ease); }
+.lucent .nav-menu a:hover{ color: var(--ink); background: var(--surface-glass); }
+.lucent .nav-menu-label{ padding: 12px 14px 4px; font-family:'Geist Mono',ui-monospace,monospace; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+.lucent .nav-menu-cta{ display: grid; gap: 8px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--hair); }
+.lucent .nav-menu-cta .nav-signin{ text-align: center; }
+.lucent .nav-menu-cta .btn{ width: 100%; }
+
+/* Audience-switch labels — full on desktop, short on phones so brand + switch + burger fit. */
+.lucent .aud-switch .aud-lbl-short{ display: none; }
+
+/* < 1024px: desktop links + CTA collapse into the hamburger menu. */
+@media (max-width: 1024px){
+  .lucent .nav-links{ display: none; }
+  .lucent .nav-cta{ display: none; }
+  .lucent .nav-burger{ display: inline-grid; }
+}
+@media (max-width: 720px){ .lucent .nav-banner{ font-size: .8rem; padding: 8px 34px; } .lucent .nav{ gap: 12px; } }
+@media (max-width: 560px){
+  .lucent .aud-switch .aud-lbl-full{ display: none; }
+  .lucent .aud-switch .aud-lbl-short{ display: inline; }
+}
+@media (max-width: 420px){ .lucent .brand .brand-tx{ display: none; } }
+/* Desktop guard — the menu never shows even if state is briefly stale on resize. */
+@media (min-width: 1025px){ .lucent .nav-menu{ display: none; } }
 
 /* Hero + 3D lens */
 .lucent .hero{ position: relative; padding-top: clamp(28px, 6vh, 70px); padding-bottom: clamp(40px, 8vh, 96px); }
@@ -499,7 +528,7 @@
 .lucent .pill svg{ color: var(--ink); flex: 0 0 auto; }
 
 /* Floating stat chips */
-.lucent .float-chip{ position: absolute; z-index: var(--z-content); padding: 12px 16px; border-radius: 14px; text-align: left; background: var(--surface-glass-2); border: 1px solid var(--line-glass); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4); box-shadow: var(--shadow-lift), inset 0 1px 0 var(--sheen); }
+.lucent .float-chip{ position: absolute; z-index: var(--z-content); padding: 12px 16px; border-radius: 14px; text-align: left; background: var(--surface-glass-2); border: 1px solid var(--line-glass); -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4); box-shadow: var(--shadow-lift), inset 0 1px 0 var(--sheen); }
 .lucent .float-chip .n{ font-family:'Geist Mono',monospace; font-variant-numeric: tabular-nums; font-size: 1.28rem; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
 .lucent .float-chip .t{ font-size: .82rem; color: var(--ink-2); }
 .lucent .fc-1{ left: 1%; top: 20%; } .lucent .fc-2{ right: 1%; top: 29%; } .lucent .fc-3{ left: 6%; bottom: 4%; } .lucent .fc-4{ right: 5%; bottom: 10%; }
