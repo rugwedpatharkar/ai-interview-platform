@@ -5,6 +5,9 @@
    processing, so the shared @theme / @layer resolve in-app. */
 @import "../../../packages/ui/src/styles/index.css";
 
+/* Self-hosted Clash Display + General Sans @font-face (CSP-safe; replaces Fontshare). */
+@import "./fonts.css";
+
 /* Scan the shared UI package so its component classes make it into the build. */
 @source "../../../packages/ui/src";
 
