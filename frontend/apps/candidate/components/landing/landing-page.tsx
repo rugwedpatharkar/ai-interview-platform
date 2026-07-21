@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AudienceSwitch } from "../audience-switch";
 import { CandidateBody } from "./candidate-body";
 import { CompanyBody } from "./company-body";
+import { Arrow, Chevron } from "./landing-icons";
 
 // Single consolidated Lucent landing. Owns the `.lucent` shell (aurora bg-field,
 // grain, glass nav, footer) and swaps the audience body IN PLACE when the nav
@@ -22,12 +23,6 @@ const AptMark = ({ size = 30, spin = false }: { size?: number; spin?: boolean })
   </svg>
 );
 
-const Chevron = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-);
-const Arrow = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-);
 const Burger = ({ open }: { open: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
     {open ? <><path d="M6 6l12 12" /><path d="M18 6 6 18" /></> : <><path d="M3 6h18" /><path d="M3 12h18" /><path d="M3 18h18" /></>}
@@ -125,7 +120,7 @@ export function LandingPage({ initialAudience }: { initialAudience: "candidates"
               <span className="nb-in">
                 <span className="nb-tag">New</span>
                 <span>AI-proctored interviews are live — one fair round, evidence you can trust.</span>
-                <a className="nb-link" href={audience === "hiring" ? "#platform" : "#how"}>See how <Arrow /></a>
+                <a className="nb-link" href={audience === "hiring" ? "#platform" : "#how"}>See how <Arrow size={13} /></a>
               </span>
               <button type="button" className="nb-x" onClick={() => setShowBar(false)} aria-label="Dismiss announcement">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
