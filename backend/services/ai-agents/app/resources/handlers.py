@@ -91,24 +91,32 @@ async def handle_job_published(payload, *, llm, data, capability, publisher):
                 return
             aptitude = job.get("aptitude_config", {})
             topics = aptitude.get("topics") or job.get("required_topics", [])
-            # Bank + plan are gated independently. A redelivery must not regenerate
-            # an existing bank (a fresh question set corrupts an in-flight delivery's
-            # answer order), but it MUST build a plan a prior partial run never saved
-            # (bank saved, then plan build failed) — else every interview for this
-            # job stays ungrounded forever.
+            # C4: version bank + plan by a hash of the source spec. If a recruiter
+            # edits JD/topics/num_questions and republishes, the hash changes and we
+            # rebuild — before, we skipped on presence and served a "Rust" candidate
+            # a Python-grounded interview.
+            import hashlib as _hashlib
+
+            _num_q = aptitude.get(
+                "num_questions", get_settings().default_aptitude_questions
+            )
+            _spec_bytes = repr((job["jd_text"], sorted(topics), int(_num_q))).encode()
+            spec_hash = _hashlib.sha256(_spec_bytes).hexdigest()
+
+            def _fresh(doc) -> bool:
+                return doc is not None and doc.get("spec_hash") == spec_hash
+
             try:
-                if await data.get_aptitude_bank(job_id) is None:
+                cached_bank = await data.get_aptitude_bank(job_id)
+                if not _fresh(cached_bank):
                     bank = await build_aptitude_bank(
-                        job["jd_text"],
-                        topics,
-                        aptitude.get(
-                            "num_questions",
-                            get_settings().default_aptitude_questions,
-                        ),
-                        llm=llm,
+                        job["jd_text"], topics, _num_q, llm=llm
                     )
-                    await data.save_aptitude_bank(job_id, bank.model_dump())
-                if await data.get_question_plan(job_id) is None:
+                    bank_doc = bank.model_dump()
+                    bank_doc["spec_hash"] = spec_hash
+                    await data.save_aptitude_bank(job_id, bank_doc)
+                cached_plan = await data.get_question_plan(job_id)
+                if not _fresh(cached_plan):
                     plan = await build_job_question_plan(
                         job["jd_text"],
                         topics,
@@ -117,7 +125,9 @@ async def handle_job_published(payload, *, llm, data, capability, publisher):
                         llm=llm,
                     )
                     plan.job_id = job_id
-                    await data.save_question_plan(job_id, plan.model_dump())
+                    plan_doc = plan.model_dump()
+                    plan_doc["spec_hash"] = spec_hash
+                    await data.save_question_plan(job_id, plan_doc)
             except Exception:
                 # Surface a build failure with the job id + consequence BEFORE it
                 # propagates to the DLX (it otherwise only shows as a generic
