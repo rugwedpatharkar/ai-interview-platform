@@ -348,7 +348,7 @@ export default function ApplicantReportPage() {
                 </div>
 
                 {dto.executiveSummary && (
-                  <p className="mt-5 text-[0.96rem] leading-relaxed text-ink">
+                  <p className="mt-5 max-w-prose text-[0.96rem] leading-relaxed text-ink">
                     {dto.executiveSummary}
                   </p>
                 )}
