@@ -50,7 +50,7 @@ export default function SampleReportPage() {
                   Sr. Product Designer · sample report · for illustration
                 </div>
               </div>
-              <span className="ml-auto rounded-full border border-good/40 bg-good/10 px-3 py-1 text-[0.84rem] font-semibold text-good">
+              <span className="ml-auto rounded-full border border-good/40 bg-good/10 px-3 py-1 text-[0.84rem] font-semibold text-success-foreground">
                 Recommended: Advance
               </span>
             </div>
@@ -180,7 +180,7 @@ export default function SampleReportPage() {
                     <div className="text-[0.78rem] text-ink-3">Hiring Manager · sample workspace</div>
                   </div>
                 </div>
-                <span className="ml-auto inline-flex items-center gap-2 rounded-md border border-good/40 bg-good/10 px-3 py-1.5 text-[0.86rem] font-semibold text-good">
+                <span className="ml-auto inline-flex items-center gap-2 rounded-md border border-good/40 bg-good/10 px-3 py-1.5 text-[0.86rem] font-semibold text-success-foreground">
                   <ApIcon name="check" className="size-4" /> Advance · signed
                 </span>
               </div>

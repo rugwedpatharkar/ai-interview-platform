@@ -250,7 +250,7 @@ export default function InterviewLobbyPage() {
             </button>
           )}
           {stream && (
-            <p className="inline-flex items-center gap-2 text-sm text-good">
+            <p className="inline-flex items-center gap-2 text-sm text-success-foreground">
               <ApIcon name="check" className="size-4" /> Devices ready · preview only, nothing is
               recorded here.
             </p>
@@ -394,11 +394,11 @@ function ScanTile({
 }) {
   const tone =
     status === "pass"
-      ? "border-good/40 bg-[color-mix(in_oklch,var(--good)_6%,var(--surface))] text-good"
+      ? "border-good/40 bg-[color-mix(in_oklch,var(--good)_6%,var(--surface))] text-success-foreground"
       : status === "fail"
       ? "border-danger/40 bg-[color-mix(in_oklch,var(--danger)_6%,var(--surface))] text-danger"
       : status === "warn"
-      ? "border-warn/40 bg-[color-mix(in_oklch,var(--warn)_6%,var(--surface))] text-warn"
+      ? "border-warn/40 bg-[color-mix(in_oklch,var(--warn)_6%,var(--surface))] text-warning-foreground"
       : "border-line bg-surface-2 text-ink-3";
   return (
     <div className={`flex flex-col gap-1.5 rounded-xl border p-3 ${tone}`}>

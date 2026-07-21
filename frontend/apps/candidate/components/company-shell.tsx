@@ -152,7 +152,7 @@ export function CompanyShell({ children }: { children: ReactNode }) {
           </span>
           <div className="ml-auto flex items-center gap-2">
             <DropdownMenu>
-              <DropdownMenuTrigger className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring">
+              <DropdownMenuTrigger aria-label="Account menu" className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <Avatar name={label} size="sm" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[200px]">

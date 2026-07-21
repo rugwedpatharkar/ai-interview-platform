@@ -144,7 +144,7 @@ export function SignInBand({ audience, useAuthHook }: SignInBandProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 className={`mt-1.5 w-full rounded-lg border border-line-2 bg-surface px-3.5 py-2.5 text-[1rem] text-ink placeholder:text-ink-3 transition-colors focus:outline-none focus:ring-4 ${
                   tone === "teal"
-                    ? "focus:border-teal focus:ring-teal-soft"
+                    ? "focus:border-brand focus:ring-brand/45"
                     : "focus:border-coral focus:ring-coral-soft"
                 }`}
               />
@@ -166,7 +166,7 @@ export function SignInBand({ audience, useAuthHook }: SignInBandProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 className={`mt-1.5 w-full rounded-lg border border-line-2 bg-surface px-3.5 py-2.5 text-[1rem] text-ink placeholder:text-ink-3 transition-colors focus:outline-none focus:ring-4 ${
                   tone === "teal"
-                    ? "focus:border-teal focus:ring-teal-soft"
+                    ? "focus:border-brand focus:ring-brand/45"
                     : "focus:border-coral focus:ring-coral-soft"
                 }`}
               />

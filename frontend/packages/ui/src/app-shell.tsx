@@ -133,7 +133,7 @@ export function SidebarShell({
       {/* Main column */}
       <div className="flex min-w-0 flex-col">
         <header
-          className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-border/70 bg-surface/80 px-6 py-3 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-surface/70"
+          className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-border/70 bg-surface px-6 py-3"
           style={{ boxShadow: "0 1px 2px -1px rgba(38,44,76,0.06), inset 0 1px 0 rgba(255,255,255,0.6)" }}
         >
           {mobileBrand}

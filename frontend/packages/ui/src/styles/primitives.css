@@ -116,7 +116,7 @@
     padding: .18rem .55rem; border-radius: var(--rad-pill); font-size: .78rem; font-weight: 600;
     border: 1px solid var(--line); background: var(--surface); color: var(--ink-2);
   }
-  .ap-pill--good   { color: var(--good); border-color: color-mix(in oklch, var(--good) 30%, var(--line)); background: color-mix(in oklch, var(--good) 8%, var(--surface)); }
+  .ap-pill--good   { color: var(--success-foreground); border-color: color-mix(in oklch, var(--good) 30%, var(--line)); background: color-mix(in oklch, var(--good) 8%, var(--surface)); }
   .ap-pill--warn   { color: color-mix(in oklch, var(--warn) 60%, var(--ink-deep)); border-color: color-mix(in oklch, var(--warn) 30%, var(--line)); background: color-mix(in oklch, var(--warn) 8%, var(--surface)); }
   .ap-pill--danger { color: var(--danger); border-color: color-mix(in oklch, var(--danger) 30%, var(--line)); background: color-mix(in oklch, var(--danger) 8%, var(--surface)); }
   .ap-pill--teal   { color: var(--brand-strong); border-color: color-mix(in oklch, var(--brand) 30%, var(--line)); background: var(--brand-soft); }
@@ -266,7 +266,7 @@
   .ap-compare-head .col.us { color: var(--brand); }
   .ap-compare-row > div:not(:first-child) { text-align: center; font-size: .94rem; }
   .ap-compare-row > div:first-child { color: var(--ink-2); font-size: .96rem; }
-  .ap-compare-yes { color: var(--good); display: inline-flex; align-items: center; gap: .3rem; font-weight: 600; }
+  .ap-compare-yes { color: var(--success-foreground); display: inline-flex; align-items: center; gap: .3rem; font-weight: 600; }
   .ap-compare-no { color: var(--ink-3); font-weight: 500; }
   .ap-compare-mid { color: color-mix(in oklch, var(--warn) 60%, var(--ink-deep)); font-weight: 600; }
   .ap-compare-us { background: color-mix(in oklch, var(--brand) 4%, var(--surface)); }
@@ -361,7 +361,7 @@
   -webkit-mask-composite: xor; mask-composite: exclude; }
 
 /* Buttons */
-.btn{ display: inline-flex; align-items: center; justify-content: center; gap: .5em; min-height: 48px; padding: 0 22px; border-radius: 12px; font-weight: 500; font-size: 1rem; letter-spacing: -0.01em; border: 1px solid transparent; cursor: pointer; text-decoration: none; position: relative; transition: transform .5s var(--ease), box-shadow .35s var(--ease), background .35s var(--ease); will-change: transform; }
+.btn{ display: inline-flex; align-items: center; justify-content: center; gap: .5em; min-height: 48px; padding: 0 22px; border-radius: 12px; font-weight: 500; font-size: 1rem; letter-spacing: -0.01em; border: 1px solid transparent; cursor: pointer; text-decoration: none; position: relative; transition: transform .5s var(--ease), box-shadow .35s var(--ease), background .35s var(--ease); }
 .btn:active{ transform: scale(.975); transition-duration: .08s; }
 /* ANCHOR THE VIOLET (Phase 6): the default primary button is SOLID --brand —
    matches @ip/ui <Button variant="primary"> and keeps the spectral gradient from
@@ -373,7 +373,8 @@
 
 /* Reserved signature CTA — spectral gradient + slow flow + iridescent edge.
    Add alongside .btn-primary on the landing hero call-to-action only. */
-.btn-hero{ background: var(--grad-cta); background-size: 200% 200%; animation: ctaflow 9s ease-in-out infinite; }
+.btn-hero{ background: var(--grad-cta); background-size: 200% 200%; }
+.btn-hero:hover{ animation: ctaflow 7s ease-in-out infinite; }
 .btn-hero::before{ content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; background: var(--irid); opacity:.55; pointer-events:none;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor; mask-composite: exclude; }
@@ -436,7 +437,7 @@
 /* Narrow-width degrade (no hamburger yet): drop the middle links on tablet, then
    the ghost sign-in on mobile, so the floating pill never overflows its row. */
 @media (max-width: 1024px){ .lucent .nav-links{ display: none; } }
-@media (max-width: 720px){ .lucent .nav-banner{ font-size: .8rem; padding: 8px 34px; } .lucent .nav-signin{ display: none; } .lucent .nav{ gap: 12px; } .lucent .mega-panel{ grid-template-columns: 1fr; width: min(320px, 88vw); } }
+@media (max-width: 720px){ .lucent .nav-banner{ font-size: .8rem; padding: 8px 34px; } .lucent .nav{ gap: 12px; } .lucent .mega-panel{ grid-template-columns: 1fr; width: min(320px, 88vw); } }
 
 /* Hero + 3D lens */
 .lucent .hero{ position: relative; padding-top: clamp(28px, 6vh, 70px); padding-bottom: clamp(40px, 8vh, 96px); }
