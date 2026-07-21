@@ -64,13 +64,17 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-async def parse_document(object_key: str, owner: str = "") -> str:
+async def parse_document(object_key: str, owner: str) -> str:
     """Extract text from a stored resume (PDF/DOCX), scoped to the owner's keys."""
+    # Empty owner used to slip past the prefix guard (owner or None -> _parse skipped it).
+    # Require a non-empty owner at the server boundary so multi-tenant isolation holds.
+    if not owner:
+        raise ValueError("owner is required")
     async with log_context(
-        log, "tool.parse_document", object_key=object_key, owner=owner or None
+        log, "tool.parse_document", object_key=object_key, owner=owner
     ):
         await _ensure_rag()  # connects _storage on first use
-        return await _parse(object_key, storage=_storage, owner=owner or None)
+        return await _parse(object_key, storage=_storage, owner=owner)
 
 
 @mcp.tool()
