@@ -340,7 +340,11 @@ async def refresh(
             log.warning("refresh: invalid refresh token")
             raise InvalidTokenError("Invalid refresh token") from exc
         jti, sub = claims["jti"], claims["sub"]
-        if not await sessions.is_active(jti):
+        # Atomic consume: exactly one concurrent refresh with the same jti wins;
+        # the loser sees consume()==False and is treated as reuse. Was an is_active
+        # check followed by revoke — two concurrent web+mobile refreshes both
+        # passed the check and both minted new valid pairs.
+        if not await sessions.consume(jti):
             log.warning(
                 "refresh: reuse detected; revoking session family for user={}", sub
             )
@@ -348,7 +352,6 @@ async def refresh(
             raise InvalidTokenError("Refresh token is no longer active")
         user = await users.get(sub)
         if not user:
-            await sessions.revoke(jti)
             raise NotFoundError("User not found")
         new_jti = uuid4().hex
         access = tokens.access_token(
@@ -363,7 +366,6 @@ async def refresh(
         await sessions.allow(
             sub, new_jti, refresh_ttl_seconds, ip=ip, user_agent=user_agent
         )
-        await sessions.revoke(jti)
         log.info("token refreshed: user_id={}", sub)
         return {
             "access_token": access,

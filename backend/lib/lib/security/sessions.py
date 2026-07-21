@@ -110,6 +110,39 @@ class RefreshSessionStore:
             )
         )
 
+    async def consume(self, jti: str) -> bool:
+        """Atomically delete the jti key and return True iff we were the one who
+        deleted it. Refresh-token rotation uses this instead of is_active+revoke —
+        two concurrent refreshes with the same jti both used to pass is_active and
+        both mint new tokens; now exactly one consume() wins.
+
+        Best-effort set cleanup follows outside the atomic — leftover set entries
+        get filtered by is_active on the next list_for_user read.
+        """
+        try:
+            user_id = await with_timeout(
+                self._r.get(self._jti_key(jti)),
+                self._timeout_s,
+                op="sessions.consume.get",
+            )
+            removed = bool(
+                await with_timeout(
+                    self._r.delete(self._jti_key(jti)),
+                    self._timeout_s,
+                    op="sessions.consume.delete",
+                )
+            )
+            if removed and user_id is not None:
+                await with_timeout(
+                    self._r.srem(self._user_key(user_id), jti),
+                    self._timeout_s,
+                    op="sessions.consume.srem",
+                )
+            return removed
+        except Exception:
+            log.error("sessions.consume_failed jti={}", jti)
+            raise
+
     async def revoke(self, jti: str) -> None:
         try:
             user_id = await with_timeout(
