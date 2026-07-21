@@ -54,7 +54,7 @@ class _Db(dict):
 async def test_save_profile_respects_mongo_timeout(monkeypatch):
     monkeypatch.setenv("MONGO_OP_TIMEOUT_SECONDS", "0.05")
     # Reset the timeouts cache so the new env value is picked up.
-    timeouts._cached_settings = None
+    timeouts.reset_for_test()
     store = DataStore(_Db())
     with pytest.raises(OperationTimeout):
         await store.save_profile("u1", {"name": "Alice"})

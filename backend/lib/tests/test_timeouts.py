@@ -14,7 +14,9 @@ def test_timeout_accessors_read_from_settings(monkeypatch):
     monkeypatch.setenv("HTTP_CLIENT_TIMEOUT_SECONDS", "12")
 
     s = BaseServiceSettings()
-    timeouts._cached_settings = s  # inject for the test
+    timeouts._fallback = (
+        s  # inject for the test (no service provider is registered here)
+    )
     try:
         assert timeouts.mongo() == 7.5
         assert timeouts.redis() == 3.0
@@ -25,7 +27,7 @@ def test_timeout_accessors_read_from_settings(monkeypatch):
         assert timeouts.storage_op() == 25.0
         assert timeouts.http_client() == 12.0
     finally:
-        timeouts._cached_settings = None
+        timeouts.reset_for_test()
 
 
 def test_defaults_match_spec_section_2_3(monkeypatch):
@@ -41,7 +43,7 @@ def test_defaults_match_spec_section_2_3(monkeypatch):
     ):
         monkeypatch.delenv(var, raising=False)
     s = BaseServiceSettings()
-    timeouts._cached_settings = s
+    timeouts._fallback = s
     try:
         assert timeouts.mongo() == 10.0
         assert timeouts.redis() == 5.0
@@ -52,4 +54,4 @@ def test_defaults_match_spec_section_2_3(monkeypatch):
         assert timeouts.storage_op() == 35.0
         assert timeouts.http_client() == 15.0
     finally:
-        timeouts._cached_settings = None
+        timeouts.reset_for_test()

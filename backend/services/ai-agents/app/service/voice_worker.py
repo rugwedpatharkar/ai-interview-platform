@@ -57,6 +57,7 @@ from app.infra.voice.vad import SileroOnnxVad, UtteranceSegmenter
 from app.resources.voice.rtc_token import mint_join_token
 from app.resources.voice.session import run_voice_interview
 from app.resources.voice.transport import VoiceTransport
+from lib import timeouts
 
 log = get_logger(component="voice_worker")
 
@@ -365,8 +366,9 @@ async def serve() -> None:
     llm = get_llm(s)
 
     # McpSessionManager owns the streamablehttp_client lifecycle and self-heals on
-    # transport drops — an mcp-data restart no longer crashes the voice-worker.
-    data_manager = McpSessionManager(s.mcp_data_url)
+    # transport drops — an mcp-data restart no longer crashes the voice-worker. The
+    # explicit call_timeout prevents a hung MCP from stalling the live voice loop.
+    data_manager = McpSessionManager(s.mcp_data_url, call_timeout_s=timeouts.mcp_call())
     await data_manager.start()
     data = McpDataGateway(data_manager)
     sessions = RedisInterviewStore(redis)

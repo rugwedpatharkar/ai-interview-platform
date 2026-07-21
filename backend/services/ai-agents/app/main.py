@@ -18,6 +18,7 @@ from app.infra.sessions import RedisInterviewStore
 from app.resources.interview_host import abandon_stale
 from app.routes.web import create_grpc_app
 from app.routes.worker import EVENTS, make_dispatch
+from lib import timeouts
 
 log = get_logger(component="ai_agents.server")
 
@@ -94,8 +95,12 @@ async def serve() -> None:
     # Data + document parsing come from the MCP servers (mcp-data, mcp-capability).
     # McpSessionManager owns the streamablehttp_client lifecycle and self-heals on
     # transport drops — an mcp-data/mcp-capability restart no longer crashes us.
-    data_manager = McpSessionManager(s.mcp_data_url)
-    cap_manager = McpSessionManager(s.mcp_capability_url)
+    # `call_timeout_s` prevents a hung MCP server from stalling gRPC RPCs up to the
+    # 300 s outer deadline; default is now `timeouts.mcp_call()` (20 s per lib.config).
+    data_manager = McpSessionManager(s.mcp_data_url, call_timeout_s=timeouts.mcp_call())
+    cap_manager = McpSessionManager(
+        s.mcp_capability_url, call_timeout_s=timeouts.mcp_call()
+    )
     await data_manager.start()
     await cap_manager.start()
     data = McpDataGateway(data_manager)

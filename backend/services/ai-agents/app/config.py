@@ -2,6 +2,7 @@ from functools import lru_cache
 from typing import ClassVar
 
 from lib.config import BaseServiceSettings
+from lib.timeouts import register_settings_provider
 from pydantic import Field, field_validator
 
 
@@ -84,3 +85,9 @@ class Settings(BaseServiceSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+# Point lib.timeouts accessors at this service's settings so per-service overrides and
+# env vars actually reach mongo()/redis()/mcp_call()/... — previously they hit a bare
+# BaseServiceSettings() and every subclass override silently no-op'd.
+register_settings_provider(get_settings)

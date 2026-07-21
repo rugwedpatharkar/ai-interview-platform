@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from lib.config import BaseServiceSettings
+from lib.timeouts import register_settings_provider
 
 
 class Settings(BaseServiceSettings):
@@ -22,3 +23,7 @@ class Settings(BaseServiceSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+# Point lib.timeouts accessors at this service's settings — see admin/app/config.py.
+register_settings_provider(get_settings)
