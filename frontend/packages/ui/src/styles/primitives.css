@@ -320,7 +320,6 @@
   .lucent .lens-stage { transform: translate(-50%, -52%) !important; }
   .lucent .landing-body { transition: none !important; }
   .lucent .landing-body.is-leaving { opacity: 1 !important; transform: none !important; filter: none !important; }
-  .cursor-glow { display: none !important; }
 }
 
 .lucent{ position: relative; min-height: 100vh; font-family: 'General Sans','Hanken Grotesk',system-ui,sans-serif; color: var(--ink); }
@@ -777,27 +776,6 @@
   .lucent .j-row{ grid-template-columns: 1fr; gap: 14px; }
   .lucent .rep-score{ grid-template-columns: 1fr; }
   .lucent .rep-legend{ margin-left: 0; flex-wrap: wrap; }
-}
-
-/* ===========================================================================
-   Cursor blush — a vibrant spectral glow that trails the pointer app-wide.
-   Positioned by JS (--x/--y) in components/cursor-glow.tsx. Additive blend so it
-   lights the surface without obscuring content; hidden on touch / reduced-motion.
-   ========================================================================== */
-.cursor-glow{
-  position: fixed; top: 0; left: 0; z-index: 1; pointer-events: none;
-  width: 540px; height: 540px; margin: -270px 0 0 -270px;
-  transform: translate3d(var(--x, 50vw), var(--y, 40vh), 0);
-  border-radius: 50%;
-  /* Dark spectral tint of the brand (deep violet core) — multiply darkens/tints the
-     surface toward the theme colour instead of the old additive white glow. */
-  background: radial-gradient(circle,
-    oklch(0.50 0.24 298 / 0.22), oklch(0.53 0.20 268 / 0.13) 44%,
-    oklch(0.56 0.19 332 / 0.06) 64%, transparent 72%);
-  filter: blur(24px);
-  mix-blend-mode: multiply;
-  opacity: 0; transition: opacity .6s ease;
-  will-change: transform;
 }
 
 /* Landing audience crossfade — the nav switch swaps CandidateBody/CompanyBody in
