@@ -6,7 +6,7 @@ import { type ReactNode, useState } from "react";
 type SvgComponent = React.ComponentType<SVGAttributes<SVGSVGElement>>;
 
 import { cn } from "./cn.js";
-import { AlertCircleIcon, XIcon } from "./internal-icons.js";
+import { AlertCircleIcon, CheckIcon, XIcon } from "./internal-icons.js";
 import { Logo } from "./logo.js";
 import { Spinner } from "./spinner.js";
 
@@ -177,4 +177,45 @@ export function LoadingState({ label = "Loading…" }: { label?: string }) {
       <Spinner /> {label}
     </div>
   );
+}
+
+/** Success confirmation panel — completes the EmptyState/ErrorState/LoadingState
+ *  family so post-action success reads consistently instead of ad-hoc markup. */
+export function SuccessState({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-success-border bg-success-surface px-6 py-12 text-center">
+      <span className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success">
+        <CheckIcon className="size-6" aria-hidden />
+      </span>
+      <p className="font-medium text-success-foreground">{title}</p>
+      {description && (
+        <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
+      )}
+      {action && <div className="mt-1">{action}</div>}
+    </div>
+  );
+}
+
+/** Semantic section heading on the app type scale (level → h1/h2/h3 + txt-h*).
+ *  For the page-title header use PageHeader; this is for in-page section titles. */
+export function Heading({
+  level = 2,
+  children,
+  className,
+}: {
+  level?: 1 | 2 | 3;
+  children: ReactNode;
+  className?: string;
+}) {
+  const Tag = `h${level}` as const;
+  const scale = { 1: "txt-h1", 2: "txt-h2", 3: "txt-h3" }[level];
+  return <Tag className={cn(scale, className)}>{children}</Tag>;
 }
