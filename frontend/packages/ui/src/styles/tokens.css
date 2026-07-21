@@ -43,12 +43,17 @@
   --teal-glow:   var(--brand-glow);
   --teal-ink:    var(--brand-ink);
 
-  --coral:      oklch(0.67 0.16 34);
-  --coral-soft: oklch(0.67 0.16 34 / 0.12);
-  --coral-ink:  oklch(0.99 0.01 45);
+  /* Anchor the violet (Phase 6): --coral/--gold were spectral secondary accents.
+     Per the teal/coral/gold → brand unification they now ALIAS --brand, so every
+     screen that still names text-coral / var(--gold) / from-coral renders the one
+     brand hue — no per-file churn, and any straggler is caught here. --warn keeps
+     the amber status hue; only the decorative accents fold into brand. */
+  --coral:      var(--brand);
+  --coral-soft: var(--brand-soft);
+  --coral-ink:  var(--brand-ink);
 
-  --gold:      oklch(0.74 0.14 70);
-  --gold-soft: oklch(0.74 0.14 70 / 0.16);
+  --gold:      var(--brand);
+  --gold-soft: var(--brand-soft);
 
   /* Status — --good/--warn/--danger are canonical; --success/--warning alias below. */
   --good:    oklch(0.60 0.14 150);
