@@ -584,6 +584,7 @@ async def oauth_login(
     limiter,
     refresh_ttl_seconds,
     audit=None,
+    nonces=None,
 ):
     async with log_context(log, "resource.auth.oauth_login", **bind_ids()):
         # SSO: rate-limit by IP, verify CSRF state, exchange the code for a verified
@@ -616,6 +617,20 @@ async def oauth_login(
             )
             user = await users.get(user_id)
         user_id = str(user["_id"])
+        if user.get("totp_enabled"):
+            # Match the password-login TOTP path: return a short-lived mfa challenge
+            # instead of minting tokens. SSO used to silently bypass 2FA for any
+            # user who had it enabled on their password login.
+            mfa_jti = uuid4().hex
+            mfa_token = tokens.mfa_token(sub=user_id, jti=mfa_jti)
+            if nonces is not None:
+                await nonces.allow(mfa_jti, _MFA_NONCE_TTL)
+            log.info("oauth: 2FA required for user_id={}", user_id)
+            return {
+                "mfa_required": True,
+                "mfa_token": mfa_token,
+                "user_id": user_id,
+            }
         refresh_jti = uuid4().hex
         access = tokens.access_token(
             sub=user_id,

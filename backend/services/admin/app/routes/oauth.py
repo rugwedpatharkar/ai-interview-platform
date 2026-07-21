@@ -143,11 +143,20 @@ def make_oauth_routes(deps):
                 limiter=deps["limiter"],
                 refresh_ttl_seconds=deps["refresh_ttl_seconds"],
                 audit=deps.get("audit"),
+                nonces=deps.get("nonces"),
             )
         except RateLimitedError:
             return _error_redirect(redirect, "rate_limited")
         except AuthDomainError:
             return _error_redirect(redirect, "auth_failed")
+        # TOTP-enabled user: mint an mfa_token challenge and redirect the FE to its
+        # MFA page. The FE completes via VerifyTotpLogin. Was: silently minted tokens
+        # and skipped the 2FA challenge entirely.
+        if result.get("mfa_required"):
+            response = RedirectResponse(f"{redirect}#{urlencode(result)}")
+            response.delete_cookie("oauth_state", path="/auth/oauth/")
+            response.headers["Referrer-Policy"] = "no-referrer"
+            return response
         # Access-only fragment to the per-app FE callback bound to this state.
         refresh = result.pop("refresh_token")
         response = RedirectResponse(f"{redirect}#{urlencode(result)}")
