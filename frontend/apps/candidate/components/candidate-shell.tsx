@@ -31,7 +31,7 @@ import {
   User,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -68,8 +68,6 @@ const NAV_PREPARE: NavEntry[] = [
 export function CandidateShell({ children }: { children: ReactNode }) {
   const { api, token, identity, logout } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
-  const [search, setSearch] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
   const email = token ? (decodeJwtPayload(token)?.email as string | undefined) ?? null : null;
   const label = email ?? identity?.id ?? "Account";
@@ -179,25 +177,17 @@ export function CandidateShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <form
-              role="search"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const q = search.trim();
-                router.push(q ? `/jobs?q=${encodeURIComponent(q)}` : "/jobs");
-              }}
-              className="hidden items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-sm text-muted-foreground focus-within:ring-2 focus-within:ring-ring sm:flex"
+            <button
+              type="button"
+              onClick={() => setPaletteOpen(true)}
+              aria-label="Search jobs and pages"
+              aria-keyshortcuts="Meta+K Control+K"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Search className="size-4" aria-hidden />
-              <input
-                type="search"
-                aria-label="Search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search jobs & companies"
-                className="w-40 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
-              />
-            </form>
+              <span className="hidden sm:inline">Search…</span>
+              <kbd className="ml-4 hidden rounded border border-border bg-surface px-1.5 py-0.5 font-sans text-[10px] font-medium lg:inline-block">⌘K</kbd>
+            </button>
             <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger
