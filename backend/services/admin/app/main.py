@@ -15,7 +15,7 @@ from lib.web import CorrelationIdMiddleware
 from app.config import get_settings
 from app.errors import InvalidTransition, NotFoundError
 from app.infra.db import INDEXES
-from app.infra.notifier import LoggingNotifier, NotificationRequestPublisher
+from app.infra.notifier import NotificationRequestPublisher, make_notifier
 from app.infra.oauth import HttpOAuthClient
 from app.infra.repositories.applications import ApplicationRepository
 from app.infra.repositories.aptitude_attempts import AptitudeAttemptRepository
@@ -124,7 +124,8 @@ async def serve() -> None:
     await publisher.connect()
     await ensure_indexes(mongo.db, INDEXES)
 
-    notifier = LoggingNotifier()
+    # SMTP in prod (fails startup if any SMTP_* missing); LoggingNotifier in dev.
+    notifier = make_notifier(s)
     transition_notifier = TransitionNotifier(
         users=UserRepository(mongo.db), notifier=notifier
     )

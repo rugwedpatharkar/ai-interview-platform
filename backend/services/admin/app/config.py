@@ -57,6 +57,14 @@ class Settings(BaseServiceSettings):
     aptitude_expiry_hours: int = 24  # abandoned aptitude tests expire after this
     scheduler_interval_seconds: int = 3600  # how often the liveness reapers run
     recommend_fanout_limit: int = 20  # max jobs a parsed profile fans match.run out to
+    # SMTP for outbound email (verification links, password reset). Prod refuses to
+    # boot without these (infra/notifier.py::make_notifier); dev falls back to
+    # LoggingNotifier and logs a warning so the docker-compose default just works.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_pass: str = ""
+    smtp_from: str = ""
     # SSO (OAuth) — provider config map + the SPA callback URL. Empty until creds exist.
     oauth_providers: dict = Field(default_factory=dict)
     oauth_frontend_redirect: str = "http://localhost:3000/auth/callback"
