@@ -73,8 +73,8 @@ export function SignInBand({ audience, useAuthHook }: SignInBandProps) {
   const tone = audience === "hiring-teams" ? "teal" : "coral";
   const bandBg =
     audience === "hiring-teams"
-      ? "color-mix(in oklch, var(--teal) 4%, var(--surface-2))"
-      : "color-mix(in oklch, var(--coral) 4%, var(--surface-2))";
+      ? "color-mix(in oklch, var(--brand) 4%, var(--surface-2))"
+      : "color-mix(in oklch, var(--brand) 4%, var(--surface-2))";
 
   return (
     <section

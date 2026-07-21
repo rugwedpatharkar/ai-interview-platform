@@ -466,7 +466,7 @@ export default function ProfilePage() {
                   onChange={(e) =>
                     update({ willingToRelocate: e.target.checked })
                   }
-                  className="size-4 rounded border-line accent-[var(--teal)]"
+                  className="size-4 rounded border-line accent-[var(--brand)]"
                 />
                 Willing to relocate
               </label>

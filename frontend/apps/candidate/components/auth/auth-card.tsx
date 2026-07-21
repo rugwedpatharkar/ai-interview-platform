@@ -161,7 +161,7 @@ export function Notice({
       ? "border-[color-mix(in_oklch,var(--danger)_30%,var(--line))] bg-[color-mix(in_oklch,var(--danger)_8%,var(--surface))] text-[color-mix(in_oklch,var(--danger)_55%,var(--ink-deep))]"
       : tone === "success"
         ? "border-[color-mix(in_oklch,var(--good)_30%,var(--line))] bg-[color-mix(in_oklch,var(--good)_8%,var(--surface))] text-[color-mix(in_oklch,var(--good)_55%,var(--ink-deep))]"
-        : "border-[color-mix(in_oklch,var(--teal)_24%,var(--line))] bg-brand-soft text-brand-strong";
+        : "border-[color-mix(in_oklch,var(--brand)_24%,var(--line))] bg-brand-soft text-brand-strong";
   return (
     <div
       role={tone === "danger" ? "alert" : undefined}

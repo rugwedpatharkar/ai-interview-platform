@@ -223,9 +223,9 @@ export default function OutcomePage() {
             </div>
 
             {data.recommendation && (
-              <blockquote className="mt-6 rounded-r-lg border-l-[3px] border-[var(--teal)] bg-surface px-4 py-3 text-base leading-relaxed text-foreground">
+              <blockquote className="mt-6 rounded-r-lg border-l-[3px] border-[var(--brand)] bg-surface px-4 py-3 text-base leading-relaxed text-foreground">
                 <span
-                  className="text-[1.4em] leading-none text-[var(--teal)]"
+                  className="text-[1.4em] leading-none text-[var(--brand)]"
                   style={{ fontFamily: "var(--font-display)" }}
                   aria-hidden
                 >
@@ -233,7 +233,7 @@ export default function OutcomePage() {
                 </span>
                 {data.recommendation}
                 <span
-                  className="text-[1.4em] leading-none text-[var(--teal)]"
+                  className="text-[1.4em] leading-none text-[var(--brand)]"
                   style={{ fontFamily: "var(--font-display)" }}
                   aria-hidden
                 >
@@ -347,12 +347,12 @@ function CompetencyCard({
     <article className="rounded-2xl border border-border bg-surface p-4 lg:p-5">
       <div className="flex items-center gap-3">
         <span className="font-semibold text-foreground">{c.competency}</span>
-        <span className="ml-auto font-mono text-sm font-semibold text-[var(--teal-strong)]">
+        <span className="ml-auto font-mono text-sm font-semibold text-[var(--brand-strong)]">
           {pct} / 100
         </span>
       </div>
       <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-[var(--surface-3)]">
-        <i className="block h-full rounded-full bg-[var(--teal)]" style={{ width: `${pct}%` }} />
+        <i className="block h-full rounded-full bg-[var(--brand)]" style={{ width: `${pct}%` }} />
       </div>
       {c.rationale && (
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{c.rationale}</p>
@@ -362,10 +362,10 @@ function CompetencyCard({
           {c.evidence.map((e, i) => (
             <blockquote
               key={i}
-              className="rounded-r-lg border-l-[3px] border-[var(--teal)] bg-surface-2 px-3 py-2 text-sm leading-relaxed text-foreground"
+              className="rounded-r-lg border-l-[3px] border-[var(--brand)] bg-surface-2 px-3 py-2 text-sm leading-relaxed text-foreground"
             >
               <span
-                className="text-[1.2em] leading-none text-[var(--teal)]"
+                className="text-[1.2em] leading-none text-[var(--brand)]"
                 style={{ fontFamily: "var(--font-display)" }}
                 aria-hidden
               >
@@ -373,7 +373,7 @@ function CompetencyCard({
               </span>
               {e.quote}
               <span
-                className="text-[1.2em] leading-none text-[var(--teal)]"
+                className="text-[1.2em] leading-none text-[var(--brand)]"
                 style={{ fontFamily: "var(--font-display)" }}
                 aria-hidden
               >

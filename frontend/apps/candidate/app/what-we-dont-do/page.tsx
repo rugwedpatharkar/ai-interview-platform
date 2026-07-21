@@ -73,7 +73,7 @@ export default function WhatWeDontDoPage() {
             className="grid items-center gap-6 rounded-3xl border border-line p-7 lg:grid-cols-[1.2fr_auto] lg:gap-10 lg:p-12"
             style={{
               background:
-                "linear-gradient(135deg, color-mix(in oklch, var(--teal) 8%, var(--surface)), var(--surface))",
+                "linear-gradient(135deg, color-mix(in oklch, var(--brand) 8%, var(--surface)), var(--surface))",
             }}
           >
             <div>

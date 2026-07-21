@@ -48,9 +48,9 @@ const EMPTY: BrandingForm = {
 // Accent picker: the candidate marketplace uses --teal as the brand primary; companies pick
 // one of three pre-approved hues so we never need to validate raw colour input.
 const ACCENTS = [
-  { id: "teal", label: "Teal", css: "var(--teal)" },
-  { id: "coral", label: "Coral", css: "var(--coral)" },
-  { id: "gold", label: "Gold", css: "var(--gold)" },
+  { id: "teal", label: "Teal", css: "var(--brand)" },
+  { id: "coral", label: "Coral", css: "var(--brand)" },
+  { id: "gold", label: "Gold", css: "var(--brand)" },
 ] as const;
 
 // Company-branding editor. Two-column at lg+: form on the left (anchor cell), sticky live
@@ -359,10 +359,10 @@ function BrandPreview({
   const name = form.displayName.trim() || "Your company";
   const accent =
     form.accent === "coral"
-      ? "var(--coral)"
+      ? "var(--brand)"
       : form.accent === "gold"
-        ? "var(--gold)"
-        : "var(--teal)";
+        ? "var(--brand)"
+        : "var(--brand)";
 
   return (
     <div className="ap-cell h-fit lg:sticky lg:top-24">

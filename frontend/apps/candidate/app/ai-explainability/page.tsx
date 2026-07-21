@@ -94,8 +94,8 @@ export default function AiExplainabilityPage() {
       <section className="border-t border-line py-16 lg:py-24">
         <div className="ap-wrap">
           <div className="grid overflow-hidden rounded-3xl border border-line lg:grid-cols-2">
-            <div className="bg-gradient-to-br from-[color-mix(in_oklch,var(--gold)_8%,var(--surface))] to-surface p-7 lg:p-10 lg:border-r lg:border-line">
-              <div className="mb-4 grid size-12 place-items-center rounded-2xl bg-brand-soft text-[color-mix(in_oklch,var(--gold)_50%,var(--ink-deep))]">
+            <div className="bg-gradient-to-br from-[color-mix(in_oklch,var(--brand)_8%,var(--surface))] to-surface p-7 lg:p-10 lg:border-r lg:border-line">
+              <div className="mb-4 grid size-12 place-items-center rounded-2xl bg-brand-soft text-[color-mix(in_oklch,var(--brand)_50%,var(--ink-deep))]">
                 <ApIcon name="bolt" className="size-6" />
               </div>
               <h3 className="ap-h3">What the AI produces</h3>
@@ -107,7 +107,7 @@ export default function AiExplainabilityPage() {
                 <li className="flex gap-2"><span className="mt-[10px] size-1 shrink-0 rounded-full bg-current opacity-50" />A versioned model + rubric stamp</li>
               </ul>
             </div>
-            <div className="bg-gradient-to-br from-[color-mix(in_oklch,var(--coral)_5%,var(--surface))] to-surface p-7 lg:p-10">
+            <div className="bg-gradient-to-br from-[color-mix(in_oklch,var(--brand)_5%,var(--surface))] to-surface p-7 lg:p-10">
               <div className="mb-4 grid size-12 place-items-center rounded-2xl bg-brand-soft text-brand">
                 <ApIcon name="user" className="size-6" />
               </div>
@@ -131,7 +131,7 @@ export default function AiExplainabilityPage() {
             className="grid items-center gap-6 rounded-3xl border border-line p-7 lg:grid-cols-[1.2fr_auto] lg:gap-10 lg:p-12"
             style={{
               background:
-                "linear-gradient(135deg, color-mix(in oklch, var(--teal) 8%, var(--surface)), var(--surface))",
+                "linear-gradient(135deg, color-mix(in oklch, var(--brand) 8%, var(--surface)), var(--surface))",
             }}
           >
             <div>

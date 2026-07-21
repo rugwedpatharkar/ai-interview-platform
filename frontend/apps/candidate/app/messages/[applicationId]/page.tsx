@@ -76,7 +76,7 @@ export default function ThreadPage() {
             EmptyState if the thread isn't in the list (mock or new install). */}
         <header className="flex items-center gap-3 border-b border-border px-5 py-4">
           <span
-            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--teal-soft)] text-[var(--teal-strong)]"
+            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-[var(--brand-strong)]"
             aria-hidden
           >
             {meta ? (

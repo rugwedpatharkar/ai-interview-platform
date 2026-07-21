@@ -17,7 +17,7 @@ export default function TrustPage() {
           className="pointer-events-none absolute inset-x-[-10%] top-[-20%] -z-10 h-[60%]"
           style={{
             background:
-              "radial-gradient(60% 50% at 80% 20%, var(--teal-glow), transparent 70%)",
+              "radial-gradient(60% 50% at 80% 20%, var(--brand-glow), transparent 70%)",
           }}
         />
         <div className="ap-wrap">
@@ -135,7 +135,7 @@ export default function TrustPage() {
             className="grid items-center gap-6 rounded-3xl border border-line p-7 lg:grid-cols-[1.2fr_auto] lg:gap-10 lg:p-12"
             style={{
               background:
-                "linear-gradient(135deg, color-mix(in oklch, var(--teal) 8%, var(--surface)), var(--surface))",
+                "linear-gradient(135deg, color-mix(in oklch, var(--brand) 8%, var(--surface)), var(--surface))",
             }}
           >
             <div>

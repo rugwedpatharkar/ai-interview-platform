@@ -82,7 +82,7 @@ function KvRow({ label, value, ok }: { label: string; value: string; ok?: boolea
 function MiniIdentity() {
   return (
     <div className="grid w-full grid-cols-[64px_1fr] items-center gap-4">
-      <div className="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-[color-mix(in_oklch,var(--teal)_35%,var(--surface))] to-[color-mix(in_oklch,var(--teal)_12%,var(--surface))] text-brand">
+      <div className="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-[color-mix(in_oklch,var(--brand)_35%,var(--surface))] to-[color-mix(in_oklch,var(--brand)_12%,var(--surface))] text-brand">
         <ApIcon name="user" className="size-7" />
       </div>
       <div className="grid gap-1.5 text-[0.82rem] text-ink-2">
@@ -173,7 +173,7 @@ function MiniRubric() {
 function MiniDecision() {
   return (
     <div className="flex w-full items-center gap-2.5">
-      <div className="size-11 rounded-full bg-gradient-to-br from-brand to-[color-mix(in_oklch,var(--coral)_60%,var(--ink-deep))]" />
+      <div className="size-11 rounded-full bg-gradient-to-br from-brand to-[color-mix(in_oklch,var(--brand)_60%,var(--ink-deep))]" />
       <div className="flex-1">
         <div className="font-semibold text-ink-deep text-[0.92rem]">Hiring Manager</div>
         <div className="text-[0.78rem] text-ink-3">Reviewer · signs the outcome</div>
@@ -199,7 +199,7 @@ const ACTS: { step: string; n: string; title: string; body: string; bullets: str
 function Node({ label, sub, core }: { label: string; sub: string; core?: boolean }) {
   if (core) {
     return (
-      <div className="rounded-2xl border border-brand-strong bg-gradient-to-br from-brand to-brand-strong p-4 text-center text-brand-ink shadow-[0_12px_36px_-16px_color-mix(in_oklch,var(--teal)_60%,transparent)]">
+      <div className="rounded-2xl border border-brand-strong bg-gradient-to-br from-brand to-brand-strong p-4 text-center text-brand-ink shadow-[0_12px_36px_-16px_color-mix(in_oklch,var(--brand)_60%,transparent)]">
         <b className="block text-[1rem] font-semibold text-brand-ink" style={{ fontFamily: "var(--font-display)" }}>{label}</b>
         <span className="text-[0.84rem]">{sub}</span>
       </div>
@@ -224,9 +224,9 @@ function KV({ k, v }: { k: string; v: string }) {
 
 function MatchCard({ name, pct, tone }: { name: string; pct: string; tone: "teal" | "coral" | "gold" }) {
   const avBg = {
-    teal: "linear-gradient(135deg, var(--teal), var(--teal-strong))",
-    coral: "linear-gradient(135deg, var(--coral), color-mix(in oklch, var(--coral) 60%, var(--ink-deep)))",
-    gold: "linear-gradient(135deg, var(--gold), color-mix(in oklch, var(--gold) 50%, var(--ink-deep)))",
+    teal: "linear-gradient(135deg, var(--brand), var(--brand-strong))",
+    coral: "linear-gradient(135deg, var(--brand), color-mix(in oklch, var(--brand) 60%, var(--ink-deep)))",
+    gold: "linear-gradient(135deg, var(--brand), color-mix(in oklch, var(--brand) 50%, var(--ink-deep)))",
   };
   return (
     <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-2 px-2.5 py-2">
@@ -643,7 +643,7 @@ export function CompanyBody() {
         <div className="ap-defense reveal">
           <div className="ap-def-panel ap-def-panel--detect">
             <h3 className="ap-h3 flex items-center gap-2">
-              <ApIcon name="shield" className="size-6 text-[color-mix(in_oklch,var(--gold)_60%,var(--ink-deep))]" />
+              <ApIcon name="shield" className="size-6 text-[color-mix(in_oklch,var(--brand)_60%,var(--ink-deep))]" />
               What Aptura blocks
             </h3>
             <ul className="ap-def-list ap-def-list--blocks">

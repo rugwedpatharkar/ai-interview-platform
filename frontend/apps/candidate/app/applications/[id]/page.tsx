@@ -251,8 +251,8 @@ export default function ApplicationDetailPage() {
                       "flex size-8 shrink-0 items-center justify-center rounded-full",
                       ev.tone === "good" && "bg-success-surface text-success-foreground",
                       ev.tone === "bad" && "bg-danger-surface text-danger-foreground",
-                      ev.tone === "default" && ev.done && "bg-[var(--teal-soft)] text-[var(--teal-strong)]",
-                      ev.tone === "default" && ev.current && "bg-[var(--teal)] text-[var(--teal-ink)]",
+                      ev.tone === "default" && ev.done && "bg-[var(--brand-soft)] text-[var(--brand-strong)]",
+                      ev.tone === "default" && ev.current && "bg-[var(--brand)] text-[var(--brand-ink)]",
                       ev.tone === "default" && !ev.done && !ev.current && "bg-surface-muted text-muted-foreground",
                     )}
                     aria-hidden
@@ -266,7 +266,7 @@ export default function ApplicationDetailPage() {
                     </p>
                   </div>
                   {ev.current && !ev.done && (
-                    <Circle className="mt-1 size-3 fill-[var(--teal)] text-[var(--teal)]" aria-hidden />
+                    <Circle className="mt-1 size-3 fill-[var(--brand)] text-[var(--brand)]" aria-hidden />
                   )}
                 </li>
               );

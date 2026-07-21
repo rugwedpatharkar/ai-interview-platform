@@ -142,7 +142,7 @@ export default function PracticePage() {
               className="group"
               aria-label={`Open practice feedback for ${r.role_label}`}
             >
-              <div className="ap-cell flex items-center justify-between gap-4 py-4 transition-colors hover:border-[color-mix(in_oklch,var(--teal)_30%,var(--line))]">
+              <div className="ap-cell flex items-center justify-between gap-4 py-4 transition-colors hover:border-[color-mix(in_oklch,var(--brand)_30%,var(--line))]">
                 <div className="flex flex-col gap-1">
                   <span className="font-display text-[1rem] font-semibold text-ink-deep">
                     {r.role_label}
