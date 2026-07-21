@@ -73,8 +73,8 @@ export function SignInBand({ audience, useAuthHook }: SignInBandProps) {
   const tone = audience === "hiring-teams" ? "teal" : "coral";
   const bandBg =
     audience === "hiring-teams"
-      ? "color-mix(in oklch, var(--teal) 4%, var(--surface-2))"
-      : "color-mix(in oklch, var(--coral) 4%, var(--surface-2))";
+      ? "color-mix(in oklch, var(--brand) 4%, var(--surface-2))"
+      : "color-mix(in oklch, var(--brand) 4%, var(--surface-2))";
 
   return (
     <section
@@ -87,7 +87,7 @@ export function SignInBand({ audience, useAuthHook }: SignInBandProps) {
         <div>
           <span
             className={`text-[0.78rem] font-semibold uppercase tracking-[0.16em] ${
-              tone === "teal" ? "text-teal-strong" : "text-coral"
+              tone === "teal" ? "text-brand-strong" : "text-brand"
             }`}
           >
             {copy.eyebrow}
@@ -104,7 +104,7 @@ export function SignInBand({ audience, useAuthHook }: SignInBandProps) {
                 <ApIcon
                   name="check"
                   className={`mt-[3px] size-[18px] shrink-0 ${
-                    tone === "teal" ? "text-teal" : "text-coral"
+                    tone === "teal" ? "text-brand" : "text-brand"
                   }`}
                 />
                 {b}
@@ -145,7 +145,7 @@ export function SignInBand({ audience, useAuthHook }: SignInBandProps) {
                 className={`mt-1.5 w-full rounded-lg border border-line-2 bg-surface px-3.5 py-2.5 text-[1rem] text-ink placeholder:text-ink-3 transition-colors focus:outline-none focus:ring-4 ${
                   tone === "teal"
                     ? "focus:border-brand focus:ring-brand/45"
-                    : "focus:border-coral focus:ring-coral-soft"
+                    : "focus:border-brand focus:ring-brand-soft"
                 }`}
               />
             </div>
@@ -167,7 +167,7 @@ export function SignInBand({ audience, useAuthHook }: SignInBandProps) {
                 className={`mt-1.5 w-full rounded-lg border border-line-2 bg-surface px-3.5 py-2.5 text-[1rem] text-ink placeholder:text-ink-3 transition-colors focus:outline-none focus:ring-4 ${
                   tone === "teal"
                     ? "focus:border-brand focus:ring-brand/45"
-                    : "focus:border-coral focus:ring-coral-soft"
+                    : "focus:border-brand focus:ring-brand-soft"
                 }`}
               />
             </div>
@@ -201,8 +201,8 @@ export function SignInBand({ audience, useAuthHook }: SignInBandProps) {
               href={copy.signupHref}
               className={
                 tone === "teal"
-                  ? "font-semibold text-teal-strong hover:underline"
-                  : "font-semibold text-coral hover:underline"
+                  ? "font-semibold text-brand-strong hover:underline"
+                  : "font-semibold text-brand hover:underline"
               }
             >
               {copy.signupLabel}

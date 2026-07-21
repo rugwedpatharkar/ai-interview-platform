@@ -62,7 +62,7 @@ export default function ForgotPage() {
             <button
               type="button"
               onClick={() => setSent(false)}
-              className="font-medium text-teal-strong underline-offset-4 hover:underline"
+              className="font-medium text-brand-strong underline-offset-4 hover:underline"
             >
               try a different email
             </button>

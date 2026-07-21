@@ -170,7 +170,7 @@ export default function CompanyDashboardPage() {
           {!jobs.isLoading && jobList.length === 0 && (
             <p className="text-sm text-ink-2">
               No jobs yet —{" "}
-              <Link href="/company/jobs/new" className="text-teal-strong underline-offset-2 hover:underline">
+              <Link href="/company/jobs/new" className="text-brand-strong underline-offset-2 hover:underline">
                 post a role
               </Link>
               .
@@ -223,7 +223,7 @@ export default function CompanyDashboardPage() {
               and waiting for your call.{" "}
               <Link
                 href="/company/jobs"
-                className="text-teal-strong underline-offset-2 hover:underline"
+                className="text-brand-strong underline-offset-2 hover:underline"
               >
                 Open jobs to decide
               </Link>

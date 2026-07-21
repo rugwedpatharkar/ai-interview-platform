@@ -199,7 +199,7 @@ export default function InterviewLobbyPage() {
         {/* 1. Strict-proctored invariants — verbatim */}
         <section className="ap-def-panel ap-def-panel--detect flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="size-5 text-gold" aria-hidden />
+            <AlertTriangle className="size-5 text-brand" aria-hidden />
             <h2 className="font-display text-[1.05rem] font-semibold text-ink-deep">
               This is a strictly proctored interview
             </h2>
@@ -215,7 +215,7 @@ export default function InterviewLobbyPage() {
           </ul>
           <p className="text-[0.86rem] text-ink-3">
             Read the full{" "}
-            <Link href="/trust" className="text-teal-strong underline underline-offset-4">
+            <Link href="/trust" className="text-brand-strong underline underline-offset-4">
               integrity & privacy policy
             </Link>{" "}
             before you continue.

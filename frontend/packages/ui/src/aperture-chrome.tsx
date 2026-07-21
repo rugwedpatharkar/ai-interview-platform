@@ -61,7 +61,7 @@ export function MegaNav({ audience = "applicants", links }: MegaNavProps) {
           className="flex items-center gap-2 text-[1.25rem] font-bold tracking-tight text-ink-deep"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          <ApIcon name="mark" className="size-7 text-teal" />
+          <ApIcon name="mark" className="size-7 text-brand" />
           Aptura
         </Link>
 
@@ -248,7 +248,7 @@ export function MegaFooter({
               className="flex items-center gap-2 text-[1.1rem] font-bold tracking-tight text-ink-deep"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              <ApIcon name="mark" className="size-7 text-teal" />
+              <ApIcon name="mark" className="size-7 text-brand" />
               Aptura
             </Link>
             <p className="mt-3 max-w-[30ch] text-[0.9rem] leading-snug text-ink-2">{tagline}</p>

@@ -18,9 +18,9 @@ export function PrivacyPanel() {
   return (
     <div className="ap-def-panel ap-def-panel--privacy">
       <h3 className="ap-h3 flex items-center gap-2">
-        <ApIcon name="shield-check" className="size-6 text-teal" />
+        <ApIcon name="shield-check" className="size-6 text-brand" />
         What Aptura does{" "}
-        <em className="not-italic font-medium text-teal-strong">not</em> do
+        <em className="not-italic font-medium text-brand-strong">not</em> do
       </h3>
       <ul className="ap-def-list ap-def-list--privacy">
         {ITEMS.map(([title, rest]) => (

@@ -19,7 +19,7 @@ export default function WhatWeDontDoPage() {
           >
             Integrity is knowing who&apos;s at the keyboard.
             <br />
-            <span className="text-teal">Not policing what they use.</span>
+            <span className="text-brand">Not policing what they use.</span>
           </h1>
           <p className="ap-lead mt-5 max-w-[60ch]">
             A new generation of cheating tools advertises &quot;runs invisibly during your
@@ -51,7 +51,7 @@ export default function WhatWeDontDoPage() {
             ].map(([title, body], i) => (
               <article key={title} className="ap-cell flex gap-4">
                 <span
-                  className="text-[1.3rem] font-bold tracking-[-0.02em] text-teal"
+                  className="text-[1.3rem] font-bold tracking-[-0.02em] text-brand"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
                   {String(i + 1).padStart(2, "0")}
@@ -73,7 +73,7 @@ export default function WhatWeDontDoPage() {
             className="grid items-center gap-6 rounded-3xl border border-line p-7 lg:grid-cols-[1.2fr_auto] lg:gap-10 lg:p-12"
             style={{
               background:
-                "linear-gradient(135deg, color-mix(in oklch, var(--teal) 8%, var(--surface)), var(--surface))",
+                "linear-gradient(135deg, color-mix(in oklch, var(--brand) 8%, var(--surface)), var(--surface))",
             }}
           >
             <div>

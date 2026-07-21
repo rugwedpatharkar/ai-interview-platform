@@ -87,7 +87,7 @@ export function JobDetailSidebar({
               duplicating the description here. */}
           <Link
             href={`/companies/${job.company.id}`}
-            className="font-medium text-teal-strong hover:underline"
+            className="font-medium text-brand-strong hover:underline"
           >
             See {job.company.name}'s profile →
           </Link>

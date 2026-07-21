@@ -124,7 +124,7 @@ function PasswordMeter({ strength }: { strength: Strength }) {
   const colorMap: Record<Strength["tone"], string> = {
     weak: "var(--danger)",
     fair: "var(--warn)",
-    good: "var(--teal)",
+    good: "var(--brand)",
     strong: "var(--good)",
   };
   return (

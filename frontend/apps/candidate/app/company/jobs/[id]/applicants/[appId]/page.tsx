@@ -354,7 +354,7 @@ export default function ApplicantReportPage() {
                 )}
 
                 <p className="mt-5 inline-flex items-center gap-2 text-xs text-ink-3">
-                  <ShieldCheck className="size-3.5 text-teal" aria-hidden />
+                  <ShieldCheck className="size-3.5 text-brand" aria-hidden />
                   Behavioural &amp; AV proctoring only — Aptura does not perform identity
                   matching against external databases.
                 </p>
@@ -499,7 +499,7 @@ export default function ApplicantReportPage() {
               The full thread view lives at{" "}
               <Link
                 href={`/messages/${appId}`}
-                className="text-teal-strong underline-offset-2 hover:underline"
+                className="text-brand-strong underline-offset-2 hover:underline"
               >
                 /messages/{appId.slice(0, 8)}…
               </Link>
@@ -528,7 +528,7 @@ function TabButton({
       aria-pressed={active}
       className={
         active
-          ? "border-b-2 border-teal px-4 py-2 text-sm font-semibold text-ink-deep"
+          ? "border-b-2 border-brand px-4 py-2 text-sm font-semibold text-ink-deep"
           : "border-b-2 border-transparent px-4 py-2 text-sm text-ink-2 hover:text-ink-deep"
       }
     >
@@ -560,20 +560,20 @@ function CompetencyCard({ c }: { c: Competency }) {
     <div className="rounded-xl border border-line bg-surface-2 p-4">
       <div className="flex items-center gap-2.5">
         <span className="font-semibold text-ink-deep">{c.competency}</span>
-        <span className="ml-auto font-mono font-semibold text-teal-strong tabular-nums">
+        <span className="ml-auto font-mono font-semibold text-brand-strong tabular-nums">
           {(c.score * 5).toFixed(1)} / 5
         </span>
       </div>
       <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-surface-3">
-        <i className="block h-full rounded-full bg-teal" style={{ width: `${pct}%` }} />
+        <i className="block h-full rounded-full bg-brand" style={{ width: `${pct}%` }} />
       </div>
       {c.rationale && (
         <p className="mt-3 text-[0.86rem] text-ink-2">{c.rationale}</p>
       )}
       {ev && (
-        <blockquote className="mt-3 rounded-r-lg border-l-[3px] border-teal bg-surface px-3 py-2.5 text-[0.88rem] leading-relaxed text-ink">
+        <blockquote className="mt-3 rounded-r-lg border-l-[3px] border-brand bg-surface px-3 py-2.5 text-[0.88rem] leading-relaxed text-ink">
           <span
-            className="text-[1.4em] leading-none text-teal"
+            className="text-[1.4em] leading-none text-brand"
             style={{ fontFamily: "var(--font-display)" }}
             aria-hidden
           >
@@ -581,7 +581,7 @@ function CompetencyCard({ c }: { c: Competency }) {
           </span>
           {ev.quote}
           <span
-            className="text-[1.4em] leading-none text-teal"
+            className="text-[1.4em] leading-none text-brand"
             style={{ fontFamily: "var(--font-display)" }}
             aria-hidden
           >

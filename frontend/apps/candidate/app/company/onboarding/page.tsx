@@ -241,7 +241,7 @@ export default function CompanyOnboardingPage() {
               key={s.n}
               className={
                 active
-                  ? "rounded-2xl border-2 border-teal bg-teal-soft p-3"
+                  ? "rounded-2xl border-2 border-brand bg-brand-soft p-3"
                   : done
                     ? "rounded-2xl border border-line bg-surface-2 p-3"
                     : "rounded-2xl border border-line bg-surface p-3"
@@ -252,7 +252,7 @@ export default function CompanyOnboardingPage() {
                   aria-hidden
                   className={
                     done
-                      ? "grid size-6 place-items-center rounded-full bg-teal text-teal-ink"
+                      ? "grid size-6 place-items-center rounded-full bg-brand text-brand-ink"
                       : "grid size-6 place-items-center rounded-full bg-surface-3 text-ink-2"
                   }
                 >

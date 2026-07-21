@@ -68,7 +68,7 @@ export function LegalShell({
               <section key={s.id} id={s.id} className="scroll-mt-24">
                 <div className="flex items-baseline gap-3">
                   <span
-                    className="font-mono text-[0.78rem] text-teal"
+                    className="font-mono text-[0.78rem] text-brand"
                     style={{ fontFamily: "var(--font-mono)" }}
                   >
                     {String(i + 1).padStart(2, "0")}
@@ -90,8 +90,8 @@ export function LegalShell({
 /** Inline legal-placeholder marker — calls out where ratified legal copy goes. */
 export function LegalPlaceholder({ children }: { children?: ReactNode }) {
   return (
-    <div className="rounded-lg border border-dashed border-coral/40 bg-coral-soft/30 p-4 text-[0.92rem] leading-relaxed text-ink-2">
-      <b className="text-coral">[LEGAL placeholder]</b>{" "}
+    <div className="rounded-lg border border-dashed border-brand/40 bg-brand-soft/30 p-4 text-[0.92rem] leading-relaxed text-ink-2">
+      <b className="text-brand">[LEGAL placeholder]</b>{" "}
       {children ?? "Ratified legal text goes here. The structure on this page is final; the words are filled in by counsel before public launch."}
     </div>
   );

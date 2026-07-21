@@ -192,7 +192,7 @@ export default function RubricsPage() {
                         className={cn(
                           "flex w-full flex-col gap-0.5 rounded-lg border px-3 py-2 text-left transition-colors",
                           active
-                            ? "border-teal/40 bg-teal-soft"
+                            ? "border-brand/40 bg-brand-soft"
                             : "border-transparent hover:bg-surface-2",
                         )}
                       >

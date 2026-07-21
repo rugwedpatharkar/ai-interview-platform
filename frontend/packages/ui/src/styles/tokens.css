@@ -2,8 +2,9 @@
    Aptura Lucent — design TOKENS (shared).
    Moved out of apps/candidate/app/globals.css so every app inherits one source
    of truth. Light-only. OKLCH throughout. The brand hue is a deep spectral
-   VIOLET (historically mis-named --teal; --teal* is kept below as a back-compat
-   alias so existing screens + appearance-client.ts keep working).
+   VIOLET (historically mis-named --teal; the teal/coral/gold aliases have since
+   been unified into --brand — appearance-client.ts drives --brand at runtime for
+   the accent feature).
 
    Tailwind v4 flattens @import before processing, so the `@theme inline` mapping
    at the bottom of this file resolves in-app even though it lives in @ip/ui.
@@ -34,26 +35,6 @@
   --brand-soft:   oklch(0.60 0.22 300 / 0.10);
   --brand-glow:   oklch(0.64 0.22 300 / 0.16);
   --brand-ink:    oklch(0.99 0.005 300);
-
-  /* Back-compat aliases — app screens (arbitrary values, inline styles) and the
-     JS accent-hue writer (appearance-client.ts) still read/set --teal*. */
-  --teal:        var(--brand);
-  --teal-strong: var(--brand-strong);
-  --teal-soft:   var(--brand-soft);
-  --teal-glow:   var(--brand-glow);
-  --teal-ink:    var(--brand-ink);
-
-  /* Anchor the violet (Phase 6): --coral/--gold were spectral secondary accents.
-     Per the teal/coral/gold → brand unification they now ALIAS --brand, so every
-     screen that still names text-coral / var(--gold) / from-coral renders the one
-     brand hue — no per-file churn, and any straggler is caught here. --warn keeps
-     the amber status hue; only the decorative accents fold into brand. */
-  --coral:      var(--brand);
-  --coral-soft: var(--brand-soft);
-  --coral-ink:  var(--brand-ink);
-
-  --gold:      var(--brand);
-  --gold-soft: var(--brand-soft);
 
   /* Status — --good/--warn/--danger are canonical; --success/--warning alias below. */
   --good:    oklch(0.60 0.14 150);
@@ -192,17 +173,6 @@
   --color-brand-strong: var(--brand-strong);
   --color-brand-soft: var(--brand-soft);
   --color-brand-ink: var(--brand-ink);
-
-  /* Back-compat teal-* utilities kept, now pointing at brand. */
-  --color-teal: var(--brand);
-  --color-teal-strong: var(--brand-strong);
-  --color-teal-soft: var(--brand-soft);
-  --color-teal-ink: var(--brand-ink);
-  --color-coral: var(--coral);
-  --color-coral-soft: var(--coral-soft);
-  --color-coral-ink: var(--coral-ink);
-  --color-gold: var(--gold);
-  --color-gold-soft: var(--gold-soft);
 
   --color-good: var(--good);
   --color-warn: var(--warn);

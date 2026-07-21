@@ -82,7 +82,7 @@ function KvRow({ label, value, ok }: { label: string; value: string; ok?: boolea
 function MiniIdentity() {
   return (
     <div className="grid w-full grid-cols-[64px_1fr] items-center gap-4">
-      <div className="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-[color-mix(in_oklch,var(--teal)_35%,var(--surface))] to-[color-mix(in_oklch,var(--teal)_12%,var(--surface))] text-teal">
+      <div className="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-[color-mix(in_oklch,var(--brand)_35%,var(--surface))] to-[color-mix(in_oklch,var(--brand)_12%,var(--surface))] text-brand">
         <ApIcon name="user" className="size-7" />
       </div>
       <div className="grid gap-1.5 text-[0.82rem] text-ink-2">
@@ -161,7 +161,7 @@ function MiniRubric() {
         <div key={r.name} className="grid grid-cols-[1fr_60px_30px] items-center gap-2 text-[0.84rem]">
           <span className="text-ink-2">{r.name}</span>
           <span className="h-[5px] overflow-hidden rounded-full bg-surface-3">
-            <i className="block h-full rounded-full bg-teal" style={{ width: `${r.pct}%` }} />
+            <i className="block h-full rounded-full bg-brand" style={{ width: `${r.pct}%` }} />
           </span>
           <span className="text-right font-semibold tabular-nums text-ink-deep">{r.v}</span>
         </div>
@@ -173,7 +173,7 @@ function MiniRubric() {
 function MiniDecision() {
   return (
     <div className="flex w-full items-center gap-2.5">
-      <div className="size-11 rounded-full bg-gradient-to-br from-coral to-[color-mix(in_oklch,var(--coral)_60%,var(--ink-deep))]" />
+      <div className="size-11 rounded-full bg-gradient-to-br from-brand to-[color-mix(in_oklch,var(--brand)_60%,var(--ink-deep))]" />
       <div className="flex-1">
         <div className="font-semibold text-ink-deep text-[0.92rem]">Hiring Manager</div>
         <div className="text-[0.78rem] text-ink-3">Reviewer · signs the outcome</div>
@@ -199,8 +199,8 @@ const ACTS: { step: string; n: string; title: string; body: string; bullets: str
 function Node({ label, sub, core }: { label: string; sub: string; core?: boolean }) {
   if (core) {
     return (
-      <div className="rounded-2xl border border-teal-strong bg-gradient-to-br from-teal to-teal-strong p-4 text-center text-teal-ink shadow-[0_12px_36px_-16px_color-mix(in_oklch,var(--teal)_60%,transparent)]">
-        <b className="block text-[1rem] font-semibold text-teal-ink" style={{ fontFamily: "var(--font-display)" }}>{label}</b>
+      <div className="rounded-2xl border border-brand-strong bg-gradient-to-br from-brand to-brand-strong p-4 text-center text-brand-ink shadow-[0_12px_36px_-16px_color-mix(in_oklch,var(--brand)_60%,transparent)]">
+        <b className="block text-[1rem] font-semibold text-brand-ink" style={{ fontFamily: "var(--font-display)" }}>{label}</b>
         <span className="text-[0.84rem]">{sub}</span>
       </div>
     );
@@ -224,9 +224,9 @@ function KV({ k, v }: { k: string; v: string }) {
 
 function MatchCard({ name, pct, tone }: { name: string; pct: string; tone: "teal" | "coral" | "gold" }) {
   const avBg = {
-    teal: "linear-gradient(135deg, var(--teal), var(--teal-strong))",
-    coral: "linear-gradient(135deg, var(--coral), color-mix(in oklch, var(--coral) 60%, var(--ink-deep)))",
-    gold: "linear-gradient(135deg, var(--gold), color-mix(in oklch, var(--gold) 50%, var(--ink-deep)))",
+    teal: "linear-gradient(135deg, var(--brand), var(--brand-strong))",
+    coral: "linear-gradient(135deg, var(--brand), color-mix(in oklch, var(--brand) 60%, var(--ink-deep)))",
+    gold: "linear-gradient(135deg, var(--brand), color-mix(in oklch, var(--brand) 50%, var(--ink-deep)))",
   };
   return (
     <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-2 px-2.5 py-2">
@@ -235,7 +235,7 @@ function MatchCard({ name, pct, tone }: { name: string; pct: string; tone: "teal
         <b className="block font-semibold text-ink-deep">{name}</b>
         <span className="text-[0.72rem] text-ink-3">Sr. Product Designer · sample</span>
       </div>
-      <span className="font-mono text-[0.84rem] font-semibold text-teal-strong">{pct}</span>
+      <span className="font-mono text-[0.84rem] font-semibold text-brand-strong">{pct}</span>
     </div>
   );
 }
@@ -436,7 +436,7 @@ export function CompanyBody() {
           lead={
             <>
               Résumés are written. Aptura interviews are{" "}
-              <em className="not-italic font-medium text-teal-strong">observed, recorded, and evidenced</em>. Same role, two different signals — and only one of them tells you whether the person can do the work, today.
+              <em className="not-italic font-medium text-brand-strong">observed, recorded, and evidenced</em>. Same role, two different signals — and only one of them tells you whether the person can do the work, today.
             </>
           }
         />
@@ -643,7 +643,7 @@ export function CompanyBody() {
         <div className="ap-defense reveal">
           <div className="ap-def-panel ap-def-panel--detect">
             <h3 className="ap-h3 flex items-center gap-2">
-              <ApIcon name="shield" className="size-6 text-[color-mix(in_oklch,var(--gold)_60%,var(--ink-deep))]" />
+              <ApIcon name="shield" className="size-6 text-[color-mix(in_oklch,var(--brand)_60%,var(--ink-deep))]" />
               What Aptura blocks
             </h3>
             <ul className="ap-def-list ap-def-list--blocks">
@@ -685,7 +685,7 @@ export function CompanyBody() {
             <h2 className="section-head" style={{ marginTop: 12 }}>Every score points to a quoted line and a timestamp.</h2>
             <p className="section-lede" style={{ marginTop: 14 }}>
               No &quot;AI vibes.&quot; Aptura&apos;s Core 6 rubric reads the transcript, picks the candidate&apos;s own words as the evidence, and shows them next to the score — so a reviewer can disagree with the rating{" "}
-              <em className="not-italic font-medium text-teal-strong">and</em> see exactly what informed it.
+              <em className="not-italic font-medium text-brand-strong">and</em> see exactly what informed it.
             </p>
             <ul className="checks" style={{ marginTop: 24, gap: 12 }}>
               {REPORT_POINTS.map(([b, rest]) => (
@@ -740,7 +740,7 @@ export function CompanyBody() {
             <div>Capability</div>
             <div className="col">Resume<br /><span className="text-[0.84rem] font-normal text-ink-3">screen + intuition</span></div>
             <div className="col">Take-home<br /><span className="text-[0.84rem] font-normal text-ink-3">+ generic AI tools</span></div>
-            <div className="col us">Aptura<br /><span className="text-[0.84rem] font-semibold text-teal">verified interview</span></div>
+            <div className="col us">Aptura<br /><span className="text-[0.84rem] font-semibold text-brand">verified interview</span></div>
           </div>
           {([
             ["Identity is verified before the assessment", "no", "no", "ID match + liveness"],

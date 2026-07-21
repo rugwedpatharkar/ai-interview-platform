@@ -188,7 +188,7 @@ export default function ApplicantSchedulePage() {
           <div className="flex items-center gap-3">
             <span
               aria-hidden
-              className="grid size-12 shrink-0 place-items-center rounded-full bg-teal-soft font-mono text-sm font-bold text-teal-strong"
+              className="grid size-12 shrink-0 place-items-center rounded-full bg-brand-soft font-mono text-sm font-bold text-brand-strong"
             >
               {candidateHandle.slice(0, 2)}
             </span>

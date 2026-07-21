@@ -18,12 +18,12 @@ export default function AccessibilityPage() {
             style={{ fontFamily: "var(--font-display)" }}
           >
             Hiring on merit means every candidate can{" "}
-            <span className="text-teal">actually take the interview.</span>
+            <span className="text-brand">actually take the interview.</span>
           </h1>
           <p className="ap-lead mt-5 max-w-[60ch]">
             Aptura&apos;s accessibility commitment, target standards, and accommodations. If
             something on this page does not work for you, write to{" "}
-            <a className="text-teal-strong underline-offset-2 hover:underline" href="mailto:access@aptura.app">access@aptura.app</a>{" "}
+            <a className="text-brand-strong underline-offset-2 hover:underline" href="mailto:access@aptura.app">access@aptura.app</a>{" "}
             and we will respond within two business days.
           </p>
         </div>
@@ -95,7 +95,7 @@ export default function AccessibilityPage() {
             className="grid items-center gap-6 rounded-3xl border border-line p-7 lg:grid-cols-[1.2fr_auto] lg:gap-10 lg:p-12"
             style={{
               background:
-                "linear-gradient(135deg, color-mix(in oklch, var(--teal) 8%, var(--surface)), var(--surface))",
+                "linear-gradient(135deg, color-mix(in oklch, var(--brand) 8%, var(--surface)), var(--surface))",
             }}
           >
             <div>

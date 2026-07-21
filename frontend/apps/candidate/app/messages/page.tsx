@@ -227,14 +227,14 @@ function MessagesPageInner() {
                     className={cn(
                       "flex animate-rise-in items-start justify-between gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-muted",
                       active &&
-                        "bg-surface-muted shadow-[inset_3px_0_0_var(--teal)]",
+                        "bg-surface-muted shadow-[inset_3px_0_0_var(--brand)]",
                     )}
                   >
                     <span className="flex min-w-0 items-start gap-3">
                       {/* Company-logo initial — same primitive the old page used; matches
                           the inbox skeleton + the message-thread peer avatar. */}
                       <span
-                        className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--teal-soft)] text-base font-semibold text-[var(--teal-strong)]"
+                        className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-base font-semibold text-[var(--brand-strong)]"
                         aria-hidden
                       >
                         {t.companyName.charAt(0).toUpperCase()}
@@ -302,7 +302,7 @@ function MessagesPageInner() {
                 </div>
               ) : (
                 <div className="ap-cell flex h-[calc(100dvh-14rem)] flex-col items-center justify-center text-center">
-                  <span className="flex size-12 items-center justify-center rounded-full bg-[var(--teal-soft)] text-[var(--teal-strong)]">
+                  <span className="flex size-12 items-center justify-center rounded-full bg-[var(--brand-soft)] text-[var(--brand-strong)]">
                     <MessageSquare className="size-6" aria-hidden />
                   </span>
                   <h2 className="mt-3 font-display text-lg font-semibold text-foreground">

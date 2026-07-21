@@ -369,7 +369,7 @@ function PaymentMethodSection({ q }: { q: AsyncQ<PaymentMethodDTO | null> }) {
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 p-4">
             <div className="flex items-center gap-3">
               <span className="grid size-10 shrink-0 place-items-center rounded-full border border-line bg-surface">
-                <CreditCard className="size-4 text-teal" aria-hidden />
+                <CreditCard className="size-4 text-brand" aria-hidden />
               </span>
               <div>
                 <p className="font-medium capitalize text-foreground">

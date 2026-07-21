@@ -316,9 +316,9 @@ export default function OnboardingPage() {
                   className={cn(
                     "h-1.5 rounded-full transition-colors",
                     done
-                      ? "bg-[var(--teal-strong)]"
+                      ? "bg-[var(--brand-strong)]"
                       : current
-                        ? "bg-[var(--teal)]"
+                        ? "bg-[var(--brand)]"
                         : "bg-[var(--surface-3)]",
                   )}
                   aria-hidden
@@ -357,7 +357,7 @@ export default function OnboardingPage() {
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors",
                       on
-                        ? "border-[color-mix(in_oklch,var(--teal)_40%,var(--line))] bg-[var(--teal-soft)] text-[var(--teal-strong)]"
+                        ? "border-[color-mix(in_oklch,var(--brand)_40%,var(--line))] bg-[var(--brand-soft)] text-[var(--brand-strong)]"
                         : "border-border bg-surface text-foreground hover:bg-surface-muted",
                     )}
                   >
@@ -406,7 +406,7 @@ export default function OnboardingPage() {
                     className={cn(
                       "flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-surface p-3 text-sm transition-colors hover:bg-surface-muted",
                       data.workPref === value &&
-                        "border-primary bg-[var(--teal-soft)]",
+                        "border-primary bg-[var(--brand-soft)]",
                     )}
                   >
                     <RadioGroupItem value={value} id={`wp-${value}`} />
@@ -605,7 +605,7 @@ function StepShell({
   return (
     <section className="ap-cell ap-cell--anchor flex flex-col gap-5">
       <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--teal-soft)] text-[var(--teal-strong)]">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-soft)] text-[var(--brand-strong)]">
           <Icon className="size-5" aria-hidden />
         </span>
         <div>

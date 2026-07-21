@@ -266,7 +266,7 @@ function Avatar({ handle }: { handle: string }) {
   return (
     <span
       aria-hidden
-      className="grid size-7 shrink-0 place-items-center rounded-full bg-teal-soft font-mono text-[0.65rem] font-bold text-teal-strong"
+      className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-soft font-mono text-[0.65rem] font-bold text-brand-strong"
     >
       {initial}
     </span>

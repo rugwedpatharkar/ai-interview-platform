@@ -34,7 +34,7 @@ export default function SampleReportPage() {
             {/* Header */}
             <div className="flex flex-wrap items-center gap-4 border-b border-line p-6 lg:p-8">
               <div
-                className="grid size-14 place-items-center rounded-full bg-gradient-to-br from-coral to-[color-mix(in_oklch,var(--coral)_60%,var(--ink-deep))] font-bold text-white"
+                className="grid size-14 place-items-center rounded-full bg-gradient-to-br from-brand to-[color-mix(in_oklch,var(--brand)_60%,var(--ink-deep))] font-bold text-white"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 SC
@@ -98,16 +98,16 @@ export default function SampleReportPage() {
                 <article key={c.name} className="rounded-xl border border-line bg-surface-2 p-4 lg:p-5">
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-ink-deep">{c.name}</span>
-                    <span className="ml-auto font-mono font-semibold text-teal-strong">
+                    <span className="ml-auto font-mono font-semibold text-brand-strong">
                       {c.score}
                     </span>
                   </div>
                   <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-surface-3">
-                    <i className="block h-full rounded-full bg-teal" style={{ width: `${c.pct}%` }} />
+                    <i className="block h-full rounded-full bg-brand" style={{ width: `${c.pct}%` }} />
                   </div>
-                  <blockquote className="mt-3 rounded-r-lg border-l-[3px] border-teal bg-surface px-3 py-2.5 text-[0.92rem] leading-relaxed text-ink">
+                  <blockquote className="mt-3 rounded-r-lg border-l-[3px] border-brand bg-surface px-3 py-2.5 text-[0.92rem] leading-relaxed text-ink">
                     <span
-                      className="text-[1.4em] leading-none text-teal"
+                      className="text-[1.4em] leading-none text-brand"
                       style={{ fontFamily: "var(--font-display)" }}
                       aria-hidden
                     >
@@ -115,7 +115,7 @@ export default function SampleReportPage() {
                     </span>
                     {c.quote}
                     <span
-                      className="text-[1.4em] leading-none text-teal"
+                      className="text-[1.4em] leading-none text-brand"
                       style={{ fontFamily: "var(--font-display)" }}
                       aria-hidden
                     >
@@ -174,7 +174,7 @@ export default function SampleReportPage() {
               </span>
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="size-9 rounded-full bg-gradient-to-br from-coral to-[color-mix(in_oklch,var(--coral)_60%,var(--ink-deep))]" />
+                  <div className="size-9 rounded-full bg-gradient-to-br from-brand to-[color-mix(in_oklch,var(--brand)_60%,var(--ink-deep))]" />
                   <div>
                     <div className="font-semibold text-ink-deep">Sample reviewer</div>
                     <div className="text-[0.78rem] text-ink-3">Hiring Manager · sample workspace</div>
@@ -243,7 +243,7 @@ function Event({
     <article
       className={
         expanded
-          ? "rounded-2xl border border-coral bg-surface p-4 shadow-[0_6px_24px_-10px_color-mix(in_oklch,var(--coral)_30%,transparent)]"
+          ? "rounded-2xl border border-brand bg-surface p-4 shadow-[0_6px_24px_-10px_color-mix(in_oklch,var(--brand)_30%,transparent)]"
           : "rounded-2xl border border-line bg-surface-2 p-4"
       }
     >
@@ -258,7 +258,7 @@ function Event({
         {ttl}
       </div>
       <p className="mt-1 text-[0.86rem] text-ink-2">{body}</p>
-      <div className="mt-2.5 rounded-lg border border-dashed border-[color-mix(in_oklch,var(--gold)_35%,var(--line))] bg-[color-mix(in_oklch,var(--gold)_15%,var(--surface))] px-2.5 py-2 text-[0.78rem] text-ink-2">
+      <div className="mt-2.5 rounded-lg border border-dashed border-[color-mix(in_oklch,var(--brand)_35%,var(--line))] bg-[color-mix(in_oklch,var(--brand)_15%,var(--surface))] px-2.5 py-2 text-[0.78rem] text-ink-2">
         {clip}
       </div>
     </article>
