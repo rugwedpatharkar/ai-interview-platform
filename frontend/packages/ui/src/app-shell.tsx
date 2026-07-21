@@ -86,7 +86,14 @@ export function SidebarShell({
 }) {
   const mobileItems = navGroups.flatMap((g) => g.items);
   return (
-    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[248px_1fr]">
+    <div
+      className="min-h-screen bg-background lg:grid lg:grid-cols-[248px_1fr]"
+      style={{
+        backgroundImage:
+          "radial-gradient(920px 460px at 100% -8%, oklch(0.68 0.16 300 / 0.05), transparent 60%), radial-gradient(720px 440px at 0% -4%, oklch(0.72 0.12 250 / 0.045), transparent 56%)",
+        backgroundAttachment: "fixed",
+      }}
+    >
       {/* Skip link — first focusable element; visually hidden until focused. */}
       <a
         href="#main"
@@ -95,7 +102,14 @@ export function SidebarShell({
         Skip to content
       </a>
       {/* Sidebar */}
-      <aside className="sticky top-0 hidden h-screen flex-col gap-1 border-r border-border bg-surface px-4 py-5 lg:flex">
+      <aside
+        className="sticky top-0 hidden h-screen flex-col gap-1 border-r border-border/70 px-4 py-5 lg:flex"
+        style={{
+          backgroundImage:
+            "linear-gradient(to bottom, var(--surface), color-mix(in oklch, var(--surface-2) 55%, var(--surface)))",
+          boxShadow: "inset -1px 0 0 rgba(255,255,255,0.5)",
+        }}
+      >
         {brand}
         {navGroups.map((group, gi) => (
           <Fragment key={group.title}>
@@ -118,7 +132,10 @@ export function SidebarShell({
 
       {/* Main column */}
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-border bg-surface/85 px-6 py-3 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-surface/75">
+        <header
+          className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-border/70 bg-surface/80 px-6 py-3 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-surface/70"
+          style={{ boxShadow: "0 1px 2px -1px rgba(38,44,76,0.06), inset 0 1px 0 rgba(255,255,255,0.6)" }}
+        >
           {mobileBrand}
           {topbar}
         </header>
