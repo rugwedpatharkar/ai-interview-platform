@@ -43,6 +43,10 @@ class Settings(BaseServiceSettings):
     # Public marketplace search (/public/jobs) is unauthenticated — rate-limit per IP.
     public_search_limit: int = Field(default=60, gt=0)
     public_search_window_seconds: int = Field(default=60, gt=0)
+    # FE telemetry ingest (RecordClientError / RecordClientEvent) — anon-allowed and
+    # each call writes up to 100 * 4 KiB to Mongo, so bound it per-IP too.
+    obs_limit: int = Field(default=30, gt=0)
+    obs_window_seconds: int = Field(default=60, gt=0)
     # Serves gRPC-web over HTTP (browser reaches it directly; no proxy). See
     # lib/grpcweb.py and docs/superpowers/plans/DEPLOYMENT.md.
     http_host: str = "0.0.0.0"  # noqa: S104 — containerized server binds all interfaces

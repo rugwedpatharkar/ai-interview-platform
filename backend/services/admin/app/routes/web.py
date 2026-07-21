@@ -338,6 +338,8 @@ def create_web_app(
             events_repo=ClientEventRepository(db),
             dedup=_dedup,
             tokens=tokens,
+            limiter=RateLimiter(redis),
+            trusted_proxy=trusted_proxy,
         ),
         app,
     )
