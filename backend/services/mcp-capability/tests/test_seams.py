@@ -2,7 +2,10 @@
 fetch. These are the offline implementations the whole RAG pipeline is unit-tested
 against; the real Gemini/Qdrant/httpx impls are exercised only live."""
 
+import pytest
+
 from app.seams import FakeEmbedder, FakeFetcher, FakeVectorStore
+from app.seams.fetcher import SsrfBlocked, _validate_url
 
 
 async def test_fake_embedder_is_deterministic():
@@ -52,3 +55,25 @@ async def test_fake_fetcher_returns_canned_text():
     out = await fetcher.fetch("http://x")
     assert out == {"text": "hello", "url": "http://x"}
     assert fetcher.fetched == ["http://x"]
+
+
+async def test_ssrf_guard_rejects_non_https():
+    with pytest.raises(SsrfBlocked):
+        await _validate_url("http://example.com/")
+    with pytest.raises(SsrfBlocked):
+        await _validate_url("file:///etc/passwd")
+
+
+async def test_ssrf_guard_rejects_cloud_metadata_hostname():
+    with pytest.raises(SsrfBlocked):
+        await _validate_url("https://metadata.google.internal/")
+
+
+async def test_ssrf_guard_rejects_literal_private_ip():
+    # 169.254.169.254 is the cloud-metadata address across AWS, GCP, Azure.
+    with pytest.raises(SsrfBlocked):
+        await _validate_url("https://169.254.169.254/latest/meta-data/")
+    with pytest.raises(SsrfBlocked):
+        await _validate_url("https://127.0.0.1/admin")
+    with pytest.raises(SsrfBlocked):
+        await _validate_url("https://10.0.0.1/")
