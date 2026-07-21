@@ -19,7 +19,7 @@ export function AuthSplitPanel() {
         aria-hidden
         className="pointer-events-none absolute -bottom-24 -left-16 size-72 rounded-full border border-white/10"
       />
-      <LogoMark size="lg" className="relative bg-white/10 text-white" />
+      <LogoMark size="lg" className="relative text-white" />
       <div className="relative">
         <p className="font-display text-3xl font-semibold leading-tight">
           Get seen. Get interviewed. Get hired.

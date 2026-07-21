@@ -4,45 +4,44 @@ const markSizes = { sm: "size-6", md: "size-7", lg: "size-9" } as const;
 const textSizes = { sm: "text-sm", md: "text-base", lg: "text-lg" } as const;
 
 /**
- * Brand mark — a rounded Midnight tile with the Aptura **aperture/lens** glyph.
- * Standalone, or paired with the wordmark via <Logo>. Pure inline SVG (CSP-safe).
+ * Brand mark — the Aptura **aperture** glyph: an outer ring + six iris blades,
+ * drawn in `currentColor` so it takes the surrounding text/brand colour. Bare
+ * by design (no tile) to match the landing mark everywhere. Pure inline SVG
+ * (CSP-safe). Pass `spin` for the slow rotation used in the landing nav — it
+ * animates via the shared `.mark .spin` keyframe inside a `.lucent .brand`.
  */
 export function LogoMark({
   size = "md",
+  spin = false,
   className,
 }: {
   size?: keyof typeof markSizes;
+  spin?: boolean;
   className?: string;
 }) {
   return (
-    <span
-      className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm",
-        markSizes[size],
-        className,
-      )}
+    <svg
+      className={cn("mark shrink-0", markSizes[size], className)}
+      viewBox="0 0 64 64"
+      fill="none"
       aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
     >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
+      <circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" strokeWidth={3} />
+      <g
+        className={spin ? "spin" : undefined}
         stroke="currentColor"
-        strokeWidth={2}
+        strokeWidth={2.6}
         strokeLinecap="round"
-        strokeLinejoin="round"
-        className="size-[64%]"
-        xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Aperture/lens — outer ring + six iris blades. */}
-        <circle cx="12" cy="12" r="10" />
-        <path d="M14.31 8l5.74 9.94" />
-        <path d="M9.69 8h11.48" />
-        <path d="M7.38 12l5.74-9.94" />
-        <path d="M9.69 16L3.95 6.06" />
-        <path d="M14.31 16H2.83" />
-        <path d="M16.62 12l-5.74 9.94" />
-      </svg>
-    </span>
+        <line x1="43" y1="32" x2="55.4" y2="45.5" />
+        <line x1="37.5" y1="41.5" x2="32" y2="59" />
+        <line x1="26.5" y1="41.5" x2="8.6" y2="45.5" />
+        <line x1="21" y1="32" x2="8.6" y2="18.5" />
+        <line x1="26.5" y1="22.5" x2="32" y2="5" />
+        <line x1="37.5" y1="22.5" x2="55.4" y2="18.5" />
+      </g>
+    </svg>
   );
 }
 
