@@ -74,6 +74,10 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
         # off _deps because other resources here (list_messages, mark_read, etc.)
         # would trip over the extra kwarg via **self._deps.
         self._redis = redis
+        # RateLimiter also for send_message only; keep off _deps for the same reason.
+        from lib.redis import RateLimiter
+
+        self._limiter = RateLimiter(redis) if redis is not None else None
 
     async def _abort(self, context, exc, method):
         code, msg = to_grpc_status(exc)
@@ -96,6 +100,7 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
                     request.body,
                     **self._deps,
                     redis=self._redis,
+                    limiter=self._limiter,
                 )
                 return _message(out)
             except AuthDomainError as exc:

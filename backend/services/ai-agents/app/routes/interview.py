@@ -157,6 +157,14 @@ class InterviewServicer(interview_pb2_grpc.InterviewServiceServicer):
             )
         if session.candidate_user_id != user_id:
             await context.abort(grpc.StatusCode.PERMISSION_DENIED, "not your interview")
+        # A candidate auto-terminated by a HIGH-severity proctoring signal used to
+        # re-mint a valid RTC join token and rejoin the room. Gate on session status:
+        # only in_progress interviews may hand out fresh tokens.
+        if getattr(session, "status", "in_progress") != "in_progress":
+            await context.abort(
+                grpc.StatusCode.FAILED_PRECONDITION,
+                "interview is not active (may have been terminated)",
+            )
         s = self._settings
         if not (s.livekit_api_key and s.livekit_api_secret):
             await context.abort(

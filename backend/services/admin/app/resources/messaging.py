@@ -15,7 +15,7 @@ from lib.logging import bind_ids, get_logger, log_context
 from lib.resilience import with_timeout
 from lib.schemas import Role
 
-from app.errors import ValidationError
+from app.errors import RateLimitedError, ValidationError
 from app.resources.aptitude import _owned
 from app.resources.decision import _scoped
 from app.resources.discovery import iso
@@ -92,12 +92,27 @@ async def send_message(
     companies,
     notifications=None,
     redis=None,
+    limiter=None,
 ):
     async with log_context(
         log,
         "resource.messaging.send_message",
         **bind_ids(user_id=identity["id"], application_id=application_id),
     ):
+        # Per-user + per-application throttle: was unbounded; a candidate could
+        # loop SendMessage at gRPC speed and flood the recruiter's inbox +
+        # notification store + notifier.send_email fanout.
+        if limiter is not None:
+            from app.config import get_settings as _s
+
+            settings = _s()
+            hit = await limiter.hit(
+                f"msg:user:{identity['id']}:{application_id}",
+                settings.msg_send_limit,
+                settings.msg_send_window_seconds,
+            )
+            if not hit.allowed:
+                raise RateLimitedError(hit.retry_after)
         body = (body or "").strip()
         if not body:
             raise ValidationError("message body is required")

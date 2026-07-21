@@ -85,7 +85,18 @@ class Consumer:
     async def _process_message(
         self, message: aio_pika.abc.AbstractIncomingMessage, handler: Handler
     ) -> None:
-        delivery_count = (message.headers or {}).get("x-delivery-count", 0)
+        headers = message.headers or {}
+        # x-delivery-count is set by quorum queues. If a legacy classic queue slips
+        # in (mixed-broker migration, or someone redeclared without x-queue-type),
+        # the header is absent and delivery_count stays 0 forever — a process-
+        # crashing payload would hot-loop. Fall back to message.redelivered (the
+        # broker-set flag on 2nd+ delivery) so a poison message dead-letters on
+        # its very next delivery even without the quorum-queue header.
+        raw_count = headers.get("x-delivery-count")
+        if raw_count is None:
+            delivery_count = 1 if message.redelivered else 0
+        else:
+            delivery_count = raw_count
         # Absolute ceiling, checked BEFORE the handler: x-delivery-count bumps on
         # every (re)delivery, including a requeue after a crash that closed the
         # channel pre-ack. Checking here (not just in except) stops a process-

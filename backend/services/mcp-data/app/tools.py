@@ -347,8 +347,11 @@ class DataStore:
             return len(docs)
 
     async def get_proctoring_events(self, application_id):
-        # Chronological (insertion order, append-only); _id excluded — the report only
-        # needs {type, severity} to fold the integrity snapshot.
+        # Aggregation ranks events by severity FIRST (high→medium→low), then by _id
+        # so a malicious candidate can't spam LOW events to push HIGH ones past the
+        # _PROCTOR_CAP truncation point. Auto-termination on write already fires for
+        # HIGH events; this preserves the recruiter's integrity-timeline evidence.
+        # _id is projected out — the report only needs {type, severity, at, meta}.
         async with log_context(
             log,
             "data.get_proctoring_events",
@@ -361,9 +364,34 @@ class DataStore:
                 async with span(
                     "mongo.get_proctoring_events", application_id=application_id
                 ):
-                    cursor = self._proctoring.find(
-                        {"application_id": application_id}, {"_id": 0}
-                    )
+                    pipeline = [
+                        {"$match": {"application_id": application_id}},
+                        {
+                            "$addFields": {
+                                "_sev_rank": {
+                                    "$switch": {
+                                        "branches": [
+                                            {
+                                                "case": {"$eq": ["$severity", "high"]},
+                                                "then": 3,
+                                            },
+                                            {
+                                                "case": {
+                                                    "$eq": ["$severity", "medium"]
+                                                },
+                                                "then": 2,
+                                            },
+                                        ],
+                                        "default": 1,
+                                    }
+                                }
+                            }
+                        },
+                        {"$sort": {"_sev_rank": -1, "_id": 1}},
+                        {"$limit": _PROCTOR_CAP},
+                        {"$project": {"_id": 0, "_sev_rank": 0}},
+                    ]
+                    cursor = self._proctoring.aggregate(pipeline)
                     rows = await cursor.to_list(length=_PROCTOR_CAP)
                     if len(rows) >= _PROCTOR_CAP:
                         log.warning(

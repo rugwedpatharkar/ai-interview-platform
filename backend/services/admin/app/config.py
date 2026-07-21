@@ -47,6 +47,11 @@ class Settings(BaseServiceSettings):
     # each call writes up to 100 * 4 KiB to Mongo, so bound it per-IP too.
     obs_limit: int = Field(default=30, gt=0)
     obs_window_seconds: int = Field(default=60, gt=0)
+    # Messaging SendMessage rate limit. Per-user-per-application so a candidate
+    # can't flood the recruiter (or vice versa). Both parties in a busy thread
+    # under normal use send maybe a dozen messages/minute — 30/min is generous.
+    msg_send_limit: int = Field(default=30, gt=0)
+    msg_send_window_seconds: int = Field(default=60, gt=0)
     # Serves gRPC-web over HTTP (browser reaches it directly; no proxy). See
     # lib/grpcweb.py and docs/superpowers/plans/DEPLOYMENT.md.
     http_host: str = "0.0.0.0"  # noqa: S104 — containerized server binds all interfaces

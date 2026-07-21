@@ -61,8 +61,12 @@ class Publisher:
         )
         payload = {**payload, "correlation_id": cid}
 
+        # default=str keeps datetime/ObjectId/Decimal from raising TypeError and
+        # invalidating the exchange handle mid-publish (a payload with any of those
+        # would previously crash the publisher until the next self-heal). Downstream
+        # consumers already parse as strings.
         message = aio_pika.Message(
-            body=json.dumps(payload).encode(),
+            body=json.dumps(payload, default=str).encode(),
             content_type="application/json",
             delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
         )
