@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark light" />
+<title>Aptura — Get seen. Get interviewed. Get hired.</title>
+
+<!-- Fonts: Archivo + Archivo Expanded (display), Hanken Grotesk (body/UI), Geist Mono (data). -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Archivo+Expanded:wght@700;800&family=Geist+Mono:wght@400;500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<!-- Set .js synchronously so scroll-reveal pre-states never flash for JS-off users. -->
+<script>document.documentElement.classList.add('js');</script>
+
+<style>
+/* ==========================================================================
+   APTURA · Direction D2 — "Signal"
+   Dark-first technical instrument. Near-black graphite, ONE electric
+   signal-green accent for live/verified/pass states only — prose stays ink.
+   Archivo Expanded (display) · Hanken Grotesk (body) · Geist Mono (data).
+   Lead theme: DARK.
+   ========================================================================== */
+
+/* ---- DARK (lead) ---- */
+:root, [data-theme="dark"]{
+  --bg:            oklch(0.16 0.006 250);
+  --surface:       oklch(0.20 0.007 250);
+  --surface-2:     oklch(0.245 0.008 250);
+  --ink:           oklch(0.97 0.004 250);
+  --ink-2:         oklch(0.72 0.008 250);
+  --ink-3:         oklch(0.56 0.008 250);
+  --line:          oklch(0.28 0.008 250);
+  --line-2:        oklch(0.36 0.010 250);
+  --accent:        oklch(0.86 0.19 135);
+  --accent-strong: oklch(0.80 0.18 138);
+  --accent-ink:    oklch(0.18 0.05 140);
+  --accent-soft:   oklch(0.86 0.19 135 / 0.14);
+  --accent-text:   var(--accent);          /* green text hits contrast on dark */
+  --grid:          oklch(0.28 0.008 250 / 0.34);
+  --panel-glow:    oklch(0.86 0.19 135 / 0.10);
+  --nav-bg:        oklch(0.16 0.006 250 / 0.72);
+  color-scheme: dark;
+}
+/* ---- LIGHT — cool paper white, deeper green so signals keep contrast ---- */
+[data-theme="light"]{
+  --bg:            oklch(0.985 0.002 250);
+  --surface:       oklch(1 0 0);
+  --surface-2:     oklch(0.965 0.003 250);
+  --ink:           oklch(0.18 0.006 250);
+  --ink-2:         oklch(0.42 0.006 250);
+  --ink-3:         oklch(0.55 0.006 250);
+  --line:          oklch(0.90 0.004 250);
+  --line-2:        oklch(0.83 0.005 250);
+  --accent:        oklch(0.60 0.15 142);
+  --accent-strong: oklch(0.53 0.15 144);
+  --accent-ink:    oklch(0.99 0.02 140);
+  --accent-soft:   oklch(0.60 0.15 142 / 0.10);
+  --accent-text:   var(--accent-strong);   /* deeper green for text on paper */
+  --grid:          oklch(0.83 0.005 250 / 0.55);
+  --panel-glow:    oklch(0.60 0.15 142 / 0.06);
+  --nav-bg:        oklch(0.985 0.002 250 / 0.78);
+  color-scheme: light;
+}
+
+/* ---- Type scale (fluid, ≥1.25 step) ---- */
+:root{
+  --fs-mono:   0.78rem;                                    /* data labels */
+  --fs-body:   1.0625rem;                                  /* 17px body   */
+  --fs-lead:   clamp(1.15rem, 1.02rem + 0.55vw, 1.4rem);
+  --fs-h3:     clamp(1.18rem, 1.05rem + 0.6vw, 1.45rem);
+  --fs-h2:     clamp(1.85rem, 1.3rem + 2.4vw, 3rem);
+  --fs-h1:     clamp(2.7rem, 1.4rem + 6vw, 5.6rem);
+  --maxw: 1220px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);        /* ease-out quart, no bounce */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --radius: 14px;
+  --radius-sm: 9px;
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  font-size:var(--fs-body); line-height:1.62; font-weight:400;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow-x:hidden; position:relative; min-height:100vh;
+}
+
+/* Hairline grid texture — a faint instrument backdrop, not glassmorphism. */
+body::before{
+  content:""; position:fixed; inset:-2px; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size: 72px 72px;
+  -webkit-mask-image: radial-gradient(120% 100% at 50% 0%, #000 55%, transparent 100%);
+          mask-image: radial-gradient(120% 100% at 50% 0%, #000 55%, transparent 100%);
+  opacity:.7;
+}
+
+/* Typography helpers */
+.display{ font-family:"Archivo Expanded","Archivo", sans-serif; font-weight:800;
+  letter-spacing:-0.045em; line-height:0.98; text-wrap:balance; }
+.head{ font-family:"Archivo", sans-serif; font-weight:700; letter-spacing:-0.03em; text-wrap:balance; }
+.mono{ font-family:"Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+  font-variant-numeric: tabular-nums; letter-spacing:0.01em; }
+.metric{ font-family:"Geist Mono", ui-monospace, monospace; font-weight:500;
+  font-variant-numeric: tabular-nums; letter-spacing:-0.02em; }
+p{ text-wrap:pretty; }
+a{ color:inherit; text-decoration:none; }
+img,svg{ display:block; max-width:100%; }
+
+.wrap{ width:min(100% - 2.5rem, var(--maxw)); margin-inline:auto; position:relative; z-index:1; }
+
+.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+.skip{ position:absolute; left:-999px; top:0; z-index:100; background:var(--accent);
+  color:var(--accent-ink); padding:.7rem 1rem; border-radius:0 0 var(--radius-sm) 0; font-weight:600; }
+.skip:focus{ left:0; }
+
+:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+
+/* ---- Signal dot (the live pulse) ---- */
+.dot{ width:8px; height:8px; border-radius:50%; background:var(--accent);
+  box-shadow:0 0 0 0 var(--accent-soft); flex:0 0 auto; position:relative; }
+.dot::after{ content:""; position:absolute; inset:0; border-radius:50%;
+  background:var(--accent); animation:ping 2.4s var(--ease) infinite; }
+@keyframes ping{ 0%{ opacity:.7; transform:scale(1);} 70%,100%{ opacity:0; transform:scale(2.6);} }
+
+/* ---- Buttons ---- */
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  font-family:"Hanken Grotesk",sans-serif; font-weight:600; font-size:0.97rem;
+  min-height:44px; padding:0 1.15rem; border-radius:var(--radius-sm); white-space:nowrap;
+  border:1px solid transparent; cursor:pointer; transition:transform .16s var(--ease),
+  background-color .16s var(--ease), border-color .16s var(--ease), color .16s var(--ease); }
+.btn:active{ transform:translateY(1px); }
+.btn--accent{ background:var(--accent); color:var(--accent-ink); font-weight:700; }
+[data-theme="light"] .btn--accent{ background:var(--accent-strong); }
+.btn--accent:hover{ background:var(--accent-strong); }
+[data-theme="light"] .btn--accent:hover{ background:var(--accent); }
+.btn--ghost{ background:transparent; color:var(--ink); border-color:var(--line-2); }
+.btn--ghost:hover{ border-color:var(--ink-3); background:var(--surface-2); }
+.btn--block{ width:100%; }
+
+/* ============================ NAV ============================ */
+header.nav{ position:sticky; top:0; z-index:50; border-bottom:1px solid var(--line);
+  background:var(--nav-bg); backdrop-filter:saturate(150%) blur(12px); -webkit-backdrop-filter:saturate(150%) blur(12px); }
+.nav-in{ display:flex; align-items:center; gap:1.5rem; height:64px; }
+.brand{ display:flex; align-items:center; gap:.6rem; color:var(--ink); }
+.brand .mark{ color:var(--accent); }
+.brand b{ font-family:"Archivo",sans-serif; font-weight:800; font-size:1.16rem; letter-spacing:-0.03em; }
+.nav-links{ display:flex; align-items:center; gap:1.6rem; margin-left:auto; }
+.nav-links a{ color:var(--ink-2); font-weight:500; font-size:0.95rem; transition:color .16s var(--ease); }
+.nav-links a:hover{ color:var(--ink); }
+.nav-cta{ display:flex; align-items:center; gap:.65rem; }
+.toggle{ display:inline-grid; place-items:center; width:44px; height:44px; border-radius:var(--radius-sm);
+  border:1px solid var(--line-2); background:transparent; color:var(--ink-2); cursor:pointer;
+  transition:color .16s var(--ease), border-color .16s var(--ease), background-color .16s var(--ease); }
+.toggle:hover{ color:var(--ink); border-color:var(--ink-3); background:var(--surface-2); }
+.toggle svg{ width:18px; height:18px; }
+[data-theme="dark"] .icon-moon{ display:none; }
+[data-theme="light"] .icon-sun{ display:none; }
+@media (max-width:760px){ .nav-links a:not(.nav-signin){ display:none; } }
+@media (max-width:520px){ .nav-links{ display:none; } .nav-cta{ margin-left:auto; } .brand b{ font-size:1.05rem; } }
+
+/* ============================ HERO ============================ */
+.hero{ padding-block: clamp(3rem, 5vw, 5.5rem) clamp(3.5rem, 6vw, 6rem); }
+.hero-grid{ display:grid; grid-template-columns: 1.02fr 0.98fr; gap:clamp(2rem,4.5vw,4rem); align-items:center; }
+.eyebrow{ display:inline-flex; align-items:center; gap:.6rem; padding:.4rem .75rem .4rem .65rem;
+  border:1px solid var(--line-2); border-radius:100px; background:var(--surface);
+  font-family:"Geist Mono",monospace; font-size:0.72rem; font-weight:500; letter-spacing:0.14em;
+  text-transform:uppercase; color:var(--ink-2); }
+h1.hero-h1{ font-size:var(--fs-h1); margin-top:1.35rem; color:var(--ink); }
+.hero-lede{ font-size:var(--fs-lead); color:var(--ink-2); margin-top:1.35rem; max-width:34ch; line-height:1.5; }
+
+/* Role fork (tabs) */
+.fork{ display:inline-flex; margin-top:2rem; padding:4px; border:1px solid var(--line);
+  border-radius:12px; background:var(--surface); gap:2px; }
+.fork button{ font-family:"Hanken Grotesk",sans-serif; font-size:0.92rem; font-weight:600;
+  color:var(--ink-2); background:transparent; border:0; cursor:pointer; padding:.6rem .95rem;
+  min-height:44px; border-radius:8px; transition:color .16s var(--ease), background-color .16s var(--ease); }
+.fork button[aria-selected="true"]{ background:var(--surface-2); color:var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-2); }
+.fork button:hover[aria-selected="false"]{ color:var(--ink); }
+
+/* Search instrument */
+.search{ margin-top:1.1rem; display:grid; grid-template-columns:1fr 1fr auto; gap:0;
+  border:1px solid var(--line-2); border-radius:12px; background:var(--surface); overflow:hidden;
+  max-width:560px; }
+.search .field{ display:flex; flex-direction:column; justify-content:center; padding:.55rem .9rem;
+  border-right:1px solid var(--line); }
+.search .field label{ font-family:"Geist Mono",monospace; font-size:0.62rem; letter-spacing:0.13em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:1px; }
+.search input{ border:0; background:transparent; color:var(--ink); font-family:inherit; font-size:0.97rem;
+  width:100%; padding:.1rem 0; }
+.search input::placeholder{ color:var(--ink-2); opacity:1; }
+.search input:focus{ outline:none; }
+.search .field:focus-within label{ color:var(--accent-text); }
+.search .btn--accent{ border-radius:0; min-height:auto; padding-inline:1.4rem; }
+.search-hint{ margin-top:.7rem; font-family:"Geist Mono",monospace; font-size:0.74rem; color:var(--ink-3);
+  display:flex; align-items:center; gap:.5rem; }
+.search-hint .dot{ width:6px; height:6px; }
+
+/* Trust pills */
+.pills{ list-style:none; display:flex; flex-wrap:wrap; gap:.55rem; margin-top:1.6rem; }
+.pills li{ display:inline-flex; align-items:center; gap:.5rem; padding:.42rem .8rem;
+  border:1px solid var(--line); border-radius:100px; background:var(--surface);
+  font-size:0.86rem; color:var(--ink-2); }
+.pills .tick{ width:14px; height:14px; color:var(--accent); flex:0 0 auto; }
+
+/* ---- Telemetry / proctoring panel (hero signature) ---- */
+.panel{ border:1px solid var(--line-2); border-radius:var(--radius); background:var(--surface);
+  box-shadow: 0 1px 0 var(--line) inset, 0 24px 60px -30px var(--panel-glow),
+              0 30px 80px -50px rgba(0,0,0,.55); overflow:hidden; }
+.panel-bar{ display:flex; align-items:center; gap:.6rem; padding:.7rem .9rem;
+  border-bottom:1px solid var(--line); background:var(--surface-2); }
+.panel-bar .mono{ font-size:0.72rem; color:var(--ink-2); letter-spacing:0.1em; text-transform:uppercase; }
+.panel-bar .id{ margin-left:auto; color:var(--ink-3); font-size:0.72rem; }
+.panel-view{ position:relative; aspect-ratio: 16/10.2; background:
+    radial-gradient(120% 120% at 50% 20%, var(--surface-2), var(--surface)); overflow:hidden; }
+.panel-view svg.stage{ position:absolute; inset:0; width:100%; height:100%; }
+.scanline{ position:absolute; left:0; right:0; height:2px; top:0;
+  background:linear-gradient(90deg, transparent, var(--accent), transparent);
+  box-shadow:0 0 14px 2px var(--accent-soft); opacity:.85;
+  animation: scan 3.6s var(--ease-expo) infinite; }
+@keyframes scan{ 0%{ top:6%; opacity:0;} 12%{opacity:.9;} 88%{opacity:.9;} 100%{ top:94%; opacity:0;} }
+.panel-tag{ position:absolute; left:12px; bottom:12px; display:inline-flex; align-items:center; gap:.45rem;
+  padding:.32rem .6rem; border:1px solid var(--line-2); border-radius:8px;
+  background:color-mix(in oklch, var(--surface) 82%, transparent); backdrop-filter:blur(4px);
+  font-family:"Geist Mono",monospace; font-size:0.68rem; color:var(--ink); }
+.panel-tag .dot{ width:6px; height:6px; }
+.panel-tag.focus{ left:auto; right:12px; color:var(--accent-text); border-color:var(--accent-soft); }
+
+.chips{ display:flex; flex-wrap:wrap; gap:.4rem; padding:.85rem .9rem; border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line); }
+.chip{ display:inline-flex; align-items:center; gap:.45rem; padding:.36rem .62rem;
+  border:1px solid var(--line); border-radius:8px; background:var(--surface-2);
+  font-family:"Geist Mono",monospace; font-size:0.71rem; color:var(--ink); letter-spacing:0.01em; }
+.chip .dot{ width:6px; height:6px; }
+
+.meter{ display:flex; align-items:center; gap:.9rem; padding:.85rem .9rem; }
+.meter svg{ flex:1 1 auto; height:34px; width:100%; }
+.meter .read{ font-family:"Geist Mono",monospace; font-size:0.74rem; color:var(--ink-2);
+  white-space:nowrap; display:flex; flex-direction:column; align-items:flex-end; line-height:1.2; }
+.meter .read b{ color:var(--accent-text); font-weight:500; font-size:0.92rem; }
+.readout{ padding:.65rem .9rem; border-top:1px solid var(--line); background:var(--surface-2);
+  font-family:"Geist Mono",monospace; font-size:0.72rem; color:var(--ink-3);
+  display:flex; gap:1.2rem; flex-wrap:wrap; }
+.readout .ok{ color:var(--accent-text); }
+
+/* ============================ STATS BAND ============================ */
+.stats-band{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--surface); }
+.stats{ display:grid; grid-template-columns:repeat(4,1fr); }
+.stat{ padding:clamp(1.5rem,3vw,2.4rem) clamp(1.1rem,2.4vw,2rem); border-right:1px solid var(--line); }
+.stat:last-child{ border-right:0; }
+.stat .val{ font-family:"Geist Mono",monospace; font-weight:500; font-variant-numeric:tabular-nums;
+  font-size:clamp(2rem,1.2rem+2.6vw,3.1rem); letter-spacing:-0.03em; color:var(--ink); line-height:1; }
+.stat .val.accent{ color:var(--accent-text); }
+.stat .lbl{ margin-top:.7rem; font-family:"Geist Mono",monospace; font-size:0.73rem; letter-spacing:0.06em;
+  text-transform:uppercase; color:var(--ink-2); line-height:1.4; }
+
+/* ============================ SECTIONS ============================ */
+section.block{ padding-block: clamp(4rem, 8vw, 7.5rem); }
+.section-head{ max-width:64ch; }
+.section-head h2{ font-size:var(--fs-h2); color:var(--ink); }
+.section-head .sub{ margin-top:1rem; font-size:var(--fs-lead); color:var(--ink-2); max-width:56ch; }
+
+/* Why — hairline-segmented instrument columns (no boxed card-grid) */
+.why-grid{ margin-top:clamp(2.2rem,4vw,3.4rem); display:grid; grid-template-columns:repeat(3,1fr);
+  border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:var(--surface); }
+.why-cell{ padding:clamp(1.6rem,2.6vw,2.2rem); border-right:1px solid var(--line); }
+.why-cell:last-child{ border-right:0; }
+.why-ic{ width:34px; height:34px; color:var(--accent); }
+.why-cell h3{ font-family:"Archivo",sans-serif; font-weight:700; letter-spacing:-0.02em;
+  font-size:var(--fs-h3); margin-top:1.1rem; color:var(--ink); display:flex; align-items:center; gap:.55rem; }
+.why-cell p{ margin-top:.6rem; color:var(--ink-2); font-size:0.98rem; }
+
+/* How it works — tight 4-col ordered grid with wired connectors */
+.steps{ margin-top:clamp(2.4rem,4vw,3.4rem); display:grid; grid-template-columns:repeat(4,1fr); gap:0; }
+.step{ position:relative; padding:1.5rem 1.4rem 1.6rem 0; }
+.step-n{ display:inline-grid; place-items:center; width:42px; height:42px; border-radius:10px;
+  border:1px solid var(--line-2); background:var(--surface); color:var(--accent-text);
+  font-family:"Geist Mono",monospace; font-weight:500; font-size:0.95rem; position:relative; z-index:2; }
+.step::before{ content:""; position:absolute; top:21px; left:20px; right:-1px; height:1px;
+  background:linear-gradient(90deg, var(--line-2), var(--line)); z-index:1; }
+.step:last-child::before{ display:none; }
+.step h3{ font-family:"Archivo",sans-serif; font-weight:700; letter-spacing:-0.02em; font-size:1.08rem;
+  margin-top:1.1rem; color:var(--ink); padding-right:1rem; }
+.step p{ margin-top:.5rem; color:var(--ink-2); font-size:0.94rem; padding-right:1rem; }
+
+/* Merit flow — wired node diagram */
+.flow{ margin-top:clamp(2.4rem,4vw,3.4rem); display:grid; grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;
+  align-items:stretch; gap:0; }
+.node{ border:1px solid var(--line-2); border-radius:var(--radius-sm); background:var(--surface);
+  padding:1.15rem 1.2rem; display:flex; flex-direction:column; gap:.55rem; }
+.node .n-top{ display:flex; align-items:center; gap:.5rem; font-family:"Geist Mono",monospace;
+  font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-3); }
+.node .n-title{ font-family:"Archivo",sans-serif; font-weight:700; font-size:1.02rem; letter-spacing:-0.02em;
+  color:var(--ink); }
+.node.human{ border-color:var(--accent-soft); box-shadow:0 0 0 1px var(--accent-soft),
+  0 18px 40px -28px var(--panel-glow); background:linear-gradient(180deg, var(--surface), color-mix(in oklch, var(--accent-soft) 55%, var(--surface))); }
+.node.human .n-top{ color:var(--accent-text); }
+.arrow{ display:grid; place-items:center; padding-inline:.7rem; color:var(--ink-3); }
+.arrow svg{ width:26px; height:14px; }
+
+/* Two audiences — deliberately distinct cards */
+.aud{ margin-top:clamp(2.4rem,4vw,3.4rem); display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+.card{ border:1px solid var(--line-2); border-radius:var(--radius); padding:clamp(1.6rem,2.6vw,2.2rem);
+  display:flex; flex-direction:column; }
+.card--cand{ background:linear-gradient(180deg, color-mix(in oklch, var(--accent-soft) 60%, var(--surface)), var(--surface));
+  border-color:var(--accent-soft); }
+.card--co{ background:var(--surface-2); }
+.card-top{ display:flex; align-items:center; justify-content:space-between; }
+.card-top h3{ font-family:"Archivo",sans-serif; font-weight:800; letter-spacing:-0.03em; font-size:1.4rem; color:var(--ink); }
+.card-tag{ font-family:"Geist Mono",monospace; font-size:0.66rem; letter-spacing:0.14em; text-transform:uppercase;
+  padding:.3rem .55rem; border-radius:6px; border:1px solid var(--line-2); color:var(--ink-2); background:var(--surface); }
+.card--cand .card-tag{ color:var(--accent-ink); background:var(--accent); border-color:transparent; font-weight:500; }
+[data-theme="light"] .card--cand .card-tag{ background:var(--accent-strong); color:var(--accent-ink); }
+.card p.card-desc{ color:var(--ink-2); margin-top:.7rem; font-size:0.96rem; }
+.feat{ list-style:none; margin-top:1.3rem; display:flex; flex-direction:column; }
+/* candidate: checklist */
+.card--cand .feat li{ display:flex; align-items:center; gap:.65rem; padding:.6rem 0; border-top:1px solid var(--line);
+  font-size:0.97rem; color:var(--ink); }
+.card--cand .feat li:first-child{ border-top:0; }
+.card--cand .feat .tick{ width:17px; height:17px; color:var(--accent); flex:0 0 auto; }
+/* company: spec rows */
+.card--co .feat li{ display:grid; grid-template-columns:12px 1fr; gap:.7rem; align-items:baseline; padding:.6rem 0;
+  border-top:1px solid var(--line); font-size:0.97rem; color:var(--ink); }
+.card--co .feat li:first-child{ border-top:0; }
+.card--co .feat .k{ font-family:"Geist Mono",monospace; color:var(--accent-text); font-size:0.9rem; }
+.card .btn{ margin-top:auto; }
+.card .card-cta{ padding-top:1.5rem; }
+
+/* Trust band */
+.trust{ display:flex; flex-wrap:wrap; gap:.7rem; margin-top:clamp(2rem,3.5vw,3rem); }
+.badge{ display:inline-flex; align-items:center; gap:.55rem; padding:.6rem .95rem; border:1px solid var(--line-2);
+  border-radius:100px; background:var(--surface); font-family:"Geist Mono",monospace; font-size:0.82rem; color:var(--ink); }
+.badge .v{ width:15px; height:15px; color:var(--accent); flex:0 0 auto; }
+
+/* ============================ FOOTER ============================ */
+footer.foot{ border-top:1px solid var(--line); padding-block:clamp(3rem,5vw,4.5rem); margin-top:clamp(3rem,5vw,5rem); }
+.foot-lede{ font-size:clamp(1.6rem,1.1rem+2vw,2.7rem); color:var(--ink); max-width:20ch; }
+.foot-row{ display:flex; align-items:center; gap:1rem; margin-top:2rem; flex-wrap:wrap; }
+.foot-row .brand b{ font-size:1.05rem; }
+.foot-row .meta{ margin-left:auto; font-family:"Geist Mono",monospace; font-size:0.78rem; color:var(--ink-3); }
+
+/* ============================ REVEAL (enhance only) ============================ */
+@media (prefers-reduced-motion: no-preference){
+  html.js .reveal{ opacity:0; transform:translateY(16px); }
+  html.js .reveal.in{ opacity:1; transform:none;
+    transition:opacity .55s var(--ease-expo), transform .55s var(--ease-expo);
+    transition-delay:var(--d, 0s); }
+}
+
+/* ============================ RESPONSIVE ============================ */
+@media (max-width:980px){
+  .hero-grid{ grid-template-columns:1fr; }
+  .panel{ max-width:560px; margin-inline:auto; width:100%; }
+  .why-grid{ grid-template-columns:1fr; }
+  .why-cell{ border-right:0; border-bottom:1px solid var(--line); }
+  .why-cell:last-child{ border-bottom:0; }
+  .steps{ grid-template-columns:1fr 1fr; gap:1.5rem 0; }
+  .step::before{ display:none; }
+  .flow{ grid-template-columns:1fr; }
+  .flow .arrow{ padding-block:.55rem; }
+  .flow .arrow svg{ transform:rotate(90deg); }
+}
+@media (max-width:760px){
+  .stats{ grid-template-columns:1fr 1fr; }
+  .stat:nth-child(2){ border-right:0; }
+  .stat:nth-child(1),.stat:nth-child(2){ border-bottom:1px solid var(--line); }
+  .aud{ grid-template-columns:1fr; }
+}
+@media (max-width:600px){
+  .search{ grid-template-columns:1fr; max-width:none; }
+  .search .field{ border-right:0; border-bottom:1px solid var(--line); }
+  .search .btn--accent{ min-height:48px; }
+  .fork{ display:flex; width:100%; }
+  .fork button{ flex:1; }
+  .steps{ grid-template-columns:1fr; }
+}
+@media (max-width:420px){
+  .stats{ grid-template-columns:1fr; }
+  .stat{ border-right:0; border-bottom:1px solid var(--line); }
+  .stat:last-child{ border-bottom:0; }
+}
+
+/* Freeze all motion for reduced-motion users — content stays fully legible. */
+@media (prefers-reduced-motion: reduce){
+  *{ animation:none !important; transition:none !important; scroll-behavior:auto !important; }
+}
+</style>
+</head>
+
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- DEMO ONLY: real product has no landing theme toggle — it lives in Settings → Appearance. -->
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#" aria-label="Aptura home">
+      <span class="mark">
+        <svg width="28" height="28" viewBox="0 0 64 64" role="img" aria-label="Aptura">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" stroke-width="3"/>
+          <g stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+            <line x1="43" y1="32" x2="55.4" y2="45.5"/><line x1="37.5" y1="41.5" x2="32" y2="59"/>
+            <line x1="26.5" y1="41.5" x2="8.6" y2="45.5"/><line x1="21" y1="32" x2="8.6" y2="18.5"/>
+            <line x1="26.5" y1="22.5" x2="32" y2="5"/><line x1="37.5" y1="22.5" x2="55.4" y2="18.5"/>
+          </g>
+        </svg>
+      </span>
+      <b>Aptura</b>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#audiences">For companies</a>
+      <a href="#how">How it works</a>
+      <a class="nav-signin" href="#">Sign in</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn--accent" href="#">Get started</a>
+      <button class="toggle" id="themeToggle" type="button" aria-label="Switch to light theme">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow reveal" style="--d:.02s"><span class="dot"></span>Unified hiring platform</span>
+        <h1 class="display hero-h1 reveal" style="--d:.08s">Get seen. Get interviewed. Get hired.</h1>
+        <p class="hero-lede reveal" style="--d:.14s">One place to apply, interview, and hear back — on a result you can trust.</p>
+
+        <div class="fork reveal" style="--d:.2s" role="tablist" aria-label="Choose your path">
+          <button role="tab" id="tab-job" aria-selected="true" aria-controls="search-panel">I'm looking for a job</button>
+          <button role="tab" id="tab-hire" aria-selected="false" aria-controls="search-panel">I'm hiring</button>
+        </div>
+
+        <form class="search reveal" style="--d:.24s" id="search-panel" role="search" onsubmit="return false;">
+          <div class="field">
+            <label for="q-role" id="lbl-role">Job title or skill</label>
+            <input id="q-role" type="text" placeholder="Job title or skill" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="q-loc">Location</label>
+            <input id="q-loc" type="text" placeholder="Location" autocomplete="off" />
+          </div>
+          <button class="btn btn--accent" type="submit">Search</button>
+        </form>
+        <p class="search-hint reveal" style="--d:.28s"><span class="dot"></span><span id="hint">Searching <b class="mono">8,200</b> open roles · updated live</span></p>
+
+        <ul class="pills reveal" style="--d:.34s">
+          <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.5 3.5L16 5.5"/></svg>Free for candidates</li>
+          <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.5 3.5L16 5.5"/></svg>Proctored &amp; fair — same rules for everyone</li>
+          <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.5 3.5L16 5.5"/></svg>Every application gets an answer</li>
+        </ul>
+      </div>
+
+      <!-- Telemetry / live proctoring instrument -->
+      <div class="panel reveal" style="--d:.16s" role="img"
+           aria-label="Live proctoring telemetry: one face detected, eyes on screen, fullscreen active, integrity 99.2 percent, zero flags.">
+        <div class="panel-bar">
+          <span class="dot"></span>
+          <span class="mono">Proctoring · Live</span>
+          <span class="mono id">SES-4F2A · 04:12</span>
+        </div>
+        <div class="panel-view">
+          <svg class="stage" viewBox="0 0 400 255" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <pattern id="fineGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M20 0H0V20" fill="none" stroke="var(--line)" stroke-width="0.6" opacity="0.5"/>
+              </pattern>
+            </defs>
+            <rect width="400" height="255" fill="url(#fineGrid)"/>
+            <!-- dignified abstract candidate: head + shoulders, low contrast -->
+            <g stroke="var(--ink-3)" fill="none" stroke-width="1.6">
+              <circle cx="200" cy="112" r="34"/>
+              <path d="M148 200c6-33 27-52 52-52s46 19 52 52" stroke-linecap="round"/>
+            </g>
+            <!-- signal-green focus reticle around the face = 'one face, in focus, verified' -->
+            <g stroke="var(--accent)" stroke-width="2" stroke-linecap="round" fill="none">
+              <path d="M156 78h-12v12"/><path d="M244 78h12v12"/>
+              <path d="M156 150h-12v-12"/><path d="M244 150h12v-12"/>
+            </g>
+            <!-- crop-mark corner ticks (instrument frame) -->
+            <g stroke="var(--ink-3)" stroke-width="1.4" stroke-linecap="round" opacity="0.8">
+              <path d="M14 14h16M14 14v16"/><path d="M386 14h-16M386 14v16"/>
+              <path d="M14 241h16M14 241v-16"/><path d="M386 241h-16M386 241v-16"/>
+            </g>
+          </svg>
+          <div class="scanline" aria-hidden="true"></div>
+          <span class="panel-tag focus"><span class="dot"></span>IN FOCUS</span>
+        </div>
+
+        <div class="chips" aria-hidden="true">
+          <span class="chip"><span class="dot"></span>One face</span>
+          <span class="chip"><span class="dot"></span>Eyes on screen</span>
+          <span class="chip"><span class="dot"></span>Fullscreen</span>
+        </div>
+
+        <div class="meter">
+          <svg viewBox="0 0 260 40" preserveAspectRatio="none" aria-hidden="true">
+            <polyline fill="none" stroke="var(--line-2)" stroke-width="1"
+              points="0,30 20,26 40,28 60,20 80,24 100,14 120,18 140,10 160,16 180,8 200,13 220,6 240,11 260,7"/>
+            <polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              points="0,30 20,26 40,28 60,20 80,24 100,14 120,18 140,10 160,16 180,8 200,13 220,6 240,11 260,7"
+              opacity="0.9"/>
+          </svg>
+          <div class="read"><b class="metric">99.2%</b>integrity</div>
+        </div>
+
+        <div class="readout mono" aria-hidden="true">
+          <span><span class="ok">●</span> 0 flags</span>
+          <span>1 face</span>
+          <span>signal nominal</span>
+          <span>audio ✓</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATS BAND ============ -->
+  <div class="stats-band">
+    <div class="wrap">
+      <div class="stats" id="stats">
+        <div class="stat reveal">
+          <div class="val accent metric" data-count="100" data-suffix="%">100%</div>
+          <div class="lbl">of applications answered</div>
+        </div>
+        <div class="stat reveal" style="--d:.06s">
+          <div class="val metric" data-count="12400" data-suffix="+">12,400+</div>
+          <div class="lbl">interviews completed</div>
+        </div>
+        <div class="stat reveal" style="--d:.12s">
+          <div class="val metric" data-count="1">1</div>
+          <div class="lbl">fair interview · live video + voice</div>
+        </div>
+        <div class="stat reveal" style="--d:.18s">
+          <div class="val metric" data-count="3" data-suffix="-day">3-day</div>
+          <div class="lbl">average feedback</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ WHY ============ -->
+  <section class="block" id="why">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 class="head">The hiring platform that doesn't ghost you — and gives a result you can trust.</h2>
+      </div>
+      <div class="why-grid reveal" style="--d:.06s">
+        <div class="why-cell">
+          <svg class="why-ic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M27 16a11 11 0 1 1-4.6-8.9"/><path d="M27 7v6h-6"/><path d="M11 16l3.4 3.4L22 12"/></svg>
+          <h3>Answered, always</h3>
+          <p>Every application gets a real response — no ghosting, ever.</p>
+        </div>
+        <div class="why-cell">
+          <svg class="why-ic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3l11 4v7c0 7-4.7 11.4-11 13-6.3-1.6-11-6-11-13V7z"/><circle cx="16" cy="14" r="3"/><path d="M16 17v3"/></svg>
+          <h3>Cheat-proof</h3>
+          <p>A rigorously proctored interview — same rules for everyone — so a pass means something.</p>
+        </div>
+        <div class="why-cell">
+          <svg class="why-ic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4v24"/><path d="M8 9h16"/><path d="M8 9l-4 8a4 4 0 0 0 8 0z"/><path d="M24 9l-4 8a4 4 0 0 0 8 0z"/><path d="M11 28h10"/></svg>
+          <h3>On merit</h3>
+          <p>Judged on evidence from the interview, not pedigree or who you know.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section class="block" id="how">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 class="head">From "apply" to "you're hired" — in four steps.</h2>
+      </div>
+      <ol class="steps reveal" style="--d:.06s">
+        <li class="step">
+          <div class="step-n">01</div>
+          <h3>Search &amp; apply</h3>
+          <p>Find roles that fit and apply in a click.</p>
+        </li>
+        <li class="step">
+          <div class="step-n">02</div>
+          <h3>Take your live interview</h3>
+          <p>A single proctored live video + voice interview — same for everyone.</p>
+        </li>
+        <li class="step">
+          <div class="step-n">03</div>
+          <h3>Get evidence-based feedback</h3>
+          <p>See how you did, grounded in what you actually said.</p>
+        </li>
+        <li class="step">
+          <div class="step-n">04</div>
+          <h3>Hear back, always</h3>
+          <p>A real answer on every application.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ MERIT, MADE VISIBLE ============ -->
+  <section class="block" id="merit">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 class="head">A fair shot you can actually see.</h2>
+        <p class="sub">No black-box verdicts — here is exactly how a decision gets made.</p>
+      </div>
+      <div class="flow reveal" style="--d:.06s">
+        <div class="node">
+          <span class="n-top"><span class="dot"></span>Input</span>
+          <span class="n-title">Evidence captured</span>
+        </div>
+        <div class="arrow" aria-hidden="true"><svg viewBox="0 0 26 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h22"/><path d="M18 2l5 5-5 5"/></svg></div>
+        <div class="node">
+          <span class="n-top"><span class="dot"></span>Structure</span>
+          <span class="n-title">AI structures it</span>
+        </div>
+        <div class="arrow" aria-hidden="true"><svg viewBox="0 0 26 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h22"/><path d="M18 2l5 5-5 5"/></svg></div>
+        <div class="node human">
+          <span class="n-top"><span class="dot"></span>Decision</span>
+          <span class="n-title">A human decides</span>
+        </div>
+        <div class="arrow" aria-hidden="true"><svg viewBox="0 0 26 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h22"/><path d="M18 2l5 5-5 5"/></svg></div>
+        <div class="node">
+          <span class="n-top"><span class="dot"></span>Output</span>
+          <span class="n-title">You're notified</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TWO AUDIENCES ============ -->
+  <section class="block" id="audiences">
+    <div class="wrap">
+      <div class="aud">
+        <div class="card card--cand reveal">
+          <div class="card-top">
+            <h3 class="head">For candidates</h3>
+            <span class="card-tag">Free</span>
+          </div>
+          <p class="card-desc">Show what you can do in one live interview — and always hear back.</p>
+          <ul class="feat">
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.5 3.5L16 5.5"/></svg>Live video + voice interview</li>
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.5 3.5L16 5.5"/></svg>Private practice runs</li>
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.5 3.5L16 5.5"/></svg>Skill-gap feedback</li>
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.5 3.5L16 5.5"/></svg>Real-time application status</li>
+          </ul>
+          <div class="card-cta"><a class="btn btn--accent btn--block" href="#">Find your next job →</a></div>
+        </div>
+
+        <div class="card card--co reveal" style="--d:.08s">
+          <div class="card-top">
+            <h3 class="head">For companies</h3>
+            <span class="card-tag">Teams</span>
+          </div>
+          <p class="card-desc">Screen on evidence, keep the final call, and never leave a candidate hanging.</p>
+          <ul class="feat">
+            <li><span class="k mono">01</span>Merit-based screening</li>
+            <li><span class="k mono">02</span>Advisory gate — you decide</li>
+            <li><span class="k mono">03</span>Evidence-based reports</li>
+            <li><span class="k mono">04</span>No-ghosting analytics</li>
+          </ul>
+          <div class="card-cta"><a class="btn btn--ghost btn--block" href="#">Start hiring on merit →</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRUST BAND ============ -->
+  <section class="block" id="trust">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 class="head">Built to be trusted.</h2>
+      </div>
+      <div class="trust reveal" style="--d:.06s">
+        <span class="badge"><svg class="v" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2l6 2.4v4.2c0 4-2.6 6.4-6 7.4-3.4-1-6-3.4-6-7.4V4.4z"/><path d="M7.4 10l1.8 1.8L13 8"/></svg>SOC 2</span>
+        <span class="badge"><svg class="v" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2l6 2.4v4.2c0 4-2.6 6.4-6 7.4-3.4-1-6-3.4-6-7.4V4.4z"/><path d="M7.4 10l1.8 1.8L13 8"/></svg>GDPR-ready</span>
+        <span class="badge"><svg class="v" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2l6 2.4v4.2c0 4-2.6 6.4-6 7.4-3.4-1-6-3.4-6-7.4V4.4z"/><path d="M7.4 10l1.8 1.8L13 8"/></svg>EEOC-aligned</span>
+        <span class="badge"><svg class="v" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2l6 2.4v4.2c0 4-2.6 6.4-6 7.4-3.4-1-6-3.4-6-7.4V4.4z"/><path d="M7.4 10l1.8 1.8L13 8"/></svg>Bias-tested</span>
+        <span class="badge"><svg class="v" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2l6 2.4v4.2c0 4-2.6 6.4-6 7.4-3.4-1-6-3.4-6-7.4V4.4z"/><path d="M7.4 10l1.8 1.8L13 8"/></svg>Proctored integrity</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <div class="wrap">
+    <p class="foot-lede display">Get seen. Get interviewed. Get hired.</p>
+    <div class="foot-row">
+      <span class="brand">
+        <span class="mark" style="color:var(--accent)">
+          <svg width="24" height="24" viewBox="0 0 64 64" role="img" aria-label="Aptura">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" stroke-width="3"/>
+            <g stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+              <line x1="43" y1="32" x2="55.4" y2="45.5"/><line x1="37.5" y1="41.5" x2="32" y2="59"/>
+              <line x1="26.5" y1="41.5" x2="8.6" y2="45.5"/><line x1="21" y1="32" x2="8.6" y2="18.5"/>
+              <line x1="26.5" y1="22.5" x2="32" y2="5"/><line x1="37.5" y1="22.5" x2="55.4" y2="18.5"/>
+            </g>
+          </svg>
+        </span>
+        <b>Aptura</b>
+      </span>
+      <span class="meta">© Aptura</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- Theme toggle (demo affordance only) ---- */
+  var toggle = document.getElementById('themeToggle');
+  toggle.addEventListener('click', function(){
+    var light = root.getAttribute('data-theme') === 'light';
+    root.setAttribute('data-theme', light ? 'dark' : 'light');
+    toggle.setAttribute('aria-label', light ? 'Switch to light theme' : 'Switch to dark theme');
+  });
+
+  /* ---- Role fork: keyboard-operable tabs that visibly switch context ---- */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  var roleInput = document.getElementById('q-role');
+  var roleLabel = document.getElementById('lbl-role');
+  var hint = document.getElementById('hint');
+  var MODES = {
+    'tab-job':  { ph:'Job title or skill', lbl:'Job title or skill', hint:'Searching <b class="mono">8,200</b> open roles · updated live' },
+    'tab-hire': { ph:'Role or skill you\'re hiring for', lbl:'Role you\'re hiring for', hint:'Searching <b class="mono">34,000</b> verified candidates · updated live' }
+  };
+  function select(tab){
+    tabs.forEach(function(t){ t.setAttribute('aria-selected', String(t === tab)); });
+    var m = MODES[tab.id];
+    roleInput.placeholder = m.ph; roleLabel.textContent = m.lbl; hint.innerHTML = m.hint;
+  }
+  tabs.forEach(function(tab, i){
+    tab.addEventListener('click', function(){ select(tab); });
+    tab.addEventListener('keydown', function(e){
+      if(e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      next.focus(); select(next);
+    });
+  });
+
+  /* ---- Scroll reveal (enhances an already-visible default) ---- */
+  var reveals = document.querySelectorAll('.reveal');
+  if(!rm && 'IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { threshold:0.1, rootMargin:'0px 0px -5% 0px' });
+    reveals.forEach(function(el){ io.observe(el); });
+  } else {
+    /* No IO (or reduced motion): pre-state must never trap content hidden. */
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  }
+
+  /* ---- Count-up on the stats band (ease-out quart) ---- */
+  function countUp(el){
+    var target = +el.dataset.count, suffix = el.dataset.suffix || '', start = 0, dur = 1150, t0 = 0;
+    function frame(now){
+      if(!t0) t0 = now;
+      var p = Math.min(1, (now - t0) / dur);
+      var eased = 1 - Math.pow(1 - p, 4);
+      el.textContent = Math.round(target * eased).toLocaleString('en-US') + suffix;
+      if(p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  var statsBand = document.getElementById('stats');
+  if(!rm && 'IntersectionObserver' in window && statsBand){
+    var sObs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(!e.isIntersecting) return;
+        statsBand.querySelectorAll('[data-count]').forEach(countUp);
+        sObs.disconnect();
+      });
+    }, { threshold:0.4 });
+    sObs.observe(statsBand);
+  }
+})();
+</script>
+</body>
+</html>

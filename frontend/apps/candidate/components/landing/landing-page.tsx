@@ -2,10 +2,19 @@
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { AudienceSwitch } from "../audience-switch";
-import { CandidateBody } from "./candidate-body";
-import { CompanyBody } from "./company-body";
 import { Arrow, Chevron } from "./landing-icons";
+
+// Lazy-load the two audience bodies — only the shown one ships in the initial JS; the
+// other loads on the audience switch. Cuts the landing's component payload (each body is
+// large and pulls in the 3D ApertureLens) on first paint.
+const CandidateBody = dynamic(() =>
+  import("./candidate-body").then((m) => m.CandidateBody),
+);
+const CompanyBody = dynamic(() =>
+  import("./company-body").then((m) => m.CompanyBody),
+);
 
 // Single consolidated Lucent landing. Owns the `.lucent` shell (aurora bg-field,
 // grain, glass nav, footer) and swaps the audience body IN PLACE when the nav
