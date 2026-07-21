@@ -58,21 +58,40 @@ def _token_service(s):
     )
 
 
-async def _health(send):
-    """Unauthenticated liveness probe (no DB hit) for load balancers / uptime pings."""
+async def _http_response(send, status, body):
     await send(
         {
             "type": "http.response.start",
-            "status": 200,
+            "status": status,
             "headers": [(b"content-type", b"text/plain")],
         }
     )
-    await send({"type": "http.response.body", "body": b"ok"})
+    await send({"type": "http.response.body", "body": body})
 
 
-def _dispatcher(grpc_app, oauth_app, public_app):
-    """Path-prefix ASGI router: /healthz → 200, /auth/oauth/* → OAuth, /public/* → REST,
-    else gRPC-web.
+async def _health(send):
+    """Unauthenticated liveness probe (no DB hit) for load balancers / uptime pings."""
+    await _http_response(send, 200, b"ok")
+
+
+async def _readyz(send, *, mongo, redis):
+    """Readiness probe: ping Mongo + Redis under a short timeout. Returns 503 if any
+    dep is unreachable — separate from /healthz so the load balancer keeps traffic
+    off a warming or degraded container without also killing it.
+    """
+    try:
+        await asyncio.wait_for(mongo.ping(), timeout=0.5)
+        await asyncio.wait_for(redis.ping(), timeout=0.5)
+    except Exception as exc:
+        log.warning("readyz: dep check failed: {}", exc)
+        await _http_response(send, 503, b"not ready")
+        return
+    await _http_response(send, 200, b"ready")
+
+
+def _dispatcher(grpc_app, oauth_app, public_app, *, readyz):
+    """Path-prefix ASGI router: /healthz → 200, /readyz → dep-check, /auth/oauth/* →
+    OAuth, /public/* → REST, else gRPC-web.
 
     gRPC method paths are /admin.*; OAuth lives under /auth/oauth/ and the public
     marketplace under /public/, so the prefixes never collide.
@@ -82,6 +101,8 @@ def _dispatcher(grpc_app, oauth_app, public_app):
         path = scope.get("path", "")
         if scope["type"] == "http" and path == "/healthz":
             await _health(send)
+        elif scope["type"] == "http" and path == "/readyz":
+            await readyz(send)
         elif scope["type"] == "http" and path.startswith("/auth/oauth/"):
             await oauth_app(scope, receive, send)
         elif scope["type"] == "http" and path.startswith("/public/"):
@@ -197,7 +218,13 @@ async def serve() -> None:
     )
     # Bind a correlation_id per HTTP request (gRPC-web, OAuth, or public REST) so every
     # handler's logs + any events it publishes are traceable. Phase-4 corr-IDs.
-    app = CorrelationIdMiddleware(_dispatcher(grpc_app, oauth_app, public_app))
+
+    async def _readyz_bound(send):
+        await _readyz(send, mongo=mongo, redis=redis)
+
+    app = CorrelationIdMiddleware(
+        _dispatcher(grpc_app, oauth_app, public_app, readyz=_readyz_bound)
+    )
 
     # Funnel consumer: advance application state on funnel events (audit-logged).
     funnel_apps = ApplicationRepository(mongo.db)

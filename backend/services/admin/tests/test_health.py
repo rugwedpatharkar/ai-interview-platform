@@ -34,7 +34,17 @@ async def test_dispatch_healthz_short_circuits():
     async def public(scope, receive, send):
         called.append("public")
 
-    dispatch = _dispatcher(grpc, oauth, public)
+    async def readyz(send):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [(b"content-type", b"text/plain")],
+            }
+        )
+        await send({"type": "http.response.body", "body": b"ready"})
+
+    dispatch = _dispatcher(grpc, oauth, public, readyz=readyz)
     sent = []
 
     async def send(msg):

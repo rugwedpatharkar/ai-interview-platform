@@ -52,17 +52,46 @@ def _dispatcher(grpc_app, health):
     return dispatch
 
 
-async def _health_app(scope, receive, send):
-    """Liveness probe: GET /health -> 200, anything else -> 404."""
-    ok = scope["type"] == "http" and scope.get("path") == "/health"
-    await send(
-        {
-            "type": "http.response.start",
-            "status": 200 if ok else 404,
-            "headers": [(b"content-type", b"text/plain")],
-        }
-    )
-    await send({"type": "http.response.body", "body": b"ok" if ok else b""})
+def _make_health_app(*, redis, data_manager):
+    """Return an ASGI app that handles /health (liveness) and /readyz (readiness).
+
+    /health is a static 200; /readyz pings Redis + the MCP session so a warming or
+    degraded container gets pulled from rotation without also being killed.
+    """
+
+    async def _respond(send, status, body):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": status,
+                "headers": [(b"content-type", b"text/plain")],
+            }
+        )
+        await send({"type": "http.response.body", "body": body})
+
+    async def health_app(scope, receive, send):
+        if scope["type"] != "http":
+            await _respond(send, 404, b"")
+            return
+        path = scope.get("path")
+        if path == "/health":
+            await _respond(send, 200, b"ok")
+            return
+        if path == "/readyz":
+            try:
+                await asyncio.wait_for(redis.ping(), timeout=0.5)
+                # McpSessionManager exposes an active session once .start() completed.
+                if data_manager._session is None:
+                    raise RuntimeError("mcp-data session not initialised")
+            except Exception as exc:
+                log.warning("readyz: dep check failed: {}", exc)
+                await _respond(send, 503, b"not ready")
+                return
+            await _respond(send, 200, b"ready")
+            return
+        await _respond(send, 404, b"")
+
+    return health_app
 
 
 async def serve() -> None:
@@ -160,7 +189,9 @@ async def serve() -> None:
             timeout_seconds=s.grpc_timeout_seconds,
         )
     )
-    api = _dispatcher(grpc_app, _health_app)
+    api = _dispatcher(
+        grpc_app, _make_health_app(redis=redis, data_manager=data_manager)
+    )
     config = uvicorn.Config(
         api,
         host=s.http_host,
