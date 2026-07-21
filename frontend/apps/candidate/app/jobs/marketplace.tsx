@@ -2,7 +2,15 @@
 
 import { Button, EmptyState, Skeleton, cn } from "@ip/ui";
 import { useQuery } from "@tanstack/react-query";
-import { CloudOff, Compass, RefreshCw, SearchX, Sparkles } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CloudOff,
+  Compass,
+  RefreshCw,
+  SearchX,
+  Sparkles,
+} from "lucide-react";
 import { useState } from "react";
 
 import { FilterSidebar } from "../../components/filter-sidebar";
@@ -33,6 +41,9 @@ export function Marketplace({
 }) {
   const [params, setParams] = useState<SearchJobsParams>(initialParams);
 
+  // Any search / filter / sort change resets to page 1; only the pager moves pages.
+  const setFilters = (next: SearchJobsParams) => setParams({ ...next, page: 1 });
+
   const q = useQuery({
     queryKey: ["public-jobs", params],
     queryFn: ({ signal }) => query(params, signal),
@@ -44,9 +55,17 @@ export function Marketplace({
   const jobs = q.data?.jobs ?? [];
   const showSkeletons = q.isLoading && !q.data;
 
+  const page = q.data?.page ?? 1;
+  const pageSize = q.data?.pageSize ?? 24;
+  const totalPages = q.data ? Math.max(1, Math.ceil(q.data.total / pageSize)) : 1;
+  const goToPage = (next: number) => {
+    setParams({ ...params, page: next });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      <JobSearchBar value={params} onSearch={setParams} />
+      <JobSearchBar value={params} onSearch={setFilters} />
 
       {/* Mobile: filter rail as accordion above the results. */}
       <details className="ap-cell lg:hidden">
@@ -54,7 +73,7 @@ export function Marketplace({
           Filters
         </summary>
         <div className="mt-4">
-          <FilterSidebar facets={q.data?.facets} value={params} onChange={setParams} />
+          <FilterSidebar facets={q.data?.facets} value={params} onChange={setFilters} />
         </div>
       </details>
 
@@ -62,7 +81,7 @@ export function Marketplace({
         {/* ---------- LEFT: filter rail ---------- */}
         <aside className="hidden lg:block">
           <div className="ap-cell sticky top-24">
-            <FilterSidebar facets={q.data?.facets} value={params} onChange={setParams} />
+            <FilterSidebar facets={q.data?.facets} value={params} onChange={setFilters} />
           </div>
         </aside>
 
@@ -95,7 +114,7 @@ export function Marketplace({
                       role="tab"
                       type="button"
                       aria-selected={active}
-                      onClick={() => setParams({ ...params, sort: value })}
+                      onClick={() => setFilters({ ...params, sort: value })}
                       className={cn(
                         "rounded-md px-3 py-1 text-xs font-medium transition-colors",
                         active
@@ -151,6 +170,38 @@ export function Marketplace({
               />
             </div>
           ))}
+
+          {q.data && totalPages > 1 && (
+            <nav
+              className="mt-2 flex items-center justify-between gap-3 border-t border-line pt-4"
+              aria-label="Pagination"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => goToPage(page - 1)}
+              >
+                <ChevronLeft className="size-4" aria-hidden />
+                Previous
+              </Button>
+              <span
+                className="text-sm tabular-nums text-muted-foreground"
+                aria-live="polite"
+              >
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => goToPage(page + 1)}
+              >
+                Next
+                <ChevronRight className="size-4" aria-hidden />
+              </Button>
+            </nav>
+          )}
         </div>
 
         {/* ---------- RIGHT: "why these results" rail ---------- */}
