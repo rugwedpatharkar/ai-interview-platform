@@ -81,6 +81,57 @@ class RedisInterviewStore:
             raise
         _session_ops_duration.labels(op="save").observe((time.monotonic() - t0) * 1000)
 
+    # C1: atomic "save only if the stored session is still in_progress". The
+    # reaper races against a live SubmitTurn's _finalize; before this CAS, a
+    # stale reaper snapshot could overwrite a just-completed transcript with an
+    # older one and publish interview.abandoned on top of interview.completed.
+    # Lua match on the pydantic-emitted `"status":"in_progress"` substring is
+    # safe because pydantic always emits that key literal at the top level.
+    _SAVE_IF_IN_PROGRESS_LUA = (
+        "local raw = redis.call('GET', KEYS[1]) "
+        "if not raw then return 0 end "
+        'if not string.find(raw, \'"status":"in_progress"\', 1, true) then return 0 end '
+        "redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[2]) "
+        "return 1"
+    )
+
+    async def save_if_in_progress(self, session) -> bool:
+        """CAS-style save: succeeds iff the stored blob currently has
+        status=in_progress. Returns True on write, False when a concurrent
+        writer (finalize, terminate) has already changed the status."""
+        import time
+
+        _session_ops_total.labels(op="save_if_in_progress").inc()
+        t0 = time.monotonic()
+        try:
+            ttl = max(
+                self._ttl,
+                session.blueprint.time_budget_min * 60 + _REAPER_MARGIN_SECONDS,
+            )
+            result = await with_timeout(
+                self._redis.eval(
+                    self._SAVE_IF_IN_PROGRESS_LUA,
+                    1,
+                    self._key(session.application_id),
+                    session.model_dump_json(),
+                    ttl,
+                ),
+                timeouts.redis(),
+                op="interview_session.save_if_in_progress",
+            )
+            return bool(int(result))
+        except Exception:
+            _session_ops_errors.labels(op="save_if_in_progress").inc()
+            _session_ops_duration.labels(op="save_if_in_progress").observe(
+                (time.monotonic() - t0) * 1000
+            )
+            log.exception("interview_session.save_if_in_progress failed")
+            raise
+        finally:
+            _session_ops_duration.labels(op="save_if_in_progress").observe(
+                (time.monotonic() - t0) * 1000
+            )
+
     async def get(self, application_id):
         import time
 
