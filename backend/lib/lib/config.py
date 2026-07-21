@@ -74,6 +74,11 @@ class BaseServiceSettings(BaseSettings):
     s3_secret_access_key: str = ""
     s3_bucket: str = "interview-platform"
     storage_presign_ttl_seconds: int = 900
+    # Server-side ceiling on presigned PUT uploads (5 MB by default). Enforced when
+    # the caller passes an explicit content_length — S3 PUT presign has no native
+    # content-length-range condition; a bullet-proof fix needs presigned POST + a
+    # FE change, tracked separately.
+    storage_max_upload_bytes: int = 5 * 1024 * 1024
 
     # Resilience knobs — see docs/superpowers/specs/2026-06-21-...-design.md §2.3.
     # Every external-call site reads via lib.timeouts.<accessor>(); no magic numbers in

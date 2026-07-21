@@ -205,20 +205,28 @@ class ObjectStorage:
         key: str,
         content_type: str,
         ttl: int | None = None,
+        content_length: int | None = None,
     ) -> str:
         # Presigned PUT so the browser uploads directly (e.g. a company logo) without
         # proxying bytes through the service. The lifetime is clamped like the GET URL.
+        # `content_length` (bytes) — when supplied, the signed URL binds the exact size
+        # the client must send. Callers pass this to enforce a server-side size cap.
+        # ponytail: PUT presign has no native content-length-range condition; a range
+        # bound requires switching to presigned POST + a coordinated FE upload change.
         expires_in = min(ttl or self._presign_ttl, self._presign_ttl_max)
         object_key = self._key(comp_id, category, key)
+        params = {
+            "Bucket": self._bucket,
+            "Key": object_key,
+            "ContentType": content_type,
+        }
+        if content_length is not None:
+            params["ContentLength"] = content_length
         try:
             return await with_timeout(
                 self._client.generate_presigned_url(
                     "put_object",
-                    Params={
-                        "Bucket": self._bucket,
-                        "Key": object_key,
-                        "ContentType": content_type,
-                    },
+                    Params=params,
                     ExpiresIn=expires_in,
                 ),
                 seconds=self._op_timeout_seconds,
