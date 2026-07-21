@@ -57,6 +57,10 @@ class Settings(BaseServiceSettings):
     default_aptitude_questions: int = Field(default=10, gt=0)
     max_chat_messages: int = Field(default=50, gt=0)
     max_proctor_events: int = Field(default=200, gt=0)
+    # Interview time-budget ceiling. Was hardcoded to 180 min in blueprint.py — a JD
+    # injection or model hallucination could steer to 3 h and hold a live Redis session
+    # + LiveKit room for the duration. Default 60 min; tune per deployment.
+    max_interview_budget_min: int = Field(default=60, gt=0)
 
     # Voice pipeline tuning — defaults match Phase-3 module constants so a
     # default-config run is byte-identical; override per-env via environment variables.
