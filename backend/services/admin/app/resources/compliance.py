@@ -140,13 +140,20 @@ class CandidateEraser:
                 application_ids = [str(a["_id"]) for a in applications]
                 await self._slots.delete_by_applications(application_ids)
                 await self._bookings.delete_by_applications(application_ids)
+            # Delete S3 blob BEFORE the profile row. If S3 fails, the retry sweep
+            # still finds the profile (and its resume_key) and cleans up. Old order
+            # deleted the profile first — a mid-flight S3 failure orphaned the resume
+            # in the bucket forever because the next sweep saw no profile.
             profile = await self._profiles.get_by_user(user_id)
-            await self._profiles.delete_by_user(user_id)
             if profile and profile.get("resume_key"):
                 try:
                     await self._storage.delete_raw(profile["resume_key"])
                 except Exception:
+                    # Best-effort — log and re-raise so the sweep retries (do NOT
+                    # proceed to profile-delete: that would strand the S3 object).
                     log.exception("erase: resume delete failed for {}", user_id)
+                    raise
+            await self._profiles.delete_by_user(user_id)
             # Revoke every live refresh session BEFORE anonymizing so the erased
             # user's still-valid access token can't be exchanged for a fresh pair.
             # Access tokens themselves are stateless and expire in 15 min; the refresh
