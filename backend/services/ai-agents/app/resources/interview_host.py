@@ -149,7 +149,8 @@ async def abandon_stale(*, sessions, data, publisher, clock=_utcnow):
             wrote = await sessions.save_if_in_progress(current)
             if not wrote:
                 log.info(
-                    "abandon_stale: concurrent completion won for {}, skipping status flip",
+                    "abandon_stale: concurrent completion won for {}; "
+                    "skipping status flip",
                     current.application_id,
                 )
 

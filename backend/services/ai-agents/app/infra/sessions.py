@@ -90,7 +90,8 @@ class RedisInterviewStore:
     _SAVE_IF_IN_PROGRESS_LUA = (
         "local raw = redis.call('GET', KEYS[1]) "
         "if not raw then return 0 end "
-        'if not string.find(raw, \'"status":"in_progress"\', 1, true) then return 0 end '
+        'if not string.find(raw, \'"status":"in_progress"\', 1, true) '
+        "then return 0 end "
         "redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[2]) "
         "return 1"
     )
