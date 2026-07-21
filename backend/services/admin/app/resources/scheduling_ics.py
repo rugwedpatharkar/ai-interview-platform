@@ -13,9 +13,9 @@ def _ics_dt(dt: datetime) -> str:
 
 def _escape(text: str) -> str:
     # RFC 5545 TEXT escaping: backslash, semicolon, comma, and newlines.
-    # Lone `\r` (macOS-classic linefeeds or crafted injections like "Zoom\rDESCRIPTION:")
-    # was untouched — some ICS parsers unfold on bare `\r` and re-inject the smuggled
-    # line. Replace it before the pairwise CRLF pass so both variants are neutralised.
+    # Lone `\r` (macOS-classic linefeeds or crafted injections like
+    # "Zoom\rDESCRIPTION:...") was untouched — some ICS parsers unfold on bare `\r`
+    # and re-inject the smuggled line. Replace it after the pairwise CRLF pass.
     return (
         text.replace("\\", "\\\\")
         .replace(";", "\\;")

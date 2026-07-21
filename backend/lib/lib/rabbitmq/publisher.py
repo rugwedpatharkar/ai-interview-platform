@@ -70,18 +70,37 @@ class Publisher:
             content_type="application/json",
             delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
         )
-        try:
-            # publisher_confirms + mandatory: an unroutable or unacked publish raises
-            # instead of vanishing, so a lost funnel event surfaces to the caller.
-            await self._exchange.publish(
-                message, routing_key=routing_key, mandatory=True
-            )
-            log.debug("publisher.sent routing_key={}", routing_key)
-        except Exception:
-            # Invalidate the exchange handle so the next call re-acquires it.
-            self._exchange = None
-            log.exception("publisher.error routing_key={}", routing_key)
-            raise
+        # One-shot in-place retry on a dropped channel: the first attempt invalidates
+        # the exchange handle; the second attempt re-acquires and publishes. Prevents
+        # a routine broker restart from silently dropping every in-flight publish
+        # onto the caller (who then either logs+swallows or fails their whole op).
+        for attempt in (1, 2):
+            try:
+                # publisher_confirms + mandatory: an unroutable or unacked publish
+                # raises instead of vanishing, so a lost funnel event surfaces.
+                await self._exchange.publish(
+                    message, routing_key=routing_key, mandatory=True
+                )
+                log.debug(
+                    "publisher.sent routing_key={} attempt={}", routing_key, attempt
+                )
+                return
+            except Exception:
+                # Invalidate the exchange handle so the next call re-acquires it.
+                self._exchange = None
+                if attempt == 2:
+                    log.exception(
+                        "publisher.error routing_key={} attempts={}",
+                        routing_key,
+                        attempt,
+                    )
+                    raise
+                log.warning(
+                    "publisher.retry routing_key={} attempt={}", routing_key, attempt
+                )
+                async with self._exchange_lock:
+                    if self._exchange is None:
+                        self._exchange = await self._acquire_exchange()
 
     async def close(self) -> None:
         if self._conn is not None:

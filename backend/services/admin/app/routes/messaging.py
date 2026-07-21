@@ -60,6 +60,7 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
         tokens,
         notifications=None,
         redis=None,
+        users=None,
     ):
         self._deps = {
             "applications": applications,
@@ -70,6 +71,9 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
             "notifications": notifications,
         }
         self._tokens = tokens
+        # Separate `users` handle for send_message only — the other messaging
+        # resources don't need it and would trip over the kwarg via **self._deps.
+        self._users = users
         # Redis is only consumed by send_message + stream_messages (pub/sub) — kept
         # off _deps because other resources here (list_messages, mark_read, etc.)
         # would trip over the extra kwarg via **self._deps.
@@ -101,6 +105,7 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
                     **self._deps,
                     redis=self._redis,
                     limiter=self._limiter,
+                    users=self._users,
                 )
                 return _message(out)
             except AuthDomainError as exc:

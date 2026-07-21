@@ -12,6 +12,7 @@ answers back through the permutation, and the unique attempt index makes a secon
 submission a clean conflict.
 """
 
+import contextlib
 import random
 from datetime import UTC, datetime
 
@@ -136,8 +137,37 @@ async def grade_aptitude(
             "aptitude_config", {}
         )
         limit_seconds = config.get("time_limit_min", _DEFAULT_TIME_LIMIT_MIN) * 60
-        if (clock() - delivery["delivered_at"]).total_seconds() > limit_seconds:
-            raise ValidationError("Aptitude time limit exceeded")
+        # Time-limit strand fix: previously we raised outright at limit+1s, leaving
+        # the application in aptitude_pending until the expiry sweep. Now: if within
+        # a small grace, accept; if past the grace, RECORD as failed (score=0,
+        # passed=False) and publish aptitude.graded so the funnel advances instead of
+        # stranding the candidate with an error and no recovery path.
+        elapsed = (clock() - delivery["delivered_at"]).total_seconds()
+        _GRACE_S = 30
+        if elapsed > limit_seconds + _GRACE_S:
+            # Already graded (e.g. sweep beat us) — nothing more to record; suppress
+            # the DuplicateKeyError and just re-emit the funnel event.
+            with contextlib.suppress(DuplicateKeyError):
+                await attempts.insert(
+                    AptitudeAttempt(
+                        application_id=application_id,
+                        comp_id=application["comp_id"],
+                        candidate_user_id=identity["id"],
+                        job_id=application["job_id"],
+                        score=0,
+                        passed=False,
+                    )
+                )
+            await publisher.publish(
+                "aptitude.graded",
+                {"application_id": application_id, "passed": False},
+            )
+            log.info(
+                "aptitude auto-failed on time limit: app={} elapsed={}",
+                application_id,
+                int(elapsed),
+            )
+            raise ValidationError("Aptitude time limit exceeded — recorded as failed")
         # Answers are positional in *served* order; map each back to its original
         # question. Each must index a real option: reject out-of-range, don't silently
         # score wrong.

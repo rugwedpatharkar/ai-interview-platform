@@ -15,7 +15,7 @@ from lib.logging import bind_ids, get_logger, log_context
 from lib.resilience import with_timeout
 from lib.schemas import Role
 
-from app.errors import RateLimitedError, ValidationError
+from app.errors import ConflictError, RateLimitedError, ValidationError
 from app.resources.aptitude import _owned
 from app.resources.decision import _scoped
 from app.resources.discovery import iso
@@ -93,6 +93,7 @@ async def send_message(
     notifications=None,
     redis=None,
     limiter=None,
+    users=None,
 ):
     async with log_context(
         log,
@@ -124,6 +125,25 @@ async def send_message(
         comp_id = application["comp_id"]
         candidate_user_id = application["candidate_user_id"]
 
+        # When a recruiter sends, the recipient is the candidate (known now); when a
+        # candidate sends, the recipient is the recruiter (known only after the thread
+        # lookup below). Check for a deleted/disabled/erased counterparty at the
+        # earliest point we know their id — used to accept forever, writing orphan
+        # messages + notifications with no signal.
+        async def _check_active(uid):
+            if users is None or not uid:
+                return
+            other = await users.get(uid)
+            if (
+                not other
+                or other.get("erased")
+                or other.get("status") in ("revoked", "disabled")
+            ):
+                raise ConflictError("Recipient account is no longer active")
+
+        if sender_role == "recruiter":
+            await _check_active(candidate_user_id)
+
         job = await jobs.get_by_id(application.get("job_id", ""))
         names = await companies.names_by_ids([comp_id])
         thread = await threads.get_or_create(
@@ -138,6 +158,9 @@ async def send_message(
             if sender_role == "recruiter"
             else thread.get("recruiter_user_id", "")
         )
+        if sender_role == "candidate":
+            # Now that we have the thread, check the recruiter too.
+            await _check_active(recruiter_user_id)
         now = datetime.now(UTC)
         from app.model.message import Message
 

@@ -369,6 +369,29 @@ def _build_webhook_app(
             log.warning("voice_worker: webhook validation failed: {}", exc)
             raise HTTPException(status_code=400, detail="invalid webhook") from exc
 
+        # Replay-protection nonce: LiveKit's SDK verifies HMAC + timestamp freshness
+        # (~5 min), but within that window a captured webhook could be replayed to
+        # re-spawn an agent for the same room. Guard with a SET NX on the event id.
+        event_id = getattr(event, "id", "") or ""
+        if event_id and redis is not None:
+            key = f"livekit:webhook:seen:{event_id}"
+            try:
+                added = await with_timeout(
+                    redis.set(key, "1", nx=True, ex=600),
+                    timeouts.redis(),
+                    op="voice_worker.webhook_replay_guard",
+                )
+                if not added:
+                    log.warning(
+                        "voice_worker: webhook replay detected event_id={}", event_id
+                    )
+                    return {"ok": True}
+            except Exception as exc:
+                # Guard is best-effort — a Redis blip must not drop legit webhooks.
+                log.warning(
+                    "voice_worker: replay-guard SET failed for {}: {}", event_id, exc
+                )
+
         event_type = event.event
         room_name = event.room.name if event.room else ""
         participant_identity = event.participant.identity if event.participant else ""
