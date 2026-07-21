@@ -179,8 +179,17 @@ async def _run_session(
     publisher,
     llm,
     in_flight: dict[str, asyncio.Task],
+    vad,
+    redis=None,
 ) -> None:
-    """Build media objects, run the interview, tear down on exit."""
+    """Build media objects, run the interview, tear down on exit.
+
+    ``vad`` is the process-shared SileroOnnxVad instance built once in ``serve()`` —
+    per-session load blocked the webhook event loop 30-100 ms and re-loaded the
+    1.8 MB ONNX per interview. ``redis`` (optional) is the cross-replica dedup
+    guard: SETNX voice:agent:{app_id} at start, DEL at end, so two replicas that
+    both receive the participant_joined webhook don't double-spawn an agent.
+    """
     worker_identity = f"{settings.voice_worker_identity_prefix}{application_id}"
     room_name = f"interview-{application_id}"
 
@@ -190,6 +199,20 @@ async def _run_session(
         worker_identity,
     )
 
+    # Cross-replica claim: SET NX with a generous TTL (>= session upper bound so a
+    # crashed worker's claim expires). Loses the race → skip; no cleanup needed.
+    claim_key = f"voice:agent:{application_id}"
+    have_claim = True
+    if redis is not None:
+        have_claim = bool(await redis.set(claim_key, worker_identity, nx=True, ex=7200))
+        if not have_claim:
+            log.info(
+                "voice_worker: another replica owns application_id={} (skipping)",
+                application_id,
+            )
+            in_flight.pop(application_id, None)
+            return
+
     worker_token = mint_join_token(
         room_name,
         worker_identity,
@@ -197,13 +220,6 @@ async def _run_session(
         api_secret=settings.livekit_api_secret,
         ttl_seconds=settings.voice_rtc_token_ttl_seconds,
     )
-
-    try:
-        vad = SileroOnnxVad.load()
-    except Exception as exc:
-        log.error("voice_worker: failed to load Silero VAD: {}", exc)
-        in_flight.pop(application_id, None)
-        return
 
     segmenter = UtteranceSegmenter(
         vad,
@@ -222,44 +238,52 @@ async def _run_session(
     )
 
     try:
-        await room_audio.connect()
-    except Exception as exc:
-        log.error("voice_worker: failed to connect to room {} : {}", room_name, exc)
-        in_flight.pop(application_id, None)
-        await _safe_aclose_room(room_audio, application_id)
-        return
-
-    stt = GroqStt(
-        api_key=settings.groq_api_key,
-        timeout_seconds=settings.voice_stt_timeout_s,
-        max_retries=settings.voice_stt_max_retries,
-    )
-    tts = EdgeTts(
-        voice=settings.voice_tts_voice,
-        max_retries=settings.voice_tts_max_retries,
-        stream_timeout_seconds=settings.voice_tts_stream_timeout_s,
-    )
-    transport = VoiceTransport(stt=stt, tts=tts, room=room_audio)
-
-    try:
-        await run_voice_interview(
-            application_id,
-            transport=transport,
-            caller_user_id=candidate_identity,
-            data=data,
-            sessions=sessions,
-            llm=llm,
-            publisher=publisher,
+        try:
+            await room_audio.connect()
+        except Exception as exc:
+            log.error("voice_worker: failed to connect to room {} : {}", room_name, exc)
+            return
+        stt = GroqStt(
+            api_key=settings.groq_api_key,
+            timeout_seconds=settings.voice_stt_timeout_s,
+            max_retries=settings.voice_stt_max_retries,
         )
-        log.info("voice_worker: session completed application_id={}", application_id)
-    except Exception:
-        log.exception(
-            "voice_worker: session {} failed; session left resumable in Redis",
-            application_id,
+        tts = EdgeTts(
+            voice=settings.voice_tts_voice,
+            max_retries=settings.voice_tts_max_retries,
+            stream_timeout_seconds=settings.voice_tts_stream_timeout_s,
         )
+        transport = VoiceTransport(stt=stt, tts=tts, room=room_audio)
+        try:
+            await run_voice_interview(
+                application_id,
+                transport=transport,
+                caller_user_id=candidate_identity,
+                data=data,
+                sessions=sessions,
+                llm=llm,
+                publisher=publisher,
+            )
+            log.info(
+                "voice_worker: session completed application_id={}", application_id
+            )
+        except Exception:
+            log.exception(
+                "voice_worker: session {} failed; left resumable in Redis",
+                application_id,
+            )
     finally:
         in_flight.pop(application_id, None)
         await _safe_aclose_room(room_audio, application_id)
+        if redis is not None and have_claim:
+            # Best-effort release; if a peer crash left it dangling, the 7200 s TTL
+            # eventually reclaims it.
+            try:
+                await redis.delete(claim_key)
+            except Exception as exc:
+                log.warning(
+                    "voice_worker: failed to release claim {}: {}", claim_key, exc
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -268,7 +292,15 @@ async def _run_session(
 
 
 def _build_webhook_app(
-    *, settings, sessions, data, publisher, llm, in_flight: dict[str, asyncio.Task]
+    *,
+    settings,
+    sessions,
+    data,
+    publisher,
+    llm,
+    in_flight: dict[str, asyncio.Task],
+    vad,
+    redis=None,
 ) -> FastAPI:
     """Construct the FastAPI webhook listener with all deps closed over."""
     from livekit import api as livekit_api
@@ -310,7 +342,8 @@ def _build_webhook_app(
         )
 
         if application_id is not None:
-            # in-process dedup; cross-replica dedup (Redis SETNX) deferred to Phase 4.
+            # in-process dedup via `in_flight`; cross-replica dedup via Redis SETNX
+            # inside _run_session so a lost race no-ops without spawning media.
             in_flight[application_id] = asyncio.ensure_future(
                 _run_session(
                     application_id,
@@ -321,6 +354,8 @@ def _build_webhook_app(
                     publisher=publisher,
                     llm=llm,
                     in_flight=in_flight,
+                    vad=vad,
+                    redis=redis,
                 )
             )
             log.info(
@@ -383,6 +418,14 @@ async def serve() -> None:
 
     registry: dict[str, asyncio.Task] = {}
 
+    # Load Silero VAD once at process start and share across all sessions. Was loaded
+    # per session (30-100 ms blocking on the webhook loop, 1.8 MB ONNX per interview).
+    try:
+        vad = SileroOnnxVad.load()
+    except Exception as exc:
+        log.error("voice_worker: failed to load Silero VAD at boot: {}", exc)
+        raise
+
     webhook_app = _build_webhook_app(
         settings=s,
         sessions=sessions,
@@ -390,6 +433,8 @@ async def serve() -> None:
         publisher=publisher,
         llm=llm,
         in_flight=registry,
+        vad=vad,
+        redis=redis,
     )
 
     config = uvicorn.Config(
