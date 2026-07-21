@@ -518,8 +518,9 @@ async def test_logout_revokes_refresh(fakes):
 async def test_invite_recruiter(fakes):
     s = _services(fakes)
     admin = await _login_company(s)
+    caller = auth.identity_from_token(admin["access_token"], tokens=s["tokens"])
     invited = await auth.invite_recruiter(
-        admin["access_token"],
+        caller,
         "rec@acme.com",
         "pw123456",
         users=s["users"],
@@ -550,9 +551,10 @@ async def test_invite_recruiter_requires_company_admin(fakes):
         limiter=s["limiter"],
         refresh_ttl_seconds=100,
     )
+    caller = auth.identity_from_token(cand["access_token"], tokens=s["tokens"])
     with pytest.raises(ForbiddenError):
         await auth.invite_recruiter(
-            cand["access_token"],
+            caller,
             "x@acme.com",
             "pw123456",
             users=s["users"],

@@ -422,10 +422,12 @@ async def _invite_company_user(
 
 
 async def invite_recruiter(
-    token, email, password, *, users, tokens, notifier, nonces=None, audit=None
+    caller, email, password, *, users, tokens, notifier, nonces=None, audit=None
 ):
+    """The route must validate the token via `caller_identity` first (so expired /
+    invalid tokens abort with UNAUTHENTICATED, not INVALID_ARGUMENT) and pass the
+    resulting caller dict here."""
     async with log_context(log, "resource.auth.invite_recruiter", **bind_ids()):
-        caller = identity_from_token(token, tokens=tokens)
         if caller["role"] != Role.company_admin.value:
             log.warning("invite_recruiter denied: caller role={}", caller["role"])
             raise ForbiddenError("Only a company admin can invite recruiters")
