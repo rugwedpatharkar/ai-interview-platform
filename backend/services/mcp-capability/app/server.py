@@ -8,6 +8,7 @@ for the server's lifetime. The ai-agents service connects as an MCP client. Run 
 import asyncio
 
 from lib.logging import configure_logging, get_logger, log_context
+from lib.mcp_auth import BearerAuthMiddleware, assert_secret_configured
 from lib.observability import init_tracing, start_metrics_server
 from lib.redis import create_redis
 from lib.storage import ObjectStorage
@@ -64,13 +65,17 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-async def parse_document(object_key: str, owner: str = "") -> str:
+async def parse_document(object_key: str, owner: str) -> str:
     """Extract text from a stored resume (PDF/DOCX), scoped to the owner's keys."""
+    # Empty owner used to slip past the prefix guard (owner or None -> _parse skipped).
+    # Require a non-empty owner at the server boundary so tenant isolation holds.
+    if not owner:
+        raise ValueError("owner is required")
     async with log_context(
-        log, "tool.parse_document", object_key=object_key, owner=owner or None
+        log, "tool.parse_document", object_key=object_key, owner=owner
     ):
         await _ensure_rag()  # connects _storage on first use
-        return await _parse(object_key, storage=_storage, owner=owner or None)
+        return await _parse(object_key, storage=_storage, owner=owner)
 
 
 @mcp.tool()
@@ -115,6 +120,8 @@ async def ingest(owner: str, sources: list[dict]) -> dict:
 
 
 def main() -> None:
+    import uvicorn
+
     configure_logging(_settings.service_name, _settings.log_level)
     if _settings.otlp_endpoint:
         from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
@@ -128,7 +135,15 @@ def main() -> None:
     else:
         init_tracing(_settings.service_name, enabled=_settings.tracing_enabled)
     asyncio.run(start_metrics_server(_settings.metrics_port))
-    mcp.run(transport="streamable-http")
+    assert_secret_configured(
+        _settings.mcp_shared_secret,
+        environment=_settings.environment,
+        service=_settings.service_name,
+    )
+    app = mcp.streamable_http_app()
+    if _settings.mcp_shared_secret:
+        app.add_middleware(BearerAuthMiddleware, secret=_settings.mcp_shared_secret)
+    uvicorn.run(app, host=_settings.mcp_host, port=_settings.mcp_port, log_level="info")
 
 
 if __name__ == "__main__":

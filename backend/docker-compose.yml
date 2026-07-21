@@ -10,6 +10,10 @@ x-common-env: &common-env
   RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
   RABBITMQ_EXCHANGE: interview
   JWT_SECRET: ${JWT_SECRET:-dev-insecure-change-me-000000000000000000}
+  # Shared MCP bearer secret (empty in dev → auth middleware not attached; loud warning
+  # logged). Set MCP_SHARED_SECRET in your env if you want to exercise the auth path
+  # locally; prod (render.yaml) refuses to boot without one.
+  MCP_SHARED_SECRET: ${MCP_SHARED_SECRET:-}
   S3_ENDPOINT_URL: http://minio:9000
   S3_REGION: us-east-1
   S3_ACCESS_KEY_ID: minioadmin

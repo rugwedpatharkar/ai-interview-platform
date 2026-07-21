@@ -82,10 +82,12 @@ class McpSessionManager:
         *,
         max_reconnect_attempts: int = 3,
         call_timeout_s: float | None = None,
+        headers: dict | None = None,
     ) -> None:
         self._url = url
         self._max_reconnects = max_reconnect_attempts
         self._call_timeout_s = call_timeout_s
+        self._headers = headers
 
         # Live session + context-manager handles; None = not yet connected.
         self._session: ClientSession | None = None
@@ -180,7 +182,7 @@ class McpSessionManager:
         log.info("mcp_session: connecting url={}", self._url)
         # Enter the two async context managers manually so we can store their
         # __aexit__ callables and call them later in _disconnect_locked.
-        http_cm = streamablehttp_client(self._url)
+        http_cm = streamablehttp_client(self._url, headers=self._headers)
         read, write, _ = await http_cm.__aenter__()
         session_cm = ClientSession(read, write)
         session = await session_cm.__aenter__()

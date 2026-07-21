@@ -24,12 +24,13 @@ def _citation(c):
 
 
 class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
-    def __init__(self, *, tokens, llm, data, capability, settings):
+    def __init__(self, *, tokens, llm, data, capability, settings, limiter=None):
         self._tokens = tokens
         self._llm = llm
         self._data = data
         self._capability = capability
         self._settings = settings
+        self._limiter = limiter
 
     async def Chat(self, request, context):
         scope = await caller_identity(context, self._tokens)
@@ -40,6 +41,17 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
             )
         if len(messages) > self._settings.max_chat_messages:
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, "too many messages")
+        if self._limiter is not None:
+            hit = await self._limiter.hit(
+                f"llm:user:{scope['id']}",
+                self._settings.llm_user_limit,
+                self._settings.llm_user_window_seconds,
+            )
+            if not hit.allowed:
+                await context.abort(
+                    grpc.StatusCode.RESOURCE_EXHAUSTED,
+                    f"llm rate limit exceeded; retry after {hit.retry_after}s",
+                )
         async with log_context(log, "grpc.chat"):
             # Plan + scoped fetch up front; a planner/tool failure ends the stream
             # with one `error` event (the SSE route 502'd before opening the stream).

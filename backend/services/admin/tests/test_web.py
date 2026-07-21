@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 from lib.security import TokenService
 
+from app.infra.totp import FernetSecretBox
 from app.routes.web import create_web_app
 
 
@@ -17,6 +18,7 @@ def test_registers_all_twenty_five_services():
         notifier=MagicMock(),
         notification_publisher=MagicMock(),
         refresh_ttl_seconds=60,
+        secretbox=FernetSecretBox("s" * 40),
     )
     services = {path.rsplit("/", 1)[0] for path in app.methods}
     assert len(services) == 25

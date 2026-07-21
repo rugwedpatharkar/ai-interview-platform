@@ -64,7 +64,7 @@ class _FakeStore:
 @pytest.mark.asyncio
 async def test_kb_search_version_read_respects_timeout(monkeypatch):
     monkeypatch.setenv("REDIS_OP_TIMEOUT_SECONDS", "0.05")
-    timeouts._cached_settings = None
+    timeouts.reset_for_test()
     from app.tools import kb_search
 
     with pytest.raises(OperationTimeout) as exc_info:
@@ -83,7 +83,7 @@ async def test_kb_search_version_read_respects_timeout(monkeypatch):
 async def test_kb_search_cache_get_respects_timeout(monkeypatch):
     """The cache_get site is hit after a fast version read; patched version read."""
     monkeypatch.setenv("REDIS_OP_TIMEOUT_SECONDS", "0.05")
-    timeouts._cached_settings = None
+    timeouts.reset_for_test()
 
     class _FastVersionRedis(_SlowRedis):
         """Returns a fast version_key result but sleeps on cache_key get."""
@@ -122,7 +122,7 @@ async def test_kb_search_cache_get_respects_timeout(monkeypatch):
 @pytest.mark.asyncio
 async def test_kb_search_cache_set_respects_timeout(monkeypatch):
     monkeypatch.setenv("REDIS_OP_TIMEOUT_SECONDS", "0.05")
-    timeouts._cached_settings = None
+    timeouts.reset_for_test()
 
     class _CacheSetSlowRedis:
         """Fast on get (cache miss), slow on set."""
@@ -173,7 +173,7 @@ async def test_kb_search_cache_set_respects_timeout(monkeypatch):
 @pytest.mark.asyncio
 async def test_ingest_dedup_check_respects_timeout(monkeypatch):
     monkeypatch.setenv("REDIS_OP_TIMEOUT_SECONDS", "0.05")
-    timeouts._cached_settings = None
+    timeouts.reset_for_test()
     from app.tools import _ingest_one
 
     with pytest.raises(OperationTimeout) as exc_info:
@@ -197,7 +197,7 @@ async def test_ingest_dedup_check_respects_timeout(monkeypatch):
 @pytest.mark.asyncio
 async def test_ingest_dedup_add_respects_timeout(monkeypatch):
     monkeypatch.setenv("REDIS_OP_TIMEOUT_SECONDS", "0.05")
-    timeouts._cached_settings = None
+    timeouts.reset_for_test()
 
     class _DedupePassRedis(_SlowRedis):
         """Fast on sismember (dedup passes), slow on sadd."""
@@ -225,7 +225,7 @@ async def test_ingest_dedup_add_respects_timeout(monkeypatch):
 @pytest.mark.asyncio
 async def test_ingest_dedup_expire_respects_timeout(monkeypatch):
     monkeypatch.setenv("REDIS_OP_TIMEOUT_SECONDS", "0.05")
-    timeouts._cached_settings = None
+    timeouts.reset_for_test()
 
     class _DedupeExpireSlowRedis(_SlowRedis):
         """Fast through sadd, slow on expire."""
@@ -256,7 +256,7 @@ async def test_ingest_dedup_expire_respects_timeout(monkeypatch):
 @pytest.mark.asyncio
 async def test_ingest_version_bump_respects_timeout(monkeypatch):
     monkeypatch.setenv("REDIS_OP_TIMEOUT_SECONDS", "0.05")
-    timeouts._cached_settings = None
+    timeouts.reset_for_test()
 
     class _VersionBumpSlowRedis(_SlowRedis):
         """Fast through sadd+expire, slow on incr."""

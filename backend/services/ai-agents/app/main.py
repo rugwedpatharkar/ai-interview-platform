@@ -2,14 +2,15 @@ import asyncio
 
 import uvicorn
 from lib.logging import configure_logging, get_logger
+from lib.mcp_auth import bearer_headers
 from lib.observability import init_tracing, start_metrics_server
 from lib.rabbitmq import Consumer, Publisher
-from lib.redis import create_redis
+from lib.redis import RateLimiter, create_redis
 from lib.security import TokenService
 from lib.web import CorrelationIdMiddleware
 
 from app.config import get_settings
-from app.infra.factory import get_llm, get_scoring_llm
+from app.infra.factory import assert_llm_configured, get_llm, get_scoring_llm
 from app.infra.mcp_capability import McpCapability
 from app.infra.mcp_data import McpDataGateway
 from app.infra.mcp_session import McpSessionManager
@@ -18,6 +19,7 @@ from app.infra.sessions import RedisInterviewStore
 from app.resources.interview_host import abandon_stale
 from app.routes.web import create_grpc_app
 from app.routes.worker import EVENTS, make_dispatch
+from lib import timeouts
 
 log = get_logger(component="ai_agents.server")
 
@@ -50,22 +52,53 @@ def _dispatcher(grpc_app, health):
     return dispatch
 
 
-async def _health_app(scope, receive, send):
-    """Liveness probe: GET /health -> 200, anything else -> 404."""
-    ok = scope["type"] == "http" and scope.get("path") == "/health"
-    await send(
-        {
-            "type": "http.response.start",
-            "status": 200 if ok else 404,
-            "headers": [(b"content-type", b"text/plain")],
-        }
-    )
-    await send({"type": "http.response.body", "body": b"ok" if ok else b""})
+def _make_health_app(*, redis, data_manager):
+    """Return an ASGI app that handles /health (liveness) and /readyz (readiness).
+
+    /health is a static 200; /readyz pings Redis + the MCP session so a warming or
+    degraded container gets pulled from rotation without also being killed.
+    """
+
+    async def _respond(send, status, body):
+        await send(
+            {
+                "type": "http.response.start",
+                "status": status,
+                "headers": [(b"content-type", b"text/plain")],
+            }
+        )
+        await send({"type": "http.response.body", "body": body})
+
+    async def health_app(scope, receive, send):
+        if scope["type"] != "http":
+            await _respond(send, 404, b"")
+            return
+        path = scope.get("path")
+        if path == "/health":
+            await _respond(send, 200, b"ok")
+            return
+        if path == "/readyz":
+            try:
+                await asyncio.wait_for(redis.ping(), timeout=0.5)
+                # McpSessionManager exposes an active session once .start() completed.
+                if data_manager._session is None:
+                    raise RuntimeError("mcp-data session not initialised")
+            except Exception as exc:
+                log.warning("readyz: dep check failed: {}", exc)
+                await _respond(send, 503, b"not ready")
+                return
+            await _respond(send, 200, b"ready")
+            return
+        await _respond(send, 404, b"")
+
+    return health_app
 
 
 async def serve() -> None:
     s = get_settings()
     configure_logging(s.service_name, s.log_level)
+    # Fail-closed on missing LLM key in prod (dev logs a warning + continues).
+    assert_llm_configured(s)
     if s.otlp_endpoint:
         from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
             OTLPSpanExporter,
@@ -94,8 +127,17 @@ async def serve() -> None:
     # Data + document parsing come from the MCP servers (mcp-data, mcp-capability).
     # McpSessionManager owns the streamablehttp_client lifecycle and self-heals on
     # transport drops — an mcp-data/mcp-capability restart no longer crashes us.
-    data_manager = McpSessionManager(s.mcp_data_url)
-    cap_manager = McpSessionManager(s.mcp_capability_url)
+    # `call_timeout_s` prevents a hung MCP server from stalling gRPC RPCs up to the
+    # 300 s outer deadline; default is now `timeouts.mcp_call()` (20 s per lib.config).
+    # `headers=bearer_headers(...)` authenticates against the MCP bearer middleware —
+    # empty secret returns None (dev mode, middleware not attached on either side).
+    auth = bearer_headers(s.mcp_shared_secret)
+    data_manager = McpSessionManager(
+        s.mcp_data_url, call_timeout_s=timeouts.mcp_call(), headers=auth
+    )
+    cap_manager = McpSessionManager(
+        s.mcp_capability_url, call_timeout_s=timeouts.mcp_call(), headers=auth
+    )
     await data_manager.start()
     await cap_manager.start()
     data = McpDataGateway(data_manager)
@@ -134,6 +176,7 @@ async def serve() -> None:
         "practice_sessions": practice_store,
         "publisher": publisher,
         "llm": llm,
+        "limiter": RateLimiter(redis),
         "settings": s,
     }
     # Application traffic is gRPC-web (interview/chat/jd/practice/proctor/rtc) on
@@ -146,7 +189,9 @@ async def serve() -> None:
             timeout_seconds=s.grpc_timeout_seconds,
         )
     )
-    api = _dispatcher(grpc_app, _health_app)
+    api = _dispatcher(
+        grpc_app, _make_health_app(redis=redis, data_manager=data_manager)
+    )
     config = uvicorn.Config(
         api,
         host=s.http_host,

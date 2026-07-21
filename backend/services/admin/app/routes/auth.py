@@ -292,6 +292,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                     refresh_ttl_seconds=self._refresh_ttl,
                     ip=_client_ip(context, self._trusted_proxy),
                     user_agent=_user_agent(context),
+                    limiter=self._limiter,
                 )
                 return auth_pb2.TokenResponse(
                     access_token=out["access_token"],
@@ -311,18 +312,16 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
     async def InviteRecruiter(self, request, context):
         _grpc_total.labels(method="InviteRecruiter").inc()
-        token = _bearer_from_metadata(context)
-        if token is None:
-            log.warning("auth.InviteRecruiter: missing bearer token")
-            _grpc_errors.labels(method="InviteRecruiter").inc()
-            await context.abort(grpc.StatusCode.UNAUTHENTICATED, "Not authenticated")
+        # caller_identity aborts UNAUTHENTICATED on missing/invalid/expired token (the
+        # FE gRPC-web client refreshes on 401; INVALID_ARGUMENT wouldn't trigger that).
+        caller = await caller_identity(context, self._tokens)
         async with (
             log_context(log, "auth.InviteRecruiter"),
             span("auth.InviteRecruiter"),
         ):
             try:
                 out = await auth_res.invite_recruiter(
-                    token,
+                    caller,
                     request.email,
                     request.password,
                     users=self._users,
@@ -338,14 +337,19 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
     async def ForgotPassword(self, request, context):
         _grpc_total.labels(method="ForgotPassword").inc()
         async with log_context(log, "auth.ForgotPassword"):
-            out = await auth_res.forgot_password(
-                request.email,
-                users=self._users,
-                tokens=self._tokens,
-                notifier=self._notifier,
-                nonces=self._nonces,
-            )
-            return auth_pb2.OkResponse(ok=out["ok"])
+            try:
+                out = await auth_res.forgot_password(
+                    request.email,
+                    users=self._users,
+                    tokens=self._tokens,
+                    notifier=self._notifier,
+                    nonces=self._nonces,
+                    limiter=self._limiter,
+                    ip=_client_ip(context, self._trusted_proxy),
+                )
+                return auth_pb2.OkResponse(ok=out["ok"])
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "ForgotPassword")
 
     async def ResetPassword(self, request, context):
         _grpc_total.labels(method="ResetPassword").inc()
@@ -359,6 +363,8 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                     sessions=self._sessions,
                     nonces=self._nonces,
                     audit=self._audit,
+                    limiter=self._limiter,
+                    ip=_client_ip(context, self._trusted_proxy),
                 )
                 return auth_pb2.OkResponse(ok=out["ok"])
             except AuthDomainError as exc:

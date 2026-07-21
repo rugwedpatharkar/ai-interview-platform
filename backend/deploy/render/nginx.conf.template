@@ -1,15 +1,27 @@
 # nginx reverse proxy for the consolidated backend on Render.
 # ONE public port ($PORT, injected by Render) fronts both browser-facing services:
-#   /agents/*  → ai-agents (interview chat/jd/practice HTTP + SSE)
-#   /*         → admin     (gRPC-web: auth, jobs, applications, decisions, …)
+#   /agents/*        → ai-agents (interview chat/jd/practice HTTP + SSE)
+#   /agents/health   → explicit health probe on ai-agents (Render/monitors)
+#   /*               → admin     (gRPC-web: auth, jobs, applications, decisions, …)
 # Only ${PORT} is substituted at boot (entrypoint runs `envsubst '${PORT}'`); every
 # other $var below is a literal nginx variable and must survive substitution.
 server {
     listen ${PORT};
     server_name _;
 
-    # Branding logo / résumé uploads ride through here; match admin's own ceiling.
-    client_max_body_size 25M;
+    # Match admin's grpc_max_message_bytes (4 MiB). Was 25M; a 5–25 MB request would
+    # pass nginx but the app cap would reject it as RESOURCE_EXHAUSTED — two caps in
+    # two places is the classic misconfig, unify at the smaller value.
+    client_max_body_size 4M;
+
+    # Explicit health path for ai-agents so external monitors and future Render blueprint
+    # updates can distinguish an ai-agents outage from an admin outage — /healthz on
+    # admin is still what Render itself is configured to probe today.
+    location = /agents/health {
+        proxy_pass http://127.0.0.1:8081/health;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
 
     # ai-agents — rewrite /agents/foo → /foo on the upstream (note trailing slashes).
     location /agents/ {

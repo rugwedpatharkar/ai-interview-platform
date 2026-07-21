@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from lib.config import BaseServiceSettings
+from lib.timeouts import register_settings_provider
 from pydantic import Field, field_validator
 
 _OAUTH_REQUIRED_KEYS = {
@@ -56,6 +57,14 @@ class Settings(BaseServiceSettings):
     aptitude_expiry_hours: int = 24  # abandoned aptitude tests expire after this
     scheduler_interval_seconds: int = 3600  # how often the liveness reapers run
     recommend_fanout_limit: int = 20  # max jobs a parsed profile fans match.run out to
+    # SMTP for outbound email (verification links, password reset). Prod refuses to
+    # boot without these (infra/notifier.py::make_notifier); dev falls back to
+    # LoggingNotifier and logs a warning so the docker-compose default just works.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_pass: str = ""
+    smtp_from: str = ""
     # SSO (OAuth) — provider config map + the SPA callback URL. Empty until creds exist.
     oauth_providers: dict = Field(default_factory=dict)
     oauth_frontend_redirect: str = "http://localhost:3000/auth/callback"
@@ -76,3 +85,9 @@ class Settings(BaseServiceSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+# Point lib.timeouts accessors at this service's settings so per-service overrides and
+# env vars actually reach mongo()/redis()/... — previously they hit a bare
+# BaseServiceSettings() and every subclass override silently no-op'd.
+register_settings_provider(get_settings)

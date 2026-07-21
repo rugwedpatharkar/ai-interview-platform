@@ -65,10 +65,13 @@ def _adapt_prompt(jd_text, profile, plan_competencies, time_budget_min):
     )
 
 
-# Cap the LLM-chosen budget so a pathological value can't strand an interview past its
-# Redis session TTL (which tracks this budget) or create a multi-day key. 3h is well
-# beyond any real interview.
-_MAX_BUDGET_MIN = 180
+# Cap the LLM-chosen budget so a pathological value (JD injection, model hallucination)
+# can't strand an interview past its Redis session TTL. Reading from settings so a
+# per-env override can lower it (default 60 min) without a code deploy.
+def _max_budget_min() -> int:
+    from app.config import get_settings
+
+    return get_settings().max_interview_budget_min
 
 
 def _validate(blueprint):
@@ -76,7 +79,7 @@ def _validate(blueprint):
         raise ValueError("blueprint has no competencies")
     if blueprint.time_budget_min <= 0:
         raise ValueError("blueprint time budget must be positive")
-    blueprint.time_budget_min = min(blueprint.time_budget_min, _MAX_BUDGET_MIN)
+    blueprint.time_budget_min = min(blueprint.time_budget_min, _max_budget_min())
 
 
 async def build_job_question_plan(

@@ -37,6 +37,7 @@ def create_grpc_app(
             publisher=deps["publisher"],
             llm=deps["llm"],
             settings=deps["settings"],
+            limiter=deps.get("limiter"),
         ),
         app,
     )
@@ -47,6 +48,7 @@ def create_grpc_app(
             data=deps["data"],
             capability=deps["capability"],
             settings=deps["settings"],
+            limiter=deps.get("limiter"),
         ),
         app,
     )
@@ -60,6 +62,8 @@ def create_grpc_app(
             data=deps["data"],
             sessions=deps["practice_sessions"],
             llm=deps["llm"],
+            settings=deps["settings"],
+            limiter=deps.get("limiter"),
         ),
         app,
     )

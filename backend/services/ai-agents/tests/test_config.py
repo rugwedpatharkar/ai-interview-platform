@@ -21,3 +21,21 @@ def test_settings_cap_rejects_non_positive():
         Settings(max_chat_messages=-1)
     with pytest.raises(ValidationError):
         Settings(max_proctor_events=0)
+
+
+def test_livekit_sentinel_refused_in_prod():
+    # The dev-default LiveKit secret from docker-compose.yml must not reach prod: anyone
+    # with it can mint a valid join token for any interview room.
+    with pytest.raises(ValidationError):
+        Settings(
+            environment="prod",
+            livekit_api_secret="devsecret_change_me_min_32_chars_long",
+        )
+
+
+def test_livekit_sentinel_allowed_in_dev():
+    s = Settings(
+        environment="dev",
+        livekit_api_secret="devsecret_change_me_min_32_chars_long",
+    )
+    assert s.livekit_api_secret == "devsecret_change_me_min_32_chars_long"

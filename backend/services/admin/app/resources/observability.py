@@ -27,9 +27,15 @@ def _redact(s: str) -> str:
     return _REDACT_RE.sub(r"\1=***", s)
 
 
+def _user_id(identity):
+    # `caller_identity` stores it as `id`; `_ANON_IDENTITY` uses `user_id`. Reading
+    # only one silently drops the user_id from every authenticated event.
+    return identity.get("id") or identity.get("user_id")
+
+
 def _scrub_identity(identity):
     return {
-        "user_id": identity.get("user_id"),
+        "user_id": _user_id(identity),
         "comp_id": identity.get("comp_id") or "",
         "role": identity.get("role"),
     }
@@ -39,7 +45,7 @@ async def record_client_error(events, *, errors_repo, dedup, identity):
     async with log_context(
         log,
         "resource.observability.record_client_error",
-        **bind_ids(comp_id=identity.get("comp_id"), user_id=identity.get("user_id")),
+        **bind_ids(comp_id=identity.get("comp_id"), user_id=_user_id(identity)),
     ):
         if not events:
             return []
@@ -74,7 +80,7 @@ async def record_client_event(events, *, events_repo, dedup, identity):
     async with log_context(
         log,
         "resource.observability.record_client_event",
-        **bind_ids(comp_id=identity.get("comp_id"), user_id=identity.get("user_id")),
+        **bind_ids(comp_id=identity.get("comp_id"), user_id=_user_id(identity)),
     ):
         if not events:
             return []

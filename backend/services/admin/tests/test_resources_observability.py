@@ -147,6 +147,20 @@ async def test_record_client_error_scrubs_caller_context():
 
 
 @pytest.mark.asyncio
+async def test_record_client_error_reads_id_key_from_real_caller_identity():
+    # `caller_identity` returns the shape produced by identity_from_token, which keys
+    # the user under `id` — not `user_id`. Reading only `user_id` used to silently
+    # drop the field for every authenticated event.
+    repo = _FakeRepo()
+    dedup = _FakeDedup()
+    identity = {"id": "u-real", "comp_id": "c1", "role": "candidate", "email": "e"}
+    await obs_res.record_client_error(
+        [_error_event("id-key-1")], errors_repo=repo, dedup=dedup, identity=identity
+    )
+    assert repo.docs[0]["user_id"] == "u-real"
+
+
+@pytest.mark.asyncio
 async def test_record_client_error_redacts_pii():
     repo = _FakeRepo()
     dedup = _FakeDedup()

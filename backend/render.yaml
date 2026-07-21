@@ -38,6 +38,12 @@ services:
         sync: false
       - key: CORS_ALLOW_ORIGIN    # your Vercel URL, e.g. https://aptura.vercel.app
         sync: false
+      # Shared bearer secret for the internal MCP endpoints (mcp-data, mcp-capability).
+      # `openssl rand -hex 32`. ai-agents sends it as `Authorization: Bearer <secret>`;
+      # the MCP servers refuse any request without a matching header. Belt-and-braces on
+      # top of the loopback-only routing in nginx.conf.template.
+      - key: MCP_SHARED_SECRET
+        sync: false
       # --- Object storage (Cloudflare R2, S3-compatible) ---
       - key: S3_ENDPOINT_URL      # https://<account-id>.r2.cloudflarestorage.com
         sync: false
@@ -49,7 +55,7 @@ services:
         value: interview-platform
       - key: S3_REGION
         value: auto
-      # --- Email (Resend SMTP; optional — without it, verify links only hit the logs) ---
+      # --- Email (Resend SMTP; required for verification / password reset emails) ---
       - key: SMTP_HOST
         value: smtp.resend.com
       - key: SMTP_PORT
@@ -59,4 +65,30 @@ services:
       - key: SMTP_PASS            # Resend API key
         sync: false
       - key: SMTP_FROM            # noreply@yourdomain.com (verified Resend sender)
+        sync: false
+      # --- Runtime posture ---
+      # Marks this as a production deployment. The lib.config sentinel validator refuses
+      # to start when a known dev-only secret (JWT_SECRET, LIVEKIT_API_SECRET) matches
+      # its docker-compose default — set this OR pay for it later.
+      - key: ENVIRONMENT
+        value: prod
+      # Trust the bundled nginx to set X-Forwarded-For; otherwise every request looks
+      # like 127.0.0.1 and per-IP rate limits collapse into a shared global limit.
+      - key: TRUSTED_PROXY
+        value: "1"
+      # OTLP collector endpoint (Grafana Cloud, Honeycomb, self-hosted otel-collector).
+      # Empty = InMemorySpanExporter (spans dropped). Set it to actually see traces.
+      - key: OTLP_ENDPOINT
+        sync: false
+      # Voice-mode interview via LiveKit + Groq. Off by default (~+90 MB memory + needs
+      # LIVEKIT_* + GROQ_API_KEY). Set to "1" to boot the voice-worker program.
+      - key: VOICE_ENABLED
+        value: "0"
+      - key: LIVEKIT_URL          # wss://... your LiveKit Cloud / self-hosted URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET   # >=32 chars; the dev sentinel is refused at boot
+        sync: false
+      - key: GROQ_API_KEY
         sync: false

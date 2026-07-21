@@ -1,6 +1,8 @@
 from functools import lru_cache
+from typing import ClassVar
 
 from lib.config import BaseServiceSettings
+from lib.timeouts import register_settings_provider
 from pydantic import Field, field_validator
 
 
@@ -9,6 +11,12 @@ class Settings(BaseServiceSettings):
 
     The LLM API key is a secret — supply it via env (GEMINI_API_KEY), never a default.
     """
+
+    # Base class's DEV_SENTINELS is auto-merged via MRO walk in the base validator; only
+    # list the service-specific sentinels here.
+    DEV_SENTINELS: ClassVar[dict[str, str]] = {
+        "livekit_api_secret": "devsecret_change_me_min_32_chars_long",
+    }
 
     service_name: str = "ai-agents"
     llm_provider: str = "gemini"
@@ -49,6 +57,15 @@ class Settings(BaseServiceSettings):
     default_aptitude_questions: int = Field(default=10, gt=0)
     max_chat_messages: int = Field(default=50, gt=0)
     max_proctor_events: int = Field(default=200, gt=0)
+    # Interview time-budget ceiling. Was hardcoded to 180 min in blueprint.py — a JD
+    # injection or model hallucination could steer to 3 h and hold a live Redis session
+    # + LiveKit room for the duration. Default 60 min; tune per deployment.
+    max_interview_budget_min: int = Field(default=60, gt=0)
+    # Per-user LLM rate limit. Applies to Chat, SubmitTurn, and SubmitPracticeTurn —
+    # bounds a compromised or misbehaving candidate token's Gemini spend. Default is
+    # 30 calls / 60 s / user; tune per deployment / model tier.
+    llm_user_limit: int = Field(default=30, gt=0)
+    llm_user_window_seconds: int = Field(default=60, gt=0)
 
     # Voice pipeline tuning — defaults match Phase-3 module constants so a
     # default-config run is byte-identical; override per-env via environment variables.
@@ -77,3 +94,9 @@ class Settings(BaseServiceSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+# Point lib.timeouts accessors at this service's settings so per-service overrides and
+# env vars actually reach mongo()/redis()/mcp_call()/... — previously they hit a bare
+# BaseServiceSettings() and every subclass override silently no-op'd.
+register_settings_provider(get_settings)

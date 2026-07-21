@@ -25,11 +25,27 @@ _MAX_ANSWER_CHARS = 32_000
 
 
 class PracticeServicer(practice_pb2_grpc.PracticeServiceServicer):
-    def __init__(self, *, tokens, data, sessions, llm):
+    def __init__(self, *, tokens, data, sessions, llm, settings=None, limiter=None):
         self._tokens = tokens
         self._data = data
         self._sessions = sessions
         self._llm = llm
+        self._settings = settings
+        self._limiter = limiter
+
+    async def _rate_limit(self, context, user_id):
+        if self._limiter is None or self._settings is None:
+            return
+        hit = await self._limiter.hit(
+            f"llm:user:{user_id}",
+            self._settings.llm_user_limit,
+            self._settings.llm_user_window_seconds,
+        )
+        if not hit.allowed:
+            await context.abort(
+                grpc.StatusCode.RESOURCE_EXHAUSTED,
+                f"llm rate limit exceeded; retry after {hit.retry_after}s",
+            )
 
     async def StartPractice(self, request, context):
         user_id = await caller_user_id(context, self._tokens)
@@ -51,6 +67,7 @@ class PracticeServicer(practice_pb2_grpc.PracticeServiceServicer):
 
     async def SubmitPracticeTurn(self, request, context):
         user_id = await caller_user_id(context, self._tokens)
+        await self._rate_limit(context, user_id)
         answer = request.answer
         if not answer.strip():
             await context.abort(

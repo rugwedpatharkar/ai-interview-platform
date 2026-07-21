@@ -47,7 +47,7 @@ def _session() -> InterviewSession:
 @pytest.mark.asyncio
 async def test_save_raises_operation_timeout(monkeypatch):
     monkeypatch.setenv("REDIS_OP_TIMEOUT_SECONDS", "0.05")
-    timeouts._cached_settings = None
+    timeouts.reset_for_test()
     store = RedisInterviewStore(_SlowRedis())
     with pytest.raises(OperationTimeout):
         await store.save(_session())
@@ -56,7 +56,7 @@ async def test_save_raises_operation_timeout(monkeypatch):
 @pytest.mark.asyncio
 async def test_get_raises_operation_timeout(monkeypatch):
     monkeypatch.setenv("REDIS_OP_TIMEOUT_SECONDS", "0.05")
-    timeouts._cached_settings = None
+    timeouts.reset_for_test()
     store = RedisInterviewStore(_SlowRedis())
     with pytest.raises(OperationTimeout):
         await store.get("app-1")
@@ -65,7 +65,7 @@ async def test_get_raises_operation_timeout(monkeypatch):
 @pytest.mark.asyncio
 async def test_list_in_progress_raises_operation_timeout(monkeypatch):
     monkeypatch.setenv("REDIS_OP_TIMEOUT_SECONDS", "0.05")
-    timeouts._cached_settings = None
+    timeouts.reset_for_test()
     store = RedisInterviewStore(_SlowRedis())
     with pytest.raises(OperationTimeout):
         await store.list_in_progress()

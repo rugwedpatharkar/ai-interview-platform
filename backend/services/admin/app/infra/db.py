@@ -48,8 +48,8 @@ INDEXES: list[IndexSpec] = [
     IndexSpec("interviews", "user_id"),
     IndexSpec("rubrics", "comp_id"),
     # proctoring_events written by ai-agents during the interview (append-only advisory
-    # signals); admin reads them comp-scoped for the recruiter integrity timeline.
-    IndexSpec("proctoring_events", "application_id"),
+    # signals); admin reads comp-scoped for the recruiter integrity timeline. Every
+    # reader includes comp_id, so the compound covers both single- and comp-scoped.
     IndexSpec("proctoring_events", [("comp_id", 1), ("application_id", 1)]),
     # BE-E: perf indexes for sweep queries and status filters.
     # aptitude_deliveries: list_stale filters on delivered_at.
@@ -94,8 +94,10 @@ INDEXES: list[IndexSpec] = [
         "saved_jobs", [("candidate_user_id", 1), ("job_id", 1)], {"unique": True}
     ),
     # audit_logs: entity+entity_id is the primary lookup pattern; comp_id backs scans.
+    # 365-day TTL bounds growth; widen the window if compliance requires more.
     IndexSpec("audit_logs", [("entity", 1), ("entity_id", 1)]),
     IndexSpec("audit_logs", "comp_id"),
+    IndexSpec("audit_logs", "at", {"expireAfterSeconds": 365 * 24 * 3600}),
     # practice_sessions written by ai-agents (detached candidate mock interviews). The
     # (user_id, created_at) index powers history + the erasure delete_by_user; the
     # unique (user_id, practice_id) backs single-run reads + the idempotent upsert.
@@ -116,14 +118,16 @@ INDEXES: list[IndexSpec] = [
     IndexSpec("interview_bookings", [("status", 1), ("chosen_start_at", 1)]),
     # team roster reads + the last-admin count (comp_id, role, status).
     IndexSpec("users", [("comp_id", 1), ("role", 1), ("status", 1)]),
-    # member_job_assignments (per-job seat scoping; enforcement deferred). Unique
-    # (user_id, job_id) makes an assignment idempotent; comp_id backs tenant scans.
+    # consents (GDPR consent ledger): every settings load + erasure looks up by user_id;
+    # was scanning the full collection until this index was added.
+    IndexSpec("consents", "user_id"),
+    # read_state (per-user thread read markers): the $max upsert races without unique
+    # on the natural key — docstring claimed unique but the index was never declared.
     IndexSpec(
-        "member_job_assignments",
-        [("user_id", 1), ("job_id", 1)],
+        "read_state",
+        [("user_id", 1), ("kind", 1), ("thread_id", 1)],
         {"unique": True},
     ),
-    IndexSpec("member_job_assignments", "comp_id"),
     # client_errors: FE unhandled exceptions — 30-day TTL; event_id for dedup lookups.
     IndexSpec("client_errors", "created_at", {"expireAfterSeconds": 30 * 24 * 3600}),
     IndexSpec("client_errors", "event_id"),

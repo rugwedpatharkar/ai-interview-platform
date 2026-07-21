@@ -15,7 +15,7 @@ from lib.web import CorrelationIdMiddleware
 from app.config import get_settings
 from app.errors import InvalidTransition, NotFoundError
 from app.infra.db import INDEXES
-from app.infra.notifier import LoggingNotifier, NotificationRequestPublisher
+from app.infra.notifier import NotificationRequestPublisher, make_notifier
 from app.infra.oauth import HttpOAuthClient
 from app.infra.repositories.applications import ApplicationRepository
 from app.infra.repositories.aptitude_attempts import AptitudeAttemptRepository
@@ -27,6 +27,7 @@ from app.infra.repositories.interview_bookings import InterviewBookingRepository
 from app.infra.repositories.jobs import JobRepository
 from app.infra.repositories.notifications import NotificationRepository
 from app.infra.repositories.users import UserRepository
+from app.infra.totp import FernetSecretBox
 from app.resources import funnel, recommend, scheduler
 from app.resources.notification import TransitionNotifier
 from app.routes.oauth import create_oauth_app
@@ -57,21 +58,40 @@ def _token_service(s):
     )
 
 
-async def _health(send):
-    """Unauthenticated liveness probe (no DB hit) for load balancers / uptime pings."""
+async def _http_response(send, status, body):
     await send(
         {
             "type": "http.response.start",
-            "status": 200,
+            "status": status,
             "headers": [(b"content-type", b"text/plain")],
         }
     )
-    await send({"type": "http.response.body", "body": b"ok"})
+    await send({"type": "http.response.body", "body": body})
 
 
-def _dispatcher(grpc_app, oauth_app, public_app):
-    """Path-prefix ASGI router: /healthz → 200, /auth/oauth/* → OAuth, /public/* → REST,
-    else gRPC-web.
+async def _health(send):
+    """Unauthenticated liveness probe (no DB hit) for load balancers / uptime pings."""
+    await _http_response(send, 200, b"ok")
+
+
+async def _readyz(send, *, mongo, redis):
+    """Readiness probe: ping Mongo + Redis under a short timeout. Returns 503 if any
+    dep is unreachable — separate from /healthz so the load balancer keeps traffic
+    off a warming or degraded container without also killing it.
+    """
+    try:
+        await asyncio.wait_for(mongo.ping(), timeout=0.5)
+        await asyncio.wait_for(redis.ping(), timeout=0.5)
+    except Exception as exc:
+        log.warning("readyz: dep check failed: {}", exc)
+        await _http_response(send, 503, b"not ready")
+        return
+    await _http_response(send, 200, b"ready")
+
+
+def _dispatcher(grpc_app, oauth_app, public_app, *, readyz):
+    """Path-prefix ASGI router: /healthz → 200, /readyz → dep-check, /auth/oauth/* →
+    OAuth, /public/* → REST, else gRPC-web.
 
     gRPC method paths are /admin.*; OAuth lives under /auth/oauth/ and the public
     marketplace under /public/, so the prefixes never collide.
@@ -81,6 +101,8 @@ def _dispatcher(grpc_app, oauth_app, public_app):
         path = scope.get("path", "")
         if scope["type"] == "http" and path == "/healthz":
             await _health(send)
+        elif scope["type"] == "http" and path == "/readyz":
+            await readyz(send)
         elif scope["type"] == "http" and path.startswith("/auth/oauth/"):
             await oauth_app(scope, receive, send)
         elif scope["type"] == "http" and path.startswith("/public/"):
@@ -124,7 +146,8 @@ async def serve() -> None:
     await publisher.connect()
     await ensure_indexes(mongo.db, INDEXES)
 
-    notifier = LoggingNotifier()
+    # SMTP in prod (fails startup if any SMTP_* missing); LoggingNotifier in dev.
+    notifier = make_notifier(s)
     transition_notifier = TransitionNotifier(
         users=UserRepository(mongo.db), notifier=notifier
     )
@@ -133,6 +156,9 @@ async def serve() -> None:
     notification_publisher = NotificationRequestPublisher(publisher)
 
     # Browser → gRPC-web (no proxy); the same servicers, registered onto an ASGI app.
+    # Build the TOTP secretbox from settings directly (not by reaching into
+    # TokenService's private attr) so key derivation has a single explicit source.
+    secretbox = FernetSecretBox(s.jwt_secret)
     grpc_app = create_web_app(
         db=mongo.db,
         redis=redis,
@@ -142,6 +168,7 @@ async def serve() -> None:
         notifier=notifier,
         notification_publisher=notification_publisher,
         refresh_ttl_seconds=s.refresh_token_minutes * 60,
+        secretbox=secretbox,
         allow_origin=s.cors_allow_origin,
         max_message_bytes=s.grpc_max_message_bytes,
         timeout_seconds=s.grpc_timeout_seconds,
@@ -191,7 +218,13 @@ async def serve() -> None:
     )
     # Bind a correlation_id per HTTP request (gRPC-web, OAuth, or public REST) so every
     # handler's logs + any events it publishes are traceable. Phase-4 corr-IDs.
-    app = CorrelationIdMiddleware(_dispatcher(grpc_app, oauth_app, public_app))
+
+    async def _readyz_bound(send):
+        await _readyz(send, mongo=mongo, redis=redis)
+
+    app = CorrelationIdMiddleware(
+        _dispatcher(grpc_app, oauth_app, public_app, readyz=_readyz_bound)
+    )
 
     # Funnel consumer: advance application state on funnel events (audit-logged).
     funnel_apps = ApplicationRepository(mongo.db)
