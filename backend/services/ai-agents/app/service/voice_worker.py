@@ -204,7 +204,13 @@ async def _run_session(
     claim_key = f"voice:agent:{application_id}"
     have_claim = True
     if redis is not None:
-        have_claim = bool(await redis.set(claim_key, worker_identity, nx=True, ex=7200))
+        have_claim = bool(
+            await with_timeout(
+                redis.set(claim_key, worker_identity, nx=True, ex=7200),
+                timeouts.redis(),
+                op="voice_worker.claim_set",
+            )
+        )
         if not have_claim:
             log.info(
                 "voice_worker: another replica owns application_id={} (skipping)",
@@ -279,7 +285,11 @@ async def _run_session(
             # Best-effort release; if a peer crash left it dangling, the 7200 s TTL
             # eventually reclaims it.
             try:
-                await redis.delete(claim_key)
+                await with_timeout(
+                    redis.delete(claim_key),
+                    timeouts.redis(),
+                    op="voice_worker.claim_release",
+                )
             except Exception as exc:
                 log.warning(
                     "voice_worker: failed to release claim {}: {}", claim_key, exc
