@@ -179,6 +179,7 @@ class SettingsServicer(settings_pb2_grpc.SettingsServiceServicer):
                 await settings_res.request_email_change(
                     ident["id"],
                     request.new_email,
+                    request.current_password,
                     users=self._users,
                     tokens=self._tokens,
                     notifier=self._notifier,

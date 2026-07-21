@@ -48,6 +48,9 @@ message ChangePasswordRequest {
 }
 message RequestEmailChangeRequest {
   string new_email = 1;
+  // Required: the caller's current password. A stolen access token alone must not
+  // be enough to move the account to an attacker-controlled inbox.
+  string current_password = 2;
 }
 message VerifyEmailChangeRequest {
   string token = 1;

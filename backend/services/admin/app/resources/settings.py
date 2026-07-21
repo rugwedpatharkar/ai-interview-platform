@@ -18,6 +18,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from app.errors import (
     ConflictError,
+    InvalidCredentialsError,
     InvalidTokenError,
     NotFoundError,
     RateLimitedError,
@@ -202,11 +203,23 @@ async def change_password(
 
 
 async def request_email_change(
-    user_id, new_email, *, users, tokens, notifier, nonces=None, audit=None
+    user_id,
+    new_email,
+    current_password,
+    *,
+    users,
+    tokens,
+    notifier,
+    nonces=None,
+    audit=None,
 ):
-    # Stage a new email + send a single-use confirm link to it. The address is only
-    # swapped in once VerifyEmailChange consumes the link (the new email is never
-    # trusted from the token — it's read back from the staged `pending_email`).
+    """Stage a new email + send a single-use confirm link to it. Requires the
+    current password (stolen access token alone is not enough). Also notifies the
+    OLD address so a compromised account can react.
+
+    The new address is only swapped in once VerifyEmailChange consumes the link
+    (the new email is never trusted from the token — it's read from `pending_email`).
+    """
     async with log_context(
         log, "resource.settings.request_email_change", **bind_ids(user_id=user_id)
     ):
@@ -215,6 +228,19 @@ async def request_email_change(
             TypeAdapter(EmailStr).validate_python(new_email)
         except PydanticValidationError as exc:
             raise ValidationError("invalid email address") from exc
+        user = await users.get(user_id)
+        if not user:
+            raise NotFoundError("User not found")
+        # SSO-only accounts have no password to challenge; refuse email change from
+        # this path (the OAuth provider already owns the email).
+        stored_hash = user.get("password_hash", "")
+        if not stored_hash:
+            raise InvalidCredentialsError(
+                "email change requires password login (SSO account)"
+            )
+        if not verify_password(current_password or "", stored_hash):
+            log.warning("email change denied: bad password for user_id={}", user_id)
+            raise InvalidCredentialsError("invalid password")
         if await users.get_by_email(new_email):
             raise ConflictError("Email already registered")
         await users.update_fields(user_id, {"pending_email": new_email})
@@ -225,6 +251,19 @@ async def request_email_change(
         await notifier.send_email(
             new_email, "Confirm your new email", f"/verify-email?token={token}"
         )
+        # Security alert to the CURRENT address: a compromised access token now
+        # can't silently move the account to an attacker-controlled inbox.
+        old_email = user.get("email")
+        if old_email:
+            try:
+                await notifier.send_email(
+                    old_email,
+                    "Someone requested an email change on your account",
+                    f"If this wasn't you, sign in and change your password now. "
+                    f"New address requested: {new_email}",
+                )
+            except Exception:
+                log.exception("email change: old-address notify failed for {}", user_id)
         if audit is not None:
             await audit.insert(
                 AuditLog(

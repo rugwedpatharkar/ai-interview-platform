@@ -318,11 +318,18 @@ async def test_change_password_without_sid_revokes_all():
 
 @pytest.mark.asyncio
 async def test_request_email_change_stages_pending_and_emails_new_address():
-    user = {"_id": "u1", "email": "old@b.co"}
+    from lib.security import hash_password
+
+    user = {
+        "_id": "u1",
+        "email": "old@b.co",
+        "password_hash": hash_password("realpw"),
+    }
     users, notifier, nonces = _UsersDb([user]), _FakeNotifier(), _FakeNonces()
     out = await settings.request_email_change(
         "u1",
         "New@B.co",
+        "realpw",
         users=users,
         tokens=_TOKENS,
         notifier=notifier,
@@ -331,19 +338,52 @@ async def test_request_email_change_stages_pending_and_emails_new_address():
     )
     assert out["ok"] is True
     assert user["pending_email"] == "new@b.co"  # normalized, staged
-    assert notifier.emails and notifier.emails[0][0] == "new@b.co"
-    assert "/verify-email?token=" in notifier.emails[0][2]
+    # Two emails now: confirm-link to NEW + security-alert to OLD.
+    recipients = {e[0] for e in notifier.emails}
+    assert recipients == {"new@b.co", "old@b.co"}
+    assert any("/verify-email?token=" in body for _, _, body in notifier.emails)
+
+
+@pytest.mark.asyncio
+async def test_request_email_change_rejects_bad_password():
+    from lib.security import hash_password
+
+    from app.errors import InvalidCredentialsError
+
+    users = _UsersDb(
+        [{"_id": "u1", "email": "old@b.co", "password_hash": hash_password("realpw")}]
+    )
+    with pytest.raises(InvalidCredentialsError):
+        await settings.request_email_change(
+            "u1",
+            "new@b.co",
+            "wrongpw",
+            users=users,
+            tokens=_TOKENS,
+            notifier=_FakeNotifier(),
+            nonces=_FakeNonces(),
+        )
 
 
 @pytest.mark.asyncio
 async def test_request_email_change_duplicate_rejected():
+    from lib.security import hash_password
+
     users = _UsersDb(
-        [{"_id": "u1", "email": "old@b.co"}, {"_id": "u2", "email": "taken@b.co"}]
+        [
+            {
+                "_id": "u1",
+                "email": "old@b.co",
+                "password_hash": hash_password("realpw"),
+            },
+            {"_id": "u2", "email": "taken@b.co"},
+        ]
     )
     with pytest.raises(ConflictError):
         await settings.request_email_change(
             "u1",
             "taken@b.co",
+            "realpw",
             users=users,
             tokens=_TOKENS,
             notifier=_FakeNotifier(),
