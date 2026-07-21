@@ -64,7 +64,11 @@ async def _call(client, base, method, request, token=None):
 
 
 async def _run(base: str) -> None:
-    email = "smoke@example.com"
+    # Per-run unique email so the smoke script can be run repeatedly against the
+    # same live stack without tripping the ALREADY_EXISTS gate on RegisterCompany.
+    import uuid
+
+    email = f"smoke+{uuid.uuid4().hex[:12]}@example.com"
     async with httpx.AsyncClient(timeout=10) as client:
         user = auth_pb2.UserResponse.FromString(
             await _call(
