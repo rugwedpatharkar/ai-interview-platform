@@ -96,7 +96,49 @@ class ApplicationRepository(BaseRepository[Application]):
         return result[0]["n"] if result else 0
 
     async def list_by_comp(self, comp_id: str) -> list[dict]:
+        # Analytics call sites moved to aggregate_state_counts / iter_by_comp so
+        # the 200-row find_capped no longer silently truncates KPIs. This one is
+        # kept for the small-cardinality callers (recruiter dashboards that page
+        # UI-first).
         return await self.find_capped({"comp_id": comp_id})
+
+    async def aggregate_state_counts(self, comp_id: str) -> dict:
+        """Server-side funnel roll-up: {states: [{state, count}], total, hired}.
+        Runs one $facet against Mongo — no row-by-row Python loop, no cap."""
+        pipeline = [
+            {"$match": {"comp_id": comp_id}},
+            {
+                "$facet": {
+                    "states": [
+                        {"$group": {"_id": "$state", "count": {"$sum": 1}}},
+                        {"$project": {"_id": 0, "state": "$_id", "count": 1}},
+                        {"$sort": {"state": 1}},
+                    ],
+                    "totals": [{"$count": "n"}],
+                    "hired": [
+                        {"$match": {"state": "hired"}},
+                        {"$count": "n"},
+                    ],
+                }
+            },
+        ]
+        result = await self.col.aggregate(pipeline).to_list(length=1)
+        if not result:
+            return {"states": [], "total": 0, "hired": 0}
+        r = result[0]
+        return {
+            "states": r.get("states", []),
+            "total": r["totals"][0]["n"] if r.get("totals") else 0,
+            "hired": r["hired"][0]["n"] if r.get("hired") else 0,
+        }
+
+    async def iter_by_comp(self, comp_id: str, *, projection: dict | None = None):
+        """Async iterator over every application in `comp_id` — unbounded and
+        projection-friendly so KPI callers pull only the fields they need without
+        the 200-row find_capped ceiling. Backed by the (comp_id, job_id) index."""
+        cursor = self.col.find({"comp_id": comp_id}, projection=projection)
+        async for doc in cursor:
+            yield doc
 
     async def list_by_state(self, state: str) -> list[dict]:
         return await self.find_capped({"state": state})

@@ -22,6 +22,22 @@ class _FakeApps:
     async def list_by_comp(self, comp_id):
         return [r for r in self._rows if r.get("comp_id") == comp_id]
 
+    async def aggregate_state_counts(self, comp_id):
+        matched = [r for r in self._rows if r.get("comp_id") == comp_id]
+        counts: dict[str, int] = {}
+        for r in matched:
+            counts[r.get("state", "")] = counts.get(r.get("state", ""), 0) + 1
+        return {
+            "states": [{"state": s, "count": c} for s, c in sorted(counts.items())],
+            "total": len(matched),
+            "hired": counts.get("hired", 0),
+        }
+
+    async def iter_by_comp(self, comp_id, *, projection=None):
+        for r in self._rows:
+            if r.get("comp_id") == comp_id:
+                yield r
+
 
 def _app(rows=None):
     grpc_app = GrpcWebASGI()

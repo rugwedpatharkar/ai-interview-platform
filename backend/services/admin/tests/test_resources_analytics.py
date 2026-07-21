@@ -18,6 +18,23 @@ class _FakeApps:
     async def list_by_comp(self, comp_id):
         return [r for r in self._rows if r.get("comp_id") == comp_id]
 
+    async def aggregate_state_counts(self, comp_id):
+        # Mirror the Mongo $facet: server-side state histogram + totals.
+        matched = [r for r in self._rows if r.get("comp_id") == comp_id]
+        counts: dict[str, int] = {}
+        for r in matched:
+            counts[r.get("state", "")] = counts.get(r.get("state", ""), 0) + 1
+        return {
+            "states": [{"state": s, "count": c} for s, c in sorted(counts.items())],
+            "total": len(matched),
+            "hired": counts.get("hired", 0),
+        }
+
+    async def iter_by_comp(self, comp_id, *, projection=None):
+        for r in self._rows:
+            if r.get("comp_id") == comp_id:
+                yield r
+
 
 @pytest.mark.asyncio
 async def test_funnel_counts_and_conversion():
@@ -46,6 +63,21 @@ async def test_empty_conversion_is_zero():
     out = await analytics.get_funnel_analytics(MGR, applications=_FakeApps([]))
     assert out["total"] == 0
     assert out["conversion_rate"] == 0.0
+
+
+@pytest.mark.asyncio
+async def test_funnel_does_not_truncate_above_prior_200_cap():
+    # C3: funnel used to run through list_by_comp -> find_capped(200), so a
+    # tenant with 5k applications saw a silently truncated conversion rate.
+    # This test seeds > cap rows to prove the server-side aggregate returns
+    # the true total.
+    rows = [{"comp_id": "c1", "state": "applied"} for _ in range(4995)]
+    rows += [{"comp_id": "c1", "state": "hired"} for _ in range(5)]
+    out = await analytics.get_funnel_analytics(MGR, applications=_FakeApps(rows))
+    assert out["total"] == 5000
+    counts = {s["state"]: s["count"] for s in out["states"]}
+    assert counts == {"applied": 4995, "hired": 5}
+    assert out["conversion_rate"] == 5 / 5000
 
 
 class _FakeReports:
