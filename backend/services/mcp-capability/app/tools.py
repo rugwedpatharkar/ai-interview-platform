@@ -28,6 +28,19 @@ log = get_logger(component="mcp_capability.tools")
 _CACHE_TTL_SECONDS = 3600
 _MAX_K = 50  # ceiling on kb_search k so a caller can't request an unbounded result set
 _SEEN_TTL_SECONDS = 2592000  # 30 days; bounds the dedup set without churning re-embeds
+_EMBED_BATCH_SIZE = 100  # cap Gemini aembed_documents chunks per call — a large PDF
+# used to submit hundreds of chunks in one request and fail the entire ingest
+
+
+async def _embed_batched(embedder, texts):
+    """Call ``embedder.embed`` in fixed-size batches so a large source can't exceed
+    the provider's per-request token/count limit and blow up the whole ingest."""
+    out = []
+    for i in range(0, len(texts), _EMBED_BATCH_SIZE):
+        chunk = texts[i : i + _EMBED_BATCH_SIZE]
+        out.extend(await embedder.embed(chunk))
+    return out
+
 
 # ---------------------------------------------------------------------------
 # Prometheus metrics — defined at module level (safe to import repeatedly)
@@ -219,7 +232,7 @@ async def _ingest_one(owner, source, *, fetcher, embedder, store, redis):
             )
         if not texts:
             return 0, skipped
-        vectors = await embedder.embed(texts)
+        vectors = await _embed_batched(embedder, texts)
         await store.upsert(collection, ids, vectors, payloads)
         for payload in payloads:
             await with_timeout(
