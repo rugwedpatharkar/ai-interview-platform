@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>Aptura — Get seen. Get interviewed. Get hired.</title>
+
+<!-- Fonts: Bricolage Grotesque (display, characterful) · Hanken Grotesk (body/UI) · Geist Mono (small data labels). -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist+Mono:wght@400;500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<!-- Set .js synchronously so scroll-reveal pre-states never flash for JS-off users. -->
+<script>document.documentElement.classList.add('js');</script>
+
+<style>
+/* ==========================================================================
+   APTURA · Direction D3 — "Merit"
+   Light-first, warm human premium. Near-neutral cool off-white body; the
+   warmth is COMMITTED in ONE amber-clay accent + the type — never a cream bg.
+   Two branded islands break the light body: an amber "Merit, made visible"
+   panel and one deep-ink "Built to be trusted" authority band.
+   Bricolage Grotesque (display) · Hanken Grotesk (body) · Geist Mono (labels).
+   Lead theme: LIGHT.
+   ========================================================================== */
+
+/* ---- LIGHT (lead) ---- */
+:root, [data-theme="light"]{
+  --bg:            oklch(0.985 0.004 250);
+  --surface:       oklch(1 0 0);
+  --surface-2:     oklch(0.97 0.005 250);
+  --ink:           oklch(0.20 0.010 260);
+  --ink-2:         oklch(0.44 0.012 260);
+  --ink-3:         oklch(0.56 0.012 260);
+  --line:          oklch(0.90 0.006 255);
+  --line-2:        oklch(0.83 0.008 255);
+  --accent:        oklch(0.68 0.13 58);
+  --accent-strong: oklch(0.60 0.13 55);
+  --accent-ink:    oklch(0.99 0.02 80);
+  --accent-soft:   oklch(0.68 0.13 58 / 0.12);
+  --ink-band:      oklch(0.205 0.012 262);
+  /* text-safe amber (deeper than accent-strong → clears 4.5:1 at body size on paper) */
+  --accent-text:   oklch(0.52 0.13 50);
+  /* CTA fill tuned so near-white ink clears 4.5:1 on light */
+  --cta-bg:        oklch(0.555 0.135 52);
+  --cta-bg-hover:  oklch(0.50 0.135 50);
+  --cta-ink:       oklch(0.99 0.02 85);
+  --ph:            oklch(0.50 0.012 260);
+  --nav-bg:        oklch(0.985 0.004 250 / 0.86);
+  --glow:          oklch(0.68 0.13 58 / 0.20);
+  --shadow-sm: 0 1px 2px oklch(0.30 0.03 60 / 0.05), 0 3px 10px oklch(0.30 0.03 60 / 0.05);
+  --shadow-md: 0 4px 14px oklch(0.30 0.03 60 / 0.07), 0 16px 40px -12px oklch(0.30 0.03 60 / 0.12);
+  --shadow-cta: 0 6px 18px -4px oklch(0.55 0.13 52 / 0.42);
+  color-scheme: light;
+}
+/* ---- DARK — warm charcoal, deliberately warmer than a cyber-dark ---- */
+[data-theme="dark"]{
+  --bg:            oklch(0.20 0.012 60);
+  --surface:       oklch(0.24 0.014 60);
+  --surface-2:     oklch(0.285 0.016 60);
+  --ink:           oklch(0.97 0.008 70);
+  --ink-2:         oklch(0.76 0.020 65);
+  --ink-3:         oklch(0.62 0.018 65);
+  --line:          oklch(0.33 0.016 60);
+  --line-2:        oklch(0.41 0.018 60);
+  --accent:        oklch(0.78 0.13 62);
+  --accent-strong: oklch(0.82 0.12 65);
+  --accent-ink:    oklch(0.20 0.05 60);
+  --accent-soft:   oklch(0.78 0.13 62 / 0.16);
+  --ink-band:      oklch(0.15 0.012 60);
+  --accent-text:   oklch(0.82 0.12 65);
+  --cta-bg:        oklch(0.78 0.13 62);
+  --cta-bg-hover:  oklch(0.82 0.12 65);
+  --cta-ink:       oklch(0.20 0.05 60);
+  --ph:            oklch(0.70 0.018 65);
+  --nav-bg:        oklch(0.20 0.012 60 / 0.86);
+  --glow:          oklch(0.78 0.13 62 / 0.18);
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.30), 0 3px 10px oklch(0 0 0 / 0.28);
+  --shadow-md: 0 6px 18px oklch(0 0 0 / 0.38), 0 22px 50px -16px oklch(0 0 0 / 0.5);
+  --shadow-cta: 0 6px 20px -4px oklch(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+/* ---- Branded islands (theme-independent so contrast is guaranteed in both) ---- */
+:root{
+  --merit-bg:      oklch(0.50 0.128 50);
+  --merit-bg-2:    oklch(0.435 0.115 45);
+  --merit-ink:     oklch(0.99 0.015 82);
+  --merit-ink-2:   oklch(0.93 0.030 80);
+  --merit-line:    oklch(1 0 0 / 0.22);
+  --merit-card:    oklch(0.995 0.004 90);
+  --merit-card-ink: oklch(0.24 0.010 55);
+  --merit-card-ink-2: oklch(0.45 0.012 55);
+  --merit-accent:  oklch(0.74 0.14 62);       /* bright amber for marks on the clay panel */
+
+  --band-ink:      oklch(0.965 0.006 250);
+  --band-ink-2:    oklch(0.75 0.012 255);
+  --band-line:     oklch(1 0 0 / 0.14);
+  --band-surface:  oklch(1 0 0 / 0.05);
+  --band-accent:   oklch(0.80 0.13 62);
+
+  /* Type scale — fluid, ≥1.25 step */
+  --fs-mono:  0.775rem;
+  --fs-body:  1.0625rem;                                    /* 17px */
+  --fs-lead:  clamp(1.16rem, 1.02rem + 0.62vw, 1.42rem);
+  --fs-h3:    clamp(1.24rem, 1.06rem + 0.7vw, 1.58rem);
+  --fs-h2:    clamp(1.98rem, 1.34rem + 2.6vw, 3.2rem);
+  --fs-h1:    clamp(2.65rem, 1.35rem + 5.9vw, 5rem);
+
+  --maxw: 1160px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);          /* ease-out quart */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);       /* ease-out expo  */
+  --radius: 18px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:var(--fs-body); line-height:1.62; font-weight:400;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  overflow-x:hidden; min-height:100vh;
+}
+
+/* Typography helpers */
+.display{ font-family:"Bricolage Grotesque","Hanken Grotesk", sans-serif; font-weight:800;
+  letter-spacing:-0.045em; line-height:1.0; text-wrap:balance; }
+.head{ font-family:"Bricolage Grotesque", sans-serif; font-weight:700; letter-spacing:-0.032em;
+  line-height:1.08; text-wrap:balance; }
+.mono{ font-family:"Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-variant-numeric:tabular-nums; letter-spacing:0.01em; }
+p{ text-wrap:pretty; }
+a{ color:inherit; text-decoration:none; }
+img,svg{ display:block; max-width:100%; }
+h1,h2,h3{ overflow-wrap:break-word; }
+
+.wrap{ width:min(100% - 2.5rem, var(--maxw)); margin-inline:auto; position:relative; }
+
+.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+.skip{ position:absolute; left:-999px; top:0; z-index:100; background:var(--cta-bg); color:var(--cta-ink);
+  padding:.7rem 1rem; border-radius:0 0 var(--radius-sm) 0; font-weight:600; }
+.skip:focus{ left:0; }
+
+:focus-visible{ outline:2.5px solid var(--accent-strong); outline-offset:3px; border-radius:5px; }
+
+/* ---- Buttons ---- */
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  font-family:"Hanken Grotesk",sans-serif; font-weight:600; font-size:1rem; line-height:1;
+  min-height:46px; padding:0 1.3rem; border-radius:var(--radius-sm); border:1.5px solid transparent;
+  cursor:pointer; white-space:nowrap;
+  transition:transform .24s var(--ease), box-shadow .24s var(--ease),
+    background-color .24s var(--ease), border-color .24s var(--ease), color .24s var(--ease); }
+.btn:active{ transform:translateY(1px); }
+.btn--accent{ background:var(--cta-bg); color:var(--cta-ink); box-shadow:var(--shadow-cta); }
+.btn--accent:hover{ background:var(--cta-bg-hover); transform:translateY(-1px);
+  box-shadow:0 10px 24px -6px oklch(0.55 0.13 52 / 0.5); }
+[data-theme="dark"] .btn--accent:hover{ box-shadow:0 10px 26px -6px oklch(0 0 0 / 0.55); }
+.btn--ink{ background:var(--ink); color:var(--bg); }
+.btn--ink:hover{ transform:translateY(-1px); box-shadow:var(--shadow-md); }
+.btn--ghost{ background:var(--surface); color:var(--ink); border-color:var(--line-2); }
+.btn--ghost:hover{ border-color:var(--ink-3); background:var(--surface-2); transform:translateY(-1px); }
+.btn--lg{ min-height:52px; padding-inline:1.7rem; font-size:1.05rem; }
+.btn--block{ width:100%; }
+
+/* ============================ NAV ============================ */
+header.nav{ position:sticky; top:0; z-index:50; background:var(--nav-bg);
+  backdrop-filter:saturate(140%) blur(10px); -webkit-backdrop-filter:saturate(140%) blur(10px);
+  border-bottom:1px solid transparent; transition:border-color .3s var(--ease), box-shadow .3s var(--ease); }
+header.nav.scrolled{ border-bottom-color:var(--line); box-shadow:0 1px 0 var(--line), var(--shadow-sm); }
+.nav-in{ display:flex; align-items:center; gap:1.5rem; height:70px; }
+.brand{ display:flex; align-items:center; gap:.6rem; color:var(--ink); }
+.brand .mark{ color:var(--accent-strong); display:flex; }
+.brand b{ font-family:"Bricolage Grotesque",sans-serif; font-weight:700; font-size:1.24rem; letter-spacing:-0.03em; }
+.nav-links{ display:flex; align-items:center; gap:1.7rem; margin-left:auto; }
+.nav-links a{ color:var(--ink-2); font-weight:500; font-size:0.97rem; transition:color .2s var(--ease); }
+.nav-links a:hover{ color:var(--ink); }
+.nav-cta{ display:flex; align-items:center; gap:.65rem; }
+.toggle{ display:inline-grid; place-items:center; width:46px; height:46px; border-radius:var(--radius-sm);
+  border:1.5px solid var(--line-2); background:var(--surface); color:var(--ink-2); cursor:pointer;
+  transition:color .2s var(--ease), border-color .2s var(--ease), background-color .2s var(--ease); }
+.toggle:hover{ color:var(--ink); border-color:var(--ink-3); }
+.toggle svg{ width:19px; height:19px; }
+[data-theme="dark"] .icon-moon{ display:none; }
+[data-theme="light"] .icon-sun{ display:none; }
+@media (max-width:820px){ .nav-links a:not(.nav-signin){ display:none; } }
+@media (max-width:520px){ .nav-links{ gap:1.1rem; } .brand b{ font-size:1.12rem; } .nav-signin{ display:none; } }
+
+/* ============================ HERO ============================ */
+.hero{ padding-block: clamp(2.6rem, 5vw, 5rem) clamp(3rem, 6vw, 5.5rem); }
+.hero-grid{ display:grid; grid-template-columns:1.06fr 0.94fr; gap:clamp(2rem,4.5vw,4.2rem); align-items:center; }
+
+.eyebrow{ display:inline-flex; align-items:center; gap:.6rem; padding:.42rem .85rem;
+  border:1px solid var(--line-2); border-radius:100px; background:var(--surface);
+  font-family:"Geist Mono",monospace; font-size:0.72rem; font-weight:500; letter-spacing:0.14em;
+  text-transform:uppercase; color:var(--ink-2); box-shadow:var(--shadow-sm); }
+.eyebrow .sd{ width:7px; height:7px; border-radius:50%; background:var(--accent); flex:0 0 auto; }
+
+h1.hero-h1{ font-size:var(--fs-h1); margin-top:1.5rem; color:var(--ink); }
+/* Drawn accent mark under key words (SVG so it can animate in) */
+.uline{ position:relative; display:inline-block; white-space:nowrap; }
+.uline .uline-svg{ position:absolute; left:-2%; bottom:-0.16em; width:104%; height:0.34em; overflow:visible; }
+.uline .uline-svg path{ fill:none; stroke:var(--accent); stroke-width:9; stroke-linecap:round; }
+
+.hero-lede{ font-size:var(--fs-lead); color:var(--ink-2); margin-top:1.5rem; max-width:36ch; line-height:1.5; }
+
+/* Role fork (tabs) — warm accent on the active role */
+.fork{ display:inline-flex; margin-top:2rem; padding:5px; border:1px solid var(--line-2);
+  border-radius:14px; background:var(--surface-2); gap:4px; }
+.fork button{ font-family:"Hanken Grotesk",sans-serif; font-size:0.94rem; font-weight:600;
+  color:var(--ink-2); background:transparent; border:0; cursor:pointer; padding:.62rem 1.05rem;
+  min-height:44px; border-radius:9px; transition:color .22s var(--ease), background-color .22s var(--ease),
+    box-shadow .22s var(--ease); }
+.fork button[aria-selected="true"]{ background:var(--cta-bg); color:var(--cta-ink); box-shadow:var(--shadow-cta); }
+.fork button:hover[aria-selected="false"]{ color:var(--ink); }
+
+/* Search — warm elevated instrument card */
+.search{ margin-top:1.1rem; display:grid; grid-template-columns:1fr 1fr auto; gap:0;
+  border:1px solid var(--line-2); border-radius:16px; background:var(--surface);
+  overflow:hidden; max-width:580px; box-shadow:var(--shadow-md); }
+.search .field{ display:flex; flex-direction:column; justify-content:center; padding:.7rem 1.05rem;
+  border-right:1px solid var(--line); min-width:0; }
+.search .field label{ font-family:"Geist Mono",monospace; font-size:0.63rem; letter-spacing:0.12em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:2px; }
+.search .field:focus-within label{ color:var(--accent-text); }
+.search input{ border:0; background:transparent; color:var(--ink); font-family:inherit; font-size:1rem;
+  width:100%; padding:.12rem 0; min-width:0; }
+.search input::placeholder{ color:var(--ph); opacity:1; }
+.search input:focus{ outline:none; }
+.search .search-go{ border-radius:0; min-height:auto; align-self:stretch; padding-inline:1.5rem; }
+
+.fork-help{ margin-top:.85rem; font-size:0.92rem; color:var(--ink-2); display:flex; align-items:center; gap:.5rem; }
+.fork-help .sd{ width:7px; height:7px; border-radius:50%; background:var(--accent); flex:0 0 auto; }
+
+/* Trust pills */
+.pills{ list-style:none; display:flex; flex-wrap:wrap; gap:.6rem; margin-top:1.7rem; }
+.pills li{ display:inline-flex; align-items:center; gap:.5rem; padding:.5rem .85rem;
+  border:1px solid var(--line); border-radius:100px; background:var(--surface);
+  font-size:0.88rem; color:var(--ink-2); box-shadow:var(--shadow-sm); }
+.pills .tick{ width:15px; height:15px; color:var(--accent-strong); flex:0 0 auto; }
+
+/* ---- Hero visual: warm merit gauge + aperture bloom ---- */
+.merit-visual{ position:relative; display:flex; justify-content:center; }
+.merit-visual::before{ content:""; position:absolute; inset:6% 4%; border-radius:50%; z-index:0;
+  background:radial-gradient(circle at 50% 42%, var(--glow), transparent 66%); filter:blur(6px); }
+.merit-svg{ position:relative; z-index:1; width:min(100%, 470px); height:auto; }
+.merit-svg .track{ stroke:var(--line-2); }
+.merit-svg .gauge-fill{ stroke:var(--accent); stroke-linecap:round; }
+.merit-svg .fring{ stroke:var(--line); fill:none; }
+.merit-svg .ap-rim{ fill:var(--surface); stroke:var(--ink); }
+.merit-svg .ap-blade{ stroke:var(--ink); }
+.merit-svg .ap-core{ fill:var(--accent); }
+.merit-svg .tickm{ stroke:var(--ink-3); }
+.merit-svg .seal-bg{ fill:var(--surface); stroke:var(--line-2); }
+.merit-svg .seal-badge{ fill:var(--accent-strong); }
+.merit-svg .seal-check{ stroke:var(--accent-ink); }
+.merit-svg .seal-txt{ fill:var(--ink); font-family:"Geist Mono",monospace; font-weight:500;
+  font-size:12px; letter-spacing:0.14em; }
+.merit-svg .cap-txt{ fill:var(--ink-3); font-family:"Geist Mono",monospace;
+  font-size:11.5px; letter-spacing:0.18em; }
+.merit-svg .cap-num{ fill:var(--accent-text); font-family:"Bricolage Grotesque",sans-serif;
+  font-weight:700; font-size:34px; letter-spacing:-0.02em; }
+
+/* ============================ STATS BAND ============================ */
+.stats-band{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--surface); }
+.stats{ display:grid; grid-template-columns:repeat(4,1fr); }
+.stat{ padding:clamp(1.6rem,3vw,2.5rem) clamp(1.1rem,2.4vw,2rem); border-right:1px solid var(--line); }
+.stat:last-child{ border-right:0; }
+.stat .val{ font-family:"Bricolage Grotesque",sans-serif; font-weight:700;
+  font-size:clamp(2.1rem,1.2rem+2.7vw,3.15rem); letter-spacing:-0.035em; color:var(--ink);
+  line-height:1; font-variant-numeric:tabular-nums; }
+.stat .val .u{ color:var(--accent-text); }
+.stat .lbl{ margin-top:.75rem; font-family:"Geist Mono",monospace; font-size:0.73rem; letter-spacing:0.05em;
+  text-transform:uppercase; color:var(--ink-2); line-height:1.45; }
+
+/* ============================ SECTIONS ============================ */
+section.block{ padding-block: clamp(4.5rem, 8.5vw, 8rem); }
+.section-head{ max-width:62ch; }
+.section-head h2{ font-size:var(--fs-h2); color:var(--ink); }
+.section-head .sub{ margin-top:1.1rem; font-size:var(--fs-lead); color:var(--ink-2); max-width:56ch; }
+
+/* Why — editorial columns (hairline-topped, not boxed cards) */
+.why-grid{ margin-top:clamp(2.6rem,4.5vw,3.8rem); display:grid; grid-template-columns:repeat(3,1fr);
+  gap:clamp(1.6rem,3.5vw,3rem); }
+.why-cell{ padding-top:1.6rem; border-top:2px solid var(--ink); }
+.why-ic{ width:38px; height:38px; color:var(--accent-strong); }
+.why-cell h3{ font-family:"Bricolage Grotesque",sans-serif; font-weight:700; letter-spacing:-0.025em;
+  font-size:var(--fs-h3); margin-top:1.15rem; color:var(--ink); }
+.why-cell p{ margin-top:.65rem; color:var(--ink-2); font-size:1.02rem; max-width:34ch; }
+
+/* How it works — ordered step flow with a connector line */
+.steps{ margin-top:clamp(2.6rem,4.5vw,3.8rem); display:grid; grid-template-columns:repeat(4,1fr); gap:0; list-style:none; }
+.step{ position:relative; padding-right:1.4rem; }
+.step::before{ content:""; position:absolute; top:26px; left:26px; right:6px; height:2px;
+  background:var(--line-2); z-index:0; }
+.step:last-child::before{ display:none; }
+.step-n{ position:relative; z-index:1; display:inline-grid; place-items:center; width:52px; height:52px;
+  border-radius:50%; background:var(--surface); border:2px solid var(--line-2); color:var(--accent-text);
+  font-family:"Geist Mono",monospace; font-weight:500; font-size:1.02rem; }
+.step h3{ font-family:"Bricolage Grotesque",sans-serif; font-weight:700; letter-spacing:-0.02em;
+  font-size:1.16rem; margin-top:1.25rem; color:var(--ink); padding-right:.8rem; }
+.step p{ margin-top:.55rem; color:var(--ink-2); font-size:0.98rem; padding-right:1rem; }
+
+/* Merit, made visible — the committed amber-clay island */
+.merit-panel{ margin-top:clamp(0rem,0vw,0rem); border-radius:clamp(20px,3vw,30px);
+  background:radial-gradient(120% 130% at 85% 8%, var(--merit-bg), var(--merit-bg-2));
+  color:var(--merit-ink); padding:clamp(2.2rem,5vw,4rem);
+  box-shadow:0 30px 70px -30px oklch(0.42 0.12 45 / 0.55); overflow:hidden; position:relative; }
+.merit-panel .section-head h2{ color:var(--merit-ink); }
+.merit-panel .section-head .sub{ color:var(--merit-ink-2); }
+.flow{ margin-top:clamp(2.2rem,4vw,3rem); display:grid;
+  grid-template-columns:1fr auto 1fr auto 1fr auto 1fr; align-items:stretch; gap:0; }
+.node{ background:var(--merit-card); color:var(--merit-card-ink); border-radius:var(--radius-md);
+  padding:1.3rem 1.25rem; display:flex; flex-direction:column; gap:.7rem; box-shadow:var(--shadow-md); }
+.node .n-ic{ width:26px; height:26px; color:var(--merit-card-ink-2); }
+.node .n-top{ font-family:"Geist Mono",monospace; font-size:0.66rem; letter-spacing:0.12em;
+  text-transform:uppercase; color:var(--merit-card-ink-2); }
+.node .n-title{ font-family:"Bricolage Grotesque",sans-serif; font-weight:700; font-size:1.08rem;
+  letter-spacing:-0.02em; color:var(--merit-card-ink); }
+.node.human{ outline:2.5px solid var(--merit-accent); outline-offset:-2.5px; }
+.node.human .n-ic{ color:var(--accent-strong); }
+.node.human .n-tag{ font-family:"Geist Mono",monospace; font-size:0.62rem; letter-spacing:0.1em;
+  text-transform:uppercase; color:var(--accent-strong); font-weight:500; }
+.arrow{ display:grid; place-items:center; padding-inline:.7rem; color:var(--merit-ink); }
+.arrow svg{ width:30px; height:15px; opacity:.9; }
+
+/* Two audiences — deliberately distinct: candidate warm, company grounded */
+.aud{ margin-top:clamp(2.6rem,4.5vw,3.8rem); display:grid; grid-template-columns:1fr 1fr;
+  gap:clamp(1.2rem,2.4vw,1.7rem); }
+.card{ border-radius:var(--radius); padding:clamp(1.8rem,2.8vw,2.5rem); display:flex; flex-direction:column;
+  border:1px solid var(--line-2); box-shadow:var(--shadow-md); }
+.card--cand{ background:
+    linear-gradient(172deg, color-mix(in oklab, var(--accent-soft) 90%, var(--surface)), var(--surface) 62%);
+  border-color:color-mix(in oklab, var(--accent) 26%, var(--line-2)); }
+.card--co{ background:var(--surface); }
+.card-top{ display:flex; align-items:center; gap:.75rem; }
+.card-ic{ width:34px; height:34px; }
+.card--cand .card-ic{ color:var(--accent-strong); }
+.card--co .card-ic{ color:var(--ink); }
+.card-top h3{ font-family:"Bricolage Grotesque",sans-serif; font-weight:700; letter-spacing:-0.03em;
+  font-size:1.5rem; color:var(--ink); }
+.card p.card-desc{ color:var(--ink-2); margin-top:.85rem; font-size:1rem; max-width:40ch; }
+.feat{ list-style:none; margin-top:1.4rem; display:flex; flex-direction:column; }
+.feat li{ display:flex; align-items:center; gap:.7rem; padding:.72rem 0; border-top:1px solid var(--line);
+  font-size:1rem; color:var(--ink); }
+.feat li:first-child{ border-top:0; }
+.feat .tick{ width:19px; height:19px; flex:0 0 auto; }
+.card--cand .feat .tick{ color:var(--accent-strong); }
+.card--co .feat .tick{ color:var(--ink-2); }
+.card .card-cta{ margin-top:auto; padding-top:1.7rem; }
+
+/* Trust band — the ONE deep-ink authority band */
+.trust-band{ background:var(--ink-band); color:var(--band-ink); }
+.trust-band .section-head h2{ color:var(--band-ink); }
+.trust-band .section-head .sub{ color:var(--band-ink-2); }
+.trust{ display:flex; flex-wrap:wrap; gap:.7rem; margin-top:clamp(2rem,3.5vw,3rem); }
+.badge{ display:inline-flex; align-items:center; gap:.6rem; padding:.7rem 1.05rem; border:1px solid var(--band-line);
+  border-radius:100px; background:var(--band-surface); font-size:0.9rem; font-weight:500; color:var(--band-ink); }
+.badge .v{ width:17px; height:17px; color:var(--band-accent); flex:0 0 auto; }
+
+/* ============================ FOOTER ============================ */
+footer.foot{ border-top:1px solid var(--line); padding-block:clamp(3.2rem,5vw,4.8rem); background:var(--surface-2); }
+.foot-lede{ font-size:clamp(1.8rem,1.1rem+2.4vw,3rem); color:var(--ink); max-width:16ch; }
+.foot-row{ display:flex; align-items:center; gap:1rem; margin-top:2.2rem; flex-wrap:wrap; }
+.foot-links{ display:flex; gap:1.4rem; flex-wrap:wrap; }
+.foot-links a{ color:var(--ink-2); font-size:0.95rem; }
+.foot-links a:hover{ color:var(--ink); }
+.foot-row .brand{ margin-right:.4rem; }
+.foot-row .brand .mark{ color:var(--accent-strong); }
+.foot-row .brand b{ font-family:"Bricolage Grotesque",sans-serif; font-weight:700; font-size:1.12rem; letter-spacing:-0.03em; }
+.foot-row .meta{ margin-left:auto; font-family:"Geist Mono",monospace; font-size:0.78rem; color:var(--ink-3); }
+
+/* ============================ MOTION (enhances an already-visible default) ============================ */
+@media (prefers-reduced-motion: no-preference){
+  html.js .hero-load{ opacity:0; animation:riseIn .64s var(--ease-expo) both;
+    animation-delay:calc(var(--d, 0)*72ms + 40ms); }
+  html.js .reveal{ opacity:0; transform:translateY(20px); }
+  html.js .reveal.in{ opacity:1; transform:none;
+    transition:opacity .62s var(--ease-expo), transform .62s var(--ease-expo);
+    transition-delay:var(--rd, 0s); }
+  html.js .uline .uline-svg path{ stroke-dasharray:100 100; stroke-dashoffset:100;
+    animation:draw .72s var(--ease-expo) forwards; animation-delay:var(--dl,.9s); }
+  html.js .merit-svg .gauge-fill{ stroke-dashoffset:84;
+    animation:draw 1.25s var(--ease-expo) .4s forwards; }
+  html.js .merit-svg .fring{ transform-box:fill-box; transform-origin:center;
+    animation:breathe 7s ease-in-out infinite; }
+}
+@keyframes riseIn{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+@keyframes draw{ to{ stroke-dashoffset:0; } }
+@keyframes breathe{ 0%,100%{ opacity:.55; } 50%{ opacity:.9; } }
+
+/* ============================ RESPONSIVE ============================ */
+@media (max-width:980px){
+  .hero-grid{ grid-template-columns:1fr; }
+  .merit-visual{ order:-1; }
+  .merit-svg{ width:min(78%, 380px); }
+  .why-grid{ grid-template-columns:1fr; gap:0; }
+  .why-cell{ padding-block:1.5rem; border-top:1px solid var(--line); }
+  .why-cell:first-child{ border-top:2px solid var(--ink); }
+  .steps{ grid-template-columns:1fr 1fr; gap:2.2rem 1.2rem; }
+  .step::before{ display:none; }
+  .flow{ grid-template-columns:1fr; }
+  .flow .arrow{ padding-block:.6rem; }
+  .flow .arrow svg{ transform:rotate(90deg); }
+}
+@media (max-width:760px){
+  .stats{ grid-template-columns:1fr 1fr; }
+  .stat:nth-child(2){ border-right:0; }
+  .stat:nth-child(1),.stat:nth-child(2){ border-bottom:1px solid var(--line); }
+  .aud{ grid-template-columns:1fr; }
+}
+@media (max-width:600px){
+  .search{ grid-template-columns:1fr; max-width:none; }
+  .search .field{ border-right:0; border-bottom:1px solid var(--line); }
+  .search .search-go{ min-height:50px; padding-block:.9rem; }
+  .fork{ display:flex; width:100%; }
+  .fork button{ flex:1; }
+  .steps{ grid-template-columns:1fr; gap:1.9rem; }
+}
+@media (max-width:430px){
+  .stats{ grid-template-columns:1fr; }
+  .stat{ border-right:0; border-bottom:1px solid var(--line); }
+  .stat:last-child{ border-bottom:0; }
+  .pills li{ width:100%; }
+}
+
+/* Freeze all motion for reduced-motion users — content stays fully legible. */
+@media (prefers-reduced-motion: reduce){
+  *{ animation:none !important; transition:none !important; scroll-behavior:auto !important; }
+}
+</style>
+</head>
+
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- DEMO ONLY: the real product has no landing theme toggle — appearance lives in Settings → Appearance. -->
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#" aria-label="Aptura home">
+      <span class="mark">
+        <svg width="30" height="30" viewBox="0 0 64 64" role="img" aria-label="Aptura">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" stroke-width="3"/>
+          <g stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+            <line x1="43" y1="32" x2="55.4" y2="45.5"/><line x1="37.5" y1="41.5" x2="32" y2="59"/>
+            <line x1="26.5" y1="41.5" x2="8.6" y2="45.5"/><line x1="21" y1="32" x2="8.6" y2="18.5"/>
+            <line x1="26.5" y1="22.5" x2="32" y2="5"/><line x1="37.5" y1="22.5" x2="55.4" y2="18.5"/>
+          </g>
+        </svg>
+      </span>
+      <b>Aptura</b>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#audiences">For companies</a>
+      <a href="#how">How it works</a>
+      <a class="nav-signin" href="#">Sign in</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn--accent" href="#">Get started</a>
+      <button class="toggle" id="themeToggle" type="button" aria-label="Switch to dark theme" aria-pressed="false">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow hero-load" style="--d:0"><span class="sd"></span>Unified hiring platform</span>
+        <h1 class="display hero-h1 hero-load" style="--d:1">Get <span class="uline">seen<svg class="uline-svg" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="100" d="M5 15 C 55 6, 150 6, 195 13"/></svg></span>. Get interviewed. Get <span class="uline">hired<svg class="uline-svg" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true" style="--dl:1.15s"><path pathLength="100" d="M5 14 C 60 22, 150 22, 195 12"/></svg></span>.</h1>
+        <p class="hero-lede hero-load" style="--d:2">One place to apply, interview, and hear back — on a result you can trust.</p>
+
+        <div class="fork hero-load" style="--d:3" role="tablist" aria-label="Choose your path">
+          <button role="tab" id="tab-job" aria-selected="true" aria-controls="search-panel" tabindex="0">I&rsquo;m looking for a job</button>
+          <button role="tab" id="tab-hire" aria-selected="false" aria-controls="search-panel" tabindex="-1">I&rsquo;m hiring</button>
+        </div>
+
+        <form class="search hero-load" style="--d:4" id="search-panel" role="search" aria-labelledby="tab-job" onsubmit="return false;">
+          <div class="field">
+            <label for="q-role" id="lbl-role">Job title or skill</label>
+            <input id="q-role" type="text" placeholder="e.g. Product Designer" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="q-loc">Location</label>
+            <input id="q-loc" type="text" placeholder="e.g. Remote or Berlin" autocomplete="off" />
+          </div>
+          <button class="btn btn--accent search-go" type="submit">Search</button>
+        </form>
+        <p class="fork-help hero-load" style="--d:5"><span class="sd"></span><span id="fork-help">Search proctored, fair-hiring roles — free for candidates.</span></p>
+
+        <ul class="pills hero-load" style="--d:6">
+          <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.4"/></svg>Free for candidates</li>
+          <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.4"/></svg>Proctored &amp; fair — same rules for everyone</li>
+          <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.4"/></svg>Every application gets an answer</li>
+        </ul>
+      </div>
+
+      <!-- Warm merit gauge + aperture bloom: focus → verified, on merit -->
+      <div class="merit-visual hero-load" style="--d:2">
+        <svg class="merit-svg" viewBox="0 0 440 400" role="img"
+             aria-label="A merit gauge filling with warm colour toward a verified seal, an aperture in sharp focus at its centre.">
+          <!-- faint concentric focus rings -->
+          <circle class="fring" cx="220" cy="216" r="122" stroke-width="1.4"/>
+          <circle class="fring" cx="220" cy="216" r="96" stroke-width="1.4"/>
+          <!-- gauge, open at the bottom (a score dial) -->
+          <path class="track" d="M133.9 338.9 A150 150 0 1 1 306.1 338.9" fill="none" stroke-width="13"/>
+          <path class="gauge-fill" pathLength="100" stroke-dasharray="84 100" d="M133.9 338.9 A150 150 0 1 1 306.1 338.9" fill="none" stroke-width="13"/>
+          <!-- graduation ticks -->
+          <g class="tickm" stroke-width="2" stroke-linecap="round" opacity="0.55">
+            <line x1="220" y1="46" x2="220" y2="58"/>
+            <line x1="106.4" y1="102.6" x2="114.9" y2="111.1"/>
+            <line x1="333.6" y1="102.6" x2="325.1" y2="111.1"/>
+            <line x1="63" y1="216" x2="75" y2="216"/>
+            <line x1="377" y1="216" x2="365" y2="216"/>
+          </g>
+          <!-- center aperture (candidate in sharp focus) -->
+          <g>
+            <circle class="ap-rim" cx="220" cy="216" r="46" stroke-width="2.4"/>
+            <g class="ap-blade" stroke-width="2.3" stroke-linecap="round">
+              <line x1="238.7" y1="216" x2="259.8" y2="238.9"/>
+              <line x1="229.4" y1="232.2" x2="220" y2="261.9"/>
+              <line x1="210.6" y1="232.2" x2="180.2" y2="238.9"/>
+              <line x1="201.3" y1="216" x2="180.2" y2="193.1"/>
+              <line x1="210.6" y1="199.9" x2="220" y2="170.1"/>
+              <line x1="229.4" y1="199.9" x2="259.8" y2="193.1"/>
+            </g>
+            <circle class="ap-core" cx="220" cy="216" r="5"/>
+          </g>
+          <!-- verified seal at the apex -->
+          <g>
+            <rect class="seal-bg" x="158" y="52" width="124" height="34" rx="17" stroke-width="1.5"/>
+            <circle class="seal-badge" cx="178" cy="69" r="10.5"/>
+            <path class="seal-check" d="M173.4 69.2l3 3 5.4-5.8" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+            <text class="seal-txt" x="195" y="73.5">VERIFIED</text>
+          </g>
+          <!-- caption -->
+          <text class="cap-txt" x="220" y="300" text-anchor="middle">ON&nbsp;&nbsp;MERIT</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATS BAND ============ -->
+  <div class="stats-band">
+    <div class="wrap">
+      <div class="stats" id="stats">
+        <div class="stat reveal">
+          <div class="val" data-count="100" data-suffix="%"><span class="u">100%</span></div>
+          <div class="lbl">of applications answered</div>
+        </div>
+        <div class="stat reveal" style="--rd:.07s">
+          <div class="val" data-count="12400" data-suffix="+">12,400+</div>
+          <div class="lbl">interviews completed</div>
+        </div>
+        <div class="stat reveal" style="--rd:.14s">
+          <div class="val" data-count="1">1</div>
+          <div class="lbl">fair interview · live video + voice</div>
+        </div>
+        <div class="stat reveal" style="--rd:.21s">
+          <div class="val" data-count="3" data-suffix="-day">3-day</div>
+          <div class="lbl">average feedback</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ WHY ============ -->
+  <section class="block" id="why">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 class="head">The hiring platform that doesn&rsquo;t ghost you — and gives a result you can trust.</h2>
+      </div>
+      <div class="why-grid">
+        <div class="why-cell reveal">
+          <svg class="why-ic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M28 16A12 12 0 1 1 23 6.3"/><path d="M28 6v6h-6"/><path d="M11 16.5l3.6 3.6L23 12"/></svg>
+          <h3>Answered, always</h3>
+          <p>Every application gets a real response — no ghosting, ever.</p>
+        </div>
+        <div class="why-cell reveal" style="--rd:.07s">
+          <svg class="why-ic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3l11 4v7c0 7.1-4.8 11.5-11 13-6.2-1.5-11-5.9-11-13V7z"/><circle cx="16" cy="14.5" r="3.2"/><path d="M16 17.7v3.1"/></svg>
+          <h3>Cheat-proof</h3>
+          <p>A rigorously proctored interview — same rules for everyone — so a pass means something.</p>
+        </div>
+        <div class="why-cell reveal" style="--rd:.14s">
+          <svg class="why-ic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4v22"/><path d="M8.5 9h15"/><path d="M8.5 9l-4.2 8.4a4.2 4.2 0 0 0 8.4 0z"/><path d="M23.5 9l-4.2 8.4a4.2 4.2 0 0 0 8.4 0z"/><path d="M11 28h10"/></svg>
+          <h3>On merit</h3>
+          <p>Judged on evidence from the interview, not pedigree or who you know.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section class="block" id="how">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 class="head">From &ldquo;apply&rdquo; to &ldquo;you&rsquo;re hired&rdquo; — in four steps.</h2>
+      </div>
+      <ol class="steps">
+        <li class="step reveal">
+          <div class="step-n">01</div>
+          <h3>Search &amp; apply</h3>
+          <p>Find roles that fit and apply in a click.</p>
+        </li>
+        <li class="step reveal" style="--rd:.07s">
+          <div class="step-n">02</div>
+          <h3>Take your live interview</h3>
+          <p>A single proctored live video + voice interview — same for everyone.</p>
+        </li>
+        <li class="step reveal" style="--rd:.14s">
+          <div class="step-n">03</div>
+          <h3>Get evidence-based feedback</h3>
+          <p>See how you did, grounded in what you actually said.</p>
+        </li>
+        <li class="step reveal" style="--rd:.21s">
+          <div class="step-n">04</div>
+          <h3>Hear back, always</h3>
+          <p>A real answer on every application.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ MERIT, MADE VISIBLE (amber island) ============ -->
+  <section class="block" id="merit" style="padding-top:0;">
+    <div class="wrap">
+      <div class="merit-panel reveal">
+        <div class="section-head">
+          <h2 class="head">A fair shot you can actually see.</h2>
+          <p class="sub">No black-box verdicts — here is exactly how a decision gets made.</p>
+        </div>
+        <div class="flow">
+          <div class="node">
+            <svg class="n-ic" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M15 3v5h5"/><path d="M9 14h8M9 18h8M9 10h3"/></svg>
+            <span class="n-top">Input</span>
+            <span class="n-title">Evidence captured</span>
+          </div>
+          <div class="arrow" aria-hidden="true"><svg viewBox="0 0 30 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7.5h26"/><path d="M21 2l6 5.5-6 5.5"/></svg></div>
+          <div class="node">
+            <svg class="n-ic" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="13" r="3"/><circle cx="5" cy="6" r="2.2"/><circle cx="5" cy="20" r="2.2"/><circle cx="21" cy="13" r="2.2"/><path d="M7 7.2l3.6 3.8M7 18.8l3.6-3.8M16 13h2.8"/></svg>
+            <span class="n-top">Structure</span>
+            <span class="n-title">AI structures it</span>
+          </div>
+          <div class="arrow" aria-hidden="true"><svg viewBox="0 0 30 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7.5h26"/><path d="M21 2l6 5.5-6 5.5"/></svg></div>
+          <div class="node human">
+            <svg class="n-ic" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="8" r="4"/><path d="M5 22c1.4-4.4 4.4-6.6 8-6.6s6.6 2.2 8 6.6"/></svg>
+            <span class="n-tag">You decide</span>
+            <span class="n-title">A human decides</span>
+          </div>
+          <div class="arrow" aria-hidden="true"><svg viewBox="0 0 30 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7.5h26"/><path d="M21 2l6 5.5-6 5.5"/></svg></div>
+          <div class="node">
+            <svg class="n-ic" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3a7 7 0 0 0-7 7c0 5-2 7-2 7h18s-2-2-2-7a7 7 0 0 0-7-7z"/><path d="M10.5 21a2.5 2.5 0 0 0 5 0"/></svg>
+            <span class="n-top">Output</span>
+            <span class="n-title">You&rsquo;re notified</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TWO AUDIENCES ============ -->
+  <section class="block" id="audiences" style="padding-top:clamp(4.5rem,8vw,7rem);">
+    <div class="wrap">
+      <div class="aud">
+        <div class="card card--cand reveal">
+          <div class="card-top">
+            <svg class="card-ic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="11" r="6"/><path d="M5 27c1.6-5.6 5.8-8.5 11-8.5S25.4 21.4 27 27"/></svg>
+            <h3 class="head">For candidates</h3>
+          </div>
+          <p class="card-desc">Show what you can do in one live interview — and always hear back.</p>
+          <ul class="feat">
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.4"/></svg>Live video + voice interview</li>
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.4"/></svg>Private practice runs</li>
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.4"/></svg>Skill-gap feedback</li>
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.4"/></svg>Real-time application status</li>
+          </ul>
+          <div class="card-cta"><a class="btn btn--accent btn--lg btn--block" href="#">Find your next job &rarr;</a></div>
+        </div>
+
+        <div class="card card--co reveal" style="--rd:.09s">
+          <div class="card-top">
+            <svg class="card-ic" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 27V9l10-5 10 5v18"/><path d="M4 27h24"/><path d="M11 27v-6h6v6"/><path d="M11 13h1.5M20 13h1.5M11 17h1.5M20 17h1.5"/></svg>
+            <h3 class="head">For companies</h3>
+          </div>
+          <p class="card-desc">Screen on evidence, keep the final call, and never leave a candidate hanging.</p>
+          <ul class="feat">
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.4"/></svg>Merit-based screening</li>
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.4"/></svg>Advisory gate — you decide</li>
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.4"/></svg>Evidence-based reports</li>
+            <li><svg class="tick" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l3.6 3.6L16 5.4"/></svg>No-ghosting analytics</li>
+          </ul>
+          <div class="card-cta"><a class="btn btn--ink btn--lg btn--block" href="#">Start hiring on merit &rarr;</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRUST BAND (deep-ink authority island) ============ -->
+  <section class="block trust-band" id="trust">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 class="head">Built to be trusted.</h2>
+        <p class="sub">Fairness isn&rsquo;t a claim — it&rsquo;s audited, certified, and held to the same rules for everyone.</p>
+      </div>
+      <div class="trust reveal" style="--rd:.06s">
+        <span class="badge"><svg class="v" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2l6 2.4v4.4c0 4-2.6 6.5-6 7.4-3.4-.9-6-3.4-6-7.4V4.4z"/><path d="M7.4 10l1.8 1.8L13 8"/></svg>SOC 2</span>
+        <span class="badge"><svg class="v" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="9" width="12" height="8.5" rx="1.6"/><path d="M6.6 9V6.6a3.4 3.4 0 0 1 6.8 0V9"/></svg>GDPR-ready</span>
+        <span class="badge"><svg class="v" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5v15"/><path d="M5 6h10"/><path d="M5 6l-2.6 5.2a2.6 2.6 0 0 0 5.2 0z"/><path d="M15 6l-2.6 5.2a2.6 2.6 0 0 0 5.2 0z"/></svg>EEOC-aligned</span>
+        <span class="badge"><svg class="v" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15V5M17 15V5M3 10h14"/><path d="M6 13l3-3 2.5 2.5L15 8"/></svg>Bias-tested</span>
+        <span class="badge"><svg class="v" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><circle cx="10" cy="10" r="2.6"/><path d="M14.8 10h2.7M2.5 10h2.7M10 2.5v2.7"/></svg>Proctored integrity</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <div class="wrap">
+    <p class="foot-lede display">Get seen. Get interviewed. Get hired.</p>
+    <div class="foot-row">
+      <span class="brand" style="display:flex; align-items:center; gap:.55rem;">
+        <span class="mark" style="display:flex;">
+          <svg width="26" height="26" viewBox="0 0 64 64" role="img" aria-label="Aptura">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" stroke-width="3"/>
+            <g stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+              <line x1="43" y1="32" x2="55.4" y2="45.5"/><line x1="37.5" y1="41.5" x2="32" y2="59"/>
+              <line x1="26.5" y1="41.5" x2="8.6" y2="45.5"/><line x1="21" y1="32" x2="8.6" y2="18.5"/>
+              <line x1="26.5" y1="22.5" x2="32" y2="5"/><line x1="37.5" y1="22.5" x2="55.4" y2="18.5"/>
+            </g>
+          </svg>
+        </span>
+        <b>Aptura</b>
+      </span>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="#audiences">For companies</a>
+        <a href="#how">How it works</a>
+        <a href="#">Sign in</a>
+      </nav>
+      <span class="meta">&copy; Aptura</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- Theme toggle (demo affordance only) ---- */
+  var toggle = document.getElementById('themeToggle');
+  toggle.addEventListener('click', function(){
+    var dark = root.getAttribute('data-theme') === 'dark';
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    toggle.setAttribute('aria-label', dark ? 'Switch to dark theme' : 'Switch to light theme');
+    toggle.setAttribute('aria-pressed', String(!dark));
+  });
+
+  /* ---- Nav shadow on scroll ---- */
+  var nav = document.getElementById('nav');
+  var onScroll = function(){ nav.classList.toggle('scrolled', window.scrollY > 6); };
+  onScroll();
+  addEventListener('scroll', onScroll, { passive:true });
+
+  /* ---- Role fork: keyboard-operable tabs that visibly switch context ---- */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  var roleInput = document.getElementById('q-role');
+  var roleLabel = document.getElementById('lbl-role');
+  var panel = document.getElementById('search-panel');
+  var help = document.getElementById('fork-help');
+  var MODES = {
+    'tab-job':  { ph:'e.g. Product Designer', lbl:'Job title or skill',
+                  help:'Search proctored, fair-hiring roles — free for candidates.' },
+    'tab-hire': { ph:'e.g. Product Designer', lbl:'Role you’re hiring for',
+                  help:'Post a role and screen every candidate on merit.' }
+  };
+  function select(tab){
+    tabs.forEach(function(t){
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+    });
+    var m = MODES[tab.id];
+    roleInput.placeholder = m.ph; roleLabel.textContent = m.lbl; help.textContent = m.help;
+    panel.setAttribute('aria-labelledby', tab.id);
+  }
+  tabs.forEach(function(tab, i){
+    tab.addEventListener('click', function(){ select(tab); tab.focus(); });
+    tab.addEventListener('keydown', function(e){
+      var n;
+      if(e.key === 'ArrowRight' || e.key === 'ArrowDown') n = tabs[(i + 1) % tabs.length];
+      else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = tabs[(i - 1 + tabs.length) % tabs.length];
+      else if(e.key === 'Home') n = tabs[0];
+      else if(e.key === 'End') n = tabs[tabs.length - 1];
+      if(n){ e.preventDefault(); select(n); n.focus(); }
+    });
+  });
+
+  /* ---- Scroll reveal (enhances an already-visible default) ---- */
+  if(!rm && 'IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { threshold:0.12, rootMargin:'0px 0px -8% 0px' });
+    document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+  }
+
+  /* ---- Count-up on the stats band (ease-out quart), JS-off shows final value ---- */
+  function countUp(el){
+    var target = +el.dataset.count, suffix = el.dataset.suffix || '', dur = 1150, t0 = 0;
+    var wrapU = el.querySelector('.u');
+    function set(txt){ if(wrapU){ wrapU.textContent = txt; } else { el.textContent = txt; } }
+    function frame(now){
+      if(!t0) t0 = now;
+      var p = Math.min(1, (now - t0) / dur);
+      var eased = 1 - Math.pow(1 - p, 4);
+      set(Math.round(target * eased).toLocaleString('en-US') + suffix);
+      if(p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  var statsBand = document.getElementById('stats');
+  if(!rm && 'IntersectionObserver' in window && statsBand){
+    var sObs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(!e.isIntersecting) return;
+        statsBand.querySelectorAll('[data-count]').forEach(countUp);
+        sObs.disconnect();
+      });
+    }, { threshold:0.45 });
+    sObs.observe(statsBand);
+  }
+})();
+</script>
+</body>
+</html>
