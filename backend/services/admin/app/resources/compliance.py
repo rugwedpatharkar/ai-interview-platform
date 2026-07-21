@@ -12,7 +12,7 @@ from lib.logging import bind_ids, get_logger, log_context
 
 from app.errors import ValidationError
 from app.model.audit import AuditLog
-from app.model.compliance import ConsentRecord
+from app.model.compliance import ConsentRecord, is_consent_current
 
 log = get_logger(component="compliance.resources")
 
@@ -45,7 +45,13 @@ async def list_consent(identity, *, consents):
         "resource.compliance.list_consent",
         **bind_ids(user_id=identity["id"]),
     ):
-        return await consents.list_by_user(identity["id"])
+        rows = await consents.list_by_user(identity["id"])
+        # Stamp expiry so callers gating on 'has the user consented?' can filter
+        # stale rows without re-implementing the check. Was missing entirely — a v1
+        # record from two years ago silently counted as valid consent.
+        for r in rows:
+            r["current"] = is_consent_current(r)
+        return rows
 
 
 class CandidateEraser:

@@ -58,7 +58,7 @@ async def test_publisher_retries_in_place_after_publish_error():
     caller sees a single successful publish instead of a failure they must handle."""
     fresh_exchange = _FakeExchange()
     pub = Publisher("amqp://unused")
-    # First exchange will fail once, then succeed; second attempt goes to fresh_exchange.
+    # First exchange fails once then succeeds; second attempt hits fresh_exchange.
     failing_exchange = _FakeExchange(fail_once=True)
     pub._conn = _FakeConn(fresh_exchange)
     pub._exchange = failing_exchange

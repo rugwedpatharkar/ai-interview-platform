@@ -408,11 +408,14 @@ class DataStore:
                 _mongo_duration.labels(op=op).observe(_ms(t0))
 
     async def save_match_result(
-        self, comp_id, job_id, candidate_user_id, score, reasons
+        self, comp_id, job_id, candidate_user_id, score, reasons, model_version=""
     ):
         # The unique (job_id, candidate_user_id) index is the idempotency authority: the
         # first writer inserts (True); a concurrent/late one updates or collides (False)
         # so match.completed is emitted exactly once.
+        # model_version stamps the matcher tag so historical rank orderings can be
+        # partitioned by scoring era (a model swap otherwise silently reorders
+        # historical rankings; recruiter-facing metrics like hire-rate get mixed).
         async with log_context(
             log,
             "data.save_match_result",
@@ -437,6 +440,7 @@ class DataStore:
                                     "candidate_user_id": candidate_user_id,
                                     "score": score,
                                     "reasons": reasons,
+                                    "model_version": model_version,
                                 }
                             },
                             upsert=True,

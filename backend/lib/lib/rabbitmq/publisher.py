@@ -27,6 +27,12 @@ class Publisher:
         self._conn: aio_pika.abc.AbstractRobustConnection | None = None
         self._exchange: aio_pika.abc.AbstractExchange | None = None
         self._exchange_lock = asyncio.Lock()
+        # In-flight publish count + event that fires when the count drops to 0.
+        # Lets close() wait for concurrent publishes to confirm before tearing
+        # down the connection — an unconfirmed publish used to vanish on SIGTERM.
+        self._in_flight = 0
+        self._idle = asyncio.Event()
+        self._idle.set()
 
     async def connect(self) -> None:
         self._conn = await aio_pika.connect_robust(self._url)
@@ -70,39 +76,63 @@ class Publisher:
             content_type="application/json",
             delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
         )
-        # One-shot in-place retry on a dropped channel: the first attempt invalidates
-        # the exchange handle; the second attempt re-acquires and publishes. Prevents
-        # a routine broker restart from silently dropping every in-flight publish
-        # onto the caller (who then either logs+swallows or fails their whole op).
-        for attempt in (1, 2):
-            try:
-                # publisher_confirms + mandatory: an unroutable or unacked publish
-                # raises instead of vanishing, so a lost funnel event surfaces.
-                await self._exchange.publish(
-                    message, routing_key=routing_key, mandatory=True
-                )
-                log.debug(
-                    "publisher.sent routing_key={} attempt={}", routing_key, attempt
-                )
-                return
-            except Exception:
-                # Invalidate the exchange handle so the next call re-acquires it.
-                self._exchange = None
-                if attempt == 2:
-                    log.exception(
-                        "publisher.error routing_key={} attempts={}",
+        self._in_flight += 1
+        self._idle.clear()
+        try:
+            # One-shot in-place retry on a dropped channel: the first attempt
+            # invalidates the exchange handle; the second re-acquires and publishes.
+            # Prevents a routine broker restart from silently dropping every
+            # in-flight publish onto the caller (who then either logs+swallows or
+            # fails their whole op).
+            for attempt in (1, 2):
+                try:
+                    # publisher_confirms + mandatory: an unroutable or unacked
+                    # publish raises instead of vanishing, so a lost funnel event
+                    # surfaces to the caller.
+                    await self._exchange.publish(
+                        message, routing_key=routing_key, mandatory=True
+                    )
+                    log.debug(
+                        "publisher.sent routing_key={} attempt={}",
                         routing_key,
                         attempt,
                     )
-                    raise
-                log.warning(
-                    "publisher.retry routing_key={} attempt={}", routing_key, attempt
-                )
-                async with self._exchange_lock:
-                    if self._exchange is None:
-                        self._exchange = await self._acquire_exchange()
+                    return
+                except Exception:
+                    # Invalidate the exchange handle so the next call re-acquires.
+                    self._exchange = None
+                    if attempt == 2:
+                        log.exception(
+                            "publisher.error routing_key={} attempts={}",
+                            routing_key,
+                            attempt,
+                        )
+                        raise
+                    log.warning(
+                        "publisher.retry routing_key={} attempt={}",
+                        routing_key,
+                        attempt,
+                    )
+                    async with self._exchange_lock:
+                        if self._exchange is None:
+                            self._exchange = await self._acquire_exchange()
+        finally:
+            self._in_flight -= 1
+            if self._in_flight == 0:
+                self._idle.set()
 
-    async def close(self) -> None:
+    async def close(self, drain_timeout_s: float = 5.0) -> None:
+        # Wait for concurrent publishes to confirm before tearing down the
+        # connection — otherwise an unconfirmed publish on SIGTERM vanishes.
+        if self._in_flight > 0:
+            try:
+                await asyncio.wait_for(self._idle.wait(), timeout=drain_timeout_s)
+            except TimeoutError:
+                log.warning(
+                    "publisher.close: {} in-flight publishes did not drain in {}s",
+                    self._in_flight,
+                    drain_timeout_s,
+                )
         if self._conn is not None:
             await self._conn.close()
             log.info("publisher.closed exchange={}", self._exchange_name)
