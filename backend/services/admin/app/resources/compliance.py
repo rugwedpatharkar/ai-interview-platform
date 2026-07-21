@@ -79,6 +79,7 @@ class CandidateEraser:
         practice=None,
         slots=None,
         bookings=None,
+        sessions=None,
     ):
         self._users = users
         self._profiles = profiles
@@ -98,6 +99,7 @@ class CandidateEraser:
         self._practice = practice
         self._slots = slots
         self._bookings = bookings
+        self._sessions = sessions
 
     async def erase(self, user_id):
         async with log_context(
@@ -145,6 +147,12 @@ class CandidateEraser:
                     await self._storage.delete_raw(profile["resume_key"])
                 except Exception:
                     log.exception("erase: resume delete failed for {}", user_id)
+            # Revoke every live refresh session BEFORE anonymizing so the erased
+            # user's still-valid access token can't be exchanged for a fresh pair.
+            # Access tokens themselves are stateless and expire in 15 min; the refresh
+            # revoke closes the longer-lived window.
+            if self._sessions is not None:
+                await self._sessions.revoke_user(user_id)
             await self._users.anonymize(user_id)
             await self._audit.insert(
                 AuditLog(entity="candidate", entity_id=user_id, action="erased")
