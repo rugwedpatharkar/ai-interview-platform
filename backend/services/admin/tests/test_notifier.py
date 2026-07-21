@@ -49,3 +49,45 @@ def test_make_notifier_prod_refuses_partial_smtp():
 def test_make_notifier_prod_refuses_completely_unset():
     with pytest.raises(ValueError):
         make_notifier(_settings(environment="prod"))
+
+
+@pytest.mark.asyncio
+async def test_smtp_notifier_starttls_before_login(monkeypatch):
+    # Solid-area pin (H8 sibling): STARTTLS must run BEFORE login so credentials
+    # never cross the wire in cleartext. A regression that reordered these two
+    # calls would leak SMTP_PASS on every send.
+    calls: list[str] = []
+
+    class _FakeSmtp:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def starttls(self):
+            calls.append("starttls")
+
+        def login(self, u, p):
+            calls.append("login")
+
+        def send_message(self, msg):
+            calls.append("send")
+
+    import app.infra.notifier as notifier_mod
+
+    monkeypatch.setattr(notifier_mod.smtplib, "SMTP", _FakeSmtp)
+    n = SmtpNotifier(
+        host="smtp.example.com",
+        port=587,
+        user="u",
+        password="p",
+        sender="from@x.com",
+    )
+    await n.send_email("to@x.com", "s", "b")
+    assert calls == ["starttls", "login", "send"], (
+        f"expected starttls before login before send, got {calls}"
+    )
