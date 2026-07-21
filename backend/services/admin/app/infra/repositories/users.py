@@ -88,3 +88,15 @@ class UserRepository(BaseRepository[User]):
             {"_id": ObjectId(user_id)},
             {"$set": {"status": "revoked", "password_hash": ""}},
         )
+
+    async def consume_recovery_code(self, user_id: str, code_hash: str) -> bool:
+        """Atomically remove one recovery-code hash. Returns True iff the hash was
+        present (i.e. this caller successfully consumed it). Two concurrent verifies
+        with the same code both matched the read-copy but only one $pull removes;
+        the loser returns False and the caller treats the code as already used.
+        """
+        result = await self.col.update_one(
+            {"_id": ObjectId(user_id), "recovery_codes": code_hash},
+            {"$pull": {"recovery_codes": code_hash}},
+        )
+        return result.modified_count > 0

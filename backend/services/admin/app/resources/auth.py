@@ -270,8 +270,11 @@ async def verify_totp_login(
             )
             if matched is None:
                 raise InvalidCredentialsError("invalid code")
-            remaining = [h for h in user["recovery_codes"] if h != matched]
-            await users.update_fields(user_id, {"recovery_codes": remaining})
+            # Atomic $pull ensures exactly-once consumption: two concurrent verifies
+            # with the same code both match the read-copy, but only one $pull removes
+            # it. The loser sees modified_count == 0 and is rejected as a reuse.
+            if not await users.consume_recovery_code(user_id, matched):
+                raise InvalidCredentialsError("invalid code")
         refresh_jti = uuid4().hex
         access = tokens.access_token(
             sub=user_id,

@@ -44,6 +44,16 @@ class FakeUserRepo:
         if user_id in self._docs:
             self._docs[user_id].update(fields)
 
+    async def consume_recovery_code(self, user_id, code_hash):
+        doc = self._docs.get(user_id)
+        if not doc:
+            return False
+        codes = doc.get("recovery_codes", [])
+        if code_hash not in codes:
+            return False
+        doc["recovery_codes"] = [h for h in codes if h != code_hash]
+        return True
+
     async def anonymize(self, user_id):
         if user_id in self._docs:
             self._docs[user_id].update(
