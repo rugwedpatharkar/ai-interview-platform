@@ -43,7 +43,7 @@ export function AuthShell({
             className="inline-flex items-center gap-2 font-bold text-ink-deep"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            <ApIcon name="mark" className="size-7 text-teal" /> Aptura
+            <ApIcon name="mark" className="size-7 text-brand" /> Aptura
           </Link>
           <Link
             href={topRightHref}
@@ -123,7 +123,7 @@ export function Field({
           className="block text-[0.86rem] font-medium text-ink-deep"
         >
           {label}
-          {required && <span className="ml-0.5 text-coral">*</span>}
+          {required && <span className="ml-0.5 text-brand">*</span>}
         </label>
         {trailing}
       </div>
@@ -161,7 +161,7 @@ export function Notice({
       ? "border-[color-mix(in_oklch,var(--danger)_30%,var(--line))] bg-[color-mix(in_oklch,var(--danger)_8%,var(--surface))] text-[color-mix(in_oklch,var(--danger)_55%,var(--ink-deep))]"
       : tone === "success"
         ? "border-[color-mix(in_oklch,var(--good)_30%,var(--line))] bg-[color-mix(in_oklch,var(--good)_8%,var(--surface))] text-[color-mix(in_oklch,var(--good)_55%,var(--ink-deep))]"
-        : "border-[color-mix(in_oklch,var(--teal)_24%,var(--line))] bg-teal-soft text-teal-strong";
+        : "border-[color-mix(in_oklch,var(--teal)_24%,var(--line))] bg-brand-soft text-brand-strong";
   return (
     <div
       role={tone === "danger" ? "alert" : undefined}

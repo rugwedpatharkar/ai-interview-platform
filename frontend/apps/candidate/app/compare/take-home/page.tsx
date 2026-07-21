@@ -18,9 +18,9 @@ export default function CompareTakeHomePage() {
             style={{ fontFamily: "var(--font-display)" }}
           >
             A take-home tells you who has{" "}
-            <span className="text-teal">access to tools.</span>
+            <span className="text-brand">access to tools.</span>
             <br />
-            An Aptura interview tells you who can <span className="text-teal">do the work.</span>
+            An Aptura interview tells you who can <span className="text-brand">do the work.</span>
           </h1>
           <p className="ap-lead mt-5 max-w-[60ch]">
             Take-homes used to be a fair signal. In an era of AI copilots, screen-sharing relays,
@@ -77,11 +77,11 @@ export default function CompareTakeHomePage() {
             <article className="ap-cell ap-cell--anchor">
               <h3 className="ap-h3">Why a verified interview works</h3>
               <ul className="mt-4 grid gap-2.5 text-[0.96rem] leading-relaxed text-ink-2">
-                <li className="flex gap-2.5"><span className="mt-[10px] size-1 shrink-0 rounded-full bg-teal opacity-80" />Identity is verified before the room opens.</li>
-                <li className="flex gap-2.5"><span className="mt-[10px] size-1 shrink-0 rounded-full bg-teal opacity-80" />Reasoning happens live, on a fullscreen-locked surface.</li>
-                <li className="flex gap-2.5"><span className="mt-[10px] size-1 shrink-0 rounded-full bg-teal opacity-80" />40+ proctoring signals run on-device — never raw media.</li>
-                <li className="flex gap-2.5"><span className="mt-[10px] size-1 shrink-0 rounded-full bg-teal opacity-80" />Every score points to a quoted line in the transcript.</li>
-                <li className="flex gap-2.5"><span className="mt-[10px] size-1 shrink-0 rounded-full bg-teal opacity-80" />HIGH-severity events end the session — server-authoritative.</li>
+                <li className="flex gap-2.5"><span className="mt-[10px] size-1 shrink-0 rounded-full bg-brand opacity-80" />Identity is verified before the room opens.</li>
+                <li className="flex gap-2.5"><span className="mt-[10px] size-1 shrink-0 rounded-full bg-brand opacity-80" />Reasoning happens live, on a fullscreen-locked surface.</li>
+                <li className="flex gap-2.5"><span className="mt-[10px] size-1 shrink-0 rounded-full bg-brand opacity-80" />40+ proctoring signals run on-device — never raw media.</li>
+                <li className="flex gap-2.5"><span className="mt-[10px] size-1 shrink-0 rounded-full bg-brand opacity-80" />Every score points to a quoted line in the transcript.</li>
+                <li className="flex gap-2.5"><span className="mt-[10px] size-1 shrink-0 rounded-full bg-brand opacity-80" />HIGH-severity events end the session — server-authoritative.</li>
               </ul>
             </article>
           </div>

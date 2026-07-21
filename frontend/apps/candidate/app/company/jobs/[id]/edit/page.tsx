@@ -363,7 +363,7 @@ function GateRadio({
     <label
       className={
         active
-          ? "flex cursor-pointer items-start gap-3 rounded-xl border-2 border-teal bg-teal-soft p-3"
+          ? "flex cursor-pointer items-start gap-3 rounded-xl border-2 border-brand bg-brand-soft p-3"
           : "flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-surface p-3 hover:bg-surface-2"
       }
     >

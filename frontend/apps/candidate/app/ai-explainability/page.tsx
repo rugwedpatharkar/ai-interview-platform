@@ -20,7 +20,7 @@ export default function AiExplainabilityPage() {
           >
             AI recommends. Humans decide.
             <br />
-            <span className="text-teal">Here&apos;s exactly how that works.</span>
+            <span className="text-brand">Here&apos;s exactly how that works.</span>
           </h1>
           <p className="ap-lead mt-5 max-w-[60ch]">
             Aptura&apos;s AI never decides who gets hired. It produces an evidence-backed
@@ -48,7 +48,7 @@ export default function AiExplainabilityPage() {
             ].map(([h, b], i) => (
               <li key={h} className="ap-cell flex flex-col gap-2 lg:grid lg:grid-cols-[90px_1fr] lg:gap-6">
                 <span
-                  className="text-[1.5rem] font-bold tracking-[-0.02em] text-teal"
+                  className="text-[1.5rem] font-bold tracking-[-0.02em] text-brand"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
                   {String(i + 1).padStart(2, "0")}
@@ -95,7 +95,7 @@ export default function AiExplainabilityPage() {
         <div className="ap-wrap">
           <div className="grid overflow-hidden rounded-3xl border border-line lg:grid-cols-2">
             <div className="bg-gradient-to-br from-[color-mix(in_oklch,var(--gold)_8%,var(--surface))] to-surface p-7 lg:p-10 lg:border-r lg:border-line">
-              <div className="mb-4 grid size-12 place-items-center rounded-2xl bg-gold-soft text-[color-mix(in_oklch,var(--gold)_50%,var(--ink-deep))]">
+              <div className="mb-4 grid size-12 place-items-center rounded-2xl bg-brand-soft text-[color-mix(in_oklch,var(--gold)_50%,var(--ink-deep))]">
                 <ApIcon name="bolt" className="size-6" />
               </div>
               <h3 className="ap-h3">What the AI produces</h3>
@@ -108,7 +108,7 @@ export default function AiExplainabilityPage() {
               </ul>
             </div>
             <div className="bg-gradient-to-br from-[color-mix(in_oklch,var(--coral)_5%,var(--surface))] to-surface p-7 lg:p-10">
-              <div className="mb-4 grid size-12 place-items-center rounded-2xl bg-coral-soft text-coral">
+              <div className="mb-4 grid size-12 place-items-center rounded-2xl bg-brand-soft text-brand">
                 <ApIcon name="user" className="size-6" />
               </div>
               <h3 className="ap-h3">What the human controls</h3>

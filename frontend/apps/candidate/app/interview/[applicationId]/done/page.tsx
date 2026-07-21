@@ -82,21 +82,21 @@ function CleanCompletionState({ applicationId }: { applicationId: string }) {
         </span>
         <ul className="flex flex-col gap-2 text-sm text-ink-2">
           <li className="inline-flex items-start gap-2">
-            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-teal" aria-hidden />
+            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
             <span>
               Iris's questions and your spoken answers were captured in full — no editing happens
               after the session.
             </span>
           </li>
           <li className="inline-flex items-start gap-2">
-            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-teal" aria-hidden />
+            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
             <span>
               Your integrity timeline is attached to the report — the recruiter sees the same
               evidence you'd see.
             </span>
           </li>
           <li className="inline-flex items-start gap-2">
-            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-teal" aria-hidden />
+            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
             <span>
               Most reports land within 10 minutes; long-form roles can take up to 30. We email
               you the moment the outcome is ready.

@@ -115,7 +115,7 @@ export default async function CompanyPage({
           {/* ---------- RIGHT: at-a-glance ---------- */}
           <aside className="ap-cell flex flex-col gap-4">
             <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-teal" aria-hidden />
+              <Sparkles className="size-4 text-brand" aria-hidden />
               <h3 className="ap-h4 text-base">At a glance</h3>
             </div>
             <dl className="grid gap-3 text-sm">
@@ -164,7 +164,7 @@ export default async function CompanyPage({
                 No open roles right now. Check back soon or{" "}
                 <Link
                   href="/jobs"
-                  className="font-medium text-teal-strong hover:underline"
+                  className="font-medium text-brand-strong hover:underline"
                 >
                   browse other companies
                 </Link>

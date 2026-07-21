@@ -147,7 +147,7 @@ export function CompanyShell({ children }: { children: ReactNode }) {
       }
       topbar={
         <>
-          <span className="hidden rounded-full border border-line bg-surface-2 px-3 py-1 text-[0.78rem] font-semibold text-teal-strong sm:inline">
+          <span className="hidden rounded-full border border-line bg-surface-2 px-3 py-1 text-[0.78rem] font-semibold text-brand-strong sm:inline">
             Pre-launch · company workspace
           </span>
           <div className="ml-auto flex items-center gap-2">

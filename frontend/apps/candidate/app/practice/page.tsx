@@ -155,7 +155,7 @@ export default function PracticePage() {
                     })}
                   </span>
                 </div>
-                <span className="inline-flex items-center gap-2 text-sm font-medium text-teal-strong">
+                <span className="inline-flex items-center gap-2 text-sm font-medium text-brand-strong">
                   Open feedback
                   <ArrowRight
                     className="size-4 transition-transform group-hover:translate-x-0.5"

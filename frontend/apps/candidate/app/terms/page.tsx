@@ -32,7 +32,7 @@ export default function TermsPage() {
         { id: "liability", title: "Limitation of liability", body: <LegalPlaceholder>Liability caps ratified by counsel.</LegalPlaceholder> },
         { id: "term", title: "Termination", body: <LegalPlaceholder>Termination conditions for accounts and pilots.</LegalPlaceholder> },
         { id: "law", title: "Governing law", body: <LegalPlaceholder>Governing jurisdiction ratified by counsel.</LegalPlaceholder> },
-        { id: "contact", title: "Contact", body: <p>Questions: <a className="text-teal-strong" href="mailto:legal@aptura.app">legal@aptura.app</a>.</p> },
+        { id: "contact", title: "Contact", body: <p>Questions: <a className="text-brand-strong" href="mailto:legal@aptura.app">legal@aptura.app</a>.</p> },
       ]}
     />
   );

@@ -45,7 +45,7 @@ export function PilotClient() {
               style={{ fontFamily: "var(--font-display)" }}
             >
               Pilot a verified interview on{" "}
-              <span className="text-teal">one open role.</span>
+              <span className="text-brand">one open role.</span>
             </h1>
             <p className="ap-lead mt-5">
               Run Aptura on a single role. After the pilot, you get a written summary of what
@@ -60,7 +60,7 @@ export function PilotClient() {
                 ["A direct line", "to the team building Aptura. Honest answers. Pre-launch posture."],
               ].map(([b, rest]) => (
                 <li key={b} className="flex gap-2.5 text-[0.96rem] text-ink-2">
-                  <ApIcon name="check" className="mt-[3px] size-[18px] shrink-0 text-teal" />
+                  <ApIcon name="check" className="mt-[3px] size-[18px] shrink-0 text-brand" />
                   <span>
                     <b className="text-ink-deep">{b}</b> {rest}
                   </span>
@@ -76,7 +76,7 @@ export function PilotClient() {
           >
             {status === "done" ? (
               <div className="grid place-items-center gap-3 py-10 text-center">
-                <div className="grid size-14 place-items-center rounded-full bg-teal-soft text-teal">
+                <div className="grid size-14 place-items-center rounded-full bg-brand-soft text-brand">
                   <ApIcon name="check" className="size-7" />
                 </div>
                 <h2
@@ -87,7 +87,7 @@ export function PilotClient() {
                 </h2>
                 <p className="max-w-[34ch] text-[0.94rem] text-ink-2">
                   If your mail client didn&apos;t open, write to{" "}
-                  <a className="text-teal-strong" href="mailto:hello@aptura.app">
+                  <a className="text-brand-strong" href="mailto:hello@aptura.app">
                     hello@aptura.app
                   </a>
                   .
@@ -161,7 +161,7 @@ function Field({
     <div>
       <label htmlFor={id} className="block text-[0.86rem] font-medium text-ink-deep">
         {label}
-        {required && <span className="ml-0.5 text-coral">*</span>}
+        {required && <span className="ml-0.5 text-brand">*</span>}
       </label>
       <div className="mt-1.5">
         {as === "textarea" ? (

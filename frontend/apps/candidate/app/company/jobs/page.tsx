@@ -118,7 +118,7 @@ export default function CompanyJobsPage() {
               onClick={() => setFilter(f.value)}
               className={
                 active
-                  ? "inline-flex items-center gap-2 rounded-full border border-teal bg-teal-soft px-3 py-1 text-sm font-semibold text-teal-strong"
+                  ? "inline-flex items-center gap-2 rounded-full border border-brand bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-strong"
                   : "inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-sm text-ink-2 hover:bg-surface-2"
               }
             >
@@ -151,7 +151,7 @@ export default function CompanyJobsPage() {
 
       {!jobs.isLoading && !jobs.isError && list.length === 0 && (
         <div className="ap-cell ap-cell--anchor mt-6 grid place-items-center gap-3 py-12 text-center">
-          <FileText className="size-7 text-teal" aria-hidden />
+          <FileText className="size-7 text-brand" aria-hidden />
           <h2 className="ap-h3">No jobs yet</h2>
           <p className="ap-lead max-w-md">
             Post a role to start receiving applicants. Every applicant gets a strict

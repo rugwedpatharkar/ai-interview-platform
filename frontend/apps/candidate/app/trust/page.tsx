@@ -28,7 +28,7 @@ export default function TrustPage() {
           >
             How proctoring works.
             <br />
-            And what it <span className="text-teal">does not do.</span>
+            And what it <span className="text-brand">does not do.</span>
           </h1>
           <p className="ap-lead mt-5 max-w-[60ch]">
             A proctored interview earns trust only when both sides can see the constraints. This
@@ -78,7 +78,7 @@ export default function TrustPage() {
                 className="ap-cell flex flex-col gap-2 lg:grid lg:grid-cols-[90px_1fr] lg:gap-6"
               >
                 <span
-                  className="text-[1.6rem] font-bold tracking-[-0.02em] text-teal"
+                  className="text-[1.6rem] font-bold tracking-[-0.02em] text-brand"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
                   {layer.n}

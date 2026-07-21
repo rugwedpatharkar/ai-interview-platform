@@ -111,7 +111,7 @@ function LoginInner() {
           trailing={
             <Link
               href="/forgot"
-              className="text-[0.8rem] font-medium text-teal-strong underline-offset-4 hover:underline"
+              className="text-[0.8rem] font-medium text-brand-strong underline-offset-4 hover:underline"
             >
               Forgot?
             </Link>

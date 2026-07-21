@@ -45,7 +45,7 @@ export default function DpaPage() {
         { id: "transfers", title: "International transfers", body: <LegalPlaceholder>Standard Contractual Clauses + transfer mechanisms appropriate to deployment region.</LegalPlaceholder> },
         { id: "term", title: "Term and termination", body: <LegalPlaceholder>Mirrors the pilot or subscription term; return or deletion of data on termination.</LegalPlaceholder> },
         { id: "liability", title: "Liability and indemnity", body: <LegalPlaceholder>As per the master agreement, capped per the Terms of Service.</LegalPlaceholder> },
-        { id: "contact", title: "Contact", body: <p>DPA questions: <a className="text-teal-strong" href="mailto:dpa@aptura.app">dpa@aptura.app</a>.</p> },
+        { id: "contact", title: "Contact", body: <p>DPA questions: <a className="text-brand-strong" href="mailto:dpa@aptura.app">dpa@aptura.app</a>.</p> },
       ]}
     />
   );

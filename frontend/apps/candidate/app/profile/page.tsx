@@ -345,7 +345,7 @@ export default function ProfilePage() {
                 <span className="ap-cell-tag">A · 02</span>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="flex size-10 items-center justify-center rounded-xl bg-teal-soft text-primary">
+                    <span className="flex size-10 items-center justify-center rounded-xl bg-brand-soft text-primary">
                       <FileText className="size-5" aria-hidden />
                     </span>
                     <div>

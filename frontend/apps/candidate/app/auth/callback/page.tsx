@@ -122,7 +122,7 @@ function ApertureSpinner() {
   return (
     <div className="relative grid size-20 place-items-center">
       <span className="absolute inset-0 animate-spin rounded-full border-2 border-line border-t-teal" />
-      <ApIcon name="mark" className="size-10 text-teal" />
+      <ApIcon name="mark" className="size-10 text-brand" />
     </div>
   );
 }

@@ -407,7 +407,7 @@ export default function InterviewPage() {
             </Alert>
             <Link
               href="/"
-              className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-teal-strong underline-offset-4 hover:underline"
+              className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-brand-strong underline-offset-4 hover:underline"
             >
               <ArrowLeft className="size-4" aria-hidden />
               Back to applications

@@ -39,7 +39,7 @@ export function JobDetailHero({ job }: { job: JobDetailDTO }) {
       <div className="ap-wrap">
         <Link
           href={`/companies/${job.company.id}`}
-          className="ap-eyebrow hover:text-teal"
+          className="ap-eyebrow hover:text-brand"
         >
           {job.company.name}
         </Link>

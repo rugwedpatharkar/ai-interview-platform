@@ -85,7 +85,7 @@ export default function PrivacyPage() {
               <p>
                 Access, rectification, erasure, restriction, portability, and objection — honored
                 via{" "}
-                <a className="text-teal-strong" href="mailto:privacy@aptura.app">
+                <a className="text-brand-strong" href="mailto:privacy@aptura.app">
                   privacy@aptura.app
                 </a>
                 . Two business-day response SLA.
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
           body: (
             <p>
               Questions about this policy or your data:{" "}
-              <a className="text-teal-strong" href="mailto:privacy@aptura.app">
+              <a className="text-brand-strong" href="mailto:privacy@aptura.app">
                 privacy@aptura.app
               </a>
               .

@@ -105,7 +105,7 @@ function VerifyInner() {
       >
         <div className="mt-6 grid gap-4">
           <div className="grid place-items-center gap-3 rounded-2xl border border-line bg-surface-2 py-7">
-            <div className="grid size-14 place-items-center rounded-full bg-teal-soft text-teal">
+            <div className="grid size-14 place-items-center rounded-full bg-brand-soft text-brand">
               <ApIcon name="check" className="size-7" />
             </div>
             <p className="text-[0.92rem] text-ink-2">All set — your account is active.</p>
@@ -196,7 +196,7 @@ function VerifyInner() {
       <div className="mt-6 grid gap-4">
         <div className="grid gap-3 rounded-2xl border border-line bg-surface-2 p-4">
           <div className="flex items-center gap-3">
-            <div className="grid size-10 place-items-center rounded-full bg-teal-soft text-teal">
+            <div className="grid size-10 place-items-center rounded-full bg-brand-soft text-brand">
               <ApIcon name="bell" className="size-5" />
             </div>
             <div>
