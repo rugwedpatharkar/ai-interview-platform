@@ -292,6 +292,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                     refresh_ttl_seconds=self._refresh_ttl,
                     ip=_client_ip(context, self._trusted_proxy),
                     user_agent=_user_agent(context),
+                    limiter=self._limiter,
                 )
                 return auth_pb2.TokenResponse(
                     access_token=out["access_token"],
@@ -336,14 +337,19 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
     async def ForgotPassword(self, request, context):
         _grpc_total.labels(method="ForgotPassword").inc()
         async with log_context(log, "auth.ForgotPassword"):
-            out = await auth_res.forgot_password(
-                request.email,
-                users=self._users,
-                tokens=self._tokens,
-                notifier=self._notifier,
-                nonces=self._nonces,
-            )
-            return auth_pb2.OkResponse(ok=out["ok"])
+            try:
+                out = await auth_res.forgot_password(
+                    request.email,
+                    users=self._users,
+                    tokens=self._tokens,
+                    notifier=self._notifier,
+                    nonces=self._nonces,
+                    limiter=self._limiter,
+                    ip=_client_ip(context, self._trusted_proxy),
+                )
+                return auth_pb2.OkResponse(ok=out["ok"])
+            except AuthDomainError as exc:
+                await self._abort(context, exc, "ForgotPassword")
 
     async def ResetPassword(self, request, context):
         _grpc_total.labels(method="ResetPassword").inc()
@@ -357,6 +363,8 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                     sessions=self._sessions,
                     nonces=self._nonces,
                     audit=self._audit,
+                    limiter=self._limiter,
+                    ip=_client_ip(context, self._trusted_proxy),
                 )
                 return auth_pb2.OkResponse(ok=out["ok"])
             except AuthDomainError as exc:

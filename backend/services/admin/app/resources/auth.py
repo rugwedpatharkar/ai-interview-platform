@@ -318,8 +318,19 @@ async def refresh(
     refresh_ttl_seconds,
     ip="",
     user_agent="",
+    limiter=None,
 ):
     async with log_context(log, "resource.auth.refresh", **bind_ids()):
+        # Per-IP throttle: a leaked/guessed refresh token can otherwise be hammered
+        # without any gate. Same knobs as the OAuth cookie-refresh path.
+        if limiter is not None and ip:
+            s = get_settings()
+            hit = await limiter.hit(
+                f"refresh:ip:{ip}", s.refresh_limit, s.refresh_window_seconds
+            )
+            if not hit.allowed:
+                log.warning("refresh throttled: ip={}", ip)
+                raise RateLimitedError(hit.retry_after)
         try:
             claims = tokens.decode(refresh_token, expected_type="refresh")
         except JWTError as exc:
@@ -475,8 +486,20 @@ async def resend_verification(
         return {"ok": True}
 
 
-async def forgot_password(email, *, users, tokens, notifier, nonces=None):
+async def forgot_password(
+    email, *, users, tokens, notifier, nonces=None, limiter=None, ip=None
+):
     async with log_context(log, "resource.auth.forgot_password", **bind_ids()):
+        # Per-IP throttle: without this, an attacker mass-triggers reset emails against
+        # a captured email list — spammy for users, wasteful for Redis nonces.
+        if limiter is not None and ip:
+            s = get_settings()
+            hit = await limiter.hit(
+                f"forgot:ip:{ip}", s.resend_limit, s.resend_window_seconds
+            )
+            if not hit.allowed:
+                log.warning("forgot_password throttled: ip={}", ip)
+                raise RateLimitedError(hit.retry_after)
         email = (
             email.strip().lower()
         )  # normalize so a case/space variant still resolves
@@ -496,9 +519,27 @@ async def forgot_password(email, *, users, tokens, notifier, nonces=None):
 
 
 async def reset_password(
-    token, new_password, *, users, tokens, sessions, nonces=None, audit=None
+    token,
+    new_password,
+    *,
+    users,
+    tokens,
+    sessions,
+    nonces=None,
+    audit=None,
+    limiter=None,
+    ip=None,
 ):
     async with log_context(log, "resource.auth.reset_password", **bind_ids()):
+        # Per-IP throttle: bounds offline password-guessing-via-forced-reset floods.
+        if limiter is not None and ip:
+            s = get_settings()
+            hit = await limiter.hit(
+                f"reset:ip:{ip}", s.resend_limit, s.resend_window_seconds
+            )
+            if not hit.allowed:
+                log.warning("reset_password throttled: ip={}", ip)
+                raise RateLimitedError(hit.retry_after)
         try:
             claims = tokens.decode(token)
         except JWTError as exc:
