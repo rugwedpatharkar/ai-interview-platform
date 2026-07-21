@@ -40,3 +40,17 @@ def test_observability_defaults_disabled():
     s = BaseServiceSettings()
     assert s.metrics_port == 0
     assert s.otlp_endpoint is None
+
+
+def test_dev_sentinel_allowed_in_dev():
+    sentinel = "dev-insecure-change-me-000000000000000000"
+    assert (
+        BaseServiceSettings(environment="dev", jwt_secret=sentinel).jwt_secret
+        == sentinel
+    )
+
+
+def test_dev_sentinel_refused_in_prod():
+    sentinel = "dev-insecure-change-me-000000000000000000"
+    with pytest.raises(ValidationError):
+        BaseServiceSettings(environment="prod", jwt_secret=sentinel)

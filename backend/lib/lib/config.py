@@ -1,6 +1,8 @@
+import hmac
 import os
+from typing import ClassVar
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -90,6 +92,12 @@ class BaseServiceSettings(BaseSettings):
     metrics_port: int = 0  # 0 disables the /metrics HTTP server
     otlp_endpoint: str | None = None  # None disables OTLP exporter
 
+    # Dev-only sentinel values that must never reach production. { field_name: value }.
+    # Subclasses extend this to cover their own secrets (e.g. livekit_api_secret).
+    DEV_SENTINELS: ClassVar[dict[str, str]] = {
+        "jwt_secret": "dev-insecure-change-me-000000000000000000",
+    }
+
     @field_validator("jwt_secret")
     @classmethod
     def _jwt_secret_strength(cls, v: str) -> str:
@@ -98,3 +106,21 @@ class BaseServiceSettings(BaseSettings):
         if v and len(v) < 32:
             raise ValueError("jwt_secret must be at least 32 characters")
         return v
+
+    @model_validator(mode="after")
+    def _fail_on_dev_sentinels(self) -> "BaseServiceSettings":
+        if self.environment != "prod":
+            return self
+        # Walk the MRO so a subclass's DEV_SENTINELS augments (not replaces) the parent.
+        # Read from __dict__ directly — pydantic's ModelMetaclass raises AttributeError
+        # on `getattr(cls, "DEV_SENTINELS")`, but __dict__.get sidesteps the metaclass.
+        merged: dict[str, str] = {}
+        for klass in reversed(type(self).__mro__):
+            merged.update(klass.__dict__.get("DEV_SENTINELS", {}))
+        for field, sentinel in merged.items():
+            value = getattr(self, field, None)
+            if isinstance(value, str) and hmac.compare_digest(value, sentinel):
+                raise ValueError(
+                    f"{field} matches the dev sentinel — refuse to start in production"
+                )
+        return self

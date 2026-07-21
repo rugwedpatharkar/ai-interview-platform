@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import ClassVar
 
 from lib.config import BaseServiceSettings
 from pydantic import Field, field_validator
@@ -9,6 +10,12 @@ class Settings(BaseServiceSettings):
 
     The LLM API key is a secret — supply it via env (GEMINI_API_KEY), never a default.
     """
+
+    # Base class's DEV_SENTINELS is auto-merged via MRO walk in the base validator; only
+    # list the service-specific sentinels here.
+    DEV_SENTINELS: ClassVar[dict[str, str]] = {
+        "livekit_api_secret": "devsecret_change_me_min_32_chars_long",
+    }
 
     service_name: str = "ai-agents"
     llm_provider: str = "gemini"
