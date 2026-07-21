@@ -128,6 +128,13 @@ class CandidateEraser:
                     log.exception("erase.step_failed step={} user_id={}", name, user_id)
                     failures.append(name)
 
+            # H14 part 2: flip deletion_pending FIRST so caller_identity refuses any
+            # authed write racing this cascade (a live access token has up to 15 min
+            # left after revoke_user kills the refresh family; without this flag,
+            # SubmitTurn/SubmitCoding etc. could still land during that window).
+            await _step(
+                "mark_deletion_pending", self._users.mark_deletion_pending(user_id)
+            )
             applications = await self._applications.list_by_candidate(user_id)
             application_ids = [str(a["_id"]) for a in applications]
             await _step(

@@ -36,6 +36,10 @@ class FakeUserRepo:
         if user_id in self._docs:
             self._docs[user_id]["status"] = status
 
+    async def mark_deletion_pending(self, user_id):
+        if user_id in self._docs:
+            self._docs[user_id]["deletion_pending"] = True
+
     async def update(self, user_id, fields):
         if user_id in self._docs:
             self._docs[user_id].update(fields)

@@ -20,6 +20,11 @@ class User(BaseModel):
     last_active_at: datetime | None = None
     invited_by: str = ""  # inviter user_id; "" for founding members
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    # GDPR erasure-in-flight guard. Set to True as the FIRST step of `retention_pass`
+    # so any authenticated write racing the delete cascade is refused at the auth
+    # boundary (H14). Anonymize doesn't clear this — a purged user is stuck-not-usable
+    # by design; the row exists only to satisfy FK-like joins.
+    deletion_pending: bool = False
 
 
 class Company(BaseModel):
