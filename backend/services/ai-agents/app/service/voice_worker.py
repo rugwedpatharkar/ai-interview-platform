@@ -91,7 +91,11 @@ async def _renew_claim(redis, key: str, ttl_s: int, interval_s: int) -> None:
         while True:
             await asyncio.sleep(interval_s)
             try:
-                await redis.expire(key, ttl_s)
+                await with_timeout(
+                    redis.expire(key, ttl_s),
+                    timeouts.redis(),
+                    op="voice_worker.claim_renew",
+                )
             except Exception as exc:
                 log.warning("voice_worker: claim renewal failed key={}: {}", key, exc)
     except asyncio.CancelledError:

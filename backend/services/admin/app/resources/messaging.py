@@ -12,6 +12,7 @@ import asyncio
 from datetime import UTC, datetime
 
 from lib.logging import bind_ids, get_logger, log_context
+from lib.resilience import with_timeout
 from lib.schemas import Role
 
 from app.errors import ValidationError
@@ -20,6 +21,7 @@ from app.resources.decision import _scoped
 from app.resources.discovery import iso
 from app.resources.mark_read import mark_thread_read
 from app.resources.notification import notify_event
+from lib import timeouts
 
 log = get_logger(component="messaging.resources")
 
@@ -163,7 +165,11 @@ async def send_message(
         # means the recipient's stream waits for its fallback poll instead.
         if redis is not None:
             try:
-                await redis.publish(_stream_channel(application_id), "1")
+                await with_timeout(
+                    redis.publish(_stream_channel(application_id), "1"),
+                    timeouts.redis(),
+                    op="messaging.stream_publish",
+                )
             except Exception:
                 log.exception("messaging: stream publish failed for {}", application_id)
         return _message_dto(
