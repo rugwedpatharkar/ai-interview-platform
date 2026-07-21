@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { LogoMark } from "@ip/ui";
 import { AudienceSwitch } from "../audience-switch";
 import { Arrow, Chevron } from "./landing-icons";
 
@@ -20,17 +21,6 @@ const CompanyBody = dynamic(() =>
 // grain, glass nav, footer) and swaps the audience body IN PLACE when the nav
 // switch is clicked — pure client state, NO route navigation and NO URL change.
 // There is one landing page; /hiring-teams just resolves here.
-
-const AptMark = ({ size = 30, spin = false }: { size?: number; spin?: boolean }) => (
-  <svg className="mark" width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Aptura">
-    <circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" strokeWidth="3" />
-    <g className={spin ? "spin" : undefined} stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-      <line x1="43" y1="32" x2="55.4" y2="45.5" /><line x1="37.5" y1="41.5" x2="32" y2="59" />
-      <line x1="26.5" y1="41.5" x2="8.6" y2="45.5" /><line x1="21" y1="32" x2="8.6" y2="18.5" />
-      <line x1="26.5" y1="22.5" x2="32" y2="5" /><line x1="37.5" y1="22.5" x2="55.4" y2="18.5" />
-    </g>
-  </svg>
-);
 
 const Burger = ({ open }: { open: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
@@ -137,7 +127,7 @@ export function LandingPage({ initialAudience }: { initialAudience: "candidates"
             </div>
           )}
           <nav className="nav" aria-label="Primary">
-            <Link className="brand" href="/" aria-label="Aptura — home"><AptMark spin /><span className="brand-tx">Aptura</span></Link>
+            <Link className="brand" href="/" aria-label="Aptura — home"><LogoMark size="md" spin /><span className="brand-tx">Aptura</span></Link>
             <AudienceSwitch active={audience} onSelect={select} />
 
             {audience === "candidates" ? (
@@ -233,7 +223,7 @@ export function LandingPage({ initialAudience }: { initialAudience: "candidates"
       <footer>
         <div className="wrap">
           <div className="foot">
-            <span className="brand" style={{ fontSize: "1.1rem" }}><AptMark size={26} />Aptura</span>
+            <span className="brand" style={{ fontSize: "1.1rem" }}><LogoMark size="sm" />Aptura</span>
             <div className="foot-right">
               <span>{shown === "hiring" ? "Hire on proven merit. Cheat-proof by design." : "Get seen. Get interviewed. Get hired."}</span>
               <span>© Aptura</span>
