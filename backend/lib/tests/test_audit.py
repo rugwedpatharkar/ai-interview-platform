@@ -16,8 +16,12 @@ class FakeRepo:
 
 class FakeRedis:
     def __init__(self) -> None:
-        self.list: list[bytes] = []
+        # Multiple named lists so tests can inspect the "processing" list too.
+        self.lists: dict[str, list[bytes]] = {}
         self.keys: dict[str, tuple[str, int | None]] = {}
+
+    def _l(self, key):
+        return self.lists.setdefault(key, [])
 
     async def set(self, key, value, ex=None, nx=False):
         if nx and key in self.keys:
@@ -26,15 +30,45 @@ class FakeRedis:
         return True
 
     async def rpush(self, key, value):
-        self.list.append(value)
-        return len(self.list)
+        self._l(key).append(value)
+        return len(self._l(key))
 
     async def lpop(self, key):
-        return self.list.pop(0) if self.list else None
+        lst = self._l(key)
+        return lst.pop(0) if lst else None
 
     async def lpush(self, key, value):
-        self.list.insert(0, value)
-        return len(self.list)
+        self._l(key).insert(0, value)
+        return len(self._l(key))
+
+    async def lmove(self, src, dst, from_side, to_side):
+        src_l = self._l(src)
+        if not src_l:
+            return None
+        val = src_l.pop(0) if from_side.upper() == "LEFT" else src_l.pop()
+        dst_l = self._l(dst)
+        if to_side.upper() == "RIGHT":
+            dst_l.append(val)
+        else:
+            dst_l.insert(0, val)
+        return val
+
+    async def lrem(self, key, count, value):
+        lst = self._l(key)
+        removed = 0
+        remaining = []
+        for v in lst:
+            if v == value and (count == 0 or removed < count):
+                removed += 1
+                continue
+            remaining.append(v)
+        self.lists[key] = remaining
+        return removed
+
+    # Back-compat for tests still reading .list
+    @property
+    def list(self):
+        return self._l("audit:replay")
 
 
 @pytest.mark.asyncio

@@ -13,6 +13,11 @@ from typing import Any
 from lib.errors import DependencyError
 
 _REPLAY_LIST_KEY = "audit:replay"
+# In-flight list: LMOVE from the main list to here before attempting the audit write,
+# LREM on success. On a process crash between LPOP and the write, the row used to
+# live only in Python memory and disappeared — now it's still on the processing list
+# and the next drainer sees it.
+_REPLAY_PROCESSING_KEY = "audit:replay:processing"
 _REPLAY_DEDUP_KEY_PREFIX = "audit:replay:seen:"
 _REPLAY_DEDUP_TTL_SECONDS = 24 * 3600
 
@@ -47,19 +52,31 @@ async def enqueue_replay(redis, doc: dict[str, Any]) -> None:
 
 
 async def drain_replay(repo, redis, *, batch: int = 50) -> int:
-    """Pop up to ``batch`` items and try to ``write_audit`` each. On failure, the item
-    is pushed back at the head so order is preserved. Returns count drained.
+    """Pop up to ``batch`` items and try to ``write_audit`` each. Uses LMOVE so a
+    process crash between "take from queue" and "write to Mongo" doesn't lose the
+    row — it stays on the processing list and the next drainer sweeps it. On write
+    failure the row is moved back to the head of the main list to preserve order.
+    Returns count drained.
     """
     drained = 0
     for _ in range(batch):
-        raw = await redis.lpop(_REPLAY_LIST_KEY)
+        # LMOVE atomically takes from the tail-side of the source list and puts on
+        # the tail of the processing list. If we crash after this, the row survives.
+        raw = await redis.lmove(
+            _REPLAY_LIST_KEY, _REPLAY_PROCESSING_KEY, "LEFT", "RIGHT"
+        )
         if raw is None:
             break
-        doc = json.loads(raw)
         try:
+            doc = json.loads(raw)
             await write_audit(repo, doc)
+            # Success: remove exactly this row from the processing list.
+            await redis.lrem(_REPLAY_PROCESSING_KEY, 1, raw)
             drained += 1
         except DependencyError:
+            # Put back at the head of the main list to preserve order; also clear
+            # from processing so it isn't double-drained on the next sweep.
+            await redis.lrem(_REPLAY_PROCESSING_KEY, 1, raw)
             await redis.lpush(_REPLAY_LIST_KEY, raw)
             break
     return drained
