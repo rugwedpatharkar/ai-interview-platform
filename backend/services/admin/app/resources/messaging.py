@@ -74,6 +74,10 @@ def _thread_dto(doc: dict, caller_side: str) -> dict:
     }
 
 
+def _stream_channel(application_id: str) -> str:
+    return f"msg:app:{application_id}"
+
+
 async def send_message(
     identity,
     application_id,
@@ -85,6 +89,7 @@ async def send_message(
     jobs,
     companies,
     notifications=None,
+    redis=None,
 ):
     async with log_context(
         log,
@@ -154,6 +159,13 @@ async def send_message(
                     )
                 except Exception:
                     log.exception("messaging: notify failed for {}", application_id)
+        # Notify open streams (StreamMessages subscribers). Best-effort; failure just
+        # means the recipient's stream waits for its fallback poll instead.
+        if redis is not None:
+            try:
+                await redis.publish(_stream_channel(application_id), "1")
+            except Exception:
+                log.exception("messaging: stream publish failed for {}", application_id)
         return _message_dto(
             {
                 "_id": msg_id,
@@ -284,9 +296,17 @@ async def mark_read(
 
 
 async def stream_messages(
-    application_id, since_id, *, identity, applications, messages
+    application_id, since_id, *, identity, applications, messages, redis=None
 ):
-    """Yield new MessageDTOs as they arrive (1s poll). Caller cancels on disconnect."""
+    """Yield new MessageDTOs as they arrive.
+
+    Was a 1 s poll per open stream — 1000 concurrent threads = 1000 Mongo
+    find/sec forever. Now: subscribe to a Redis pubsub channel that
+    send_message publishes to; the loop wakes on the notification and only
+    hits Mongo when there's actual news. A 10 s fallback poll runs if pubsub
+    misses a publish (network blip, subscriber not yet attached). Redis
+    unavailable → fall back to a 2 s poll to keep the feature working.
+    """
     async with log_context(
         log,
         "resource.messaging.stream_messages",
@@ -294,9 +314,48 @@ async def stream_messages(
     ):
         await _authorize(identity, application_id, applications)
         last_id = since_id
-        while True:
-            new_msgs = await messages.list_after(application_id, last_id, limit=100)
-            for m in new_msgs:
-                yield _message_dto(m)
-                last_id = str(m["_id"])
-            await asyncio.sleep(1.0)
+
+        pubsub = None
+        if redis is not None:
+            try:
+                pubsub = redis.pubsub()
+                await pubsub.subscribe(_stream_channel(application_id))
+            except Exception:
+                log.exception(
+                    "messaging.stream: pubsub subscribe failed for {}",
+                    application_id,
+                )
+                pubsub = None
+
+        try:
+            while True:
+                new_msgs = await messages.list_after(application_id, last_id, limit=100)
+                for m in new_msgs:
+                    yield _message_dto(m)
+                    last_id = str(m["_id"])
+                if pubsub is not None:
+                    # Wait for a publish notification; the 10 s timeout is the
+                    # fallback-poll interval, generous because pushes normally
+                    # arrive within milliseconds.
+                    try:
+                        await pubsub.get_message(
+                            ignore_subscribe_messages=True, timeout=10.0
+                        )
+                    except Exception:
+                        # get_message hides most errors; a stray one means the
+                        # pubsub is unhealthy — degrade to poll.
+                        pubsub = None
+                        await asyncio.sleep(2.0)
+                else:
+                    await asyncio.sleep(2.0)
+        finally:
+            if pubsub is not None:
+                try:
+                    await pubsub.unsubscribe(_stream_channel(application_id))
+                    await pubsub.aclose()
+                except Exception as exc:
+                    log.warning(
+                        "messaging.stream: pubsub teardown for {} failed: {}",
+                        application_id,
+                        exc,
+                    )

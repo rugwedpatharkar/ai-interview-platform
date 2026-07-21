@@ -371,6 +371,7 @@ def create_web_app(
             companies=CompanyRepository(db),
             tokens=tokens,
             notifications=NotificationRepository(db),
+            redis=redis,
         ),
         app,
     )

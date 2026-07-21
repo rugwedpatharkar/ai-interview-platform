@@ -95,7 +95,7 @@ class HttpFetcher:
                 if not fresh.issubset(allowed):
                     raise SsrfBlocked(
                         f"DNS-rebinding detected for {host}: "
-                        f"validated {sorted(allowed)}, resolver returned {sorted(fresh)}"
+                        f"validated {sorted(allowed)}, now returned {sorted(fresh)}"
                     )
                 # Also re-classify the fresh set — belt-and-braces if the allowed set
                 # accidentally contained a private IP (shouldn't, but cheap to check).

@@ -59,6 +59,7 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
         companies,
         tokens,
         notifications=None,
+        redis=None,
     ):
         self._deps = {
             "applications": applications,
@@ -69,6 +70,10 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
             "notifications": notifications,
         }
         self._tokens = tokens
+        # Redis is only consumed by send_message + stream_messages (pub/sub) — kept
+        # off _deps because other resources here (list_messages, mark_read, etc.)
+        # would trip over the extra kwarg via **self._deps.
+        self._redis = redis
 
     async def _abort(self, context, exc, method):
         code, msg = to_grpc_status(exc)
@@ -86,7 +91,11 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
         ):
             try:
                 out = await msg_res.send_message(
-                    ident, request.application_id, request.body, **self._deps
+                    ident,
+                    request.application_id,
+                    request.body,
+                    **self._deps,
+                    redis=self._redis,
                 )
                 return _message(out)
             except AuthDomainError as exc:
@@ -168,6 +177,7 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
                     identity=ident,
                     applications=self._deps["applications"],
                     messages=self._deps["messages"],
+                    redis=self._redis,
                 ):
                     yield _message(msg)
             except AuthDomainError as exc:
