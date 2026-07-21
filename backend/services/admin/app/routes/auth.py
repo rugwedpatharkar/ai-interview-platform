@@ -312,8 +312,8 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
     async def InviteRecruiter(self, request, context):
         _grpc_total.labels(method="InviteRecruiter").inc()
-        # caller_identity aborts with UNAUTHENTICATED on missing/invalid/expired token
-        # (the FE gRPC-web client refreshes on 401; INVALID_ARGUMENT wouldn't trigger it).
+        # caller_identity aborts UNAUTHENTICATED on missing/invalid/expired token (the
+        # FE gRPC-web client refreshes on 401; INVALID_ARGUMENT wouldn't trigger that).
         caller = await caller_identity(context, self._tokens)
         async with (
             log_context(log, "auth.InviteRecruiter"),

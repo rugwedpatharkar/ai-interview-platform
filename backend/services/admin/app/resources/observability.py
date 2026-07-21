@@ -28,8 +28,8 @@ def _redact(s: str) -> str:
 
 
 def _user_id(identity):
-    # `caller_identity` stores it as `id`; `_ANON_IDENTITY` (unauth path) uses `user_id`.
-    # Reading only one silently drops the user_id from every authenticated event.
+    # `caller_identity` stores it as `id`; `_ANON_IDENTITY` uses `user_id`. Reading
+    # only one silently drops the user_id from every authenticated event.
     return identity.get("id") or identity.get("user_id")
 
 

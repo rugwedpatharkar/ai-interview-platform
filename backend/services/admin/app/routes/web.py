@@ -43,7 +43,7 @@ from app.infra.repositories.rubrics import RubricRepository
 from app.infra.repositories.saved_jobs import SavedJobsRepository
 from app.infra.repositories.user_preferences import UserPreferencesRepository
 from app.infra.repositories.users import UserRepository
-from app.infra.totp import FernetSecretBox, PyotpProvider
+from app.infra.totp import PyotpProvider
 from app.resources.compliance import CandidateEraser
 from app.routes.analytics import AnalyticsServicer
 from app.routes.application import ApplicationServicer
@@ -134,6 +134,7 @@ def create_web_app(
     notifier,
     notification_publisher,
     refresh_ttl_seconds,
+    secretbox,
     allow_origin="*",
     max_message_bytes=4 * 1024 * 1024,
     timeout_seconds=30,
@@ -160,7 +161,7 @@ def create_web_app(
             audit=AuditLogRepository(db),
             oauth_providers=oauth_providers,
             totp=PyotpProvider(),
-            secretbox=FernetSecretBox(tokens._secret),
+            secretbox=secretbox,
         ),
         app,
     )
@@ -340,7 +341,7 @@ def create_web_app(
             tokens=tokens,
             users=UserRepository(db),
             totp=PyotpProvider(),
-            secretbox=FernetSecretBox(tokens._secret),
+            secretbox=secretbox,
             sessions=RefreshSessionStore(redis),
             limiter=RateLimiter(redis),
             nonces=SingleUseTokenStore(redis),

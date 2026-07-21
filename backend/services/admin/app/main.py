@@ -27,6 +27,7 @@ from app.infra.repositories.interview_bookings import InterviewBookingRepository
 from app.infra.repositories.jobs import JobRepository
 from app.infra.repositories.notifications import NotificationRepository
 from app.infra.repositories.users import UserRepository
+from app.infra.totp import FernetSecretBox
 from app.resources import funnel, recommend, scheduler
 from app.resources.notification import TransitionNotifier
 from app.routes.oauth import create_oauth_app
@@ -134,6 +135,9 @@ async def serve() -> None:
     notification_publisher = NotificationRequestPublisher(publisher)
 
     # Browser → gRPC-web (no proxy); the same servicers, registered onto an ASGI app.
+    # Build the TOTP secretbox from settings directly (not by reaching into
+    # TokenService's private attr) so key derivation has a single explicit source.
+    secretbox = FernetSecretBox(s.jwt_secret)
     grpc_app = create_web_app(
         db=mongo.db,
         redis=redis,
@@ -143,6 +147,7 @@ async def serve() -> None:
         notifier=notifier,
         notification_publisher=notification_publisher,
         refresh_ttl_seconds=s.refresh_token_minutes * 60,
+        secretbox=secretbox,
         allow_origin=s.cors_allow_origin,
         max_message_bytes=s.grpc_max_message_bytes,
         timeout_seconds=s.grpc_timeout_seconds,

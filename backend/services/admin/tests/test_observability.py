@@ -135,15 +135,16 @@ def test_redaction_scrubs_token_from_log_context(capsys):
 
 
 @pytest.mark.asyncio
-async def test_invite_recruiter_no_token_increments_errors(fakes):
-    """InviteRecruiter with missing token logs + increments errors_total."""
+async def test_invite_recruiter_no_token_aborts_unauthenticated(fakes):
+    """InviteRecruiter with a missing token aborts UNAUTHENTICATED via caller_identity
+    (the FE gRPC-web client only refreshes-and-retries on 401). The shared
+    caller_identity helper aborts directly and does not increment the per-method
+    _grpc_errors counter — consistent with every other authed servicer.
+    """
     svc = _servicer(fakes)
-    before = _counter_value("admin_grpc_errors_total", method="InviteRecruiter")
     with pytest.raises(_Aborted) as ei:
         await svc.InviteRecruiter(
             auth_pb2.InviteRecruiterRequest(email="r@x.com", password="pw123456"),
             FakeContext(),
         )
     assert ei.value.code == grpc.StatusCode.UNAUTHENTICATED
-    after = _counter_value("admin_grpc_errors_total", method="InviteRecruiter")
-    assert after == before + 1
