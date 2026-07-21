@@ -250,3 +250,35 @@ async def test_change_role_cannot_demote_last_admin():
             sessions=_FakeSessions(),
             audit=_FakeAudit(),
         )
+
+
+async def test_concurrent_admin_demotions_never_land_zero_admins():
+    # C2: two admins concurrently demoting each other used to both pass the
+    # count>1 guard and both succeed, leaving the company with ZERO admins and
+    # locked out. The per-company lock now serializes guard+write so exactly
+    # one demotion wins; the loser sees count==1 and raises ValidationError.
+    import asyncio as _asyncio
+
+    users = _FakeUsers()
+    _seed(users, "admin1", "company_admin", comp_id="C1")
+    _seed(users, "admin2", "company_admin", comp_id="C1")
+
+    async def demote(target):
+        try:
+            await team.change_role(
+                _admin(comp_id="C1"),
+                target,
+                "recruiter",
+                users=users,
+                sessions=_FakeSessions(),
+                audit=_FakeAudit(),
+            )
+            return "ok"
+        except ValidationError:
+            return "guard_tripped"
+
+    results = await _asyncio.gather(demote("admin1"), demote("admin2"))
+    # Exactly one succeeded; the other was rejected by the last-admin guard.
+    assert sorted(results) == ["guard_tripped", "ok"]
+    # And at least one company_admin remains active in comp C1.
+    assert await users.count_active_admins("C1") == 1
