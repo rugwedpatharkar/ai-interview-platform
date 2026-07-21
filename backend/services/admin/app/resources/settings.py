@@ -168,6 +168,7 @@ async def change_password(
     sessions,
     limiter=None,
     audit=None,
+    notifier=None,
 ):
     # Self-service password change. SSO-only accounts (blank hash) can't; the current
     # password must verify; the new one meets the min length; then OTHER sessions are
@@ -199,6 +200,19 @@ async def change_password(
             await audit.insert(
                 AuditLog(entity="user", entity_id=user_id, action="password_changed")
             )
+        # Security notification to the account's email — a stolen access token that
+        # changed the password should not do it silently. Best-effort; a notifier
+        # failure must not roll back the password change.
+        if notifier is not None and user.get("email"):
+            try:
+                await notifier.send_email(
+                    user["email"],
+                    "Your password was changed",
+                    "If this wasn't you, sign in and change your password "
+                    "immediately, then review your active sessions.",
+                )
+            except Exception:
+                log.exception("change_password: security notify failed for {}", user_id)
         return {"ok": True}
 
 

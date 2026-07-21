@@ -188,3 +188,25 @@ async def publish_job(identity, job_id, *, jobs, publisher):
         )
         log.info("job published: comp_id={} job_id={}", identity["comp_id"], job_id)
         return _to_response(await jobs.get_scoped(job_id, identity["comp_id"]))
+
+
+async def unpublish_job(identity, job_id, *, jobs):
+    """Delist a published job. Was missing entirely — a recruiter with a bad job
+    posted couldn't take it off /public/jobs without going through the repo directly.
+    Sets status back to 'draft' so SearchJobs (filters on status='published') stops
+    returning it. CDN caches (/public/jobs, 60-120 s max-age) expire naturally; no
+    invalidation call needed."""
+    async with log_context(
+        log,
+        "resource.job.unpublish_job",
+        **bind_ids(comp_id=identity["comp_id"], job_id=job_id),
+    ):
+        _require_manager(identity)
+        job = await jobs.get_scoped(job_id, identity["comp_id"])
+        if job is None:
+            raise NotFoundError("Job not found")
+        if job["status"] != "published":
+            raise ValidationError("Only a published job can be unpublished")
+        await jobs.update_fields(job_id, identity["comp_id"], {"status": "draft"})
+        log.info("job unpublished: comp_id={} job_id={}", identity["comp_id"], job_id)
+        return _to_response(await jobs.get_scoped(job_id, identity["comp_id"]))

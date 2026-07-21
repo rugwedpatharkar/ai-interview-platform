@@ -166,6 +166,7 @@ class SettingsServicer(settings_pb2_grpc.SettingsServiceServicer):
                     sessions=self._sessions,
                     limiter=self._limiter,
                     audit=self._audit,
+                    notifier=self._notifier,
                 )
                 return settings_pb2.OkResponse(ok=True)
             except AuthDomainError as exc:
