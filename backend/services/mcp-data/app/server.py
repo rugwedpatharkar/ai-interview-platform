@@ -9,6 +9,7 @@ from typing import Literal
 
 from bson import ObjectId
 from lib.logging import bind_ids, configure_logging, get_logger, log_context
+from lib.mcp_auth import BearerAuthMiddleware, assert_secret_configured
 from lib.mongodb import MongoManager
 from lib.observability import init_tracing, start_metrics_server
 from mcp.server.fastmcp import FastMCP
@@ -280,6 +281,8 @@ async def list_practice_summaries(user_id: str) -> list:
 def main() -> None:
     import asyncio
 
+    import uvicorn
+
     configure_logging(_settings.service_name, _settings.log_level)
     if _settings.otlp_endpoint:
         from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
@@ -293,7 +296,18 @@ def main() -> None:
     else:
         init_tracing(_settings.service_name, enabled=_settings.tracing_enabled)
     asyncio.run(start_metrics_server(_settings.metrics_port))
-    mcp.run(transport="streamable-http")
+    # Startup gate: refuse to boot in prod without a shared secret; warn in dev.
+    assert_secret_configured(
+        _settings.mcp_shared_secret,
+        environment=_settings.environment,
+        service=_settings.service_name,
+    )
+    # `mcp.run(transport=...)` uses FastMCP's own uvicorn — replaced so we can attach
+    # the bearer-auth middleware to the ASGI app before serving.
+    app = mcp.streamable_http_app()
+    if _settings.mcp_shared_secret:
+        app.add_middleware(BearerAuthMiddleware, secret=_settings.mcp_shared_secret)
+    uvicorn.run(app, host=_settings.mcp_host, port=_settings.mcp_port, log_level="info")
 
 
 if __name__ == "__main__":

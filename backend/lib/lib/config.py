@@ -92,6 +92,11 @@ class BaseServiceSettings(BaseSettings):
     metrics_port: int = 0  # 0 disables the /metrics HTTP server
     otlp_endpoint: str | None = None  # None disables OTLP exporter
 
+    # Shared bearer secret for the internal MCP endpoints (mcp-data / mcp-capability).
+    # Empty = auth middleware not attached; MCP servers refuse to start in prod with an
+    # empty value (see lib.mcp_auth.assert_secret_configured).
+    mcp_shared_secret: str = ""
+
     # Dev-only sentinel values that must never reach production. { field_name: value }.
     # Subclasses extend this to cover their own secrets (e.g. livekit_api_secret).
     DEV_SENTINELS: ClassVar[dict[str, str]] = {

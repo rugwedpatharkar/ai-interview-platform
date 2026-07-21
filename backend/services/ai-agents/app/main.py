@@ -2,6 +2,7 @@ import asyncio
 
 import uvicorn
 from lib.logging import configure_logging, get_logger
+from lib.mcp_auth import bearer_headers
 from lib.observability import init_tracing, start_metrics_server
 from lib.rabbitmq import Consumer, Publisher
 from lib.redis import create_redis
@@ -97,9 +98,14 @@ async def serve() -> None:
     # transport drops — an mcp-data/mcp-capability restart no longer crashes us.
     # `call_timeout_s` prevents a hung MCP server from stalling gRPC RPCs up to the
     # 300 s outer deadline; default is now `timeouts.mcp_call()` (20 s per lib.config).
-    data_manager = McpSessionManager(s.mcp_data_url, call_timeout_s=timeouts.mcp_call())
+    # `headers=bearer_headers(...)` authenticates against the MCP bearer middleware —
+    # empty secret returns None (dev mode, middleware not attached on either side).
+    auth = bearer_headers(s.mcp_shared_secret)
+    data_manager = McpSessionManager(
+        s.mcp_data_url, call_timeout_s=timeouts.mcp_call(), headers=auth
+    )
     cap_manager = McpSessionManager(
-        s.mcp_capability_url, call_timeout_s=timeouts.mcp_call()
+        s.mcp_capability_url, call_timeout_s=timeouts.mcp_call(), headers=auth
     )
     await data_manager.start()
     await cap_manager.start()

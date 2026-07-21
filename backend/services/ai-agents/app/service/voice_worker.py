@@ -39,6 +39,7 @@ import re
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from lib.logging import configure_logging, get_logger
+from lib.mcp_auth import bearer_headers
 from lib.observability import init_tracing, start_metrics_server
 from lib.rabbitmq import Publisher
 from lib.redis import create_redis
@@ -367,8 +368,13 @@ async def serve() -> None:
 
     # McpSessionManager owns the streamablehttp_client lifecycle and self-heals on
     # transport drops — an mcp-data restart no longer crashes the voice-worker. The
-    # explicit call_timeout prevents a hung MCP from stalling the live voice loop.
-    data_manager = McpSessionManager(s.mcp_data_url, call_timeout_s=timeouts.mcp_call())
+    # explicit call_timeout prevents a hung MCP from stalling the live voice loop; the
+    # bearer header authenticates against mcp-data's BearerAuthMiddleware in prod.
+    data_manager = McpSessionManager(
+        s.mcp_data_url,
+        call_timeout_s=timeouts.mcp_call(),
+        headers=bearer_headers(s.mcp_shared_secret),
+    )
     await data_manager.start()
     data = McpDataGateway(data_manager)
     sessions = RedisInterviewStore(redis)
