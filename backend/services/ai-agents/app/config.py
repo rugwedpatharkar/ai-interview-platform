@@ -61,6 +61,11 @@ class Settings(BaseServiceSettings):
     # injection or model hallucination could steer to 3 h and hold a live Redis session
     # + LiveKit room for the duration. Default 60 min; tune per deployment.
     max_interview_budget_min: int = Field(default=60, gt=0)
+    # Per-user LLM rate limit. Applies to Chat, SubmitTurn, and SubmitPracticeTurn —
+    # bounds a compromised or misbehaving candidate token's Gemini spend. Default is
+    # 30 calls / 60 s / user; tune per deployment / model tier.
+    llm_user_limit: int = Field(default=30, gt=0)
+    llm_user_window_seconds: int = Field(default=60, gt=0)
 
     # Voice pipeline tuning — defaults match Phase-3 module constants so a
     # default-config run is byte-identical; override per-env via environment variables.

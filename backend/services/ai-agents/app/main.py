@@ -5,7 +5,7 @@ from lib.logging import configure_logging, get_logger
 from lib.mcp_auth import bearer_headers
 from lib.observability import init_tracing, start_metrics_server
 from lib.rabbitmq import Consumer, Publisher
-from lib.redis import create_redis
+from lib.redis import RateLimiter, create_redis
 from lib.security import TokenService
 from lib.web import CorrelationIdMiddleware
 
@@ -147,6 +147,7 @@ async def serve() -> None:
         "practice_sessions": practice_store,
         "publisher": publisher,
         "llm": llm,
+        "limiter": RateLimiter(redis),
         "settings": s,
     }
     # Application traffic is gRPC-web (interview/chat/jd/practice/proctor/rtc) on
