@@ -10,7 +10,7 @@ from lib.security import TokenService
 from lib.web import CorrelationIdMiddleware
 
 from app.config import get_settings
-from app.infra.factory import get_llm, get_scoring_llm
+from app.infra.factory import assert_llm_configured, get_llm, get_scoring_llm
 from app.infra.mcp_capability import McpCapability
 from app.infra.mcp_data import McpDataGateway
 from app.infra.mcp_session import McpSessionManager
@@ -68,6 +68,8 @@ async def _health_app(scope, receive, send):
 async def serve() -> None:
     s = get_settings()
     configure_logging(s.service_name, s.log_level)
+    # Fail-closed on missing LLM key in prod (dev logs a warning + continues).
+    assert_llm_configured(s)
     if s.otlp_endpoint:
         from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
             OTLPSpanExporter,
