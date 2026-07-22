@@ -534,9 +534,36 @@ buttons — 40px/8px/14px vs 46px/12px/15.68px. Both now use one tier per elemen
 **Rule for the future:** pick one tier per element; never combine `buttonVariants()` with
 `.ap-btn*`.
 
-### Task 6.3: Typography + `SuccessState` primitives
+### Task 6.3: Typography + `SuccessState` primitives — **do not do this. Closed 2026-07-23.**
 
-- [ ] Add `Heading` / `Text` components and a `SuccessState` to sit alongside the existing `EmptyState` / `ErrorState` / `LoadingState`.
+Both halves fail the same test 6.2 failed: they would add a parallel system beside one
+that already exists and is used.
+
+**Typography — already solved in CSS.** The claim was that headings are "ad-hoc utility
+strings". They are not; there is a typography scale in `primitives.css` with **234**
+usages:
+
+| Class | Usages |
+|---|---|
+| `.ap-eyebrow` | 52 |
+| `.ap-h3` | 47 |
+| `.ap-h2` / `.ap-h4` / `.ap-lead` | 45 each |
+
+Adding `Heading`/`Text` components would make a fourth parallel button-style split — the
+exact mistake Task 6.2 documents. If the scale ever needs to become components, it is a
+migration of 234 call sites, not an addition.
+
+**`SuccessState` — nothing to consolidate.** Success is communicated by toast: **37**
+`toast.success(...)` calls. The checkmark markup that a survey turns up is *inline
+indicators*, structurally unlike a block state — a "Confirmed" badge in a schedule row
+(`schedule/page.tsx:260`), a "Session captured" chip (`interview/.../done/page.tsx:67`), a
+timeline step marker (`applications/[id]/page.tsx:260`), a checklist tick
+(`candidate-checklist.tsx:168`). A `SuccessState` block would replace none of them and
+would ship unused.
+
+The trio is also complete by design, not by omission: `EmptyState` / `ErrorState` /
+`LoadingState` are the three **data-fetch** states. Success is not a fetch state — a
+successful fetch renders the data. There is no missing fourth.
 
 ### Task 6.4: Legacy token rename (**handle with care**)
 
