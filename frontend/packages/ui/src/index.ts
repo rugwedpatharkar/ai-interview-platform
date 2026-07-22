@@ -78,13 +78,6 @@ export {
 // Error boundary
 export { ErrorBoundary } from "./error-boundary.js";
 
-// Theme
-export {
-  ThemeProvider,
-  ThemeToggle,
-  themeScript,
-  type Theme,
-} from "./theme.js";
 
 // Layout + status
 export {
