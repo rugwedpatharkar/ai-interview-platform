@@ -244,10 +244,13 @@ export default function OutcomePage() {
 
             {/* Primary CTA — context-dependent. */}
             <div className="mt-6 flex flex-wrap gap-3">
+              {/* One tier per element: the other actions on this screen use
+                  <Button>, and Tailwind's utilities layer overrode the stacked
+                  ap-btn-primary here anyway. */}
               {verdict === "advance" && (
                 <Link
                   href={`/applications/${id}`}
-                  className={cn(buttonVariants(), "ap-btn-primary")}
+                  className={buttonVariants()}
                 >
                   <Sparkles className="size-4" aria-hidden /> See next steps
                 </Link>

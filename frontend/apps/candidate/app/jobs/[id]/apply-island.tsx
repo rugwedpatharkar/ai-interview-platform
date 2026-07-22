@@ -8,8 +8,6 @@ import {
   DialogContent,
   DialogDescription,
   DialogTitle,
-  buttonVariants,
-  cn,
   toast,
 } from "@ip/ui";
 import type { ApplicationResponse } from "@ip/api-client";
@@ -82,10 +80,14 @@ export function ApplyIsland({ jobId }: { jobId: string }) {
   });
 
   if (ready && !token) {
+    // Same slot as the "Apply now" button below, which uses the Aperture product
+    // tier. Stacking buttonVariants() on top of it let Tailwind's utilities layer
+    // win, so the signed-out and signed-in states rendered as visibly different
+    // buttons in the same position. One tier per element.
     return (
       <Link
         href={`/login?next=/jobs/${jobId}`}
-        className={cn(buttonVariants(), "ap-btn ap-btn-primary self-start")}
+        className="ap-btn ap-btn-primary self-start"
       >
         Sign in to apply
       </Link>
