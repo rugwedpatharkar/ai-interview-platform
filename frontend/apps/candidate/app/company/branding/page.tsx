@@ -42,21 +42,11 @@ const EMPTY: BrandingForm = {
   industry: "",
   size: "",
   logoKey: "",
-  accent: "teal",
 };
 
-// Accent picker: companies pick one of three pre-approved hues so we never need to validate
-// raw colour input. The ids are persisted server-side, so they stay "teal"/"coral"/"gold"
-// even though the palette moved to --brand — renaming them would orphan stored profiles.
-//
-// NOTE: all three currently resolve to var(--brand), so the picker has no visible effect —
-// choosing Coral renders the same violet as Teal. Either give them distinct hues or drop
-// the control; leaving it implies a choice the product does not honour.
-const ACCENTS = [
-  { id: "teal", label: "Teal", css: "var(--brand)" },
-  { id: "coral", label: "Coral", css: "var(--brand)" },
-  { id: "gold", label: "Gold", css: "var(--brand)" },
-] as const;
+// The marketplace accent is fixed to the Aptura brand — companies do not choose a colour.
+// The old picker offered teal/coral/gold, but all three resolved to var(--brand), so the
+// selection was stored and then ignored at render.
 
 // Company-branding editor. Two-column at lg+: form on the left (anchor cell), sticky live
 // preview on the right. Preserves CompanyProfileService.GetCompanyProfile /
@@ -87,7 +77,6 @@ export default function BrandingPage() {
       industry: d.industry,
       size: d.size,
       logoKey: d.logoKey,
-      accent: d.accent || "teal",
     });
     setLocationsRaw(d.locations.join(", "));
     setLogoPreview(d.logoUrl ?? "");
@@ -118,7 +107,7 @@ export default function BrandingPage() {
         <p className="ap-eyebrow">Brand</p>
         <h1 className="ap-h2">How candidates see you.</h1>
         <p className="ap-lead text-base">
-          Tune your marketplace presence — logo, accent, and the words that introduce you.
+          Tune your marketplace presence — logo and the words that introduce you.
           Changes preview live before they ship.
         </p>
       </header>
@@ -169,30 +158,6 @@ export default function BrandingPage() {
                   placeholder="We help teams hire on proven merit…"
                   onChange={(e) => set("about", e.target.value)}
                 />
-              </Field>
-
-              <Field label="Accent colour">
-                <div className="flex flex-wrap gap-2">
-                  {ACCENTS.map((a) => (
-                    <button
-                      key={a.id}
-                      type="button"
-                      className={cn(
-                        "ap-pill flex items-center gap-2",
-                        form.accent === a.id && "ap-pill--teal ring-2 ring-ring",
-                      )}
-                      aria-pressed={form.accent === a.id}
-                      onClick={() => set("accent", a.id)}
-                    >
-                      <span
-                        className="size-3 rounded-full"
-                        style={{ background: a.css }}
-                        aria-hidden
-                      />
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
               </Field>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -362,12 +327,8 @@ function BrandPreview({
     [locationsRaw],
   );
   const name = form.displayName.trim() || "Your company";
-  const accent =
-    form.accent === "coral"
-      ? "var(--brand)"
-      : form.accent === "gold"
-        ? "var(--brand)"
-        : "var(--brand)";
+  // Fixed brand accent — not company-configurable.
+  const accent = "var(--brand)";
 
   return (
     <div className="ap-cell h-fit lg:sticky lg:top-24">

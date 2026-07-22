@@ -48,7 +48,6 @@ export function makeMockBrandingClient(): BrandingClient {
     locations: [],
     industry: "",
     size: "",
-    accent: "teal",
   };
   return {
     async getProfile() {
@@ -67,7 +66,7 @@ export function makeMockBrandingClient(): BrandingClient {
 
 /** Real client backed by `admin.company_profile.v1.CompanyProfileService`. The proto's
  *  CompanyProfile only carries the public-shape fields (id/name/about/website/logo/locations
- *  + trust); industry/size/accent aren't on the wire yet (presentational-only in the editor),
+ *  + trust); industry/size aren't on the wire yet (presentational-only in the editor),
  *  so they're held at the FE layer for the live-preview UI. */
 export function makeApiBrandingClient(api: AdminClients): BrandingClient {
   return {
@@ -88,7 +87,6 @@ export function makeApiBrandingClient(api: AdminClients): BrandingClient {
           locations: p.locations,
           industry: "",
           size: "",
-          accent: "teal",
         };
       } catch (err) {
         if (!isNotFound(err)) throw err;
@@ -102,7 +100,6 @@ export function makeApiBrandingClient(api: AdminClients): BrandingClient {
           locations: [],
           industry: "",
           size: "",
-          accent: "teal",
         };
       }
     },
@@ -124,7 +121,6 @@ export function makeApiBrandingClient(api: AdminClients): BrandingClient {
         // Keep the editor-only fields the form last carried (proto doesn't persist them yet).
         industry: form.industry,
         size: form.size,
-        accent: form.accent,
       };
     },
     async presignLogo({ contentType }) {

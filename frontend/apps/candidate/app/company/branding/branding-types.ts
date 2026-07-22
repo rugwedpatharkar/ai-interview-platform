@@ -12,7 +12,6 @@ export interface CompanyProfileDTO {
   locations: string[];
   industry: string;
   size: string;
-  accent: string; // OKLCH hex/keyword the brand renders under
 }
 
 export interface PresignLogoResult {
@@ -28,7 +27,6 @@ export interface BrandingForm {
   industry: string;
   size: string;
   logoKey: string;
-  accent: string;
 }
 
 // Courtesy guard — the server presign is the real gate (allowlist + content-length-range
