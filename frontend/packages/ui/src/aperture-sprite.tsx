@@ -13,18 +13,16 @@ export function ApertureSprite() {
       style={{ position: "absolute", width: 0, height: 0 }}
     >
       <defs>
-        {/* Aperture brand mark — 6-blade iris */}
-        <symbol id="ap-mark" viewBox="0 0 48 48">
-          <g fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="24" cy="24" r="19" />
-            <g>
-              <path d="M24 6 L34.5 22" />
-              <path d="M24 6 L34.5 22" transform="rotate(60 24 24)" />
-              <path d="M24 6 L34.5 22" transform="rotate(120 24 24)" />
-              <path d="M24 6 L34.5 22" transform="rotate(180 24 24)" />
-              <path d="M24 6 L34.5 22" transform="rotate(240 24 24)" />
-              <path d="M24 6 L34.5 22" transform="rotate(300 24 24)" />
-            </g>
+        {/* Aperture brand mark — must stay identical to <LogoMark> in logo.tsx. */}
+        <symbol id="ap-mark" viewBox="0 0 64 64">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" strokeWidth="3" />
+          <g fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+            <line x1="43" y1="32" x2="55.4" y2="45.5" />
+            <line x1="37.5" y1="41.5" x2="32" y2="59" />
+            <line x1="26.5" y1="41.5" x2="8.6" y2="45.5" />
+            <line x1="21" y1="32" x2="8.6" y2="18.5" />
+            <line x1="26.5" y1="22.5" x2="32" y2="5" />
+            <line x1="37.5" y1="22.5" x2="55.4" y2="18.5" />
           </g>
         </symbol>
 
