@@ -49,7 +49,9 @@ from app.routes.pb import (  # noqa: E402
     application_pb2,
     aptitude_pb2,
     auth_pb2,
+    coding_pb2,
     discovery_pb2,
+    report_pb2,
 )
 
 _spec = _iu.spec_from_file_location(
@@ -263,9 +265,85 @@ async def _main() -> None:
         )
         print(f"  funnel advance     -> state={state} (via aptitude.graded event)")
 
-        # 10. Coding stage: the seed job has no coding_task, so we skip. A
-        # coding-configured job would hit coding_pending here.
-        print("  (skip coding stage — target job has no coding_task configured)")
+        # 10. Coding stage. Not gated by the funnel (there is no coding_pending
+        # state today), but the tests are optional per job — GetCodingTask
+        # returns NotFound when no coding_task is seeded. When one IS seeded, we
+        # run the sample case (RunCode), then submit a real solution that
+        # passes every hidden case.
+        try:
+            task_bytes = await _call(
+                client,
+                "/admin.coding.v1.CodingService",
+                "GetCodingTask",
+                coding_pb2.GetCodingTaskRequest(application_id=app.application_id),
+                token=access,
+            )
+        except SystemExit as exc:
+            if "grpc-status=5" in str(exc):  # NOT_FOUND
+                print("  (skip coding stage — target job has no coding_task)")
+                task_bytes = None
+            else:
+                raise
+        if task_bytes is not None:
+            task = coding_pb2.CodingTask.FromString(task_bytes)
+            print(
+                f"  GetCodingTask      -> {task.title!r} langs={list(task.languages)} "
+                f"samples={len(task.sample_cases)} typed={len(task.typed_questions)}"
+            )
+            # The seeded task reads two ints, prints their sum. Ship a working
+            # solution that handles every hidden case.
+            solution = "a, b = map(int, input().split())\nprint(a + b)\n"
+            # RunCode against the first sample so we exercise the sandbox path.
+            sample_stdin = task.sample_cases[0].stdin if task.sample_cases else ""
+            expected_stdout = (
+                task.sample_cases[0].expected_stdout if task.sample_cases else ""
+            )
+            run_bytes = await _call(
+                client,
+                "/admin.coding.v1.CodingService",
+                "RunCode",
+                coding_pb2.RunCodeRequest(
+                    application_id=app.application_id,
+                    language="python",
+                    source=solution,
+                    stdin=sample_stdin,
+                ),
+                token=access,
+            )
+            run = coding_pb2.RunResult.FromString(run_bytes)
+            got = run.stdout.rstrip()
+            want = expected_stdout.rstrip()
+            print(
+                f"  RunCode(sample)    -> stdout={got!r} exit={run.exit_code} "
+                f"timed_out={run.timed_out}"
+            )
+            if got != want:
+                raise SystemExit(f"FAIL RunCode: sample expected {want!r} got {got!r}")
+            # SubmitCoding — server runs every hidden case sequentially and grades.
+            typed = [
+                coding_pb2.TypedAnswer(id=q.id, answer="O(1)")
+                for q in task.typed_questions
+            ]
+            submit_bytes = await _call(
+                client,
+                "/admin.coding.v1.CodingService",
+                "SubmitCoding",
+                coding_pb2.SubmitCodingRequest(
+                    application_id=app.application_id,
+                    language="python",
+                    source=solution,
+                    typed_answers=typed,
+                ),
+                token=access,
+            )
+            result = coding_pb2.SubmitResult.FromString(submit_bytes)
+            print(
+                f"  SubmitCoding       -> passed={result.passed} "
+                f"cases={result.cases_passed}/{result.cases_total} "
+                f"typed={result.typed_correct}/{result.typed_total}"
+            )
+            if not result.passed:
+                raise SystemExit("FAIL SubmitCoding: solution did not pass")
 
         # 11. StartInterview on ai-agents (real Gemini call). Gracefully
         # surface a soft-pass when the Gemini quota is exhausted — the LLM
