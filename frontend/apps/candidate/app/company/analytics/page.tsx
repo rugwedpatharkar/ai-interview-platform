@@ -5,34 +5,22 @@ import {
   ErrorState,
   LoadingState,
   applicationPillStatus,
-  cn,
 } from "@ip/ui";
 import { errorMessage, useAuthedQuery, useRequireRole } from "@ip/shared";
 import type { FunnelAnalytics } from "@ip/api-client";
 import { Activity, BarChart3, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { CompanyShell } from "../../../components/company-shell";
 import { useAuth } from "../../../lib/auth";
 
-// Time-range chip filter values. The funnel RPC takes no window today (it returns
-// last-30-days), so the chip is presentation-only — the BE owns the canonical window.
-// When `getFunnelAnalytics` learns a windowDays arg, drop the const and pass it through.
-const RANGES = [
-  { id: "7d", label: "7d" },
-  { id: "30d", label: "30d" },
-  { id: "90d", label: "90d" },
-] as const;
-type RangeId = (typeof RANGES)[number]["id"];
-
-// Hiring analytics page. Funnel + KPI stat band on top, bento of supporting cells below.
-// Preserves api.analytics.getFunnelAnalytics; KPIs that don't have a generated RPC yet are
-// truthfully marked "—" (no fake numbers).
+// Hiring analytics page. KPI stat band on top, funnel + conversion bento below.
+// Shows only what `getFunnelAnalytics` actually returns — the RPC owns the window
+// (last 30 days) and takes no range argument, so the page states that window rather
+// than offering a filter it cannot honour.
 export default function AnalyticsPage() {
   const { api, token, identity, ready } = useAuth();
   useRequireRole(identity?.role, ["recruiter", "company_admin"], ready);
-
-  const [range, setRange] = useState<RangeId>("30d");
 
   const funnel = useAuthedQuery(token, {
     queryKey: ["analytics", "funnel"],
@@ -41,15 +29,12 @@ export default function AnalyticsPage() {
 
   return (
     <CompanyShell>
-      <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="ap-eyebrow">Analytics</p>
-          <h1 className="ap-h2">Your hiring, in numbers.</h1>
-          <p className="ap-lead mt-3 text-base">
-            Funnel and conversion metrics across every published role.
-          </p>
-        </div>
-        <RangeChips value={range} onChange={setRange} />
+      <header className="mb-6">
+        <p className="ap-eyebrow">Analytics</p>
+        <h1 className="ap-h2">Your hiring, in numbers.</h1>
+        <p className="ap-lead mt-3 text-base">
+          Funnel and conversion across every published role — last 30 days.
+        </p>
       </header>
 
       {funnel.isLoading && <LoadingState />}
@@ -70,35 +55,6 @@ export default function AnalyticsPage() {
           <FunnelView data={funnel.data} />
         ))}
     </CompanyShell>
-  );
-}
-
-function RangeChips({
-  value,
-  onChange,
-}: {
-  value: RangeId;
-  onChange: (id: RangeId) => void;
-}) {
-  return (
-    <div className="inline-flex items-center gap-1 rounded-xl border border-line bg-surface-2 p-1">
-      {RANGES.map((r) => (
-        <button
-          key={r.id}
-          type="button"
-          className={cn(
-            "px-3 py-1.5 text-xs font-semibold tracking-wide rounded-lg transition-colors",
-            value === r.id
-              ? "bg-surface text-foreground shadow-sm"
-              : "text-ink-2 hover:text-foreground",
-          )}
-          aria-pressed={value === r.id}
-          onClick={() => onChange(r.id)}
-        >
-          {r.label}
-        </button>
-      ))}
-    </div>
   );
 }
 
