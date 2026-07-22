@@ -501,22 +501,38 @@ are gone.
 > `timer report chip dollar heart bag academy building users globe` — are used **only**
 > that way. Grep for the `ApIconName` type, not just the component.
 
-### Task 6.2: One Button — **scoped, carries visual risk**
+### Task 6.2: One Button — **do not do this. Closed 2026-07-23.**
 
-Measured: **53** `<Button>` component usages vs **12** `className="btn …"` usages. The CSS
-side is `.btn`, `.btn-sm`, `.btn-primary`, `.btn-ghost`, `.btn-glass`, `.btn-hero`.
+There are **three** button tiers, not two (an earlier count of "12 CSS usages" was wrong —
+`.btn-ghost` was matching `ap-btn-ghost` as a substring):
 
-The 12 stragglers are not a simple mop-up: they carry marketing-specific treatment,
-including `.btn-hero`'s animated gradient (`ctaflow`, hover-gated) and `.btn-glass`. Folding
-them into CVA variants means the landing's primary CTAs change appearance, on a design
-that has been deliberately tuned.
+| Tier | Usages | Where |
+|---|---|---|
+| `<Button>` (CVA) | 53 | product screens |
+| `.ap-btn-*` (CSS) | **103** | product screens — the dominant pattern |
+| `.btn-*` (CSS) | 12 | Lucent landing only |
 
-- [ ] Add `hero` and `glass` variants to `buttonVariants` that reproduce the current
-      rendering exactly (the keyframe animation stays in CSS; the variant just applies it).
-- [ ] Migrate the 12 call sites **one route at a time**, screenshotting the landing CTAs
-      before and after each — this is the one task in the plan where a diff can look
-      correct and still be visibly wrong.
-- [ ] Delete the `.btn*` classes only once the usage count reaches zero.
+**The separation is deliberate and already documented in the code.** `packages/ui/src/button.tsx`
+says so directly: the landing "deliberately keeps its own larger marketing button set …
+with signature spectral-gradient + glass styles that don't belong on product screens; the
+Aperture `.ap-btn-*` set is a third product-instrument tier. **These are intentional tiers,
+not duplication to merge.**"
+
+The audit recommended merging what the design system separates on purpose. Confirmed by
+measurement: the landing uses `.btn` 12× and `<Button>` 0×, the product screens use
+`.ap-btn`/`<Button>` and `.btn` 0×. There is no sprawl to clean up — converting the landing
+CTAs would in fact make those files *less* internally consistent, since they are otherwise
+built from CSS classes throughout (`.reveal` 68×, `.glass` 34×, `.ap-cell` 14×).
+
+**What was real, and is fixed:** two elements stacked two tiers at once —
+`cn(buttonVariants(), "ap-btn ap-btn-primary")`. Because `.ap-btn` lives in
+`@layer components` and Tailwind utilities come later in the cascade, the CVA styling
+silently won. In `jobs/[id]/apply-island.tsx` that was user-visible: "Sign in to apply"
+(signed out) and "Apply now" (signed in) occupy the same slot but rendered as different
+buttons — 40px/8px/14px vs 46px/12px/15.68px. Both now use one tier per element.
+
+**Rule for the future:** pick one tier per element; never combine `buttonVariants()` with
+`.ap-btn*`.
 
 ### Task 6.3: Typography + `SuccessState` primitives
 
