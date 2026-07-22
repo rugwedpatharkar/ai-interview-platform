@@ -142,7 +142,13 @@ async def grade_aptitude(
         # a small grace, accept; if past the grace, RECORD as failed (score=0,
         # passed=False) and publish aptitude.graded so the funnel advances instead of
         # stranding the candidate with an error and no recovery path.
-        elapsed = (clock() - delivery["delivered_at"]).total_seconds()
+        # Mongo returns naive UTC datetimes by default (pymongo tz_aware=False);
+        # coerce to UTC-aware before subtracting from the aware `clock()` result to
+        # avoid TypeError: can't subtract offset-naive and offset-aware datetimes.
+        delivered_at = delivery["delivered_at"]
+        if delivered_at.tzinfo is None:
+            delivered_at = delivered_at.replace(tzinfo=UTC)
+        elapsed = (clock() - delivered_at).total_seconds()
         _GRACE_S = 30
         if elapsed > limit_seconds + _GRACE_S:
             # Already graded (e.g. sweep beat us) — nothing more to record; suppress
