@@ -381,9 +381,36 @@ find frontend/apps/candidate/app -path "*jobs*" -name "page.tsx" | grep -v compa
 
 ## Phase 4 — Landing performance
 
-### Task 4.1: Move the landing to RSC
+### Task 4.1: Give the homepage server-rendered content
 
-`components/landing/landing-page.tsx` is `"use client"` at the top, so the entire marketing page — the LCP and SEO surface — ships as client JS. Only the audience switch, mega-menu, and mobile menu need client state.
+**Worse than originally recorded.** The homepage does not merely ship as client JS — it
+renders *nothing* server-side. `app/page.tsx` renders `HomeClient` (`app/page-client.tsx`),
+which does:
+
+```tsx
+const [mounted, setMounted] = useState(false);
+useEffect(() => setMounted(true), []);
+if (!mounted) return null;              // ← server HTML is empty
+if (token) return identity?.role === "candidate" ? <Dashboard /> : null;
+return <ApplicantsLanding />;           // → LandingPage
+```
+
+Confirmed by fetching `/`: the served HTML carries the `<title>` and meta description but
+no nav, no brand link, no hero markup — the body only exists after hydration. The mount
+gate is deliberate (it avoids a hydration mismatch and a signed-out flash for logged-in
+users), but it costs SSR for *every* visitor.
+
+Consequences: crawlers that do not execute JS see an empty page, this partly undercuts the
+sitemap added in Phase 3, and LCP suffers on the highest-traffic public page.
+
+**Direction:** render the marketing landing server-side and swap to `Dashboard` on the
+client only for signed-in users — accepting a brief landing flash for them, or steering it
+with a cookie hint — rather than serving empty HTML to everyone. Only the audience switch,
+mega-menu, and mobile menu genuinely need client state.
+
+Note: since Phase 1 made every route dynamically rendered (nonce CSP), the goal here is
+server-rendered *content* and a smaller client bundle — not static caching, which nonces
+preclude.
 
 - [ ] **Step 1: Map the boundary.** List every hook used in `landing-page.tsx`, `candidate-body.tsx`, `company-body.tsx`. Anything with no hooks and no handlers is a server-component candidate.
 - [ ] **Step 2:** Keep `LandingPage` (audience state) client; extract the static hero copy, feature sections, and footer into server components imported as `children`.
