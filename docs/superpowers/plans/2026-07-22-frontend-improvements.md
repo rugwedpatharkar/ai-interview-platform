@@ -462,19 +462,61 @@ Currently **7 test files** across the whole frontend and **no frontend CI** (`.g
 
 Largest and riskiest — do last, one task per commit.
 
-### Task 6.1: Collapse two icon systems into one
+### Task 6.1: Collapse two icon systems — **premise corrected, direction reversed**
 
-`lucide-react` is imported by **55 files** in `apps/candidate` while `ApertureSprite` defines 28 hand-drawn symbols. They use different stroke weights, so icons visibly disagree.
+Inventory (2026-07-23):
 
-- [ ] **Step 1: Inventory.** Produce the set of every lucide icon actually imported:
-  `grep -rho "import {[^}]*} from \"lucide-react\"" frontend/apps/candidate | tr ',' '\n' | sed 's/[^A-Za-z]//g' | sort -u`
-- [ ] **Step 2: Decide** — for each, either add a matching `<symbol>` to `ApertureSprite` (preferred: zero-dep, CSP-safe, already typed via `ApIconName`) or keep lucide for long-tail icons. Write the decision into the plan file before migrating.
-- [ ] **Step 3: Migrate in batches by route**, typechecking per batch. One commit per batch.
-- [ ] **Step 4:** Only drop the `lucide-react` dependency once the import count reaches zero.
+| | Count |
+|---|---|
+| Unique lucide icons imported | **57** |
+| Sprite symbols defined | 28 (now 24, see below) |
+| `<ApIcon>` call sites | 60, across 14 distinct names |
 
-### Task 6.2: One Button
+**The stated premise was wrong.** The two systems do *not* visibly disagree: the sprite's
+generic icons use `viewBox="0 0 24 24"` and `strokeWidth="2"` (24 of 27 declarations; three
+outliers at 2.2/2.4), which is exactly lucide's default grid and weight. The stroke
+mismatch recorded in the audit was the *logo mark* (2.1 vs 3/2.6) — fixed in Phase 1.
+So this task buys maintainability (one system, not two), **not** visual consistency.
 
-- [ ] Reconcile the CVA `<Button>` with the `.btn` / `.btn-hero` CSS classes in `primitives.css`. Fold the CSS variants into component variants; delete the classes once unused.
+**Direction reversed: migrate sprite → lucide**, not lucide → sprite as originally planned.
+Lucide already covers all 13 generic sprite names in use (`check`→`Check`,
+`arrow`→`ArrowRight`, `shield-check`→`ShieldCheck`, `dl`→`Download`, `bolt`→`Zap`,
+`cam`→`Video`, and so on), it is already a dependency, and `next.config.ts` already
+tree-shakes it via `optimizePackageImports`. Going the other way would mean hand-drawing
+30+ new symbols to reach parity with 57 icons — more work, and worse icons.
+
+`mark` stays: it is the brand logo, has no lucide equivalent, and is single-sourced from
+`aperture-mark-geometry.tsx`. Retire `ApIcon`/`ApIconName` last, once the other 13 names
+are gone.
+
+- [x] **Pruned dead symbols.** Removed `ap-eye`, `ap-briefcase`, `ap-grid`, `ap-spark` —
+  the only four with no reference anywhere. The sprite renders in the root layout, so
+  unused symbols ship on every page. 28 → 24.
+- [ ] Migrate the 13 generic names to lucide in batches by route, typechecking per batch.
+- [ ] Delete `ApIcon`/`ApIconName` and the generic symbols once call sites reach zero.
+
+> **Trap for whoever executes this.** Icon names are not all in JSX. `company-body.tsx`
+> passes them as *data* (`const GET: {icon: ApIconName}[]`, `const VERTICALS:
+> [ApIconName, ...][]`), which a `<ApIcon name="…">` grep does not see. Ten names —
+> `timer report chip dollar heart bag academy building users globe` — are used **only**
+> that way. Grep for the `ApIconName` type, not just the component.
+
+### Task 6.2: One Button — **scoped, carries visual risk**
+
+Measured: **53** `<Button>` component usages vs **12** `className="btn …"` usages. The CSS
+side is `.btn`, `.btn-sm`, `.btn-primary`, `.btn-ghost`, `.btn-glass`, `.btn-hero`.
+
+The 12 stragglers are not a simple mop-up: they carry marketing-specific treatment,
+including `.btn-hero`'s animated gradient (`ctaflow`, hover-gated) and `.btn-glass`. Folding
+them into CVA variants means the landing's primary CTAs change appearance, on a design
+that has been deliberately tuned.
+
+- [ ] Add `hero` and `glass` variants to `buttonVariants` that reproduce the current
+      rendering exactly (the keyframe animation stays in CSS; the variant just applies it).
+- [ ] Migrate the 12 call sites **one route at a time**, screenshotting the landing CTAs
+      before and after each — this is the one task in the plan where a diff can look
+      correct and still be visibly wrong.
+- [ ] Delete the `.btn*` classes only once the usage count reaches zero.
 
 ### Task 6.3: Typography + `SuccessState` primitives
 
