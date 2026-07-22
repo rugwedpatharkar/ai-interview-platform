@@ -14,13 +14,33 @@ import grpc
 from lib.logging import bind_ids, get_logger, log_context
 from pydantic import ValidationError
 
-from app.errors import ConflictError, ForbiddenError, NotFoundError
+from app.errors import ConflictError, ForbiddenError, LLMError, NotFoundError
 from app.model.proctoring import ProctoringEvent
 from app.resources.interview_host import start_interview, submit_turn
 from app.resources.proctoring import record_proctoring_events
 from app.resources.voice.rtc_token import mint_join_token
 from app.routes.grpc_common import abort_domain, caller_user_id
 from app.routes.pb import interview_pb2, interview_pb2_grpc
+
+
+async def _abort_llm(context, exc: LLMError, log_) -> None:
+    """LLMError -> UNAVAILABLE with the actual retry hint from the vendor.
+    Falling through to the grpcweb translator would surface INTERNAL "internal
+    error" — hiding the real "Gemini quota exhausted, retry in 30s" from the
+    client. Extract the retry delay from the wrapped provider message when
+    present."""
+    import re
+
+    msg = str(exc)
+    m = re.search(r"retry in (\d+)", msg, flags=re.IGNORECASE)
+    detail = (
+        f"LLM temporarily unavailable; retry in {m.group(1)}s"
+        if m
+        else ("LLM temporarily unavailable")
+    )
+    log_.warning("LLM unavailable: {}", msg[:200])
+    await context.abort(grpc.StatusCode.UNAVAILABLE, detail)
+
 
 log = get_logger(component="route.interview_grpc")
 
@@ -82,6 +102,8 @@ class InterviewServicer(interview_pb2_grpc.InterviewServiceServicer):
                 return interview_pb2.QuestionResponse(question=question)
             except (NotFoundError, ForbiddenError, ConflictError) as exc:
                 await abort_domain(context, exc)
+            except LLMError as exc:
+                await _abort_llm(context, exc, log)
 
     async def SubmitTurn(self, request, context):
         user_id = await caller_user_id(context, self._tokens)
@@ -119,6 +141,8 @@ class InterviewServicer(interview_pb2_grpc.InterviewServiceServicer):
                 )
             except (NotFoundError, ForbiddenError) as exc:
                 await abort_domain(context, exc)
+            except LLMError as exc:
+                await _abort_llm(context, exc, log)
 
     async def RecordProctorEvents(self, request, context):
         user_id = await caller_user_id(context, self._tokens)
