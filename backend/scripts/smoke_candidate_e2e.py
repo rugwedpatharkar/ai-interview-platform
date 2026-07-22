@@ -116,13 +116,16 @@ def _flip_verified(email: str) -> None:
         f'db.getSiblingDB("interview_platform").users.updateOne('
         f'{{email: "{email}"}}, {{$set: {{email_verified: true, status: "active"}}}})',
     ]
-    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    if '"modifiedCount": 1' not in result.stdout:
-        # Modern mongosh format prints ok:1, matchedCount:1, modifiedCount:1
-        if "matchedCount: 1" not in result.stdout:
-            raise SystemExit(
-                f"FAIL flip_verified: no match for {email}\n{result.stdout}"
-            )
+    # subprocess call: cmd list is built above with a self-generated email; no
+    # shell interpolation, no untrusted input path.
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)  # noqa: S603
+    # Modern mongosh prints ok:1, matchedCount:1, modifiedCount:1; the older
+    # driver-style output uses quoted JSON. Accept either wording.
+    if (
+        '"modifiedCount": 1' not in result.stdout
+        and "matchedCount: 1" not in result.stdout
+    ):
+        raise SystemExit(f"FAIL flip_verified: no match for {email}\n{result.stdout}")
 
 
 async def _main() -> None:
@@ -170,7 +173,8 @@ async def _main() -> None:
             raise SystemExit("FAIL SearchJobs: no published jobs to apply to")
         job = search.jobs[0]
         print(
-            f"  SearchJobs         -> {len(search.jobs)} jobs, target={job.title!r} id={job.job_id}"
+            f"  SearchJobs         -> {len(search.jobs)} jobs, "
+            f"target={job.title!r} id={job.job_id}"
         )
 
         # 5. Apply
@@ -202,7 +206,7 @@ async def _main() -> None:
         # 7. Wait for the funnel consumer to advance state=applied -> aptitude_pending
         # (Apply publishes application.created; admin's funnel handler transitions.)
         state = app.state
-        for attempt in range(20):
+        for _ in range(20):
             if state == "aptitude_pending":
                 break
             await asyncio.sleep(0.5)
@@ -224,7 +228,8 @@ async def _main() -> None:
             )
         if state != "aptitude_pending":
             raise SystemExit(
-                f"FAIL funnel: state stayed {state!r} after Apply (funnel consumer stalled?)"
+                f"FAIL funnel: state stayed {state!r} after Apply "
+                "(funnel consumer stalled?)"
             )
         print(f"  funnel advance     -> state={state} (via application.created event)")
 
@@ -467,14 +472,17 @@ def _correct_answers_for(job_id: str, application_id: str, n: int) -> list[int]:
         (
             'const db = db.getSiblingDB("interview_platform"); '
             f'const bank = db.aptitude_banks.findOne({{job_id: "{job_id}"}}); '
-            f'const delivery = db.aptitude_deliveries.findOne({{application_id: "{application_id}"}}); '
+            "const delivery = db.aptitude_deliveries.findOne("
+            f'{{application_id: "{application_id}"}}); '
             "JSON.stringify({"
             "correct: bank.questions.map(q => q.correct_index), "
             "order: delivery.order"
             "})"
         ),
     ]
-    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    # subprocess call: cmd list is built above with self-generated ObjectIds;
+    # no shell interpolation, no untrusted input.
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)  # noqa: S603
     payload = json.loads(result.stdout.strip())
     correct = payload["correct"]
     order = payload["order"]
