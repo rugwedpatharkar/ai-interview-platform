@@ -417,11 +417,26 @@ preclude.
 - [ ] **Step 3:** Measure before/after with `next build` output — client bundle for `/` must shrink. Record both numbers in the commit body.
 - [ ] **Step 4: Commit** — `perf(fe): render static landing sections on the server`
 
-### Task 4.2: Cap the compositor cost
+### Task 4.2: Cap the compositor cost — **measured, no action taken**
 
-- [ ] Gate `ApertureLens` on `IntersectionObserver` so the rAF loop stops when off-screen.
-- [ ] Audit simultaneous `backdrop-filter` layers (`.glass` + fixed aurora + grain). Replace large-area blurs with pre-baked gradients; keep `backdrop-filter` for small chrome only.
-- [ ] Commit — `perf(fe): reduce backdrop-filter and rAF cost on the landing`
+- [x] `ApertureLens` rAF gating — **already done.** `aperture-lens.tsx` gates on both
+  `prefers-reduced-motion` and `IntersectionObserver`, so the loop stops off-screen.
+- [x] `backdrop-filter` audit — **measured on the running landing** (1280×720, mock dev):
+
+  | Audience | Elements with backdrop-filter | In viewport | Viewport coverage |
+  |---|---|---|---|
+  | Candidates | 50 | 6 | 20% |
+  | Hiring | 43 | 6 | 20% |
+
+  The nav resolves to `blur(16px) saturate(1.4)`. Six simultaneously composited blur
+  layers covering a fifth of the viewport is moderate, not pathological — well short of
+  the budget problem the audit assumed from counting 24 CSS declarations.
+
+**Deliberately not changed.** Reducing blur would visibly alter the Lucent glass
+aesthetic, and the measurement gives no evidence it is costing frames. The honest next
+step is a real performance trace (DevTools/Lighthouse) on a mid-tier device to see
+whether compositing actually drops frames; optimise only if it does. The 50-vs-6 gap
+(most blurred elements are off-screen) is the number to watch during long scrolls.
 
 ---
 
