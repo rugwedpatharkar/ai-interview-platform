@@ -1,0 +1,61 @@
+# Frontend verification gate. Until now every frontend check was manual (see
+# CLAUDE.md "Verification gates"), so nothing stopped a typecheck- or test-breaking
+# change from reaching main — and the candidate app's five spec files had in fact
+# never executed at all.
+#
+# Runs the three gates that exist today. `lint` is deliberately absent: no package
+# defines a lint script and there is no eslint config, so a lint step would pass
+# without checking anything, which is worse than an honest gap. Add it here in the
+# same change that introduces the config.
+#
+# `gen` (buf → packages/api-client/src/gen) is intentionally not run: it is not part
+# of the build graph for @ip/candidate, and generated clients are committed.
+
+name: frontend
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+
+# A newer push to the same branch makes an in-flight run obsolete.
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20 # frontend/package.json engines: node >=20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
