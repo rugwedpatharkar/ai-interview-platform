@@ -51,8 +51,7 @@ generated client land atomically.
   - `scripts/` — gate scripts (`check.sh` runs the full backend gate)
   - `docker/`, `deploy/`, `docker-compose.yml`, `ruff.toml`, `render.yaml`, `Dockerfile`
 - `frontend/` — pnpm + turbo monorepo:
-  - `apps/candidate` — the unified user-facing app (hosts both candidate-side `/...` and recruiter-side `/company/...` routes)
-  - `apps/company` — legacy standalone recruiter app, kept alive for backward compat
+  - `apps/candidate` — the single user-facing app (hosts both candidate-side `/...` and recruiter-side `/company/...` routes). The legacy standalone `apps/company` was deleted in `7c531f9`; there is now one frontend app.
   - `packages/ui` — Aperture Pro design system (`@ip/ui`)
   - `packages/shared` — auth, transport, useAuth (`@ip/shared`)
   - `packages/api-client` — generated gRPC clients (`@ip/api-client`); `pnpm gen` reads protos from `../../../backend/services/{admin,ai-agents}/app/routes/pb`

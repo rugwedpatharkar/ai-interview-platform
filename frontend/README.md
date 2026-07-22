@@ -15,8 +15,8 @@ backend/transport rationale.
   + status tokens + layout primitives + Table.
 - **`apps/candidate`** (:3000) — register → verify → profile + resume (AI-parsed review) → apply →
   aptitude → live interview → tracker → account/erasure.
-- **`apps/company`** (:3001) — register → jobs (create/publish) → applicants → AI report →
-  decide / gate-override → xlsx export → team invites → account.
+  Recruiter-side routes live under `/company/...` in this same app — jobs (create/publish) →
+  applicants → AI report → decide / gate-override → xlsx export → team invites.
 
 ## Run (dev)
 Backend must be running (`admin` :8080 gRPC-web, `ai-agents` :8081 interview REST) — see
@@ -24,7 +24,6 @@ Backend must be running (`admin` :8080 gRPC-web, `ai-agents` :8081 interview RES
 ```bash
 npx pnpm@9.15.0 install
 npx pnpm@9.15.0 --filter @ip/candidate dev   # http://localhost:3000
-npx pnpm@9.15.0 --filter @ip/company dev      # http://localhost:3001
 ```
 Env (optional): `NEXT_PUBLIC_ADMIN_URL` (default `http://localhost:8080`),
 `NEXT_PUBLIC_AIAGENTS_URL` (default `http://localhost:8081`).
@@ -37,7 +36,6 @@ npx pnpm@9.15.0 --filter @ip/api-client gen
 ## Build / typecheck
 ```bash
 npx pnpm@9.15.0 --filter @ip/candidate build
-npx pnpm@9.15.0 --filter @ip/company build
 npx pnpm@9.15.0 --filter @ip/ui --filter @ip/shared --filter @ip/api-client typecheck
 ```
 
