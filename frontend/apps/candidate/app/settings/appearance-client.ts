@@ -1,4 +1,4 @@
-// Typed seam for per-user appearance (theme mode + base palette + accent). Wired 2026-06-21 to
+// Typed seam for per-user appearance (base palette only; mode and accent are inert). Wired 2026-06-21 to
 // `admin.preferences.v1.PreferencesService.{GetAppearance, UpdateAppearance}` on the admin
 // transport. The shape on the wire is camelCase via protobuf-es (`accentHue`); the FE keeps the
 // same field names. NEXT_PUBLIC_MOCK=1 falls back to a localStorage-only client for offline dev.
@@ -11,7 +11,10 @@ export type ThemeMode = "system" | "light" | "dark";
 /** Backend enum (wire): `midnight | azure | mint | slate`. User-facing label for `midnight` is
  *  "Aperture" — the v3 brand name. We keep the wire name so the seam is direct. */
 export type BaseTheme = "midnight" | "azure" | "mint" | "slate";
-/** Backend enum (wire): `cyan | lime | emerald | amber | coral | azure | custom`. */
+/** Backend enum (wire): `cyan | lime | emerald | amber | coral | azure | custom`.
+ *  INERT since 2026-07-23 — the brand accent is fixed and users no longer pick one. The
+ *  field is kept so the PreferencesService contract needs no proto change or migration;
+ *  nothing reads it. Same treatment `mode` already gets under light-only. */
 export type AccentPreset =
   | "cyan"
   | "lime"
@@ -84,25 +87,6 @@ export const BASE_THEMES: {
   },
 ];
 
-export const ACCENT_PRESETS: { value: AccentPreset; swatch: string }[] = [
-  { value: "cyan", swatch: "oklch(0.55 0.12 195)" },
-  { value: "lime", swatch: "oklch(0.78 0.18 125)" },
-  { value: "emerald", swatch: "oklch(0.62 0.14 155)" },
-  { value: "amber", swatch: "oklch(0.75 0.15 75)" },
-  { value: "coral", swatch: "oklch(0.66 0.17 32)" },
-  { value: "azure", swatch: "oklch(0.62 0.16 260)" },
-  { value: "custom", swatch: "" },
-];
-
-const ACCENT_HUES: Record<Exclude<AccentPreset, "custom">, number> = {
-  cyan: 195,
-  lime: 125,
-  emerald: 155,
-  amber: 75,
-  coral: 32,
-  azure: 260,
-};
-
 /** Persist + paint. The localStorage write is best-effort (private-mode browsers throw on
  *  `setItem`) — failing storage must never block the visual update, so the throw is silenced. */
 function persistLocal(prefs: AppearancePrefs): void {
@@ -149,17 +133,11 @@ export function applyAppearance(prefs: AppearancePrefs): void {
   root.dataset.theme = "light";
 
   root.dataset.base = prefs.base;
-  root.dataset.accent = prefs.accent;
 
-  // Derive the brand palette from the selected hue so every brand-tokened surface
-  // (buttons, pills, accents) re-tints uniformly without per-class rewrites.
-  const hue =
-    prefs.accent === "custom"
-      ? prefs.accentHue
-      : ACCENT_HUES[prefs.accent];
-  root.style.setProperty("--brand", `oklch(0.55 0.12 ${hue})`);
-  root.style.setProperty("--brand-strong", `oklch(0.48 0.12 ${hue})`);
-  root.style.setProperty("--brand-soft", `oklch(0.55 0.12 ${hue} / 0.12)`);
+  // The brand accent is fixed (2026-07-23): --brand and friends come from tokens.css and
+  // are no longer overridden per user. `accent`/`accentHue` stay on the wire so the
+  // PreferencesService contract is unchanged, but they have no visual effect — the same
+  // treatment `mode` already gets under light-only.
 }
 
 /** Local-only mock: persists in localStorage and re-paints on every set. Mirrors the live RPC's
@@ -242,10 +220,4 @@ r.classList.remove('dark');
 r.dataset.theme='light';
 r.style.colorScheme='light';
 r.dataset.base=p.base;
-r.dataset.accent=p.accent;
-var hueMap={cyan:195,lime:125,emerald:155,amber:75,coral:32,azure:260};
-var h=p.accent==='custom'?p.accentHue:hueMap[p.accent];if(typeof h!=='number')h=195;
-r.style.setProperty('--brand','oklch(0.55 0.12 '+h+')');
-r.style.setProperty('--brand-strong','oklch(0.48 0.12 '+h+')');
-r.style.setProperty('--brand-soft','oklch(0.55 0.12 '+h+' / 0.12)');
 }catch(_){}})();`;

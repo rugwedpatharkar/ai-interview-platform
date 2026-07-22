@@ -14,7 +14,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 
 import {
-  ACCENT_PRESETS,
   BASE_THEMES,
   DEFAULT_APPEARANCE,
   applyAppearance,
@@ -28,7 +27,7 @@ import {
 
 /** Shared Appearance subsection — mounted by both the candidate and company settings pages.
  *  Persists to localStorage so the choice survives a refresh before the backend RPC lands,
- *  and applies the chosen tokens to <html> via data-theme / data-base / data-accent so the
+ *  and applies the chosen tokens to <html> via data-theme / data-base so the
  *  global token blocks can swap. The seam (AppearanceClient) is a typed interface; the real
  *  RPC (`admin.preferences.v1.PreferencesService.{GetAppearance, UpdateAppearance}`) drops in
  *  by swapping the factory — no component edits. */
@@ -97,78 +96,6 @@ export function AppearanceTab({
               />
             ))}
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Accent</CardTitle>
-          <CardDescription>
-            The highlight colour used for primary buttons, pills, and focus rings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div role="radiogroup" aria-label="Accent colour" className="flex flex-wrap gap-2">
-            {ACCENT_PRESETS.map((a) => {
-              const on = prefs.accent === a.value;
-              return (
-                <button
-                  key={a.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => patch({ accent: a.value })}
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                    on
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-line bg-surface text-ink-2 hover:text-ink-deep",
-                  )}
-                >
-                  {a.value !== "custom" && (
-                    <span
-                      aria-hidden
-                      className="size-3.5 rounded-full"
-                      style={{ background: a.swatch }}
-                    />
-                  )}
-                  {a.value}
-                </button>
-              );
-            })}
-          </div>
-          {prefs.accent === "custom" && (
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="custom-accent-hue"
-                className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-ink-3"
-              >
-                Custom hue · {prefs.accentHue}°
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  id="custom-accent-hue"
-                  type="range"
-                  min={0}
-                  max={359}
-                  value={prefs.accentHue}
-                  onChange={(e) =>
-                    patch({ accentHue: Number.parseInt(e.target.value, 10) })
-                  }
-                  className="h-2 flex-1 cursor-pointer appearance-none rounded-full"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, oklch(0.6 0.15 0), oklch(0.6 0.15 60), oklch(0.6 0.15 120), oklch(0.6 0.15 180), oklch(0.6 0.15 240), oklch(0.6 0.15 300), oklch(0.6 0.15 359))",
-                  }}
-                />
-                <span
-                  aria-hidden
-                  className="size-8 shrink-0 rounded-full border border-line"
-                  style={{ background: `oklch(0.6 0.15 ${prefs.accentHue})` }}
-                />
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
