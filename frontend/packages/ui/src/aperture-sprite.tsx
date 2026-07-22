@@ -36,12 +36,6 @@ export function ApertureSprite() {
             <path d="M9 12l2 2 4-4" />
           </g>
         </symbol>
-        <symbol id="ap-eye" viewBox="0 0 24 24">
-          <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-            <circle cx="12" cy="12" r="3" />
-          </g>
-        </symbol>
         <symbol id="ap-lock" viewBox="0 0 24 24">
           <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="4" y="11" width="16" height="10" rx="2" />
@@ -77,20 +71,6 @@ export function ApertureSprite() {
             <path d="M16 14.5c2.5.4 4 1.9 5 4.5" />
           </g>
         </symbol>
-        <symbol id="ap-briefcase" viewBox="0 0 24 24">
-          <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="7" width="18" height="13" rx="2" />
-            <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-          </g>
-        </symbol>
-        <symbol id="ap-grid" viewBox="0 0 24 24">
-          <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
-          </g>
-        </symbol>
         <symbol id="ap-report" viewBox="0 0 24 24">
           <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
@@ -114,9 +94,6 @@ export function ApertureSprite() {
             <circle cx="12" cy="12" r="9" />
             <path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18" />
           </g>
-        </symbol>
-        <symbol id="ap-spark" viewBox="0 0 24 24">
-          <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 2v6m0 8v6M2 12h6m8 0h6M5 5l4 4m6 6l4 4M5 19l4-4m6-6l4-4" />
         </symbol>
         <symbol id="ap-dl" viewBox="0 0 24 24">
           <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -175,20 +152,16 @@ export type ApIconName =
   | "x"
   | "shield"
   | "shield-check"
-  | "eye"
   | "lock"
   | "cam"
   | "mic"
   | "bolt"
   | "user"
   | "users"
-  | "briefcase"
-  | "grid"
   | "report"
   | "timer"
   | "bell"
   | "globe"
-  | "spark"
   | "dl"
   | "arrow"
   | "building"
