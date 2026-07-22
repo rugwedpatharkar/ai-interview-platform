@@ -45,8 +45,13 @@ const EMPTY: BrandingForm = {
   accent: "teal",
 };
 
-// Accent picker: the candidate marketplace uses --teal as the brand primary; companies pick
-// one of three pre-approved hues so we never need to validate raw colour input.
+// Accent picker: companies pick one of three pre-approved hues so we never need to validate
+// raw colour input. The ids are persisted server-side, so they stay "teal"/"coral"/"gold"
+// even though the palette moved to --brand — renaming them would orphan stored profiles.
+//
+// NOTE: all three currently resolve to var(--brand), so the picker has no visible effect —
+// choosing Coral renders the same violet as Teal. Either give them distinct hues or drop
+// the control; leaving it implies a choice the product does not honour.
 const ACCENTS = [
   { id: "teal", label: "Teal", css: "var(--brand)" },
   { id: "coral", label: "Coral", css: "var(--brand)" },

@@ -565,17 +565,43 @@ The trio is also complete by design, not by omission: `EmptyState` / `ErrorState
 `LoadingState` are the three **data-fetch** states. Success is not a fetch state — a
 successful fetch renders the data. There is no missing fourth.
 
-### Task 6.4: Legacy token rename (**handle with care**)
+### Task 6.4: Legacy token rename — **already done. Closed 2026-07-23.**
 
-`--teal` / `--coral` / `--gold` alias `--brand` across ~52 files. This is **not** a safe sed:
+The dangerous half no longer exists. Verified across `apps/` and `packages/`:
 
-- `apps/candidate/app/settings/appearance-client.ts:160` writes `--teal` at runtime.
-- Company branding persists `"teal" | "coral" | "gold"` as **server-side enum values** (`app/company/branding/*`).
+| Claim in the plan | Reality |
+|---|---|
+| `--teal`/`--coral`/`--gold` alias `--brand` | **No such variables are defined anywhere.** |
+| ~52 files reference them | **Zero** `var(--teal\|--coral\|--gold)` consumers; zero Tailwind utilities (`text-teal`, `bg-coral`, …). |
+| `appearance-client.ts:160` writes `--teal` at runtime | It writes `--brand`, `--brand-strong`, `--brand-soft`. The runtime coupling is gone. |
 
-- [ ] **Step 1:** Separate the two concerns — the *CSS variable* rename and the *persisted enum values*, which must keep their current strings or ship a backend data migration.
-- [ ] **Step 2:** Rename CSS variables only, keeping `--teal` etc. as deprecated aliases for one release.
-- [ ] **Step 3:** Migrate usages in batches, typechecking each.
-- [ ] **Step 4:** Remove the aliases only after the usage count hits zero.
+So there is nothing to rename and no deprecation window to run. The CSS migration happened
+at some earlier point; this task was tracking a state that had already passed.
+
+**What survives is data, and must not be renamed.** The only remaining `teal`/`coral`/`gold`
+are string identifiers for the company-branding accent, persisted server-side
+(`branding-client.ts` defaults to `accent: "teal"`). Renaming them would orphan stored
+company profiles. They are ids, not colour names.
+
+Not to be confused with the candidate Appearance accents
+(`settings/appearance-client.ts`) — a separate, genuinely working feature with distinct
+swatches (`cyan`, `lime`, `emerald`, `amber`, `coral`, `azure`) that sets `--brand` from a
+hue at runtime.
+
+### Found while closing 6.4: the branding accent picker does nothing
+
+`app/company/branding/page.tsx` offers three accents that all resolve to the same value:
+
+```ts
+{ id: "teal",  label: "Teal",  css: "var(--brand)" },
+{ id: "coral", label: "Coral", css: "var(--brand)" },
+{ id: "gold",  label: "Gold",  css: "var(--brand)" },
+```
+
+A company selecting "Coral" gets the same violet as "Teal". The choice is persisted and
+then ignored at render. This is a product decision, not a cleanup: either give the three
+ids distinct hues, or remove the control. Leaving it advertises a choice the product does
+not honour. Flagged in the file; not changed here.
 
 ---
 
