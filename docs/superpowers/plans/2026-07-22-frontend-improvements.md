@@ -536,12 +536,42 @@ that has been deliberately tuned.
 
 ---
 
-## Phase 7 — Auth hardening (needs backend coordination)
+## Phase 7 — Auth hardening
 
-Not frontend-only; scope with the backend owner before starting.
+### Server-side enforcement — **audited 2026-07-23, no gap found**
 
-- **Tokens in `localStorage`.** Both access *and* refresh tokens are XSS-exfiltratable (`packages/shared/src/tokens.ts`). The real fix is httpOnly cookies via a BFF/proxy, which changes the transport layer. At minimum, document the accepted risk.
-- **Client-side role gating only.** `decodeIdentity` (`packages/shared/src/auth.tsx:48`) reads `sub` / `role` / `comp_id` from an **unverified** JWT payload. Correct for UI, but every RPC must enforce roles server-side — audit and confirm, since the UI cannot be the gate.
+The open worry was that `decodeIdentity` (`packages/shared/src/auth.tsx:48`) reads
+`sub`/`role`/`comp_id` from an **unverified** JWT, so if the backend trusted the client the
+UI would be the only gate. It does not. Traced end to end:
+
+| Layer | Evidence |
+|---|---|
+| Signature | `lib/lib/security/tokens.py:114` — `jwt.decode(token, self._secret, algorithms=[self._alg], audience=_AUDIENCE, issuer=_ISSUER)`. Explicit algorithm allowlist, so `alg: none` substitution is rejected. |
+| Token type | `decode(..., expected_type="access")` rejects a reset/mfa/refresh token used as an access token. |
+| Identity | `identity_from_token` (`services/admin/app/resources/auth.py:296`) derives role and comp_id from **verified claims**, never from request input. |
+| Authorization | Resources check `if identity["role"] not in _MANAGER_ROLES: raise ForbiddenError` — e.g. `get_funnel_analytics`. Coverage in `job`/`decision`/`report`/`rubric` is ≥1 guard call per public function. |
+| Tenant isolation | **14** resources scope queries by `identity["comp_id"]` (e.g. `applications.list_by_comp`). |
+| Escape hatches | No `verify_signature=False` and no permissive `options={...}` anywhere in `services/` or `lib/`. |
+
+A forged or role-tampered token therefore cannot escalate: the client cannot lie about its
+role or company. **The frontend's `useRequireRole` is UX only, and that is correct.**
+
+Note for whoever re-audits: `services/admin/app/resources/funnel.py` has no role check and
+that is right — it is the RabbitMQ-driven application state machine, not an RPC. Judge
+role coverage per user-facing route, not per file.
+
+### Remaining, and genuinely cross-team
+
+- **Tokens in `localStorage`.** Access *and* refresh are XSS-exfiltratable
+  (`packages/shared/src/tokens.ts`). Given the enforcement above, the exposure is session
+  hijack — not privilege escalation. The real fix is httpOnly cookies via a BFF/proxy,
+  which changes the transport layer and needs the backend owner. Until then this is an
+  accepted, documented risk, and the strict CSP from Phase 1 is what narrows it.
+- **Session-hint cookie.** A non-sensitive `ip_has_session` cookie set at login would let
+  the server render the dashboard shell directly and remove the one-paint landing flash
+  introduced in Phase 4. Frontend-only, but it touches the login/logout flow, so it should
+  land with the token-storage work rather than as a lone patch — and it must be cleared on
+  logout or a stale cookie produces the reverse flash.
 
 ---
 
