@@ -1,6 +1,9 @@
 import { MarketingShell } from "@ip/ui";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+
+import { jobPostingJsonLd, serializeJsonLd } from "../../../lib/structured-data";
 
 import { SimilarRoles } from "./similar-roles";
 import { JobDetailHero } from "./job-detail-hero";
@@ -18,6 +21,9 @@ export async function generateMetadata({
   return {
     title: `${job.title} · ${job.company.name} · Aptura`,
     description: job.jdText.slice(0, 160),
+    // Resolved against metadataBase in the root layout. Job URLs are reachable with
+    // tracking/query params, so name the canonical explicitly.
+    alternates: { canonical: `/jobs/${id}` },
   };
 }
 
@@ -39,7 +45,20 @@ export default async function JobDetailPage({
   });
   if (!job) notFound(); // → not-found.tsx
 
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
+    <>
+      {/* JobPosting markup — this is what makes the listing eligible for Google Jobs.
+          dangerouslySetInnerHTML is safe here specifically because the payload is
+          JSON.stringify output with `<` escaped (see serializeJsonLd); it is never
+          tenant HTML. The nonce comes from middleware.ts — without it the strict
+          production script-src drops the block. */}
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jobPostingJsonLd(job)) }}
+      />
     <MarketingShell audience="applicants">
       {/* Single page-level h1 for the entity; the visible hero heading is the h2. */}
       <h1 className="sr-only">
@@ -75,5 +94,6 @@ export default async function JobDetailPage({
         <SimilarRoles companyId={job.company.id} excludeJobId={job.jobId} />
       </div>
     </MarketingShell>
+    </>
   );
 }
