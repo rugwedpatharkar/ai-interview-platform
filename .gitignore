@@ -42,5 +42,9 @@ build/
 
 # ── Local tooling / machine-specific ───────────────────────────
 .playwright-mcp/
+# Playwright run output (reports, traces, failure screenshots) — regenerated per run.
+frontend/playwright-report/
+frontend/test-results/
+frontend/blob-report/
 .claude/settings.local.json
 .claude/launch.json
