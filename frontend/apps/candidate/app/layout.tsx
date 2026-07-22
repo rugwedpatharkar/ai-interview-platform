@@ -1,5 +1,6 @@
 import { ApertureSprite, Toaster } from "@ip/ui";
 import { Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
 
 import "./globals.css";
@@ -30,7 +31,13 @@ export const viewport = {
   themeColor: "#f7f8fb",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Reading a request header opts the tree into dynamic rendering, which is what
+  // lets Next stamp the per-request CSP nonce (set in middleware.ts) onto its own
+  // bootstrap scripts. Without it these routes prerender statically, ship HTML with
+  // no nonce, and the strict `script-src` blocks every script — a blank page.
+  await headers();
+
   return (
     <html lang="en" className={mono.variable} suppressHydrationWarning>
       <head>
