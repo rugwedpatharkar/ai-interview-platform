@@ -7,16 +7,16 @@ import { useSearchParams } from "next/navigation";
 
 import { CandidateShell } from "../../components/candidate-shell";
 import { AccountTab } from "../../components/settings/account-tab";
-import { AppearanceTab } from "../../components/settings/appearance-tab";
 import { NotificationsTab } from "../../components/settings/notifications-tab";
 import { PrivacyTab } from "../../components/settings/privacy-tab";
 import { SecurityTab } from "../../components/settings/security-tab";
 import { useAuth } from "../../lib/auth";
 import { makeSettingsClient } from "./settings-client";
 
-// v3 adds the "appearance" tab (per-user theme + base palette + accent). The order matches
-// the visual priority in the spec: identity → safety → preferences → privacy → looks.
-const TABS = ["account", "security", "notifications", "privacy", "appearance"] as const;
+// Order matches the visual priority in the spec: identity → safety → preferences → privacy.
+// The "appearance" tab was removed (2026-07-23): the product ships one fixed look, so there
+// is nothing for a user to change.
+const TABS = ["account", "security", "notifications", "privacy"] as const;
 
 /** Reads ?tab= to pick the initial tab. Isolated so Next.js can Suspense-wrap the
  *  useSearchParams read without forcing the whole page into a fallback. */
@@ -38,7 +38,6 @@ function SettingsTabs() {
             ["security", "Security"],
             ["notifications", "Notifications"],
             ["privacy", "Privacy"],
-            ["appearance", "Appearance"],
           ] as const
         ).map(([value, label]) => (
           <TabsTrigger
@@ -62,12 +61,6 @@ function SettingsTabs() {
       <TabsContent value="privacy">
         <PrivacyTab />
       </TabsContent>
-      <TabsContent value="appearance">
-        {/* Shared verbatim with /company/settings — same `["preferences","appearance"]` key,
-            so a change in one role's settings instantly reflects when the user lands in the
-            other role's settings in the same session. */}
-        <AppearanceTab />
-      </TabsContent>
     </Tabs>
   );
 }
@@ -81,7 +74,7 @@ export default function SettingsPage() {
     <CandidateShell>
       <PageHeader
         title="Settings"
-        description="Manage your account, security, notifications, and how Aptura looks."
+        description="Manage your account, security, notifications, and privacy."
       />
       <Suspense fallback={null}>
         <SettingsTabs />

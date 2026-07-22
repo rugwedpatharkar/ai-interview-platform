@@ -7,17 +7,16 @@ import { useSearchParams } from "next/navigation";
 
 import { CompanyShell } from "../../../components/company-shell";
 import { AccountTab } from "../../../components/settings/account-tab";
-import { AppearanceTab } from "../../../components/settings/appearance-tab";
 import { NotificationsTab } from "../../../components/settings/notifications-tab";
 import { PrivacyTab } from "../../../components/settings/privacy-tab";
 import { SecurityTab } from "../../../components/settings/security-tab";
 import { useAuth } from "../../../lib/auth";
 import { makeSettingsClient } from "../../settings/settings-client";
 
-// Same five tabs as the candidate side. The underlying RPCs (account/security/notifications/
+// Same four tabs as the candidate side. The underlying RPCs (account/security/notifications/
 // privacy) are token-scoped and role-agnostic — the company shell and routes here are the
 // only delta.
-const TABS = ["account", "security", "notifications", "privacy", "appearance"] as const;
+const TABS = ["account", "security", "notifications", "privacy"] as const;
 
 function CompanySettingsTabs() {
   const { api } = useAuth();
@@ -36,7 +35,6 @@ function CompanySettingsTabs() {
             ["security", "Security"],
             ["notifications", "Notifications"],
             ["privacy", "Privacy"],
-            ["appearance", "Appearance"],
           ] as const
         ).map(([value, label]) => (
           <TabsTrigger
@@ -60,12 +58,6 @@ function CompanySettingsTabs() {
       <TabsContent value="privacy">
         <PrivacyTab />
       </TabsContent>
-      <TabsContent value="appearance">
-        {/* Shared verbatim with /settings (candidate side). Same query key, same component,
-            same client seam — so a change made here propagates to the candidate view (and
-            vice versa) without an extra invalidation. */}
-        <AppearanceTab />
-      </TabsContent>
     </Tabs>
   );
 }
@@ -79,7 +71,7 @@ export default function CompanySettingsPage() {
     <CompanyShell>
       <PageHeader
         title="Workspace settings"
-        description="Manage your account, security, notifications, and how Aptura looks for your workspace."
+        description="Manage your account, security, notifications, and privacy for your workspace."
       />
       <Suspense fallback={null}>
         <CompanySettingsTabs />
