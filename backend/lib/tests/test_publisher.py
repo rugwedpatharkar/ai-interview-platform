@@ -52,27 +52,40 @@ async def test_publish_is_mandatory_to_surface_lost_events():
 
 
 @pytest.mark.asyncio
-async def test_publisher_reacquires_exchange_after_publish_error():
-    """BE-#12: publish failure clears the exchange; next call re-acquires it."""
+async def test_publisher_retries_in_place_after_publish_error():
+    """A dropped channel now retries in-place: the first publish raises internally,
+    the exchange handle is invalidated + re-acquired, and the retry succeeds — the
+    caller sees a single successful publish instead of a failure they must handle."""
     fresh_exchange = _FakeExchange()
     pub = Publisher("amqp://unused")
-    # First exchange will fail once, then succeed
+    # First exchange fails once then succeeds; second attempt hits fresh_exchange.
     failing_exchange = _FakeExchange(fail_once=True)
     pub._conn = _FakeConn(fresh_exchange)
     pub._exchange = failing_exchange
 
-    # First publish: fails, clears _exchange
-    with pytest.raises(RuntimeError, match="simulated channel error"):
-        await pub.publish("test.event", {"x": 1})
+    # Single call — the internal retry acquires fresh_exchange and publishes there.
+    await pub.publish("test.event", {"x": 1})
 
-    # _exchange must be cleared after the error
-    assert pub._exchange is None
-
-    # Second publish: re-acquires exchange (fresh_exchange via _conn) and succeeds
-    await pub.publish("test.event", {"x": 2})
-    assert pub._exchange is not None
+    assert pub._exchange is fresh_exchange
     assert len(fresh_exchange.calls) == 1
     assert fresh_exchange.calls[0][0] == "test.event"
+
+
+@pytest.mark.asyncio
+async def test_publisher_raises_after_two_consecutive_failures():
+    """If BOTH attempts fail (broker truly down), the exception surfaces so the
+    caller can decide (enqueue_replay for audit rows, DLX for events, etc.)."""
+    pub = Publisher("amqp://unused")
+    broken = _FakeExchange(fail_once=False)  # never succeeds
+
+    async def _always_fail(message, routing_key, **kwargs):
+        raise RuntimeError("simulated channel error")
+
+    broken.publish = _always_fail  # type: ignore[method-assign]
+    pub._conn = _FakeConn(broken)
+    pub._exchange = broken
+    with pytest.raises(RuntimeError, match="simulated channel error"):
+        await pub.publish("test.event", {"x": 2})
 
 
 @pytest.mark.asyncio

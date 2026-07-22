@@ -121,12 +121,13 @@ INDEXES: list[IndexSpec] = [
     # consents (GDPR consent ledger): every settings load + erasure looks up by user_id;
     # was scanning the full collection until this index was added.
     IndexSpec("consents", "user_id"),
-    # read_state (per-user thread read markers): the $max upsert races without unique
-    # on the natural key — docstring claimed unique but the index was never declared.
+    # read_state (per-user thread read markers): compound index for lookups. Was
+    # briefly declared unique; on a live DB with any existing duplicates
+    # `ensure_indexes` raises DuplicateKeyError at startup and admin refuses to boot.
+    # Enforcing uniqueness requires a dedup migration first — tracked separately.
     IndexSpec(
         "read_state",
         [("user_id", 1), ("kind", 1), ("thread_id", 1)],
-        {"unique": True},
     ),
     # client_errors: FE unhandled exceptions — 30-day TTL; event_id for dedup lookups.
     IndexSpec("client_errors", "created_at", {"expireAfterSeconds": 30 * 24 * 3600}),

@@ -115,25 +115,44 @@ async def abandon_stale(*, sessions, data, publisher, clock=_utcnow):
 
     sem = asyncio.Semaphore(_ABANDON_CONCURRENCY)
 
-    async def _abandon_one(session):
+    async def _abandon_one(snapshot):
         async with sem:
+            # C1: re-fetch the LIVE session before writing. A live SubmitTurn's
+            # _finalize (or terminate_for_proctor) may have completed the
+            # interview between the reaper's scan and this write; skip if so.
+            # This closes the "reaper overwrites the finalized transcript with
+            # a stale N-turn version and double-publishes abandoned on top of
+            # completed" race.
+            current = await sessions.get(snapshot.application_id)
+            if current is None or current.status != "in_progress":
+                return
+            # Use the FRESH transcript so a turn added after the scan isn't lost.
             await data.save_interview(
-                session.application_id,
+                current.application_id,
                 {
-                    "transcript": session.transcript.model_dump(),
-                    "blueprint": session.blueprint.model_dump(),
-                    "job_id": session.job_id,
-                    "user_id": session.candidate_user_id,
+                    "transcript": current.transcript.model_dump(),
+                    "blueprint": current.blueprint.model_dump(),
+                    "job_id": current.job_id,
+                    "user_id": current.candidate_user_id,
                 },
             )
             await publisher.publish(
                 "interview.abandoned",
-                {"application_id": session.application_id, "comp_id": session.comp_id},
+                {"application_id": current.application_id, "comp_id": current.comp_id},
             )
-            # Flip status LAST: if the save or publish above fails, the session stays
-            # in-progress and the next sweep re-picks it (no silently lost abandonment).
-            session.status = "abandoned"
-            await sessions.save(session)
+            # CAS write of the abandoned status: succeeds only if the stored
+            # session is still in_progress. A concurrent completion between our
+            # Mongo save above and this flip returns False and we log-and-skip
+            # (the abandoned event was already published; the completion event
+            # takes precedence downstream via the funnel state machine).
+            current.status = "abandoned"
+            wrote = await sessions.save_if_in_progress(current)
+            if not wrote:
+                log.info(
+                    "abandon_stale: concurrent completion won for {}; "
+                    "skipping status flip",
+                    current.application_id,
+                )
 
     await asyncio.gather(*(_abandon_one(s) for s in stale))
     log.info("abandoned {} stale interviews", len(stale))

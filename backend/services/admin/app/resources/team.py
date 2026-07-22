@@ -7,6 +7,8 @@ Invites delegate to the shared `auth._invite_company_user`. No candidate PII —
 an employee User, untouched by the CandidateEraser cascade.
 """
 
+import asyncio
+
 from lib.logging import bind_ids, get_logger, log_context
 from lib.schemas import Role
 
@@ -16,6 +18,21 @@ from app.resources.auth import _invite_company_user, _send_verification
 from app.resources.permissions import require_permission
 
 log = get_logger(component="team.resources")
+
+# C2: serialize the last-admin guard + write on a per-company basis so two admins
+# can't concurrently demote each other and leave zero admins. In-memory lock is
+# correct on the single-container Render deployment; if the service ever scales
+# to multiple replicas, upgrade this to a Redis SETNX-based distributed lock.
+_COMP_ADMIN_LOCKS: dict[str, asyncio.Lock] = {}
+
+
+def _comp_admin_lock(comp_id: str) -> asyncio.Lock:
+    lock = _COMP_ADMIN_LOCKS.get(comp_id)
+    if lock is None:
+        lock = asyncio.Lock()
+        _COMP_ADMIN_LOCKS[comp_id] = lock
+    return lock
+
 
 _INVITABLE_ROLES = {Role.recruiter.value, Role.hiring_manager.value}
 _ALL_ROLES = {Role.company_admin.value, Role.recruiter.value, Role.hiring_manager.value}
@@ -173,9 +190,12 @@ async def remove_member(identity, user_id, *, users, sessions, audit=None):
         **bind_ids(user_id=user_id, comp_id=identity["comp_id"]),
     ):
         require_permission(identity, "team:manage")
-        user = await _member_scoped(identity, user_id, users)
-        await _guard_last_admin(identity, user, users)
-        await users.revoke_seat(user_id)
+        # C2: serialize read-then-write on the guard so two admins can't concurrently
+        # demote each other and leave zero admins.
+        async with _comp_admin_lock(identity["comp_id"]):
+            user = await _member_scoped(identity, user_id, users)
+            await _guard_last_admin(identity, user, users)
+            await users.revoke_seat(user_id)
         await sessions.revoke_user(user_id)
         await _audit(audit, user_id, "member_removed", identity["comp_id"])
         return _member_dto({**user, "status": "revoked"})
@@ -190,11 +210,17 @@ async def change_role(identity, user_id, role, *, users, sessions, audit=None):
         require_permission(identity, "team:manage")
         if role not in _ALL_ROLES:
             raise ValidationError("invalid role")
-        user = await _member_scoped(identity, user_id, users)
-        old_role = str(user.get("role", ""))
-        if old_role == Role.company_admin.value and role != Role.company_admin.value:
-            await _guard_last_admin(identity, user, users)
-        await users.set_role(user_id, role)
+        # C2: same lock as remove_member — concurrent role changes on two active
+        # admins in the same company would both pass the guard and land zero admins.
+        async with _comp_admin_lock(identity["comp_id"]):
+            user = await _member_scoped(identity, user_id, users)
+            old_role = str(user.get("role", ""))
+            if (
+                old_role == Role.company_admin.value
+                and role != Role.company_admin.value
+            ):
+                await _guard_last_admin(identity, user, users)
+            await users.set_role(user_id, role)
         # A demotion (privilege reduction) revokes sessions; a promotion does not.
         if _RANK.get(role, 0) < _RANK.get(old_role, 0):
             await sessions.revoke_user(user_id)

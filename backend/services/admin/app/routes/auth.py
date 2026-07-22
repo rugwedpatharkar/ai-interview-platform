@@ -152,7 +152,19 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
     async def _abort(self, context, exc, method="unknown"):
         code, msg = lib_errors.to_grpc_status(exc)
-        code = _STATUS.get(type(exc)) or code
+        override_code = _STATUS.get(type(exc))
+        if override_code is not None:
+            code = override_code
+            # RateLimitedError / InvalidTokenError have no lib peer, so
+            # to_grpc_status falls through to (INTERNAL, "internal error").
+            # When we're overriding the code from the local map, also lift the
+            # exc's public message so clients see "Too many attempts" (plus
+            # retry hint) instead of the misleading "internal error".
+            if isinstance(exc, lib_errors.AppError):
+                msg = exc.public_message
+                retry = getattr(exc, "retry_after", None)
+                if retry is not None:
+                    msg = f"{msg}; retry after {int(retry)}s"
         log_domain_error(log, exc, method=method)
         _grpc_errors.labels(method=method).inc()
         await context.abort(code, msg)

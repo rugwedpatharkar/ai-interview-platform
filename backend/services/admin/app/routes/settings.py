@@ -166,6 +166,7 @@ class SettingsServicer(settings_pb2_grpc.SettingsServiceServicer):
                     sessions=self._sessions,
                     limiter=self._limiter,
                     audit=self._audit,
+                    notifier=self._notifier,
                 )
                 return settings_pb2.OkResponse(ok=True)
             except AuthDomainError as exc:
@@ -179,6 +180,7 @@ class SettingsServicer(settings_pb2_grpc.SettingsServiceServicer):
                 await settings_res.request_email_change(
                     ident["id"],
                     request.new_email,
+                    request.current_password,
                     users=self._users,
                     tokens=self._tokens,
                     notifier=self._notifier,

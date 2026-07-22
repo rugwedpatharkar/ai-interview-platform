@@ -270,8 +270,11 @@ async def verify_totp_login(
             )
             if matched is None:
                 raise InvalidCredentialsError("invalid code")
-            remaining = [h for h in user["recovery_codes"] if h != matched]
-            await users.update_fields(user_id, {"recovery_codes": remaining})
+            # Atomic $pull ensures exactly-once consumption: two concurrent verifies
+            # with the same code both match the read-copy, but only one $pull removes
+            # it. The loser sees modified_count == 0 and is rejected as a reuse.
+            if not await users.consume_recovery_code(user_id, matched):
+                raise InvalidCredentialsError("invalid code")
         refresh_jti = uuid4().hex
         access = tokens.access_token(
             sub=user_id,
@@ -337,7 +340,11 @@ async def refresh(
             log.warning("refresh: invalid refresh token")
             raise InvalidTokenError("Invalid refresh token") from exc
         jti, sub = claims["jti"], claims["sub"]
-        if not await sessions.is_active(jti):
+        # Atomic consume: exactly one concurrent refresh with the same jti wins;
+        # the loser sees consume()==False and is treated as reuse. Was an is_active
+        # check followed by revoke — two concurrent web+mobile refreshes both
+        # passed the check and both minted new valid pairs.
+        if not await sessions.consume(jti):
             log.warning(
                 "refresh: reuse detected; revoking session family for user={}", sub
             )
@@ -345,7 +352,6 @@ async def refresh(
             raise InvalidTokenError("Refresh token is no longer active")
         user = await users.get(sub)
         if not user:
-            await sessions.revoke(jti)
             raise NotFoundError("User not found")
         new_jti = uuid4().hex
         access = tokens.access_token(
@@ -360,7 +366,6 @@ async def refresh(
         await sessions.allow(
             sub, new_jti, refresh_ttl_seconds, ip=ip, user_agent=user_agent
         )
-        await sessions.revoke(jti)
         log.info("token refreshed: user_id={}", sub)
         return {
             "access_token": access,
@@ -579,6 +584,7 @@ async def oauth_login(
     limiter,
     refresh_ttl_seconds,
     audit=None,
+    nonces=None,
 ):
     async with log_context(log, "resource.auth.oauth_login", **bind_ids()):
         # SSO: rate-limit by IP, verify CSRF state, exchange the code for a verified
@@ -611,6 +617,20 @@ async def oauth_login(
             )
             user = await users.get(user_id)
         user_id = str(user["_id"])
+        if user.get("totp_enabled"):
+            # Match the password-login TOTP path: return a short-lived mfa challenge
+            # instead of minting tokens. SSO used to silently bypass 2FA for any
+            # user who had it enabled on their password login.
+            mfa_jti = uuid4().hex
+            mfa_token = tokens.mfa_token(sub=user_id, jti=mfa_jti)
+            if nonces is not None:
+                await nonces.allow(mfa_jti, _MFA_NONCE_TTL)
+            log.info("oauth: 2FA required for user_id={}", user_id)
+            return {
+                "mfa_required": True,
+                "mfa_token": mfa_token,
+                "user_id": user_id,
+            }
         refresh_jti = uuid4().hex
         access = tokens.access_token(
             sub=user_id,

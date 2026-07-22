@@ -9,12 +9,15 @@ class FakeMessage:
     we set it directly to drive the retry/dead-letter decision.
     """
 
-    def __init__(self, body=b"{}", headers=None, routing_key="job.published"):
+    def __init__(
+        self, body=b"{}", headers=None, routing_key="job.published", redelivered=False
+    ):
         self.body = body
         self.headers = headers or {}
         self.routing_key = routing_key
         self.acked = False
         self.nack_requeue = "UNSET"
+        self.redelivered = redelivered
 
     async def ack(self):
         self.acked = True

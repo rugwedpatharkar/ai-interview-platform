@@ -348,6 +348,42 @@ async def test_choose_books_offered_slot_and_bumps_version():
     assert bookings.docs["app1"]["chosen_duration_minutes"] == 60
 
 
+async def test_choose_concurrent_second_clicker_gets_conflict():
+    # Solid-area pin: two clicks racing on the same proposed slot must produce
+    # exactly one booking. The audit flagged the version-CAS as correct — this
+    # test proves the second clicker is rejected with ConflictError, not a
+    # silent double-booking or an INTERNAL crash.
+    from app.errors import ConflictError
+
+    apps, slots_repo, bookings = _repos(_application())
+    await _propose_one(apps, slots_repo, bookings)
+    # First click books it (bumps version proposed=0 -> booked=1).
+    first = await scheduling.choose_slot(
+        _candidate(),
+        "app1",
+        _iso(_SLOT_A),
+        applications=apps,
+        slots_repo=slots_repo,
+        bookings=bookings,
+        clock=_clock(),
+    )
+    assert first["status"] == "booked"
+    # Second click loses the CAS: bookings.choose_if_proposed returns False
+    # because status is now "booked" (not "proposed") — resource maps to ConflictError.
+    with pytest.raises(ConflictError):
+        await scheduling.choose_slot(
+            _candidate(),
+            "app1",
+            _iso(_SLOT_A),
+            applications=apps,
+            slots_repo=slots_repo,
+            bookings=bookings,
+            clock=_clock(),
+        )
+    # The booking stayed at the first winner's version (no silent second overwrite).
+    assert bookings.docs["app1"]["version"] == 1
+
+
 async def test_choose_non_offered_slot_rejected_before_cas():
     apps, slots_repo, bookings = _repos(_application())
     await _propose_one(apps, slots_repo, bookings)

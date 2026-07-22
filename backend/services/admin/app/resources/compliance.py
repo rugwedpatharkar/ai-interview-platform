@@ -7,11 +7,12 @@ candidate's explicit consent to AI-driven scoring (GDPR Art. 22 territory).
 
 import asyncio
 
+from lib.errors import DependencyError
 from lib.logging import bind_ids, get_logger, log_context
 
 from app.errors import ValidationError
 from app.model.audit import AuditLog
-from app.model.compliance import ConsentRecord
+from app.model.compliance import ConsentRecord, is_consent_current
 
 log = get_logger(component="compliance.resources")
 
@@ -44,7 +45,13 @@ async def list_consent(identity, *, consents):
         "resource.compliance.list_consent",
         **bind_ids(user_id=identity["id"]),
     ):
-        return await consents.list_by_user(identity["id"])
+        rows = await consents.list_by_user(identity["id"])
+        # Stamp expiry so callers gating on 'has the user consented?' can filter
+        # stale rows without re-implementing the check. Was missing entirely — a v1
+        # record from two years ago silently counted as valid consent.
+        for r in rows:
+            r["current"] = is_consent_current(r)
+        return rows
 
 
 class CandidateEraser:
@@ -79,6 +86,7 @@ class CandidateEraser:
         practice=None,
         slots=None,
         bookings=None,
+        sessions=None,
     ):
         self._users = users
         self._profiles = profiles
@@ -98,6 +106,7 @@ class CandidateEraser:
         self._practice = practice
         self._slots = slots
         self._bookings = bookings
+        self._sessions = sessions
 
     async def erase(self, user_id):
         async with log_context(
@@ -105,47 +114,94 @@ class CandidateEraser:
             "resource.compliance.erase",
             **bind_ids(user_id=user_id),
         ):
-            applications = await self._applications.list_by_candidate(user_id)
-            await self._reports.delete_by_applications(
-                [str(a["_id"]) for a in applications]
+            failures: list[str] = []
+
+            async def _step(name, coro):
+                # Try one cascade step; collect the failure name if it errored.
+                # The audit "erased" row is only written when every step passed —
+                # partial failure leaves the sweep to retry from the top on next
+                # tick, at which point idempotent delete_by_* calls are no-ops on
+                # already-cleared collections.
+                try:
+                    await coro
+                except Exception:
+                    log.exception("erase.step_failed step={} user_id={}", name, user_id)
+                    failures.append(name)
+
+            # H14 part 2: flip deletion_pending FIRST so caller_identity refuses any
+            # authed write racing this cascade (a live access token has up to 15 min
+            # left after revoke_user kills the refresh family; without this flag,
+            # SubmitTurn/SubmitCoding etc. could still land during that window).
+            await _step(
+                "mark_deletion_pending", self._users.mark_deletion_pending(user_id)
             )
-            # Messaging is keyed by application_id (no candidate field) — cascade per
-            # app so the recruiter's copy of the chat goes too.
+            applications = await self._applications.list_by_candidate(user_id)
+            application_ids = [str(a["_id"]) for a in applications]
+            await _step(
+                "reports", self._reports.delete_by_applications(application_ids)
+            )
             if self._message_threads is not None:
-                for application in applications:
-                    application_id = str(application["_id"])
-                    await self._message_threads.delete_by_application(application_id)
-                    await self._messages.delete_by_application(application_id)
-            await self._interviews.delete_by_user(user_id)
-            await self._attempts.delete_by_candidate(user_id)
+                for application_id in application_ids:
+                    await _step(
+                        f"message_threads:{application_id}",
+                        self._message_threads.delete_by_application(application_id),
+                    )
+                    await _step(
+                        f"messages:{application_id}",
+                        self._messages.delete_by_application(application_id),
+                    )
+            await _step("interviews", self._interviews.delete_by_user(user_id))
+            await _step("attempts", self._attempts.delete_by_candidate(user_id))
             if self._coding_attempts is not None:
-                await self._coding_attempts.delete_by_candidate(user_id)
-            # The consent ledger is keyed by user_id (identifying PII); erase it too so
-            # a right-to-erasure leaves no residual linkage back to the candidate.
-            await self._consents.delete_by_user(user_id)
+                await _step(
+                    "coding_attempts",
+                    self._coding_attempts.delete_by_candidate(user_id),
+                )
+            await _step("consents", self._consents.delete_by_user(user_id))
             if self._notifications is not None:
-                await self._notifications.delete_by_user(user_id)
+                await _step(
+                    "notifications", self._notifications.delete_by_user(user_id)
+                )
             if self._notification_prefs is not None:
-                await self._notification_prefs.delete_by_user(user_id)
+                await _step(
+                    "notification_prefs",
+                    self._notification_prefs.delete_by_user(user_id),
+                )
             if self._user_preferences is not None:
-                await self._user_preferences.delete_by_user(user_id)
-            # Practice runs are detached candidate PII keyed by user_id (no application
-            # link), so they cascade by user — not via the applications above.
+                await _step(
+                    "user_preferences",
+                    self._user_preferences.delete_by_user(user_id),
+                )
             if self._practice is not None:
-                await self._practice.delete_by_user(user_id)
-            # Interview scheduling (slots + bookings) cascades by application_id.
+                await _step("practice", self._practice.delete_by_user(user_id))
             if self._slots is not None:
-                application_ids = [str(a["_id"]) for a in applications]
-                await self._slots.delete_by_applications(application_ids)
-                await self._bookings.delete_by_applications(application_ids)
+                await _step(
+                    "slots", self._slots.delete_by_applications(application_ids)
+                )
+                await _step(
+                    "bookings", self._bookings.delete_by_applications(application_ids)
+                )
+            # S3 blob BEFORE the profile row (see earlier ordering fix). Re-raise on
+            # S3 failure since a subsequent profile-delete would orphan the object.
             profile = await self._profiles.get_by_user(user_id)
-            await self._profiles.delete_by_user(user_id)
             if profile and profile.get("resume_key"):
                 try:
                     await self._storage.delete_raw(profile["resume_key"])
                 except Exception:
                     log.exception("erase: resume delete failed for {}", user_id)
-            await self._users.anonymize(user_id)
+                    raise
+            await _step("profiles", self._profiles.delete_by_user(user_id))
+            if self._sessions is not None:
+                await _step("sessions", self._sessions.revoke_user(user_id))
+            await _step("anonymize", self._users.anonymize(user_id))
+            if failures:
+                # Do NOT write the audit row — the erasure is partial and the sweep
+                # will retry next tick. Re-raise so the caller (sweep loop) treats
+                # this as a failure to be counted / retried.
+                raise DependencyError(
+                    "erasure partial; some cascade steps failed",
+                    context={"user_id": user_id, "steps": failures},
+                )
             await self._audit.insert(
                 AuditLog(entity="candidate", entity_id=user_id, action="erased")
             )

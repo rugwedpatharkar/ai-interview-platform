@@ -216,6 +216,16 @@ def fake_sessions():
         async def save(self, session):
             self.saved[session.application_id] = session
 
+        async def save_if_in_progress(self, session):
+            # Mirror the Redis-Lua CAS: only write when the stored session is
+            # still in_progress. Returns True on write, False when a concurrent
+            # writer already changed the status.
+            current = self.saved.get(session.application_id)
+            if current is None or current.status != "in_progress":
+                return False
+            self.saved[session.application_id] = session
+            return True
+
         async def get(self, application_id):
             return self.saved.get(application_id)
 

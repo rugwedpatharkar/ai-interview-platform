@@ -274,6 +274,67 @@ class _BoomPublisher:
         raise RuntimeError("broker down")
 
 
+async def test_abandon_stale_no_ops_when_concurrent_finalize_wins(
+    fake_data, fake_publisher, fake_sessions
+):
+    # C1: reaper snapshots a stale session, live SubmitTurn's _finalize flips
+    # status to "completed" before the reaper writes. Reaper must not overwrite
+    # the completed transcript nor publish interview.abandoned as if it won.
+    sessions = fake_sessions()
+    start = datetime(2026, 1, 1, tzinfo=UTC)
+    session = _session(
+        application_id="a1",
+        job_id="j1",
+        candidate_user_id="u1",
+        current_question="Q",
+        started_at=start.isoformat(),
+        blueprint=InterviewBlueprint(
+            competencies=[CompetencyArea(name="python")], time_budget_min=10
+        ),
+    )
+    sessions.saved["a1"] = session
+
+    # Simulate the race: reaper's list_in_progress returns [session], THEN a
+    # live SubmitTurn completes the interview (flips status in-store to
+    # "completed") before the reaper's _abandon_one gets to write. We patch
+    # sessions.get so it returns the now-completed live copy.
+    completed = _session(
+        application_id="a1",
+        job_id="j1",
+        candidate_user_id="u1",
+        current_question="",
+        started_at=start.isoformat(),
+        blueprint=session.blueprint,
+    )
+    completed.status = "completed"
+    sessions.saved["a1"] = completed  # winner's copy is what the reaper re-reads
+
+    # But list_in_progress must yield the STALE snapshot so the reaper enters
+    # _abandon_one — override just that method for one call.
+    async def _stale_scan():
+        return [session]
+
+    sessions.list_in_progress = _stale_scan
+
+    data = fake_data()
+    pub = fake_publisher()
+    n = await abandon_stale(
+        sessions=sessions,
+        data=data,
+        publisher=pub,
+        clock=lambda: start + timedelta(minutes=11),
+    )
+    # Reaper counted the stale session as "processed" but the re-read caused a
+    # no-op; the completed status stays.
+    assert n == 1
+    assert sessions.saved["a1"].status == "completed"
+    # No interview.abandoned emitted (the current status wasn't in_progress).
+    assert not any(
+        e[0] == "interview.abandoned" and e[1]["application_id"] == "a1"
+        for e in pub.events
+    )
+
+
 async def test_abandon_stale_keeps_in_progress_if_publish_fails(
     fake_data, fake_sessions
 ):

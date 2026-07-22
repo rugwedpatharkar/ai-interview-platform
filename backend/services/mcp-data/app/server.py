@@ -223,16 +223,25 @@ async def get_proctoring_events(application_id: str) -> list:
 
 @mcp.tool()
 async def save_match_result(
-    comp_id: str, job_id: str, candidate_user_id: str, score: float, reasons: list[str]
+    comp_id: str,
+    job_id: str,
+    candidate_user_id: str,
+    score: float,
+    reasons: list[str],
+    model_version: str = "",
 ) -> bool:
-    """Persist a candidate<->job match result; returns True only on the first write."""
+    """Persist a candidate<->job match result; returns True only on the first write.
+
+    `model_version` stamps the matcher tag so historical rank orderings are
+    partitioned by scoring era (default empty for back-compat).
+    """
     async with log_context(
         log,
         "tool.save_match_result",
         **bind_ids(comp_id=comp_id, job_id=job_id),
     ):
         return await _store.save_match_result(
-            comp_id, job_id, candidate_user_id, score, reasons
+            comp_id, job_id, candidate_user_id, score, reasons, model_version
         )
 
 

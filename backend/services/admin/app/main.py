@@ -285,7 +285,9 @@ async def serve() -> None:
     )
 
     # Liveness reapers: purge past-retention candidates + expire abandoned aptitude.
-    eraser = make_eraser(mongo.db, storage)
+    # Sweep-side eraser gets a sessions handle too so purged users lose their live
+    # refresh sessions (parity with the live ComplianceServicer eraser).
+    eraser = make_eraser(mongo.db, storage, sessions=RefreshSessionStore(redis))
     deliveries = AptitudeDeliveryRepository(mongo.db)
     reconcile_attempts = AptitudeAttemptRepository(mongo.db)
     bookings = InterviewBookingRepository(mongo.db)

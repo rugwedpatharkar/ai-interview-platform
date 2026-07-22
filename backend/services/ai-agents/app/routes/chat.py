@@ -42,8 +42,11 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
         if len(messages) > self._settings.max_chat_messages:
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, "too many messages")
         if self._limiter is not None:
+            # ai-agents' caller_identity returns {"user_id", "role", "comp_id"} — not
+            # {"id"} like admin's variant. Using scope['id'] here would KeyError on
+            # every Chat call, which the initial commit did not catch.
             hit = await self._limiter.hit(
-                f"llm:user:{scope['id']}",
+                f"llm:user:{scope['user_id']}",
                 self._settings.llm_user_limit,
                 self._settings.llm_user_window_seconds,
             )

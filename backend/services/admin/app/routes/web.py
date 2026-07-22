@@ -100,8 +100,13 @@ from app.routes.team import TeamServicer
 from lib import timeouts
 
 
-def make_eraser(db, storage):
-    """Build the CandidateEraser (compliance servicer + the retention sweep)."""
+def make_eraser(db, storage, sessions=None):
+    """Build the CandidateEraser (compliance servicer + the retention sweep).
+
+    `sessions` (a RefreshSessionStore) is optional so the sweep-only pathway can
+    build one without a Redis handle; the live compliance servicer wires it so
+    the erased user's live refresh sessions are revoked at anonymize time.
+    """
     return CandidateEraser(
         users=UserRepository(db),
         profiles=CandidateProfileRepository(db),
@@ -121,6 +126,7 @@ def make_eraser(db, storage):
         practice=PracticeSessionRepository(db),
         slots=InterviewSlotsRepository(db),
         bookings=InterviewBookingRepository(db),
+        sessions=sessions,
     )
 
 
@@ -264,7 +270,7 @@ def create_web_app(
     compliance_pb2_grpc.add_ComplianceServiceServicer_to_server(
         ComplianceServicer(
             consents=ConsentRepository(db),
-            eraser=make_eraser(db, storage),
+            eraser=make_eraser(db, storage, sessions=RefreshSessionStore(redis)),
             tokens=tokens,
         ),
         app,
@@ -332,6 +338,8 @@ def create_web_app(
             events_repo=ClientEventRepository(db),
             dedup=_dedup,
             tokens=tokens,
+            limiter=RateLimiter(redis),
+            trusted_proxy=trusted_proxy,
         ),
         app,
     )
@@ -363,6 +371,8 @@ def create_web_app(
             companies=CompanyRepository(db),
             tokens=tokens,
             notifications=NotificationRepository(db),
+            redis=redis,
+            users=UserRepository(db),
         ),
         app,
     )

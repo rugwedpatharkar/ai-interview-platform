@@ -63,10 +63,17 @@ class BaseRepository[M: BaseModel]:
                 op=f"{self.collection}.get",
             )
 
+    def _max_time_ms(self) -> int:
+        # Server-side deadline for long-running reads. asyncio.timeout in with_timeout
+        # cancels the coroutine locally but pymongo keeps the op running on the server
+        # — connection-pool exhaustion under overload. maxTimeMS asks the server to
+        # actually kill the op when the deadline passes.
+        return int(self._timeout_s * 1000)
+
     async def find_one(self, query: dict) -> dict | None:
         async with log_context(log, f"{self.collection}.find_one"):
             return await with_timeout(
-                self.col.find_one(query),
+                self.col.find_one(query, max_time_ms=self._max_time_ms()),
                 self._timeout_s,
                 op=f"{self.collection}.find_one",
             )
@@ -78,7 +85,12 @@ class BaseRepository[M: BaseModel]:
         # find_capped.
         cap = min(limit, self._find_cap) if limit else self._find_cap
         async with log_context(log, f"{self.collection}.find", limit=limit, skip=skip):
-            cursor = self.col.find(query).skip(skip).limit(cap)
+            cursor = (
+                self.col.find(query)
+                .skip(skip)
+                .limit(cap)
+                .max_time_ms(self._max_time_ms())
+            )
             rows = await with_timeout(
                 _collect(cursor),
                 self._timeout_s,
@@ -113,7 +125,7 @@ class BaseRepository[M: BaseModel]:
     async def count(self, query: dict) -> int:
         async with log_context(log, f"{self.collection}.count"):
             return await with_timeout(
-                self.col.count_documents(query),
+                self.col.count_documents(query, maxTimeMS=self._max_time_ms()),
                 self._timeout_s,
                 op=f"{self.collection}.count",
             )

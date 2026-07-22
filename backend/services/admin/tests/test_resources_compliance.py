@@ -124,6 +124,18 @@ async def test_erase_cascades_into_ai_artifacts(fakes):
     assert fakes["attempts"].records == []
 
 
+async def test_erase_marks_deletion_pending_first(fakes):
+    # H14 part 2: the very first step of the cascade must set deletion_pending=True
+    # so any in-flight write racing the delete is refused at the auth boundary.
+    uid = await fakes["users"].insert(
+        User(email="c@x.com", password_hash="h", role=Role.candidate)
+    )
+    assert fakes["users"]._docs[uid].get("deletion_pending", False) is False
+    await _eraser(fakes).erase(uid)
+    # Row is anonymized after erase completes; deletion_pending flag persists.
+    assert fakes["users"]._docs[uid]["deletion_pending"] is True
+
+
 async def test_erase_deletes_coding_attempts(fakes):
     uid = await fakes["users"].insert(
         User(email="c@x.com", password_hash="h", role=Role.candidate)

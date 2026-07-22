@@ -59,6 +59,8 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
         companies,
         tokens,
         notifications=None,
+        redis=None,
+        users=None,
     ):
         self._deps = {
             "applications": applications,
@@ -69,6 +71,17 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
             "notifications": notifications,
         }
         self._tokens = tokens
+        # Separate `users` handle for send_message only — the other messaging
+        # resources don't need it and would trip over the kwarg via **self._deps.
+        self._users = users
+        # Redis is only consumed by send_message + stream_messages (pub/sub) — kept
+        # off _deps because other resources here (list_messages, mark_read, etc.)
+        # would trip over the extra kwarg via **self._deps.
+        self._redis = redis
+        # RateLimiter also for send_message only; keep off _deps for the same reason.
+        from lib.redis import RateLimiter
+
+        self._limiter = RateLimiter(redis) if redis is not None else None
 
     async def _abort(self, context, exc, method):
         code, msg = to_grpc_status(exc)
@@ -86,7 +99,13 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
         ):
             try:
                 out = await msg_res.send_message(
-                    ident, request.application_id, request.body, **self._deps
+                    ident,
+                    request.application_id,
+                    request.body,
+                    **self._deps,
+                    redis=self._redis,
+                    limiter=self._limiter,
+                    users=self._users,
                 )
                 return _message(out)
             except AuthDomainError as exc:
@@ -168,6 +187,7 @@ class MessagingServicer(messaging_pb2_grpc.MessagingServiceServicer):
                     identity=ident,
                     applications=self._deps["applications"],
                     messages=self._deps["messages"],
+                    redis=self._redis,
                 ):
                     yield _message(msg)
             except AuthDomainError as exc:

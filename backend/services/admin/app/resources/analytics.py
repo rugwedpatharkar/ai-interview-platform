@@ -1,10 +1,11 @@
 """Funnel analytics (recruiter-facing, read-only).
 
 Aggregates the company's applications into per-state counts + the bottom-of-funnel
-conversion (hired / total). Manager-only, comp-scoped, repository-capped.
+conversion (hired / total). Manager-only, comp-scoped. C3: no longer bounded to
+the first 200 rows — funnel uses server-side $facet, KPIs stream via iter_by_comp
+with a projection so multi-thousand-app tenants see accurate numbers.
 """
 
-from collections import Counter
 from datetime import UTC, datetime, timedelta
 
 from lib.logging import bind_ids, get_logger, log_context
@@ -36,12 +37,12 @@ async def get_funnel_analytics(identity, *, applications):
     ):
         if identity["role"] not in _MANAGER_ROLES:
             raise ForbiddenError("Only company users can view analytics")
-        rows = await applications.list_by_comp(identity["comp_id"])
-        counts = Counter(r.get("state", "") for r in rows)
-        total = len(rows)
-        hired = counts.get(ApplicationState.hired.value, 0)
+        # C3: server-side $facet — was list_by_comp which capped at 200 rows.
+        agg = await applications.aggregate_state_counts(identity["comp_id"])
+        total = agg["total"]
+        hired = agg["hired"]
         return {
-            "states": [{"state": s, "count": c} for s, c in sorted(counts.items())],
+            "states": agg["states"],
             "total": total,
             "conversion_rate": (hired / total) if total else 0.0,
         }
@@ -127,11 +128,23 @@ async def get_no_ghosting_kpis(identity, *, applications, clock=_utcnow):
     ):
         if identity["role"] not in _MANAGER_ROLES:
             raise ForbiddenError("Only company users can view analytics")
-        rows = await applications.list_by_comp(identity["comp_id"])
+        # C3: uncapped stream + tight projection (only fields the loop reads) —
+        # was list_by_comp which capped at 200 rows and returned full docs. This
+        # walks the (comp_id, ...) index without buffering the whole result set.
         now = clock()
         pending_review = stale_over_sla = responded = decided_last_7d = 0
         response_hours = []
-        for r in rows:
+        total = 0
+        projection = {
+            "_id": 0,
+            "state": 1,
+            "created_at": 1,
+            "transitions": 1,
+        }
+        async for r in applications.iter_by_comp(
+            identity["comp_id"], projection=projection
+        ):
+            total += 1
             created = _as_utc(r.get("created_at"))
             transitions = r.get("transitions") or []
             if transitions:
@@ -151,7 +164,6 @@ async def get_no_ghosting_kpis(identity, *, applications, clock=_utcnow):
                 pending_review += 1
                 if created and (now - created).total_seconds() / 3600 >= _SLA_HOURS:
                     stale_over_sla += 1
-        total = len(rows)
         return {
             "pending_review": pending_review,
             "stale_over_sla": stale_over_sla,

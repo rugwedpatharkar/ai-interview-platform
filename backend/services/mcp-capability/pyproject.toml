@@ -5,7 +5,7 @@ description = "MCP server — document parsing capability (resume -> text)"
 requires-python = ">=3.12"
 dependencies = [
     "lib",
-    "mcp>=1.2",
+    "mcp>=1.28.1",  # 1.28.0 has CVE-2026-59950
     "pypdf>=4",
     "python-docx>=1",
     "qdrant-client>=1.7",

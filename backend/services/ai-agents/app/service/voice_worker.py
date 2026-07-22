@@ -72,6 +72,35 @@ _PARTICIPANT_JOINED = "participant_joined"
 # normal operation — settings are validated at startup before serve() runs).
 _SHUTDOWN_TIMEOUT_S = 10.0
 
+# Cross-replica agent claim: short TTL + periodic renewal. A crashed worker's claim
+# expires within _CLAIM_TTL_S so a peer can take over — was 7200 s which stalled
+# rooms for 2 h on any OOM/SIGKILL.
+_CLAIM_TTL_S = 60
+_CLAIM_RENEW_INTERVAL_S = 20
+
+
+async def _renew_claim(redis, key: str, ttl_s: int, interval_s: int) -> None:
+    """Background task: extend the claim's TTL every `interval_s` while alive.
+
+    On cancellation (task cancel or worker shutdown) it exits and the claim expires
+    naturally via `ttl_s`. Uses `EXPIRE` — atomically updates only the TTL, not the
+    value. If a peer somehow takes over between refreshes (rare), our next EXPIRE
+    would extend their claim by one interval — bounded by _CLAIM_TTL_S regardless.
+    """
+    try:
+        while True:
+            await asyncio.sleep(interval_s)
+            try:
+                await with_timeout(
+                    redis.expire(key, ttl_s),
+                    timeouts.redis(),
+                    op="voice_worker.claim_renew",
+                )
+            except Exception as exc:
+                log.warning("voice_worker: claim renewal failed key={}: {}", key, exc)
+    except asyncio.CancelledError:
+        pass
+
 
 # ---------------------------------------------------------------------------
 # Pure decision function — fully unit-testable, no I/O
@@ -199,14 +228,17 @@ async def _run_session(
         worker_identity,
     )
 
-    # Cross-replica claim: SET NX with a generous TTL (>= session upper bound so a
-    # crashed worker's claim expires). Loses the race → skip; no cleanup needed.
+    # Cross-replica claim: short TTL + background heartbeat. Was 7200 s outright,
+    # which stranded a room for 2 h if the worker OOM'd or SIGKILL'd between claim
+    # and finally-block DEL. Now: 60 s TTL, refreshed every 20 s while alive. A
+    # crashed worker's claim expires within a minute and a peer takes over.
     claim_key = f"voice:agent:{application_id}"
     have_claim = True
+    renew_task: asyncio.Task | None = None
     if redis is not None:
         have_claim = bool(
             await with_timeout(
-                redis.set(claim_key, worker_identity, nx=True, ex=7200),
+                redis.set(claim_key, worker_identity, nx=True, ex=_CLAIM_TTL_S),
                 timeouts.redis(),
                 op="voice_worker.claim_set",
             )
@@ -218,6 +250,9 @@ async def _run_session(
             )
             in_flight.pop(application_id, None)
             return
+        renew_task = asyncio.create_task(
+            _renew_claim(redis, claim_key, _CLAIM_TTL_S, _CLAIM_RENEW_INTERVAL_S)
+        )
 
     worker_token = mint_join_token(
         room_name,
@@ -281,9 +316,11 @@ async def _run_session(
     finally:
         in_flight.pop(application_id, None)
         await _safe_aclose_room(room_audio, application_id)
+        if renew_task is not None:
+            renew_task.cancel()
         if redis is not None and have_claim:
-            # Best-effort release; if a peer crash left it dangling, the 7200 s TTL
-            # eventually reclaims it.
+            # Best-effort release; if a peer crash left it dangling, the 60 s TTL
+            # (see _CLAIM_TTL_S) reclaims it within a minute — no more 2 h stalls.
             try:
                 await with_timeout(
                     redis.delete(claim_key),
@@ -331,6 +368,29 @@ def _build_webhook_app(
         except Exception as exc:
             log.warning("voice_worker: webhook validation failed: {}", exc)
             raise HTTPException(status_code=400, detail="invalid webhook") from exc
+
+        # Replay-protection nonce: LiveKit's SDK verifies HMAC + timestamp freshness
+        # (~5 min), but within that window a captured webhook could be replayed to
+        # re-spawn an agent for the same room. Guard with a SET NX on the event id.
+        event_id = getattr(event, "id", "") or ""
+        if event_id and redis is not None:
+            key = f"livekit:webhook:seen:{event_id}"
+            try:
+                added = await with_timeout(
+                    redis.set(key, "1", nx=True, ex=600),
+                    timeouts.redis(),
+                    op="voice_worker.webhook_replay_guard",
+                )
+                if not added:
+                    log.warning(
+                        "voice_worker: webhook replay detected event_id={}", event_id
+                    )
+                    return {"ok": True}
+            except Exception as exc:
+                # Guard is best-effort — a Redis blip must not drop legit webhooks.
+                log.warning(
+                    "voice_worker: replay-guard SET failed for {}: {}", event_id, exc
+                )
 
         event_type = event.event
         room_name = event.room.name if event.room else ""

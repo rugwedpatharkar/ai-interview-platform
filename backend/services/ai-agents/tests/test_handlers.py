@@ -142,12 +142,23 @@ async def test_handle_job_published_skips_missing_job(
     assert pub.events == []
 
 
+def _spec_hash_from(jd_text, topics, num_q):
+    # Mirror the handler's hash so the tests can seed a "fresh" cached doc.
+    import hashlib
+
+    return hashlib.sha256(
+        repr((jd_text, sorted(topics), int(num_q))).encode()
+    ).hexdigest()
+
+
 async def test_handle_job_published_skips_builds_when_fully_built(
     fake_llm, fake_capability, fake_data, fake_publisher
 ):
     data = fake_data(job={"jd_text": "x"})
-    data.saved_banks["j1"] = {"questions": []}  # bank already built
-    data.saved_question_plans["j1"] = {"competencies": []}  # plan already built
+    # Match the handler's default num_questions (10) so the seeded hash matches.
+    fresh = _spec_hash_from("x", [], 10)
+    data.saved_banks["j1"] = {"questions": [], "spec_hash": fresh}
+    data.saved_question_plans["j1"] = {"competencies": [], "spec_hash": fresh}
     pub = fake_publisher()
     await handlers.handle_job_published(
         {"job_id": "j1", "comp_id": "c1"},
@@ -156,7 +167,8 @@ async def test_handle_job_published_skips_builds_when_fully_built(
         capability=fake_capability(),
         publisher=pub,
     )
-    assert data.saved_banks["j1"] == {"questions": []}  # bank NOT regenerated
+    # Bank NOT regenerated because its spec_hash matches the current job spec.
+    assert data.saved_banks["j1"]["questions"] == []
     # aptitude.ready IS re-emitted (idempotent) so a lost signal can still recover.
     assert ("aptitude.ready", {"job_id": "j1", "comp_id": "c1"}) in pub.events
 
@@ -164,11 +176,11 @@ async def test_handle_job_published_skips_builds_when_fully_built(
 async def test_handle_job_published_builds_missing_plan_when_bank_exists(
     fake_llm_by_schema, fake_capability, fake_data, fake_publisher
 ):
-    # A prior partial run saved the bank but not the plan; redelivery builds the plan
-    # (gated on plan, not bank) so interviews aren't ungrounded forever — without
-    # regenerating the bank (which would corrupt an in-flight aptitude delivery).
+    # A prior partial run saved the bank (with the matching spec_hash) but not the
+    # plan; redelivery builds the plan without regenerating the fresh bank.
     data = fake_data(job={"jd_text": "Backend role", "required_topics": ["python"]})
-    data.saved_banks["j1"] = {"questions": [1]}  # bank already built
+    fresh = _spec_hash_from("Backend role", ["python"], 10)
+    data.saved_banks["j1"] = {"questions": [1], "spec_hash": fresh}
     pub = fake_publisher()
     kb = {
         "python": {
@@ -183,9 +195,42 @@ async def test_handle_job_published_builds_missing_plan_when_bank_exists(
         capability=fake_capability(kb=kb),
         publisher=pub,
     )
-    assert data.saved_banks["j1"] == {"questions": [1]}  # bank NOT regenerated
+    assert data.saved_banks["j1"]["questions"] == [1]  # bank NOT regenerated
     assert data.saved_question_plans["j1"]["competencies"]  # missing plan now built
+    assert data.saved_question_plans["j1"]["spec_hash"] == fresh
     assert ("aptitude.ready", {"job_id": "j1", "comp_id": "c1"}) in pub.events
+
+
+async def test_handle_job_published_rebuilds_on_spec_change(
+    fake_llm_by_schema, fake_capability, fake_data, fake_publisher
+):
+    # C4: JD (or topics / num_questions) changed → cached bank+plan MUST rebuild.
+    # Before the fix, a "Rust" republish would keep the "Python" bank+plan.
+    data = fake_data(job={"jd_text": "Senior Rust", "required_topics": ["rust"]})
+    stale = _spec_hash_from("Senior Python", ["python"], 10)
+    data.saved_banks["j1"] = {"questions": ["old"], "spec_hash": stale}
+    data.saved_question_plans["j1"] = {"competencies": ["old"], "spec_hash": stale}
+    pub = fake_publisher()
+    kb = {
+        "rust": {
+            "chunks": ["c"],
+            "citations": [{"url": "doc://rust", "topic": "rust"}],
+        }
+    }
+    from app.model.aptitude import AptitudeBank as _AB
+
+    await handlers.handle_job_published(
+        {"job_id": "j1", "comp_id": "c1"},
+        llm=fake_llm_by_schema({InterviewBlueprint: _blueprint(), _AB: _bank(10)}),
+        data=data,
+        capability=fake_capability(kb=kb),
+        publisher=pub,
+    )
+    fresh = _spec_hash_from("Senior Rust", ["rust"], 10)
+    assert data.saved_banks["j1"]["spec_hash"] == fresh
+    assert data.saved_banks["j1"]["questions"] != ["old"]
+    assert data.saved_question_plans["j1"]["spec_hash"] == fresh
+    assert data.saved_question_plans["j1"]["competencies"] != ["old"]
 
 
 async def test_handle_interview_completed(

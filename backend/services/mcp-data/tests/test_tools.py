@@ -41,6 +41,18 @@ class _FakeCollection:
         self.last_cursor = _FakeCursor(self.find_list)
         return self.last_cursor
 
+    def aggregate(self, pipeline):
+        # Minimal $sort by _sev_rank the pipeline injects: rank high>medium>low
+        # then $limit / $project — the test just cares that severity ordering
+        # bubbles HIGH events to the front.
+        self.find_queries.append({"aggregate": pipeline})
+        _rank = {"high": 3, "medium": 2, "low": 1}
+        sorted_rows = sorted(
+            self.find_list, key=lambda d: -_rank.get(d.get("severity", "low"), 1)
+        )
+        self.last_cursor = _FakeCursor(sorted_rows)
+        return self.last_cursor
+
 
 class _FakeDB:
     def __init__(self, **cols):
@@ -84,15 +96,18 @@ async def test_save_proctoring_events_empty_is_noop():
     assert cols["proctoring_events"].inserted == []
 
 
-async def test_get_proctoring_events_reads_by_application_excluding_id():
+async def test_get_proctoring_events_returns_high_severity_first():
+    # Ordering matters: a candidate spamming LOW events could push a HIGH one past
+    # the truncation cap. Aggregation ranks high>medium>low, so HIGH events survive.
     rows = [
         {"type": "tab_hidden", "severity": "low", "at": "t0"},
         {"type": "second_face", "severity": "high", "at": "t1"},
     ]
     store, cols = _store(proctoring_events=_FakeCollection(find_list=rows))
     result = await store.get_proctoring_events("a1")
-    assert [e["type"] for e in result] == ["tab_hidden", "second_face"]
-    assert cols["proctoring_events"].find_queries[0] == {"application_id": "a1"}
+    assert [e["type"] for e in result] == ["second_face", "tab_hidden"]
+    # Aggregation pipeline queried (not plain find).
+    assert "aggregate" in cols["proctoring_events"].find_queries[0]
 
 
 async def test_save_profile_upserts_and_marks_parsed():

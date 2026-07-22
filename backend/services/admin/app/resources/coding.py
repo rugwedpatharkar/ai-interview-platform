@@ -61,16 +61,31 @@ async def get_coding_task(identity, application_id, *, applications, tasks):
 
 
 _MAX_SOURCE = 64 * 1024
+# Practice runs: generous — the candidate is iterating.
 _RUN_LIMIT = 30
 _RUN_WINDOW = 60
+# Submissions: expensive (executes every hidden case sequentially); much tighter budget
+# so a bloated hidden-case list can't be weaponised via repeated submits.
+_SUBMIT_LIMIT = 5
+_SUBMIT_WINDOW = 300
 
 
-async def _rate_limit(limiter, identity, application_id):
+async def _rate_limit_run(limiter, identity, application_id):
     hit = await limiter.hit(
         f"coding_run:{identity['id']}:{application_id}", _RUN_LIMIT, _RUN_WINDOW
     )
     if not hit.allowed:
         raise RateLimitedError("Too many runs, slow down")
+
+
+async def _rate_limit_submit(limiter, identity, application_id):
+    hit = await limiter.hit(
+        f"coding_submit:{identity['id']}:{application_id}",
+        _SUBMIT_LIMIT,
+        _SUBMIT_WINDOW,
+    )
+    if not hit.allowed:
+        raise RateLimitedError("Too many submissions, slow down")
 
 
 def _validate(task, language, source):
@@ -114,7 +129,7 @@ async def run_code_attempt(
     ):
         _, task = await _owned_task(identity, application_id, applications, tasks)
         _validate(task, language, source)
-        await _rate_limit(limiter, identity, application_id)
+        await _rate_limit_run(limiter, identity, application_id)
         result = await executor(language, source, stdin, limits=_limits(task))
         return {
             "stdout": result.stdout,
@@ -181,7 +196,7 @@ async def submit_coding(
             identity, application_id, applications, tasks
         )
         _validate(task, language, source)
-        await _rate_limit(limiter, identity, application_id)
+        await _rate_limit_submit(limiter, identity, application_id)
         # Single-attempt: a resubmit returns the recorded result without re-running
         # code. The upfront read is the fast path; the insert's unique-conflict below
         # closes the concurrent-submit race.
