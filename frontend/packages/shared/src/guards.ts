@@ -35,18 +35,24 @@ export function useRequireAuth(
   }, [token, ready, router, loginPath]);
 }
 
-/** Redirect to `fallback` unless the caller's role is one of `allowed`. `ready` defers the
- * check until auth has hydrated (see useRequireAuth). */
+/** Redirect when the caller's role is not one of `allowed`. Unauthed users go to
+ * `loginPath`; already-authed users with the wrong role go to `forbiddenPath` — the
+ * previous shape sent everyone to /login, which logged a signed-in recruiter out
+ * of a candidate-only page and vice-versa. `ready` defers the check until auth has
+ * hydrated (see useRequireAuth). */
 export function useRequireRole(
   role: string | null | undefined,
   allowed: string[],
   ready = true,
-  fallback = "/login",
+  loginPath = "/login",
+  forbiddenPath = "/",
 ): void {
   const router = useRouter();
   const allowedKey = allowed.join(",");
   useEffect(() => {
-    if (ready && (role == null || !allowed.includes(role))) router.replace(fallback);
+    if (!ready) return;
+    if (role == null) router.replace(loginPath);
+    else if (!allowed.includes(role)) router.replace(forbiddenPath);
     // allowed referenced via allowedKey to keep the dep array stable.
-  }, [role, ready, allowedKey, fallback, router]);
+  }, [role, ready, allowedKey, loginPath, forbiddenPath, router]);
 }

@@ -2,11 +2,11 @@
 
 import { Button } from "./button.js";
 import { cn } from "./cn.js";
-import { Input } from "./input.js";
 import { EmptyState, ErrorState } from "./layout.js";
 import { Skeleton } from "./skeleton.js";
+import { Textarea } from "./textarea.js";
 import type { LucideIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { SendIcon, UserIcon } from "./internal-icons.js";
 
 function MessageSquareIcon(props: React.SVGAttributes<SVGSVGElement>) {
@@ -173,17 +173,25 @@ export function MessageThreadView({
         <div ref={endRef} />
       </div>
       <form
-        className="flex gap-2"
+        className="flex items-end gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           void submit();
         }}
       >
-        <Input
+        <Textarea
           value={input}
-          maxLength={maxBody} // client guard mirrors the server cap
-          placeholder="Write a message…"
+          rows={1}
+          maxLength={maxBody}
+          placeholder="Write a message — Enter to send, Shift + Enter for a new line"
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
+            // Enter sends, Shift+Enter (and IME composition) inserts a newline.
+            if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+            e.preventDefault();
+            void submit();
+          }}
+          className="max-h-40 min-h-[2.5rem] resize-y"
         />
         <Button
           type="submit"
