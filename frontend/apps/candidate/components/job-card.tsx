@@ -142,7 +142,7 @@ export function JobCard({
               className={cn(buttonVariants({ size: "sm" }), "shrink-0")}
               aria-hidden
             >
-              Apply
+              View role
             </span>
           </div>
         </div>

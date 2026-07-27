@@ -140,16 +140,16 @@ export default async function CompanyPage({
                 </dd>
               </div>
             </dl>
-            <Link
-              href={`/jobs?company=${encodeURIComponent(company.id)}`}
+            <a
+              href="#open-roles"
               className={cn(buttonVariants({ variant: "outline" }), "mt-2 self-start")}
             >
               See all roles
-            </Link>
+            </a>
           </aside>
         </div>
 
-        <section className="mt-12 flex flex-col gap-4">
+        <section id="open-roles" className="mt-12 flex flex-col gap-4 scroll-mt-24">
           <header className="flex items-end justify-between gap-3">
             <h3 className="ap-h3">Open roles</h3>
             {jobs.length > 0 && (
