@@ -195,8 +195,15 @@ export default function ApplicationDetailPage() {
   const journey = buildJourney(app.state);
   const role = thread?.jobTitle ?? `Job ${app.jobId}`;
   const company = thread?.companyName ?? null;
+  // gated_out belongs here too — the timeline copy tells the candidate to "see
+  // your outcome" for that state, and the outcome page renders its own not-ready
+  // view if the report hasn't published yet, so the CTA is always safe to show.
   const reportPublished =
-    app.state === "scored" || app.state === "shortlisted" || app.state === "hired" || app.state === "rejected";
+    app.state === "scored" ||
+    app.state === "shortlisted" ||
+    app.state === "hired" ||
+    app.state === "rejected" ||
+    app.state === "gated_out";
 
   // The thread is sorted desc by lastMessageAt server-side; preview the freshest 2.
   // We don't fetch the full message list here — just the thread row's snippet, which
