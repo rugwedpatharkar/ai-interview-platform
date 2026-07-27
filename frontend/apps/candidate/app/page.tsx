@@ -1,12 +1,6 @@
 import { ApplicantsLanding } from "./(marketing)/applicants-landing";
 import { HomeClient } from "./page-client";
 
-export const metadata = {
-  title: "Aptura — Get seen. Get interviewed. Get hired.",
-  description:
-    "Apply to roles, sit one fair proctored interview, and always hear back — with a real reason.",
-};
-
 export default function Home() {
   // The landing is passed as children so it is part of the server render. HomeClient
   // previously returned null until mount, which meant `/` — the main acquisition and
