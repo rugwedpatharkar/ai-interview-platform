@@ -219,6 +219,22 @@ export default function AptitudePage() {
     if (submit.isSuccess) resultHeadingRef.current?.focus();
   }, [submit.isSuccess]);
 
+  // Guard against accidental refresh / tab-close while answers are in-progress
+  // but not yet submitted. The aptitude bank is one-shot and gated — losing
+  // answers means the candidate cannot retake it.
+  const hasAnswers = Object.keys(answers).length > 0;
+  useEffect(() => {
+    if (!hasAnswers || submit.isSuccess) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Spec requires returnValue to be set for the prompt; the string itself is
+      // ignored by every modern browser (they show a generic message instead).
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [hasAnswers, submit.isSuccess]);
+
   if (!token) return null;
 
   if (submit.isSuccess) {

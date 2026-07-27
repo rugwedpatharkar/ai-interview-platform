@@ -96,7 +96,21 @@ export default function InterviewPage() {
 
   const room = useRef<InterviewRoom | null>(null);
   const detach = useRef<Array<() => void>>([]);
-  const selfViewRef = useRef<HTMLVideoElement>(null);
+  // The self-view <video> only mounts once phase flips to "live" — but onReady
+  // assigns srcObject BEFORE calling setPhase("live"), so a plain useRef points
+  // at null and the tile stays black for the whole session. Stash the stream on
+  // a ref and use a callback ref that assigns srcObject the moment the element
+  // mounts (or drops off).
+  const localStream = useRef<MediaStream | null>(null);
+  const attachSelfView = useCallback((el: HTMLVideoElement | null) => {
+    if (!el) return;
+    if (localStream.current) {
+      el.srcObject = localStream.current;
+      // Local playback volume 0 — silences the local <video> only, never
+      // touches the published audio track.
+      el.volume = 0;
+    }
+  }, []);
   // Synchronous latch so a StrictMode double-invoke / double Start can't double-connect.
   const starting = useRef(false);
 
@@ -177,14 +191,10 @@ export default function InterviewPage() {
         setCaptions((c) => [...c, { text, final }]),
       );
 
-      // Wire the self-view tile to the live local stream — published tracks stay enabled
-      // for the entire session. The self-view element's playback volume is set to 0 so the
-      // candidate doesn't hear themselves echoed back; this is local-playback only and has
-      // no effect on the audio track the room publishes.
-      if (selfViewRef.current) {
-        selfViewRef.current.srcObject = media;
-        selfViewRef.current.volume = 0;
-      }
+      // Wire the self-view tile to the live local stream — the callback ref
+      // (attachSelfView above) will assign srcObject as soon as the <video>
+      // element mounts once phase flips to "live".
+      localStream.current = media;
 
       // Device/behavior runtime (shipped) + on-device vision + audio → one sink.
       detach.current.push(startProctoring({ send: sink }));
@@ -331,9 +341,10 @@ export default function InterviewPage() {
                     candidate doesn't hear their own mic — this silences the local <video>
                     element only and never touches the published audio track. */}
                 <video
-                  ref={selfViewRef}
+                  ref={attachSelfView}
                   autoPlay
                   playsInline
+                  muted
                   aria-label="Camera self-view"
                   className="ap-hud-self object-cover"
                 />
