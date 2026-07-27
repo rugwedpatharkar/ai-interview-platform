@@ -35,9 +35,16 @@ export function LegalShell({
 
       <section className="border-t border-line py-10 lg:py-16">
         <div className="ap-wrap grid items-start gap-10 lg:grid-cols-[240px_1fr] lg:gap-14">
-          {/* Sticky TOC */}
+          {/* Sticky TOC — `open` by default so the list is visible on the first paint
+              at every breakpoint. Previously it was collapsed via <details> without
+              `open`, and on desktop the summary read as a static heading (cursor
+              was `default` at lg+) with no visible affordance to expand, so the
+              TOC was effectively hidden. */}
           <nav aria-label="Sections" className="lg:sticky lg:top-24">
-            <details className="rounded-xl border border-line bg-surface-2 p-4 lg:bg-transparent lg:border-0 lg:p-0">
+            <details
+              open
+              className="rounded-xl border border-line bg-surface-2 p-4 lg:bg-transparent lg:border-0 lg:p-0"
+            >
               <summary
                 className="cursor-pointer list-none text-[0.86rem] font-semibold uppercase tracking-[0.12em] text-ink-3 lg:cursor-default"
                 style={{ fontFamily: "var(--font-display)" }}
