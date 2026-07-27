@@ -1,12 +1,12 @@
 """Funnel analytics (recruiter-facing, read-only).
 
 Aggregates the company's applications into per-state counts + the bottom-of-funnel
-conversion (hired / total). Manager-only, comp-scoped. C3: no longer bounded to
-the first 200 rows — funnel uses server-side $facet, KPIs stream via iter_by_comp
-with a projection so multi-thousand-app tenants see accurate numbers.
+conversion (hired / total). Manager-only, comp-scoped. C3 (+ follow-up): the
+funnel and the no-ghosting KPI dashboard both run as single server-side $facet
+aggregations — no row streaming into Python, no 200-row cap.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from lib.logging import bind_ids, get_logger, log_context
 from lib.schemas import ApplicationState, Role
@@ -80,47 +80,29 @@ async def get_job_score_distribution(identity, job_id, *, applications, reports)
 
 
 _SLA_HOURS = 7 * 24  # a candidate waiting longer than this with no movement is "stale"
-_DECISION_STATES = {
+_DECISION_STATES = [
     ApplicationState.shortlisted.value,
     ApplicationState.rejected.value,
     ApplicationState.hired.value,
     ApplicationState.gated_out.value,
-}
-_TERMINAL_STATES = _DECISION_STATES | {
+]
+_TERMINAL_STATES = [
+    *_DECISION_STATES,
     ApplicationState.expired.value,
     ApplicationState.withdrawn.value,
     ApplicationState.abandoned.value,
-}
+]
 
 
 def _utcnow():
     return datetime.now(UTC)
 
 
-def _as_utc(value):
-    """Coerce a stored instant (Mongo datetime or ISO str) to aware UTC."""
-    if value is None:
-        return None
-    if isinstance(value, str):
-        try:
-            value = datetime.fromisoformat(value)
-        except ValueError:
-            return None
-    return value if value.tzinfo else value.replace(tzinfo=UTC)
-
-
-def _median(values):
-    if not values:
-        return 0.0
-    s = sorted(values)
-    mid = len(s) // 2
-    return s[mid] if len(s) % 2 else (s[mid - 1] + s[mid]) / 2
-
-
 async def get_no_ghosting_kpis(identity, *, applications, clock=_utcnow):
-    # Responsiveness KPIs from the application transition-log: candidates awaiting a
-    # first action, how fast the company responds, and recent decisions. No new
-    # collection — reads each Application's `transitions` array + `created_at`.
+    # Responsiveness KPIs from the application transition-log: candidates awaiting
+    # a first action, how fast the company responds, and recent decisions. C3
+    # follow-up: one server-side $facet fans out into all six numbers — no
+    # collection stream, no 200-row cap.
     async with log_context(
         log,
         "resource.analytics.get_no_ghosting_kpis",
@@ -128,46 +110,18 @@ async def get_no_ghosting_kpis(identity, *, applications, clock=_utcnow):
     ):
         if identity["role"] not in _MANAGER_ROLES:
             raise ForbiddenError("Only company users can view analytics")
-        # C3: uncapped stream + tight projection (only fields the loop reads) —
-        # was list_by_comp which capped at 200 rows and returned full docs. This
-        # walks the (comp_id, ...) index without buffering the whole result set.
-        now = clock()
-        pending_review = stale_over_sla = responded = decided_last_7d = 0
-        response_hours = []
-        total = 0
-        projection = {
-            "_id": 0,
-            "state": 1,
-            "created_at": 1,
-            "transitions": 1,
-        }
-        async for r in applications.iter_by_comp(
-            identity["comp_id"], projection=projection
-        ):
-            total += 1
-            created = _as_utc(r.get("created_at"))
-            transitions = r.get("transitions") or []
-            if transitions:
-                responded += 1
-                first_at = _as_utc(transitions[0].get("at"))
-                if created and first_at:
-                    response_hours.append((first_at - created).total_seconds() / 3600)
-                last = transitions[-1]
-                last_at = _as_utc(last.get("at"))
-                if (
-                    last.get("state") in _DECISION_STATES
-                    and last_at
-                    and (now - last_at) <= timedelta(days=7)
-                ):
-                    decided_last_7d += 1
-            elif r.get("state", "") not in _TERMINAL_STATES:
-                pending_review += 1
-                if created and (now - created).total_seconds() / 3600 >= _SLA_HOURS:
-                    stale_over_sla += 1
+        kpis = await applications.aggregate_no_ghosting_kpis(
+            identity["comp_id"],
+            now=clock(),
+            sla_hours=_SLA_HOURS,
+            decision_states=_DECISION_STATES,
+            terminal_states=_TERMINAL_STATES,
+        )
+        total = kpis["total"]
         return {
-            "pending_review": pending_review,
-            "stale_over_sla": stale_over_sla,
-            "median_response_hours": _median(response_hours),
-            "response_rate": (responded / total) if total else 0.0,
-            "decided_last_7d": decided_last_7d,
+            "pending_review": kpis["pending_review"],
+            "stale_over_sla": kpis["stale_over_sla"],
+            "median_response_hours": kpis["median_response_hours"],
+            "response_rate": (kpis["responded"] / total) if total else 0.0,
+            "decided_last_7d": kpis["decided_last_7d"],
         }

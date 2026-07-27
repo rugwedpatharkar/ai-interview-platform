@@ -33,10 +33,51 @@ class _FakeApps:
             "hired": counts.get("hired", 0),
         }
 
-    async def iter_by_comp(self, comp_id, *, projection=None):
-        for r in self._rows:
-            if r.get("comp_id") == comp_id:
-                yield r
+    async def aggregate_no_ghosting_kpis(
+        self, comp_id, *, now, sla_hours, decision_states, terminal_states
+    ):
+        stale_cutoff = now - timedelta(hours=sla_hours)
+        week_ago = now - timedelta(days=7)
+        matched = [r for r in self._rows if r.get("comp_id") == comp_id]
+        total = len(matched)
+        responded = pending_review = stale_over_sla = decided_last_7d = 0
+        response_hours: list[float] = []
+        terminal_set = set(terminal_states)
+        decision_set = set(decision_states)
+        for r in matched:
+            transitions = r.get("transitions") or []
+            created = r.get("created_at")
+            if transitions:
+                responded += 1
+                first_at = transitions[0].get("at")
+                if isinstance(created, datetime) and isinstance(first_at, datetime):
+                    response_hours.append((first_at - created).total_seconds() / 3600)
+                last = transitions[-1]
+                last_at = last.get("at")
+                if (
+                    last.get("state") in decision_set
+                    and isinstance(last_at, datetime)
+                    and last_at >= week_ago
+                ):
+                    decided_last_7d += 1
+            elif r.get("state", "") not in terminal_set:
+                pending_review += 1
+                if isinstance(created, datetime) and created <= stale_cutoff:
+                    stale_over_sla += 1
+        if response_hours:
+            s = sorted(response_hours)
+            mid = len(s) // 2
+            median = s[mid] if len(s) % 2 else (s[mid - 1] + s[mid]) / 2
+        else:
+            median = 0.0
+        return {
+            "total": total,
+            "responded": responded,
+            "pending_review": pending_review,
+            "stale_over_sla": stale_over_sla,
+            "decided_last_7d": decided_last_7d,
+            "median_response_hours": float(median),
+        }
 
 
 def _app(rows=None):

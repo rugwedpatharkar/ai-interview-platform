@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -16,6 +16,17 @@ def _oid(application_id: str) -> ObjectId | None:
 
 def _transition(state: str) -> dict:
     return {"state": state, "at": datetime.now(UTC)}
+
+
+def _empty_no_ghosting() -> dict:
+    return {
+        "total": 0,
+        "responded": 0,
+        "pending_review": 0,
+        "stale_over_sla": 0,
+        "decided_last_7d": 0,
+        "median_response_hours": 0.0,
+    }
 
 
 class ApplicationRepository(BaseRepository[Application]):
@@ -96,10 +107,10 @@ class ApplicationRepository(BaseRepository[Application]):
         return result[0]["n"] if result else 0
 
     async def list_by_comp(self, comp_id: str) -> list[dict]:
-        # Analytics call sites moved to aggregate_state_counts / iter_by_comp so
-        # the 200-row find_capped no longer silently truncates KPIs. This one is
-        # kept for the small-cardinality callers (recruiter dashboards that page
-        # UI-first).
+        # Analytics call sites moved to aggregate_state_counts /
+        # aggregate_no_ghosting_kpis so the 200-row find_capped no longer
+        # silently truncates KPIs. This one is kept for the small-cardinality
+        # callers (recruiter dashboards that page UI-first).
         return await self.find_capped({"comp_id": comp_id})
 
     async def aggregate_state_counts(self, comp_id: str) -> dict:
@@ -132,13 +143,127 @@ class ApplicationRepository(BaseRepository[Application]):
             "hired": r["hired"][0]["n"] if r.get("hired") else 0,
         }
 
-    async def iter_by_comp(self, comp_id: str, *, projection: dict | None = None):
-        """Async iterator over every application in `comp_id` — unbounded and
-        projection-friendly so KPI callers pull only the fields they need without
-        the 200-row find_capped ceiling. Backed by the (comp_id, job_id) index."""
-        cursor = self.col.find({"comp_id": comp_id}, projection=projection)
-        async for doc in cursor:
-            yield doc
+    async def aggregate_no_ghosting_kpis(
+        self,
+        comp_id: str,
+        *,
+        now: datetime,
+        sla_hours: int,
+        decision_states: list[str],
+        terminal_states: list[str],
+    ) -> dict:
+        """Server-side $facet for the responsiveness KPI dashboard. One
+        collection pass fans out into six numbers instead of streaming every
+        application into Python.
+
+        Median hours uses `$percentile` (Mongo 7+, method="approximate"): a
+        t-digest estimate — exact enough for the dashboard and cheap on
+        multi-thousand-app tenants where streaming was the hot cost.
+        """
+        stale_cutoff = now - timedelta(hours=sla_hours)
+        week_ago = now - timedelta(days=7)
+        pending_match = {
+            "transitions.0": {"$exists": False},
+            "state": {"$nin": terminal_states},
+        }
+        pipeline = [
+            {"$match": {"comp_id": comp_id}},
+            {
+                "$facet": {
+                    "totals": [{"$count": "n"}],
+                    "responded": [
+                        {"$match": {"transitions.0": {"$exists": True}}},
+                        {"$count": "n"},
+                    ],
+                    "pending": [{"$match": pending_match}, {"$count": "n"}],
+                    "stale": [
+                        {
+                            "$match": {
+                                **pending_match,
+                                "created_at": {
+                                    "$lte": stale_cutoff,
+                                    "$type": "date",
+                                },
+                            }
+                        },
+                        {"$count": "n"},
+                    ],
+                    "decided_last_7d": [
+                        {"$match": {"transitions.0": {"$exists": True}}},
+                        {"$project": {"last": {"$arrayElemAt": ["$transitions", -1]}}},
+                        {
+                            "$match": {
+                                "last.state": {"$in": decision_states},
+                                "last.at": {"$gte": week_ago, "$type": "date"},
+                            }
+                        },
+                        {"$count": "n"},
+                    ],
+                    "median_response_hours": [
+                        {
+                            "$match": {
+                                "transitions.0": {"$exists": True},
+                                "created_at": {"$type": "date"},
+                            }
+                        },
+                        {
+                            "$project": {
+                                "first_at": {"$arrayElemAt": ["$transitions.at", 0]},
+                                "created_at": 1,
+                            }
+                        },
+                        {"$match": {"first_at": {"$type": "date"}}},
+                        {
+                            "$project": {
+                                "hours": {
+                                    "$divide": [
+                                        {"$subtract": ["$first_at", "$created_at"]},
+                                        3_600_000,
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "$group": {
+                                "_id": None,
+                                "p50": {
+                                    "$percentile": {
+                                        "input": "$hours",
+                                        "p": [0.5],
+                                        "method": "approximate",
+                                    }
+                                },
+                            }
+                        },
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "value": {"$arrayElemAt": ["$p50", 0]},
+                            }
+                        },
+                    ],
+                }
+            },
+        ]
+        result = await self.col.aggregate(pipeline).to_list(length=1)
+        if not result:
+            return _empty_no_ghosting()
+        r = result[0]
+
+        def _cnt(k: str) -> int:
+            arr = r.get(k) or []
+            return arr[0].get("n", 0) if arr else 0
+
+        median_arr = r.get("median_response_hours") or []
+        median = (median_arr[0].get("value") or 0.0) if median_arr else 0.0
+        return {
+            "total": _cnt("totals"),
+            "responded": _cnt("responded"),
+            "pending_review": _cnt("pending"),
+            "stale_over_sla": _cnt("stale"),
+            "decided_last_7d": _cnt("decided_last_7d"),
+            "median_response_hours": float(median),
+        }
 
     async def list_by_state(self, state: str) -> list[dict]:
         return await self.find_capped({"state": state})
