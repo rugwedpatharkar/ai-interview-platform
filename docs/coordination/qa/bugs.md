@@ -1,7 +1,7 @@
-# Open bugs
+# Bugs (open) — QA
 
-Sorted newest first within each severity. See `../README.md` for schema and
-field ownership. Closed bugs are archived in `bugs-closed.md`.
+All states except `closed`. See `../README.md` for schema and field
+ownership. Closed bugs archived in `bugs-closed.md`.
 
 ## Summary
 

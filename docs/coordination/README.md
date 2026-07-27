@@ -162,8 +162,29 @@ Runs on a timer OR after every push observed on `origin/main`:
    Poke stale (>48h) ones in `status.md`.
 4. Read `qa/bugs.md`. Sort by severity. Ensure every Critical/High is
    assigned.
-5. Update `manager/status.md`.
-6. Commit + push.
+5. Update `manager/status.md` — including the bug-lifecycle roll-up
+   (counts per state, computed by grepping `state:` fields).
+6. Commit + push whenever any bucket changes.
+
+## Manager SLA (what the other three roles should expect)
+
+- Every `state=filed` bug is either `state=triaged` **or** has an
+  explicit "not a bug" note in `status.md` **within 30 min**.
+- Priority framework (in order):
+
+  | Priority | Definition                              | Assign within | Notes                          |
+  |----------|-----------------------------------------|---------------|--------------------------------|
+  | P0       | Critical + data loss / security         | 5 min         | Freeze conflicting merges      |
+  | P1       | High + user-visible                     | 15 min        |                                |
+  | P2       | Medium                                  | 60 min        |                                |
+  | P3       | Low                                     | Weekly batch  |                                |
+
+- Reassignment: if QA disputes a fix (state moves back to `in_progress`
+  with a reopen note), Manager reads both sides and decides in
+  `status.md`, e.g. "MGR 2026-07-22 14:55 — BUG-20260722-03 stays with
+  BE; the reopen is a distinct edge case, filing BUG-20260722-11 for FE".
+- Closing: **only Manager sets `state=closed`.** Manager moves closed
+  entries into `qa/bugs-closed.md` so `qa/bugs.md` stays small.
 
 ## What Manager does not do
 

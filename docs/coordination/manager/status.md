@@ -29,6 +29,15 @@ Empty — no work in flight.
 Critical: 0  High: 0  Medium: 0  Low: 0
 See `docs/coordination/qa/bugs.md`.
 
+## Bug lifecycle (from qa/bugs.md)
+
+filed:        0  ← Manager SLA — triage now
+triaged:      0  ← assigned; awaiting owner start
+in_progress:  0  ← being worked
+fixed:        0  ← waiting on QA to verify
+verified:     0  ← Manager to close next iteration
+closed:       0  (archived to qa/bugs-closed.md)
+
 ## Freeze
 
 None.
