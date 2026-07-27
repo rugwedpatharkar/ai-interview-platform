@@ -53,8 +53,28 @@ export default function PostJobPage() {
     setV((p) => ({ ...p, [k]: val }));
 
   const create = useMutation({
-    mutationFn: () =>
-      api.jobs.createJob({ title: v.title.trim(), jdText: v.jdText, skills: parseSkills(skillsRaw) }),
+    mutationFn: () => {
+      // Salary inputs are text ("120000" or "") so we can distinguish empty from
+      // zero — the proto is int64/bigint so guard the empty case and coerce.
+      const toBig = (s: string): bigint => {
+        const n = Number(s);
+        return Number.isFinite(n) && n > 0 ? BigInt(Math.trunc(n)) : 0n;
+      };
+      return api.jobs.createJob({
+        title: v.title.trim(),
+        jdText: v.jdText,
+        city: v.city.trim(),
+        region: v.region.trim(),
+        country: v.country.trim(),
+        remoteMode: v.remoteMode || "",
+        employmentType: v.employmentType || "",
+        salaryMin: toBig(v.salaryMin),
+        salaryMax: toBig(v.salaryMax),
+        salaryCurrency: v.salaryCurrency || "",
+        skills: parseSkills(skillsRaw),
+        gateMode: v.gateMode,
+      });
+    },
     onSuccess: (res) => {
       toast.success("Job created");
       router.push(`/company/jobs/${res.jobId}`);

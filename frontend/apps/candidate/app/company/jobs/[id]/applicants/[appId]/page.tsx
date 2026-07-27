@@ -1,6 +1,24 @@
 "use client";
 
-import { ConfirmDialog, ErrorState, LoadingState, Spinner, toast } from "@ip/ui";
+import {
+  Button,
+  ConfirmDialog,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+  ErrorState,
+  LoadingState,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+  Textarea,
+  toast,
+} from "@ip/ui";
 import {
   errorMessage,
   isNotFound,
@@ -204,7 +222,12 @@ export default function ApplicantReportPage() {
       freeText?: string;
     }) => {
       if (input.action === "advance") {
-        await api.decisions.overrideGate({ applicationId: appId });
+        // "shortlisted" is the funnel's advance outcome — overrideGate only bypasses
+        // the aptitude threshold and doesn't move the application forward.
+        await api.decisions.decideApplication({
+          applicationId: appId,
+          outcome: "shortlisted",
+        });
         return input.action;
       }
       if (input.action === "hold") {
@@ -436,30 +459,28 @@ export default function ApplicantReportPage() {
                     busy={decide.isPending}
                     onConfirm={() => decide.mutate({ action: "advance" })}
                   />
-                  <ConfirmDialog
-                    trigger={
-                      <button type="button" className="ap-btn ap-btn-ghost">
-                        Hold
-                      </button>
-                    }
+                  <ReasonDialog
+                    action="hold"
+                    triggerLabel="Hold"
                     title="Hold this candidate?"
-                    description="They stay in the pipeline; no decision is sent yet."
+                    description="They stay in the pipeline; no decision is sent yet. Pick a reason so the audit trail carries the why."
                     confirmLabel="Hold"
                     busy={decide.isPending}
-                    onConfirm={() => decide.mutate({ action: "hold" })}
-                  />
-                  <ConfirmDialog
-                    trigger={
-                      <button type="button" className="ap-btn ap-btn-ghost">
-                        Decline
-                      </button>
+                    onConfirm={(reasonCode, freeText) =>
+                      decide.mutate({ action: "hold", reasonCode, freeText })
                     }
+                  />
+                  <ReasonDialog
+                    action="reject"
+                    triggerLabel="Decline"
                     title="Decline this candidate?"
-                    description="Records the decline for your team. The candidate will not be notified automatically."
+                    description="Records the decline for your team. Pick a reason so the audit trail carries the why. The candidate is not notified automatically."
                     confirmLabel="Decline"
                     destructive
                     busy={decide.isPending}
-                    onConfirm={() => decide.mutate({ action: "reject" })}
+                    onConfirm={(reasonCode, freeText) =>
+                      decide.mutate({ action: "reject", reasonCode, freeText })
+                    }
                   />
                 </div>
               </section>
@@ -666,7 +687,9 @@ function IntegrityBandSection({
 
           {flags.length > 0 && (
             <div className="ap-itl-events">
-              {sorted.slice(0, 3).map((f, i) => (
+              {/* Show every flag — the earlier cap of 3 silently dropped audit
+                  evidence in a surface whose whole purpose is the evidence. */}
+              {sorted.map((f, i) => (
                 <article
                   key={`${i}-${f.at}-${f.type}`}
                   className="rounded-2xl border border-line bg-surface-2 p-4"
@@ -716,5 +739,118 @@ function LegendDot({ color, label }: { color: string; label: string }) {
       <span className="size-2 rounded-full" style={{ background: color }} />
       {label}
     </span>
+  );
+}
+
+/* ============================================================
+   Reason-collecting decision dialog
+
+   ConfirmDialog fires the mutation with reason_code="other" +
+   free_text="", which passes the RPC but leaves the audit trail
+   with nothing useful. This dialog gates the confirm until a real
+   reason is picked; free_text is optional but strongly encouraged.
+   ============================================================ */
+
+const HOLD_REASONS: ReadonlyArray<[string, string]> = [
+  ["awaiting_role", "Awaiting a different role"],
+  ["awaiting_reference", "Awaiting reference/verification"],
+  ["team_bandwidth", "Team bandwidth"],
+  ["reconsider_later", "Reconsider in a later cycle"],
+  ["other", "Other"],
+];
+
+const REJECT_REASONS: ReadonlyArray<[string, string]> = [
+  ["skills_mismatch", "Skills mismatch"],
+  ["experience_mismatch", "Experience level mismatch"],
+  ["location_or_visa", "Location or visa constraint"],
+  ["compensation_gap", "Compensation gap"],
+  ["stronger_candidates", "Stronger candidates selected"],
+  ["integrity_concern", "Integrity concern from proctor evidence"],
+  ["other", "Other"],
+];
+
+function ReasonDialog({
+  action,
+  triggerLabel,
+  title,
+  description,
+  confirmLabel,
+  destructive = false,
+  busy,
+  onConfirm,
+}: {
+  action: "hold" | "reject";
+  triggerLabel: string;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  destructive?: boolean;
+  busy: boolean;
+  onConfirm: (reasonCode: string, freeText: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [freeText, setFreeText] = useState("");
+  const options = action === "hold" ? HOLD_REASONS : REJECT_REASONS;
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button type="button" className="ap-btn ap-btn-ghost">
+          {triggerLabel}
+        </button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{description}</DialogDescription>
+        <div className="mt-4 grid gap-3">
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium text-ink-deep">Reason</span>
+            <Select value={reason} onValueChange={setReason}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pick a reason" />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium text-ink-deep">
+              Notes <span className="font-normal text-ink-3">(optional, visible to your team)</span>
+            </span>
+            <Textarea
+              rows={3}
+              maxLength={1000}
+              value={freeText}
+              onChange={(e) => setFreeText(e.target.value)}
+              placeholder="Anything to add for the audit trail?"
+            />
+          </label>
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
+            Cancel
+          </Button>
+          <Button
+            variant={destructive ? "destructive" : "default"}
+            loading={busy}
+            disabled={!reason || busy}
+            onClick={() => {
+              onConfirm(reason, freeText.trim());
+              setOpen(false);
+              setReason("");
+              setFreeText("");
+            }}
+          >
+            {confirmLabel}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

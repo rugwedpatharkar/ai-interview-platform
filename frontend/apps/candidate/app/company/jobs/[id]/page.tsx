@@ -201,10 +201,18 @@ export default function JobPipelinePage() {
                 ) : (
                   <ul className="grid gap-2">
                     {apps.map((a) => (
-                      <li key={a.applicationId}>
+                      // Card is a stretched-link container so the whole surface stays
+                      // clickable for mouse users while the Override button lives as a
+                      // sibling of the link (nesting a real <button> inside <a> is invalid
+                      // HTML and made the button unreachable via keyboard Enter).
+                      <li
+                        key={a.applicationId}
+                        className="relative rounded-xl border border-line bg-surface-2 p-3 transition-colors hover:bg-surface-3 hover:border-line-2 focus-within:border-line-2"
+                      >
                         <Link
                           href={`/company/jobs/${id}/applicants/${a.applicationId}`}
-                          className="block rounded-xl border border-line bg-surface-2 p-3 transition-colors hover:bg-surface-3 hover:border-line-2"
+                          className="focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 rounded-xl before:absolute before:inset-0 before:content-[''] before:rounded-xl"
+                          aria-label={`Open ${candidateHandle(a.candidateUserId)}`}
                         >
                           <div className="flex items-center gap-2">
                             <Avatar handle={candidateHandle(a.candidateUserId)} />
@@ -220,27 +228,26 @@ export default function JobPipelinePage() {
                               {STATE_LABEL[a.state] ?? a.state}
                             </span>
                           </div>
-                          {a.state === "gated_out" && (
-                            <div className="mt-2">
-                              <ConfirmDialog
-                                trigger={
-                                  <button
-                                    type="button"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="ap-btn ap-btn-ghost ap-btn-sm w-full"
-                                  >
-                                    Override gate
-                                  </button>
-                                }
-                                title="Override the aptitude gate?"
-                                description="This lets the candidate proceed to interview despite not passing."
-                                confirmLabel="Override"
-                                busy={override.isPending}
-                                onConfirm={() => override.mutate(a.applicationId)}
-                              />
-                            </div>
-                          )}
                         </Link>
+                        {a.state === "gated_out" && (
+                          <div className="relative z-10 mt-2">
+                            <ConfirmDialog
+                              trigger={
+                                <button
+                                  type="button"
+                                  className="ap-btn ap-btn-ghost ap-btn-sm w-full"
+                                >
+                                  Override gate
+                                </button>
+                              }
+                              title="Override the aptitude gate?"
+                              description="This lets the candidate proceed to interview despite not passing."
+                              confirmLabel="Override"
+                              busy={override.isPending}
+                              onConfirm={() => override.mutate(a.applicationId)}
+                            />
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
