@@ -13,8 +13,10 @@ import { store } from "../../../lib/auth";
    The provider redirects here with #access_token=… (and possibly
    #error=…). We parse the hash, validate the JWT structurally,
    write tokens to the candidate store, decode the role claim, and
-   route. If we don't resolve within RESOLVE_TIMEOUT_MS we bail to
-   /login so the user isn't stranded on a forever-spinner.
+   route. The bearer token is scrubbed from the URL bar and history
+   before we navigate, so it never rides in a shareable/loggable
+   address. If the navigation itself never completes we bail after
+   RESOLVE_TIMEOUT_MS so the user isn't stranded on a forever-spinner.
    ============================================================ */
 
 const RESOLVE_TIMEOUT_MS = 8000;
@@ -54,8 +56,19 @@ export default function AuthCallbackPage() {
     called.current = true;
 
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    if (params.get("error")) {
-      setError("Sign-in failed. Please try again.");
+    // Strip the fragment as soon as we've read it — leaving #access_token in
+    // window.location keeps the bearer visible in the address bar, in browser
+    // history, and to any extension with URL-read access.
+    history.replaceState(null, "", window.location.pathname);
+
+    const providerErr = params.get("error");
+    if (providerErr) {
+      const desc = params.get("error_description");
+      setError(
+        desc
+          ? decodeURIComponent(desc.replace(/\+/g, " "))
+          : `Sign-in failed (${providerErr}). Please try again.`,
+      );
       return;
     }
     const access = params.get("access_token");
@@ -71,14 +84,13 @@ export default function AuthCallbackPage() {
     // The SSO refresh token rides an HttpOnly cookie (not JS-readable). Seed
     // the access token; cookie-based silent refresh is a documented follow-up.
     store.set({ access, refresh: "" });
-    // Arm the timeout before router.replace so it only covers the pending
-    // navigation window; clear immediately after to prevent a stale-toast race.
+    // Arm a timer that only fires if the navigation below never resolves —
+    // clean up on unmount (successful nav will tear the component down).
     const timer = window.setTimeout(
       () => setError("Sign-in is taking too long. Please try again."),
       RESOLVE_TIMEOUT_MS,
     );
     router.replace(roleHome(payload.role));
-    window.clearTimeout(timer);
     return () => window.clearTimeout(timer);
   }, [router]);
 
