@@ -11,13 +11,14 @@ import {
   SearchX,
   Sparkles,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { FilterSidebar } from "../../components/filter-sidebar";
 import { JobCard } from "../../components/job-card";
 import { JobSearchBar } from "../../components/job-search-bar";
 import { SaveJobButton } from "../../components/save-job-button";
-import { query } from "./search-client";
+import { query, toQuery } from "./search-client";
 import type { SearchJobsParams, SearchJobsResult } from "./types";
 
 const sameParams = (a: SearchJobsParams, b: SearchJobsParams) =>
@@ -39,10 +40,20 @@ export function Marketplace({
   initial: SearchJobsResult | null;
   initialParams: SearchJobsParams;
 }) {
+  const router = useRouter();
   const [params, setParams] = useState<SearchJobsParams>(initialParams);
 
+  // Mirror params into the URL so refresh, share, and back all restore the exact
+  // result set the user was looking at. `scroll: false` prevents Next from
+  // resetting the scroll position on every filter tap.
+  const applyParams = (next: SearchJobsParams) => {
+    setParams(next);
+    const qs = toQuery(next);
+    router.replace(qs ? `/jobs?${qs}` : "/jobs", { scroll: false });
+  };
+
   // Any search / filter / sort change resets to page 1; only the pager moves pages.
-  const setFilters = (next: SearchJobsParams) => setParams({ ...next, page: 1 });
+  const setFilters = (next: SearchJobsParams) => applyParams({ ...next, page: 1 });
 
   const q = useQuery({
     queryKey: ["public-jobs", params],
@@ -59,7 +70,7 @@ export function Marketplace({
   const pageSize = q.data?.pageSize ?? 24;
   const totalPages = q.data ? Math.max(1, Math.ceil(q.data.total / pageSize)) : 1;
   const goToPage = (next: number) => {
-    setParams({ ...params, page: next });
+    applyParams({ ...params, page: next });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
