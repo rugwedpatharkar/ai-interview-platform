@@ -50,14 +50,18 @@ it("revokeSession drops the targeted jti; revokeAllSessions keeps only the curre
 // The fix requires the client to expose the true server state so the component can
 // query it. This test fails today because the SettingsClient interface has no such
 // method; it will pass once a getTotpStatus (or equivalent me-shaped read) is added.
-it("SettingsClient exposes a read of the true TOTP-enabled state (pins BUG-20260728-01)", () => {
-  const c: SettingsClient = makeMockSettingsClient();
-  // Any of these seams would let SecurityTab read the real value. The check is
-  // intentionally structural — the exact name is FE's call as long as the seam exists.
-  const shape = c as unknown as Record<string, unknown>;
-  const hasSeam =
-    typeof shape.getTotpStatus === "function" ||
-    typeof shape.getMe === "function" ||
-    typeof shape.getSecurityStatus === "function";
-  expectTrue("settings.totpStatusSeamExists", hasSeam);
-});
+// `it.fails` inverts the assertion: today the seam is missing so this test PASSES
+// (the inner expectation fails, and .fails expects that). Once FE adds the seam, the
+// inner check succeeds, .fails then fails, and the marker prompts removal.
+it.fails(
+  "SettingsClient exposes a read of the true TOTP-enabled state (pins BUG-20260728-01)",
+  () => {
+    const c: SettingsClient = makeMockSettingsClient();
+    const shape = c as unknown as Record<string, unknown>;
+    const hasSeam =
+      typeof shape.getTotpStatus === "function" ||
+      typeof shape.getMe === "function" ||
+      typeof shape.getSecurityStatus === "function";
+    expectTrue("settings.totpStatusSeamExists", hasSeam);
+  },
+);

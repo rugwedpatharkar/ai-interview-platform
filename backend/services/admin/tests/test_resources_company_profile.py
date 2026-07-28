@@ -255,6 +255,12 @@ class _RecordingStorage:
 
 
 @pytest.mark.asyncio
+@pytest.mark.xfail(
+    strict=True,
+    reason="pins BUG-20260728-03: presign_logo_upload does not forward "
+    "content_length. Remove the xfail when the fix lands so the test guards "
+    "the regression.",
+)
 async def test_presign_logo_upload_binds_content_length_from_caller_size():
     storage = _RecordingStorage()
     # Once the fix lands, the resource must accept a size and forward it to storage
