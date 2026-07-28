@@ -230,6 +230,44 @@ async def test_presign_logo_upload():
         await cp.presign_logo_upload(_REC, "image/png", storage=_FakeStorage())
 
 
+# Pins BUG-20260728-03 (Medium). presign_logo_upload does not forward a size cap to
+# the storage layer, so the returned PUT URL will accept any-size body. The FE-side
+# 2 MB check (branding-types.ts) is bypassable with curl. The fix must (a) accept a
+# size from the caller and (b) pass it to storage.presigned_put_url as content_length.
+class _RecordingStorage:
+    def __init__(self):
+        self.calls = []
+
+    async def presigned_put_url(
+        self, comp_id, category, key, content_type, ttl=None, content_length=None
+    ):
+        self.calls.append(
+            {
+                "comp_id": comp_id,
+                "category": category,
+                "key": key,
+                "content_type": content_type,
+                "ttl": ttl,
+                "content_length": content_length,
+            }
+        )
+        return f"https://put/{comp_id}/{category}/{key}?ct={content_type}"
+
+
+@pytest.mark.asyncio
+async def test_presign_logo_upload_binds_content_length_from_caller_size():
+    storage = _RecordingStorage()
+    # Once the fix lands, the resource must accept a size and forward it to storage
+    # as content_length. Today the signature has no size param, so we assert on the
+    # storage-side effect: content_length must not be None for any well-formed call.
+    await cp.presign_logo_upload(_ADMIN, "image/png", storage=storage)
+    assert len(storage.calls) == 1
+    assert storage.calls[0]["content_length"] is not None, (
+        "presign_logo_upload must bind content_length on the signed PUT to gate size "
+        "server-side; today it forwards None so any-size uploads succeed"
+    )
+
+
 @pytest.mark.asyncio
 async def test_get_company_profile_presigns_logo_when_stored():
     profiles = _MutProfiles({"comp_id": "c1", "logo": "logo-x.png", "about": "hi"})
