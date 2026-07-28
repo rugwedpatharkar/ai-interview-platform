@@ -6,7 +6,7 @@ from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import compliance as compliance_res
-from app.routes.auth import caller_identity
+from app.routes.auth import caller_identity, caller_identity_write
 from app.routes.pb import compliance_pb2, compliance_pb2_grpc
 
 log = get_logger(component="compliance.routes")
@@ -20,10 +20,11 @@ _grpc_errors = counter(
 
 
 class ComplianceServicer(compliance_pb2_grpc.ComplianceServiceServicer):
-    def __init__(self, *, consents, eraser, tokens):
+    def __init__(self, *, consents, eraser, tokens, users=None):
         self._consents = consents
         self._eraser = eraser
         self._tokens = tokens
+        self._users = users
 
     async def _abort(self, context, exc, method="unknown"):
         code, msg = to_grpc_status(exc)
@@ -38,7 +39,9 @@ class ComplianceServicer(compliance_pb2_grpc.ComplianceServiceServicer):
             span("compliance.RecordConsent"),
         ):
             try:
-                identity = await caller_identity(context, self._tokens)
+                identity = await caller_identity_write(
+                    context, self._tokens, self._users
+                )
                 receipt = await compliance_res.record_consent(
                     identity,
                     request.scope,

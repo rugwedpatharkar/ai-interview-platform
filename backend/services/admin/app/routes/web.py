@@ -177,6 +177,7 @@ def create_web_app(
             storage=storage,
             publisher=publisher,
             tokens=tokens,
+            users=UserRepository(db),
         ),
         app,
     )
@@ -197,6 +198,7 @@ def create_web_app(
             tokens=tokens,
             audit=AuditLogRepository(db),
             notifier=notification_publisher,
+            users=UserRepository(db),
         ),
         app,
     )
@@ -218,6 +220,7 @@ def create_web_app(
             deliveries=AptitudeDeliveryRepository(db),
             publisher=publisher,
             tokens=tokens,
+            users=UserRepository(db),
         ),
         app,
     )
@@ -229,6 +232,7 @@ def create_web_app(
             publisher=publisher,
             limiter=RateLimiter(redis),
             tokens=tokens,
+            users=UserRepository(db),
         ),
         app,
     )
@@ -272,6 +276,7 @@ def create_web_app(
             consents=ConsentRepository(db),
             eraser=make_eraser(db, storage, sessions=RefreshSessionStore(redis)),
             tokens=tokens,
+            users=UserRepository(db),
         ),
         app,
     )

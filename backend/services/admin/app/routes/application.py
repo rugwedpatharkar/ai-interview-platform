@@ -6,7 +6,7 @@ from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import application as application_res
-from app.routes.auth import caller_identity
+from app.routes.auth import caller_identity, caller_identity_write
 from app.routes.pb import application_pb2, application_pb2_grpc
 
 log = get_logger(component="application.routes")
@@ -29,13 +29,24 @@ def _application_response(d):
 
 
 class ApplicationServicer(application_pb2_grpc.ApplicationServiceServicer):
-    def __init__(self, *, applications, jobs, publisher, tokens, audit, notifier=None):
+    def __init__(
+        self,
+        *,
+        applications,
+        jobs,
+        publisher,
+        tokens,
+        audit,
+        notifier=None,
+        users=None,
+    ):
         self._applications = applications
         self._jobs = jobs
         self._publisher = publisher
         self._tokens = tokens
         self._audit = audit
         self._notifier = notifier
+        self._users = users
 
     async def _abort(self, context, exc, method="unknown"):
         code, msg = to_grpc_status(exc)
@@ -50,7 +61,9 @@ class ApplicationServicer(application_pb2_grpc.ApplicationServiceServicer):
             span("application.Apply", job_id=request.job_id),
         ):
             try:
-                identity = await caller_identity(context, self._tokens)
+                identity = await caller_identity_write(
+                    context, self._tokens, self._users
+                )
                 out = await application_res.apply(
                     identity,
                     request.job_id,

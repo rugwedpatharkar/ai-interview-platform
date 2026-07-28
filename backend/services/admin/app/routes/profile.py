@@ -8,7 +8,7 @@ from lib.observability import counter, span
 from app.errors import AuthDomainError
 from app.resources import auth as auth_res
 from app.resources import profile as profile_res
-from app.routes.auth import _bearer_from_metadata
+from app.routes.auth import _bearer_from_metadata, caller_identity_write
 from app.routes.pb import profile_pb2, profile_pb2_grpc
 
 log = get_logger(component="profile.routes")
@@ -54,17 +54,25 @@ def _profile_response(d):
 
 
 class ProfileServicer(profile_pb2_grpc.ProfileServiceServicer):
-    def __init__(self, *, profiles, storage, publisher, tokens):
+    def __init__(self, *, profiles, storage, publisher, tokens, users=None):
         self._profiles = profiles
         self._storage = storage
         self._publisher = publisher
         self._tokens = tokens
+        self._users = users
 
     async def _caller_id(self, context):
         token = _bearer_from_metadata(context)
         if token is None:
             await context.abort(grpc.StatusCode.UNAUTHENTICATED, "Not authenticated")
         return auth_res.identity_from_token(token, tokens=self._tokens)["id"]
+
+    async def _caller_id_write(self, context):
+        # Same as _caller_id but additionally refuses erased/being-erased users.
+        # Delegates to caller_identity_write so the guard shape stays uniform
+        # with the other candidate-write servicers.
+        identity = await caller_identity_write(context, self._tokens, self._users)
+        return identity["id"]
 
     async def _abort(self, context, exc, method="unknown"):
         code, msg = to_grpc_status(exc)
@@ -84,7 +92,7 @@ class ProfileServicer(profile_pb2_grpc.ProfileServiceServicer):
             span("profile.UploadResume"),
         ):
             try:
-                user_id = await self._caller_id(context)
+                user_id = await self._caller_id_write(context)
                 out = await profile_res.upload_resume(
                     user_id,
                     request.data,
@@ -114,7 +122,7 @@ class ProfileServicer(profile_pb2_grpc.ProfileServiceServicer):
             span("profile.UpdateProfile"),
         ):
             try:
-                user_id = await self._caller_id(context)
+                user_id = await self._caller_id_write(context)
                 out = await profile_res.update_profile(
                     user_id,
                     {

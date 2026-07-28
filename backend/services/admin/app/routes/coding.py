@@ -6,7 +6,7 @@ from lib.observability import counter
 
 from app.errors import AuthDomainError
 from app.resources import coding as coding_res
-from app.routes.auth import caller_identity
+from app.routes.auth import caller_identity, caller_identity_write
 from app.routes.pb import coding_pb2, coding_pb2_grpc
 
 log = get_logger(component="coding.routes")
@@ -20,13 +20,24 @@ _grpc_errors = counter(
 
 
 class CodingServicer(coding_pb2_grpc.CodingServiceServicer):
-    def __init__(self, *, applications, tasks, attempts, publisher, limiter, tokens):
+    def __init__(
+        self,
+        *,
+        applications,
+        tasks,
+        attempts,
+        publisher,
+        limiter,
+        tokens,
+        users=None,
+    ):
         self._applications = applications
         self._tasks = tasks
         self._attempts = attempts
         self._publisher = publisher
         self._limiter = limiter
         self._tokens = tokens
+        self._users = users
 
     async def _abort(self, context, exc, method):
         code, msg = to_grpc_status(exc)
@@ -75,7 +86,9 @@ class CodingServicer(coding_pb2_grpc.CodingServiceServicer):
             log, "coding.Run", **bind_ids(application_id=request.application_id)
         ):
             try:
-                identity = await caller_identity(context, self._tokens)
+                identity = await caller_identity_write(
+                    context, self._tokens, self._users
+                )
                 r = await coding_res.run_code_attempt(
                     identity,
                     request.application_id,
@@ -102,7 +115,9 @@ class CodingServicer(coding_pb2_grpc.CodingServiceServicer):
             log, "coding.Submit", **bind_ids(application_id=request.application_id)
         ):
             try:
-                identity = await caller_identity(context, self._tokens)
+                identity = await caller_identity_write(
+                    context, self._tokens, self._users
+                )
                 r = await coding_res.submit_coding(
                     identity,
                     request.application_id,

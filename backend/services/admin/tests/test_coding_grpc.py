@@ -74,7 +74,17 @@ class _FakeLimiter:
         return _Hit()
 
 
-def _app(candidate_user_id="cand"):
+class _FakeUsers:
+    """Minimal users repo stub for the deletion_pending guard test."""
+
+    def __init__(self, deletion_pending=False):
+        self._flag = deletion_pending
+
+    async def is_deletion_pending(self, user_id):
+        return self._flag
+
+
+def _app(candidate_user_id="cand", users=None):
     grpc_app = GrpcWebASGI()
     coding_pb2_grpc.add_CodingServiceServicer_to_server(
         CodingServicer(
@@ -84,6 +94,7 @@ def _app(candidate_user_id="cand"):
             publisher=_FakePub(),
             limiter=_FakeLimiter(),
             tokens=TokenService(_SECRET),
+            users=users,
         ),
         grpc_app,
     )
@@ -158,6 +169,47 @@ async def test_get_task_hides_hidden_cases_over_the_wire():
     out = coding_pb2.CodingTask.FromString(data)
     assert [c.stdin for c in out.sample_cases] == ["1 2"]  # sample only
     assert out.typed_questions[0].id == "t1"
+
+
+@pytest.mark.asyncio
+async def test_submit_refused_when_deletion_pending():
+    # Erase cascade flips `users.deletion_pending` FIRST so a captured, still-live
+    # access token can't post more candidate data during the anonymize window.
+    # caller_identity_write is what closes this — when the servicer is wired
+    # with a users repo that reports deletion_pending, SubmitCoding aborts
+    # UNAUTHENTICATED before the resource layer sees the request.
+    resp = await _call(
+        _app(users=_FakeUsers(deletion_pending=True)),
+        "SubmitCoding",
+        coding_pb2.SubmitCodingRequest(
+            application_id="a1",
+            language="python",
+            source="print(0)",
+            typed_answers=[],
+        ),
+        metadata=_candidate(),
+    )
+    _, status = _ds(resp.content)
+    assert status == 16  # UNAUTHENTICATED — account deleted
+
+
+@pytest.mark.asyncio
+async def test_run_refused_when_deletion_pending():
+    # Same guard, applied to RunCode — an erased candidate must not spawn more
+    # sandboxed executions on their behalf during the anonymize window.
+    resp = await _call(
+        _app(users=_FakeUsers(deletion_pending=True)),
+        "RunCode",
+        coding_pb2.RunCodeRequest(
+            application_id="a1",
+            language="python",
+            source="print(0)",
+            stdin="",
+        ),
+        metadata=_candidate(),
+    )
+    _, status = _ds(resp.content)
+    assert status == 16
 
 
 @posix_only

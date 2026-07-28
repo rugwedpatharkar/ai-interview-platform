@@ -76,10 +76,28 @@ class UserRepository(BaseRepository[User]):
 
     async def mark_deletion_pending(self, user_id: str) -> None:
         # Set as the FIRST step of the erase cascade so any authed write racing
-        # the delete is refused at the auth boundary (H14).
+        # the delete is refused at the auth boundary (H14). Paired with
+        # `is_deletion_pending` on the caller_identity_write route helper.
         await self.col.update_one(
             {"_id": ObjectId(user_id)}, {"$set": {"deletion_pending": True}}
         )
+
+    async def is_deletion_pending(self, user_id: str) -> bool:
+        """Projected read of the erase-in-flight flag — the write-side counterpart
+        to `mark_deletion_pending`. Fails closed on malformed / missing user_id so
+        a captured token that no longer points at a valid account can't slip a
+        write past the guard.
+        """
+        from bson.errors import InvalidId
+
+        try:
+            oid = ObjectId(user_id)
+        except (InvalidId, TypeError):
+            return True
+        doc = await self.col.find_one({"_id": oid}, {"deletion_pending": 1})
+        if doc is None:
+            return True
+        return bool(doc.get("deletion_pending"))
 
     async def set_role(self, user_id: str, role: str) -> None:
         await self.col.update_one({"_id": ObjectId(user_id)}, {"$set": {"role": role}})

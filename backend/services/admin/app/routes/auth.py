@@ -118,6 +118,29 @@ async def caller_identity_optional(context, tokens):
         return _ANON_IDENTITY
 
 
+async def caller_identity_write(context, tokens, users=None):
+    """Like caller_identity, but also aborts UNAUTHENTICATED when the caller's
+    account is being erased (`users.deletion_pending == True`).
+
+    The erase cascade flips deletion_pending FIRST, then revokes the refresh
+    family — but a captured access token still has up to 15 min of life. Without
+    this check, SubmitCoding / SubmitAptitude / Apply / UploadResume / etc. could
+    persist new candidate data during the anonymize window.
+
+    `users` is optional so tests that don't opt into the guard keep working; the
+    server wiring in web.py passes `users=UserRepository(db)` on every candidate-
+    write servicer so production always enforces it.
+    """
+    identity = await caller_identity(context, tokens)
+    if users is not None and await users.is_deletion_pending(identity["id"]):
+        log.warning(
+            "caller_identity_write refused: user_id={} (deletion_pending)",
+            identity["id"],
+        )
+        await context.abort(grpc.StatusCode.UNAUTHENTICATED, "account deleted")
+    return identity
+
+
 class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
     def __init__(
         self,

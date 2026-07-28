@@ -6,7 +6,7 @@ from lib.observability import counter, span
 
 from app.errors import AuthDomainError
 from app.resources import aptitude as aptitude_res
-from app.routes.auth import caller_identity
+from app.routes.auth import caller_identity, caller_identity_write
 from app.routes.pb import aptitude_pb2, aptitude_pb2_grpc
 
 log = get_logger(component="aptitude.routes")
@@ -21,7 +21,16 @@ _grpc_errors = counter(
 
 class AptitudeServicer(aptitude_pb2_grpc.AptitudeServiceServicer):
     def __init__(
-        self, *, applications, jobs, banks, attempts, deliveries, publisher, tokens
+        self,
+        *,
+        applications,
+        jobs,
+        banks,
+        attempts,
+        deliveries,
+        publisher,
+        tokens,
+        users=None,
     ):
         self._applications = applications
         self._jobs = jobs
@@ -30,6 +39,7 @@ class AptitudeServicer(aptitude_pb2_grpc.AptitudeServiceServicer):
         self._deliveries = deliveries
         self._publisher = publisher
         self._tokens = tokens
+        self._users = users
 
     async def _abort(self, context, exc, method="unknown"):
         code, msg = to_grpc_status(exc)
@@ -82,7 +92,9 @@ class AptitudeServicer(aptitude_pb2_grpc.AptitudeServiceServicer):
             span("aptitude.SubmitAptitude", application_id=request.application_id),
         ):
             try:
-                identity = await caller_identity(context, self._tokens)
+                identity = await caller_identity_write(
+                    context, self._tokens, self._users
+                )
                 result = await aptitude_res.grade_aptitude(
                     identity,
                     request.application_id,
