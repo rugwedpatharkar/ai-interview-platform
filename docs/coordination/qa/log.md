@@ -11,4 +11,13 @@ Append-only. Newest at bottom. See `../README.md` for entry format.
 - Handoffs opened: `2026-07-28-qa-critical-totp-silent-disable.md`, `2026-07-28-qa-high-mcp-version-unpinned.md`.
 - Next: boot the FE dev server + drive `/settings?tab=security` and `/company/branding` in the browser, extend the smoke suite for the settings-tabs redirect gap, keep sweeping.
 - blockers: none.
-- commits: e4d7809 (bugs + tests), 7ae2684 (xfail markers).
+- commits: e4d7809 (bugs + tests), 7ae2684 (xfail markers), 5e2f991 (Manager-schema alignment).
+
+## 2026-07-28 20:20 UTC — session-f6e0b0
+
+- Booted candidate-mock via `preview_start`. Ran the full Playwright suite green (9/9). Drove `/jobs` marketplace with `<script>alert('xss')</script>` and `frontend' OR 1=1 --` — both properly escaped/rendered, no XSS, no crash.
+- Found BUG-20260728-05 [Medium]: `/jobs` URL is one-way — SSR seeds params from `?q=`, but user typing/filtering never pushes back to the URL. Reload / share / back all lose the search. Confirmed by `location.href` staying at `/jobs?q=frontend` after typing a fresh query and clicking a filter chip.
+- Added `frontend/e2e/marketplace-search-url.spec.ts` with two `test.fail(...)` pins (green today; flips to unexpected pass when the fix lands).
+- Next: browser-driven audit of `/settings/*` (needs an auth seed), then `/company/branding` upload flow (needs BE to hit the presign path).
+- blockers: no docker → cannot drive real BE flows (auth, TOTP, upload, interview). Mock-only surfaces still testable.
+- commits: (next commit).

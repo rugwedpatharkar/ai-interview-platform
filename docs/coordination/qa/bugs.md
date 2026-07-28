@@ -5,7 +5,7 @@ ownership. Closed bugs archived in `bugs-closed.md`.
 
 ## Summary
 
-Critical: 1  High: 1  Medium: 1  Low: 1
+Critical: 1  High: 1  Medium: 2  Low: 1
 
 ## BUG-20260728-01  [Critical]
 - state: filed
@@ -57,6 +57,25 @@ Critical: 1  High: 1  Medium: 1  Low: 1
 - test: [backend/services/admin/tests/test_resources_company_profile.py](../../../backend/services/admin/tests/test_resources_company_profile.py) — `test_presign_logo_upload_binds_content_length_from_caller_size` with `@pytest.mark.xfail(strict=True)`. Verified xfailing today; flips to unexpected-pass when the fix lands.
 - notes:
   - QA 2026-07-28 19:30 UTC — filed. Fix path: add `size` to the resource signature, forward as `content_length` to storage. The lib-storage comment at `client.py:214` notes a full range-bound needs the POST switch — content_length binding is the interim gate.
+
+## BUG-20260728-05  [Medium]
+- state: filed
+- assignee: unassigned
+- filed_by: QA in 5e2f991
+- fix_sha: -
+- verified_in: -
+- area: `/jobs` marketplace — URL is one-way for search / filter / sort state
+- repro:
+  1. `next dev -p 3000 NEXT_PUBLIC_MOCK=1` (or any environment). Navigate to `http://localhost:3000/jobs?q=frontend` → the input is seeded with "frontend" and results filter correctly. Good so far.
+  2. Type any different value in the search input, hit Search. The results update. Check `location.href` — still `/jobs?q=frontend`.
+  3. Click a filter chip (Remote / Hybrid / On-site). Results update. `location.href` still unchanged.
+  4. Reload the page. All user input is lost — only the *initial* query-string value comes back.
+  5. Copy the current URL and paste it into a new tab. New tab shows the seed state, not what the sender was looking at.
+- expected: The URL is the source of truth for search / filter / sort / page state. Every user action pushes a new URL (via `router.replace` / `router.push`) so reload, back/forward, and share/bookmark all recover the same result set. Standard Next.js pattern.
+- actual: [frontend/apps/candidate/app/jobs/marketplace.tsx:42](../../../frontend/apps/candidate/app/jobs/marketplace.tsx#L42) holds `params` in `useState`. `setFilters`, `setParams`, `goToPage` update local state only — no `useRouter().push` / `.replace`. The URL is read once via SSR `initialParams` and never written back. Bookmarks, shares, back/forward, and reload all break for anything past the seed query.
+- test: `frontend/e2e/marketplace-search-url.spec.ts` — new Playwright spec: navigate to `/jobs`, fill search, click Search, expect URL to include `?q=...`. Marked `test.fail()` today so CI stays green until the fix lands. Flips to unexpected-pass when the URL sync is added.
+- notes:
+  - QA 2026-07-28 20:10 UTC — filed after live driving. XSS is properly escaped; SQL-flavored strings do not crash — only bug in this hunt lens is the URL-sync gap.
 
 ## BUG-20260728-02  [Low]
 - state: filed
