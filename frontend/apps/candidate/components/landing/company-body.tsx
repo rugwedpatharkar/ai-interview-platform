@@ -1,4 +1,5 @@
-"use client";
+// Server Component — no client-only code in this tree (no state, no
+// event handlers). Renders as static HTML on the hiring-teams landing.
 
 import Link from "next/link";
 import { ApertureLens, ApIcon, type ApIconName } from "@ip/ui";

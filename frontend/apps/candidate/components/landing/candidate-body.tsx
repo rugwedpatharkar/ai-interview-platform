@@ -1,11 +1,12 @@
-"use client";
+// Server Component. The interactive search bar in the hero is the only
+// client-only piece — extracted into <LandingSearchIsland/> below so the
+// rest of this ~900-LOC marketing tree ships as static HTML.
 
-import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ApertureLens } from "@ip/ui";
 
 import { Arrow, Check, Lock, Shield, User } from "./landing-icons";
+import { LandingSearchIsland } from "./landing-search-island";
 
 // Candidate HERO + marketing sections for the consolidated Lucent landing. Moved
 // verbatim out of applicants-landing.tsx; the `.lucent` shell (nav, bg-field,
@@ -78,18 +79,6 @@ const FAQ: { q: string; a: string }[] = [
 ];
 
 export function CandidateBody() {
-  const router = useRouter();
-  const [q, setQ] = useState("");
-  const [loc, setLoc] = useState("");
-
-  function onSearch(e: FormEvent) {
-    e.preventDefault();
-    const params = new URLSearchParams();
-    if (q.trim()) params.set("q", q.trim());
-    if (loc.trim()) params.set("location", loc.trim());
-    router.push(`/jobs${params.toString() ? `?${params}` : ""}`);
-  }
-
   return (
     <main id="top">
       {/* HERO */}
@@ -110,19 +99,7 @@ export function CandidateBody() {
               <h1 id="hero-h1" className="hero">Get seen. Get interviewed. Get hired.</h1>
               <p className="lede">One place to apply, interview, and hear back — on a result you can trust.</p>
 
-              <form className="search glass irid-edge" role="search" aria-label="Search roles" onSubmit={onSearch}>
-                <div className="field">
-                  <span className="fi" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></svg></span>
-                  <label className="sr-only" htmlFor="q">Job title or skill</label>
-                  <input id="q" value={q} onChange={(e) => setQ(e.target.value)} type="text" placeholder="Job title or skill" autoComplete="off" />
-                </div>
-                <div className="field">
-                  <span className="fi" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 5-8 11-8 11s-8-6-8-11a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="2.6" /></svg></span>
-                  <label className="sr-only" htmlFor="loc">Location</label>
-                  <input id="loc" value={loc} onChange={(e) => setLoc(e.target.value)} type="text" placeholder="Location" autoComplete="off" />
-                </div>
-                <button className="btn btn-primary btn-hero" type="submit">Search</button>
-              </form>
+              <LandingSearchIsland />
 
               <div className="pills">
                 <span className="pill"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 13 4 4L19 7" /></svg>Free for candidates</span>
