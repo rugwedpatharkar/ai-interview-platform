@@ -45,15 +45,21 @@ function postedLabel(iso: string): string {
 
 /** Shared marketplace job card. The whole card links to the public job page; the
  * optional `action` slot (e.g. SaveJobButton) sits in the footer and stops
- * propagation so toggling it doesn't navigate. `bestMatch` adds the accent pill. */
+ * propagation so toggling it doesn't navigate. `bestMatch` adds the accent pill.
+ * `matchScore` (0..1) + `topReason` render the AI-Matcher chip for signed-in
+ * candidates — passed by the marketplace, dropped when signed out. */
 export function JobCard({
   job,
   action,
   bestMatch = false,
+  matchScore,
+  topReason,
 }: {
   job: JobCardDTO;
   action?: ReactNode;
   bestMatch?: boolean;
+  matchScore?: number;
+  topReason?: string;
 }) {
   const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
   const remote = job.remoteMode ? REMOTE_LABEL[job.remoteMode] : null;
@@ -61,6 +67,8 @@ export function JobCard({
     ? (TYPE_LABEL[job.employmentType] ?? job.employmentType.replace(/_/g, " "))
     : null;
   const initial = (job.companyName.trim()[0] ?? "?").toUpperCase();
+  const scorePct =
+    typeof matchScore === "number" ? Math.round(matchScore * 100) : null;
 
   return (
     <Card
@@ -75,6 +83,14 @@ export function JobCard({
       {bestMatch && (
         <span className="absolute right-4 top-4 z-10 inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
           Best match
+        </span>
+      )}
+      {!bestMatch && scorePct !== null && (
+        <span
+          className="absolute right-4 top-4 z-10 inline-flex items-center gap-1 rounded-full bg-brand-soft px-2.5 py-0.5 font-mono text-xs font-medium tabular-nums text-brand-strong"
+          title={topReason}
+        >
+          {scorePct}% match
         </span>
       )}
       <Link href={`/jobs/${job.jobId}`} className="block">

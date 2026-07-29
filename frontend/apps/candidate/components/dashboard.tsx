@@ -15,7 +15,7 @@ import {
   pollingBackoff,
   useAuthedQuery,
 } from "@ip/shared";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Briefcase, Dumbbell, Sparkles, Video } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -117,6 +117,20 @@ export function Dashboard() {
 
   const list = applications.data?.applications ?? [];
   const matches = recommendations.data?.matches ?? [];
+
+  // Hydrate the top 3 recommended jobs with real title + company so the card
+  // isn't the literal string "Recommended role" three times. Batched via
+  // useQueries so all three fire in parallel; staleTime 5 min because posted
+  // job metadata rarely changes and this is a low-signal fan-out.
+  const topMatches = matches.slice(0, 3);
+  const jobDetails = useQueries({
+    queries: topMatches.map((m) => ({
+      queryKey: ["job", m.jobId],
+      queryFn: () => api.jobs.getJob({ jobId: m.jobId }),
+      enabled: Boolean(token),
+      staleTime: 5 * 60_000,
+    })),
+  });
 
   // KPI + up-next are derived client-side from the already-fetched applications —
   // display-only, no extra fetch. Memoized so the count-up tiles and up-next don't
@@ -399,28 +413,49 @@ export function Dashboard() {
                       here.
                     </p>
                   )}
-                {matches.slice(0, 3).map((m, i) => (
-                  <Link
-                    key={m.jobId}
-                    href={`/jobs/${m.jobId}`}
-                    style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
-                    className="animate-rise-in flex flex-col gap-2 rounded-xl border border-line bg-surface p-4 shadow-elev-1 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-line-2 hover:shadow-elev-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="font-medium text-foreground">
-                        Recommended role
-                      </p>
-                      <span className="ap-pill ap-pill--teal tabular-nums">
-                        {Math.round(m.score * 100)}% match
-                      </span>
-                    </div>
-                    {m.reasons.length > 0 && (
-                      <p className="line-clamp-2 text-sm text-ink-2">
-                        {m.reasons[0]}
-                      </p>
-                    )}
-                  </Link>
-                ))}
+                {topMatches.map((m, i) => {
+                  const detail = jobDetails[i]?.data as
+                    | { title?: string; companyName?: string }
+                    | undefined;
+                  return (
+                    <Link
+                      key={m.jobId}
+                      href={`/jobs/${m.jobId}`}
+                      style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+                      className="animate-rise-in flex flex-col gap-2 rounded-xl border border-line bg-surface p-4 shadow-elev-1 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-line-2 hover:shadow-elev-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-foreground">
+                            {detail?.title ?? (
+                              <Skeleton className="h-4 w-32" />
+                            )}
+                          </p>
+                          {detail?.companyName && (
+                            <p className="truncate text-xs text-ink-3">
+                              {detail.companyName}
+                            </p>
+                          )}
+                        </div>
+                        <span className="ap-pill ap-pill--teal tabular-nums shrink-0">
+                          {Math.round(m.score * 100)}% match
+                        </span>
+                      </div>
+                      {m.reasons.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1.5">
+                          {m.reasons.slice(0, 3).map((r) => (
+                            <span
+                              key={r}
+                              className="rounded-full bg-surface-2 px-2 py-0.5 text-[0.72rem] text-ink-2"
+                            >
+                              {r}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </Link>
+                  );
+                })}
                 {matches.length > 0 && (
                   <Link
                     href="/jobs"

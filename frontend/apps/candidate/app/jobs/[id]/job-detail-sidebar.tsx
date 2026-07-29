@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SaveJobButton } from "../../../components/save-job-button";
 import { ApplyIsland } from "./apply-island";
 import { fmtSalary } from "./detail-client";
+import { SkillGapIsland } from "./skill-gap-island";
 import type { JobDetailDTO } from "./types";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -77,6 +78,8 @@ export function JobDetailSidebar({
           </dd>
         </div>
       </dl>
+
+      <SkillGapIsland jobSkills={job.skills} />
 
       <div className="border-t border-line pt-4">
         <p className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-ink-3">

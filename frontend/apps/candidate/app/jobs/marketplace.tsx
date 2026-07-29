@@ -12,12 +12,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useAuthedQuery } from "@ip/shared";
 
 import { FilterSidebar } from "../../components/filter-sidebar";
 import { JobCard } from "../../components/job-card";
 import { JobSearchBar } from "../../components/job-search-bar";
 import { SaveJobButton } from "../../components/save-job-button";
+import { useAuth } from "../../lib/auth";
 import { query, toQuery } from "./search-client";
 import type { SearchJobsParams, SearchJobsResult } from "./types";
 
@@ -41,8 +43,25 @@ export function Marketplace({
   initialParams: SearchJobsParams;
 }) {
   const router = useRouter();
+  const { api, token } = useAuth();
   const [params, setParams] = useState<SearchJobsParams>(initialParams);
   const [isPending, startTransition] = useTransition();
+
+  // AI Matcher scores — fetched once per session for signed-in candidates so
+  // every card can paint a "N% match" chip without a per-card round-trip.
+  // Signed-out visitors skip this query entirely (marketplace is public).
+  const recommendations = useAuthedQuery(token, {
+    queryKey: ["recommendations"],
+    queryFn: () => api.recommendations.getCandidateRecommendations({}),
+    staleTime: 5 * 60_000,
+  });
+  const scoreByJob = useMemo(() => {
+    const m = new Map<string, { score: number; reasons: string[] }>();
+    for (const match of recommendations.data?.matches ?? []) {
+      m.set(match.jobId, { score: match.score, reasons: match.reasons });
+    }
+    return m;
+  }, [recommendations.data]);
 
   // Mirror params into the URL so refresh, share, and back all restore the exact
   // result set the user was looking at. `scroll: false` prevents Next from
@@ -180,19 +199,24 @@ export function Marketplace({
             />
           )}
 
-          {jobs.map((j, i) => (
-            <div
-              key={j.jobId}
-              className="animate-rise-in"
-              style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
-            >
-              <JobCard
-                job={j}
-                bestMatch={i === 0 && (params.sort ?? "relevance") === "relevance"}
-                action={<SaveJobButton jobId={j.jobId} />}
-              />
-            </div>
-          ))}
+          {jobs.map((j, i) => {
+            const match = scoreByJob.get(j.jobId);
+            return (
+              <div
+                key={j.jobId}
+                className="animate-rise-in"
+                style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+              >
+                <JobCard
+                  job={j}
+                  bestMatch={i === 0 && (params.sort ?? "relevance") === "relevance"}
+                  action={<SaveJobButton jobId={j.jobId} />}
+                  matchScore={match?.score}
+                  topReason={match?.reasons[0]}
+                />
+              </div>
+            );
+          })}
 
           {q.data && totalPages > 1 && (
             <nav

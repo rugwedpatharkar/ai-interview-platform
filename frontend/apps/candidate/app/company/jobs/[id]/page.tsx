@@ -102,6 +102,24 @@ export default function JobPipelinePage() {
     },
   });
 
+  // AI Matcher rankings — dark before this hook was wired. Score + reasons per
+  // candidate for this job; used to sort each lane and paint a mini ScoreRing +
+  // top-reason chip on the card. Long-lived (rankings recompute infrequently);
+  // cache invalidation piggybacks the existing override + decision mutations.
+  const ranked = useAuthedQuery(token, {
+    queryKey: ["ranked", id],
+    queryFn: () => api.recommendations.getJobRankedCandidates({ jobId: id }),
+    enabled: Boolean(token && id),
+    staleTime: 60_000,
+  });
+  const rankByCandidate = useMemo(() => {
+    const m = new Map<string, { score: number; reasons: string[] }>();
+    for (const match of ranked.data?.matches ?? []) {
+      m.set(match.candidateUserId, { score: match.score, reasons: match.reasons });
+    }
+    return m;
+  }, [ranked.data]);
+
   const override = useMutation({
     mutationFn: (applicationId: string) => api.decisions.overrideGate({ applicationId }),
     onSuccess: () => {
@@ -113,10 +131,18 @@ export default function JobPipelinePage() {
     onError: (err) => toast.error(errorMessage(err)),
   });
 
-  const lanes = useMemo(
-    () => bucket(applicants.data?.applications ?? []),
-    [applicants.data],
-  );
+  const lanes = useMemo(() => {
+    const raw = bucket(applicants.data?.applications ?? []);
+    // Sort each lane by AI match score descending — highest-fit candidates float
+    // to the top of every stage. Falls back to insertion order when the AI
+    // ranking hasn't populated yet for a candidate (score = -1 sinks unranked).
+    const scoreFor = (a: ApplicationResponse) =>
+      rankByCandidate.get(a.candidateUserId)?.score ?? -1;
+    for (const key of Object.keys(raw) as LaneKey[]) {
+      raw[key] = [...raw[key]].sort((x, y) => scoreFor(y) - scoreFor(x));
+    }
+    return raw;
+  }, [applicants.data, rankByCandidate]);
 
   if (!mounted) return null;
   if (!token || (identity?.role !== "recruiter" && identity?.role !== "company_admin")) {
@@ -200,7 +226,11 @@ export default function JobPipelinePage() {
                   </p>
                 ) : (
                   <ul className="grid gap-2">
-                    {apps.map((a) => (
+                    {apps.map((a) => {
+                      const rank = rankByCandidate.get(a.candidateUserId);
+                      const scorePct = rank ? Math.round(rank.score * 100) : null;
+                      const topReason = rank?.reasons[0];
+                      return (
                       // Card is a stretched-link container so the whole surface stays
                       // clickable for mouse users while the Override button lives as a
                       // sibling of the link (nesting a real <button> inside <a> is invalid
@@ -212,17 +242,30 @@ export default function JobPipelinePage() {
                         <Link
                           href={`/company/jobs/${id}/applicants/${a.applicationId}`}
                           className="focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 rounded-xl before:absolute before:inset-0 before:content-[''] before:rounded-xl"
-                          aria-label={`Open ${candidateHandle(a.candidateUserId)}`}
+                          aria-label={`Open ${candidateHandle(a.candidateUserId)}${scorePct !== null ? `, AI match ${scorePct}%` : ""}`}
                         >
                           <div className="flex items-center gap-2">
                             <Avatar handle={candidateHandle(a.candidateUserId)} />
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <div className="font-mono text-xs font-semibold text-ink-deep">
                                 {candidateHandle(a.candidateUserId)}
                               </div>
                               <div className="text-[0.7rem] text-ink-3">Applicant</div>
                             </div>
+                            {scorePct !== null && (
+                              <span
+                                className="shrink-0 rounded-full bg-brand-soft px-2 py-0.5 font-mono text-[0.68rem] font-semibold tabular-nums text-brand-strong"
+                                title="AI match score"
+                              >
+                                {scorePct}%
+                              </span>
+                            )}
                           </div>
+                          {topReason && (
+                            <p className="mt-1.5 line-clamp-1 text-[0.72rem] text-ink-2">
+                              {topReason}
+                            </p>
+                          )}
                           <div className="mt-2 flex items-center justify-between gap-2">
                             <span className={statePill(a.state)}>
                               {STATE_LABEL[a.state] ?? a.state}
@@ -249,7 +292,8 @@ export default function JobPipelinePage() {
                           </div>
                         )}
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 )}
               </div>
