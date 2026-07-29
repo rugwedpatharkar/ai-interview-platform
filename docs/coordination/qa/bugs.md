@@ -5,11 +5,11 @@ ownership. Closed bugs archived in `bugs-closed.md`.
 
 ## Summary
 
-Critical: 1  High: 3  Medium: 2 (1 verified) Low: 1
+Critical: 1  High: 3  Medium: 1  Low: 1
 
 ## BUG-20260728-01  [Critical]
-- state: filed
-- assignee: unassigned
+- state: triaged
+- assignee: FE + BE
 - filed_by: QA in e4d7809
 - fix_sha: -
 - verified_in: -
@@ -25,10 +25,11 @@ Critical: 1  High: 3  Medium: 2 (1 verified) Low: 1
 - test: [frontend/apps/candidate/app/settings/settings-client.test.ts](../../../frontend/apps/candidate/app/settings/settings-client.test.ts) — `it.fails(...)` pin. Passes today (inner assertion throws as expected); will fail when the seam lands so the marker prompts removal.
 - notes:
   - QA 2026-07-28 19:30 UTC — filed. Handoff: `handoffs/2026-07-28-qa-critical-totp-silent-disable.md`. Requires coordinated FE + BE fix.
+  - MGR 2026-07-29 12:30 UTC — triaged P0. **Owner order: BE first, then FE.** BE lands: (1) `setup_totp` refuses when `totp_enabled=True` (return AlreadyEnrolledError), (2) expose `totp_enabled` on `getAccount`/`me`. FE then reads the seam and (3) gates the "Set up 2FA" button + (4) removes the dialog-on-open auto-fire. Sequence matters — FE without the BE guard leaves the destructive path open to anyone bypassing the client. Related: same defect surfaced in the FE→BE audit blockers doc (P1 there); this MGR triage supersedes both — one fix PR pair, cross-linked.
 
 ## BUG-20260728-04  [High]
-- state: filed
-- assignee: unassigned
+- state: triaged
+- assignee: BE
 - filed_by: QA in e4d7809
 - fix_sha: -
 - verified_in: -
@@ -41,10 +42,11 @@ Critical: 1  High: 3  Medium: 2 (1 verified) Low: 1
 - test: existing collection failure in `backend/services/mcp-data/tests/test_server_validation.py` is the natural pin — it starts passing again once `mcp<2` is in effect. No new file added.
 - notes:
   - QA 2026-07-28 19:30 UTC — filed. Handoff: `handoffs/2026-07-28-qa-high-mcp-version-unpinned.md`. Lazy fix is `,<2` in three pyproject.toml files.
+  - MGR 2026-07-29 12:30 UTC — triaged P1, BE. **First BE task of the session** — trivial `,<2` bump across three pyproject.toml files unblocks the Docker build and the QA test collection. Ship this before anything else.
 
 ## BUG-20260728-07  [High]
-- state: filed
-- assignee: unassigned
+- state: triaged
+- assignee: FE
 - filed_by: QA in 762e42b
 - fix_sha: -
 - verified_in: -
@@ -63,10 +65,11 @@ Critical: 1  High: 3  Medium: 2 (1 verified) Low: 1
 - test: none pinned (yet). A robust pin needs either a Playwright suite against a prod build (currently absent) or a Vitest that instantiates the middleware and inspects the CSP string — the middleware needs a NextRequest polyfill which the candidate app's Vitest config does not include. Manager: recommend adding a `frontend/e2e/csp-prod.spec.ts` that runs against `next start` (behind a `PLAYWRIGHT_PROD=1` guard) as part of the fix.
 - notes:
   - QA 2026-07-29 03:15 UTC — filed after auditing d9add1a end-to-end. Silent user-visible regression on brand identity, and hard-blocks logo upload in prod.
+  - MGR 2026-07-29 12:30 UTC — triaged P1, FE. **Take Fix A (small).** Add `NEXT_PUBLIC_STORAGE_URL` env var, thread it into `img-src` and `connect-src`, add `blob:` to `img-src`. Update Vercel + Render env docs (the render.yaml already references the S3 endpoint via server-side `S3_ENDPOINT_URL`; FE needs a public-safe equivalent — usually the same bucket URL). Ship the `frontend/e2e/csp-prod.spec.ts` guarded by `PLAYWRIGHT_PROD=1` in the same PR. Fix B (proxy through admin) is a durable follow-up; **not this cycle** — too much scope for the near-term deploy blocker.
 
 ## BUG-20260728-06  [High]
-- state: filed
-- assignee: unassigned
+- state: triaged
+- assignee: FE
 - filed_by: QA in 762e42b
 - fix_sha: -
 - verified_in: -
@@ -83,10 +86,11 @@ Critical: 1  High: 3  Medium: 2 (1 verified) Low: 1
 - test: `frontend/apps/candidate/app/settings/settings-client.test.ts` — `it.fails` pin on `SettingsClient.requestEmailChange.length >= 2` (a fixed signature accepts both new email and current password). Passes today (mock has arity 0); flips to unexpected-pass when the signature is fixed.
 - notes:
   - QA 2026-07-28 20:35 UTC — filed. Fix: extend `SettingsClient.requestEmailChange(newEmail, currentPassword)`, thread it through both mock + real clients, add a password `<Input>` to `ChangeEmailDialog`.
+  - MGR 2026-07-29 12:30 UTC — triaged P1, FE. Pure FE seam (BE contract already right). Ride behind BUG-07 if you're batching FE PRs.
 
 ## BUG-20260728-03  [Medium]
-- state: filed
-- assignee: unassigned
+- state: triaged
+- assignee: BE
 - filed_by: QA in e4d7809
 - fix_sha: -
 - verified_in: -
@@ -99,29 +103,11 @@ Critical: 1  High: 3  Medium: 2 (1 verified) Low: 1
 - test: [backend/services/admin/tests/test_resources_company_profile.py](../../../backend/services/admin/tests/test_resources_company_profile.py) — `test_presign_logo_upload_binds_content_length_from_caller_size` with `@pytest.mark.xfail(strict=True)`. Verified xfailing today; flips to unexpected-pass when the fix lands.
 - notes:
   - QA 2026-07-28 19:30 UTC — filed. Fix path: add `size` to the resource signature, forward as `content_length` to storage. The lib-storage comment at `client.py:214` notes a full range-bound needs the POST switch — content_length binding is the interim gate.
-
-## BUG-20260728-05  [Medium]
-- state: verified
-- assignee: FE
-- filed_by: QA in 5e2f991
-- fix_sha: -
-- verified_in: 7eb1c96
-- area: `/jobs` marketplace — URL is one-way for search / filter / sort state
-- repro:
-  1. `next dev -p 3000 NEXT_PUBLIC_MOCK=1`. Navigate to `http://localhost:3000/jobs?q=frontend` → the input is seeded with "frontend" and results filter correctly. Good so far.
-  2. Type any different value in the search input, hit Search. Results update. Check `location.href` — pre-fix, still `/jobs?q=frontend`.
-  3. Click a filter chip (Remote / Hybrid / On-site). Results update. `location.href` — pre-fix, unchanged.
-  4. Reload the page. Pre-fix, all user input is lost — only the *initial* query-string value comes back.
-- expected: The URL is the source of truth for search / filter / sort / page state. Every user action pushes a new URL so reload, back/forward, and share/bookmark all recover the same result set.
-- actual (pre-fix): `frontend/apps/candidate/app/jobs/marketplace.tsx` held `params` in `useState`; `setFilters`/`setParams`/`goToPage` updated local state only, no router push. Bookmarks/back/reload all broke.
-- test: [frontend/e2e/marketplace-search-url.spec.ts](../../../frontend/e2e/marketplace-search-url.spec.ts) — two Playwright regression guards (search + filter both push to URL). Both pass live against HEAD.
-- notes:
-  - QA 2026-07-28 20:10 UTC — filed after live driving. XSS properly escaped; SQL-flavored strings do not crash — only bug in this hunt lens was the URL-sync gap.
-  - QA 2026-07-29 11:40 UTC — verified against 7eb1c96 ("feat(fe): sync marketplace filter/sort/page state to the URL"). Pinning tests unexpected-passed after merge; converted `test.fail(...)` → `test(...)` in the same spec so they now guard the regression going forward.
+  - MGR 2026-07-29 12:30 UTC — triaged P2, BE. Land after BUG-04 + BUG-01's BE half. FE follow-up (thread file size into the presign call from `branding-client.ts`) can ride the same fix PR or a paired FE PR — coordinate on the sha.
 
 ## BUG-20260728-02  [Low]
-- state: filed
-- assignee: unassigned
+- state: triaged
+- assignee: FE
 - filed_by: QA in e4d7809
 - fix_sha: -
 - verified_in: -
@@ -134,3 +120,4 @@ Critical: 1  High: 3  Medium: 2 (1 verified) Low: 1
 - test: n/a — pure comment rot. The brand-consistency Playwright suite already asserts `--brand` = `oklch(0.53 0.24 300)`, which is the runtime behaviour the comment mis-describes.
 - notes:
   - QA 2026-07-28 19:30 UTC — filed. Trivial one-line edit.
+  - MGR 2026-07-29 12:30 UTC — triaged P3, FE. Bundle onto any FE PR touching `@ip/ui` — do not open a dedicated PR.
