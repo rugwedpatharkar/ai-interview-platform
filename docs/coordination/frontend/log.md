@@ -1,13 +1,12 @@
-# Frontend engineer log
+# Log — Frontend
 
-Append-only. Entries newest first inside each day. Format:
+Append-only. Newest at bottom. See `../README.md` for entry format.
 
-```
-## YYYY-MM-DD HH:MM — <route or component>
-- what changed (1–2 lines)
-- commit sha
-- open questions (if any)
-```
+Individual dated sections below carry the FE session history through
+2026-07-28 (audit + fixes + BE handoff) and 2026-07-29 (modernization
+audit + six implementation waves). Format within a section: `## YYYY-MM-DD
+HH:MM — <route or component>` heading, 1–2 line "what changed", commit
+sha, optional "open questions".
 
 ---
 
