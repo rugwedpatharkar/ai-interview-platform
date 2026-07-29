@@ -447,17 +447,18 @@ export default function ApplicantReportPage() {
                   Aptura recommends — you sign. Every decision is logged with your name.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <ConfirmDialog
-                    trigger={
-                      <button type="button" className="ap-btn ap-btn-primary">
-                        Advance
-                      </button>
-                    }
+                  <ReasonDialog
+                    action="advance"
+                    triggerLabel="Advance"
+                    primary
+                    requireReason={false}
                     title="Advance this candidate?"
-                    description="The candidate proceeds to the next stage and is notified."
+                    description="The candidate proceeds to the next stage and is notified. Pick a reason if you'd like the audit trail to carry your rationale — it's optional."
                     confirmLabel="Advance"
                     busy={decide.isPending}
-                    onConfirm={() => decide.mutate({ action: "advance" })}
+                    onConfirm={(reasonCode, freeText) =>
+                      decide.mutate({ action: "advance", reasonCode, freeText })
+                    }
                   />
                   <ReasonDialog
                     action="hold"
@@ -769,6 +770,13 @@ const REJECT_REASONS: ReadonlyArray<[string, string]> = [
   ["other", "Other"],
 ];
 
+const ADVANCE_REASONS: ReadonlyArray<[string, string]> = [
+  ["strong_fit", "Strong overall fit"],
+  ["proceed_with_reservation", "Proceed with reservation"],
+  ["strategic_role", "Strategic role — advance regardless of score"],
+  ["other", "Other"],
+];
+
 function ReasonDialog({
   action,
   triggerLabel,
@@ -776,27 +784,42 @@ function ReasonDialog({
   description,
   confirmLabel,
   destructive = false,
+  primary = false,
+  requireReason = true,
   busy,
   onConfirm,
 }: {
-  action: "hold" | "reject";
+  action: "hold" | "reject" | "advance";
   triggerLabel: string;
   title: string;
   description: string;
   confirmLabel: string;
   destructive?: boolean;
+  primary?: boolean;
+  /** Advance keeps the confirm enabled even without a reason picked, so a
+   *  fast recruiter can still one-click through when they have nothing to
+   *  say — the audit trail then just records the actor + timestamp. */
+  requireReason?: boolean;
   busy: boolean;
   onConfirm: (reasonCode: string, freeText: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [freeText, setFreeText] = useState("");
-  const options = action === "hold" ? HOLD_REASONS : REJECT_REASONS;
+  const options =
+    action === "hold"
+      ? HOLD_REASONS
+      : action === "reject"
+        ? REJECT_REASONS
+        : ADVANCE_REASONS;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button type="button" className="ap-btn ap-btn-ghost">
+        <button
+          type="button"
+          className={primary ? "ap-btn ap-btn-primary" : "ap-btn ap-btn-ghost"}
+        >
           {triggerLabel}
         </button>
       </DialogTrigger>
@@ -839,7 +862,7 @@ function ReasonDialog({
           <Button
             variant={destructive ? "destructive" : "default"}
             loading={busy}
-            disabled={!reason || busy}
+            disabled={(requireReason && !reason) || busy}
             onClick={() => {
               onConfirm(reason, freeText.trim());
               setOpen(false);

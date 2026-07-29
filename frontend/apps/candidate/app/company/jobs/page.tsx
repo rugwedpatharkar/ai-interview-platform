@@ -50,6 +50,13 @@ function statusPillClass(status: string): string {
   return "ap-pill"; // draft / unknown
 }
 
+type Sort = "recent" | "oldest" | "title";
+const SORT_LABEL: Record<Sort, string> = {
+  recent: "Most recent",
+  oldest: "Oldest first",
+  title: "Title A–Z",
+};
+
 export default function CompanyJobsPage() {
   const { api, token, identity, ready } = useAuth();
   useRequireRole(identity?.role, ["recruiter", "company_admin"], ready);
@@ -57,6 +64,8 @@ export default function CompanyJobsPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const [q, setQ] = useState("");
+  const [sort, setSort] = useState<Sort>("recent");
 
   const jobs = useAuthedQuery(token, {
     queryKey: ["jobs"],
@@ -64,10 +73,19 @@ export default function CompanyJobsPage() {
     enabled: Boolean(token),
   });
   const list = jobs.data?.jobs ?? [];
-  const filtered = useMemo(
-    () => (filter === "all" ? list : list.filter((j) => j.status === filter)),
-    [list, filter],
-  );
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const byStatus = filter === "all" ? list : list.filter((j) => j.status === filter);
+    const byQuery = needle
+      ? byStatus.filter((j) => j.title.toLowerCase().includes(needle))
+      : byStatus;
+    // Sort in a copy so filter re-renders don't mutate the query cache.
+    const sorted = [...byQuery];
+    if (sort === "title") sorted.sort((a, b) => a.title.localeCompare(b.title));
+    else if (sort === "oldest") sorted.sort((a, b) => (a.postedAt ?? "").localeCompare(b.postedAt ?? ""));
+    else sorted.sort((a, b) => (b.postedAt ?? "").localeCompare(a.postedAt ?? ""));
+    return sorted;
+  }, [list, filter, q, sort]);
 
   const counts = useMemo(() => {
     const acc: Record<StatusFilter, number> = {
@@ -107,7 +125,7 @@ export default function CompanyJobsPage() {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         {FILTERS.map((f) => {
           const active = filter === f.value;
           return (
@@ -126,6 +144,31 @@ export default function CompanyJobsPage() {
             </button>
           );
         })}
+        <span className="flex-1" />
+        <label className="flex items-center gap-2 text-sm">
+          <span className="sr-only">Search roles</span>
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search roles by title…"
+            className="h-8 w-48 rounded-md border border-line bg-surface px-2 text-sm text-foreground placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-brand/40"
+          />
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <span className="sr-only">Sort by</span>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as Sort)}
+            className="h-8 rounded-md border border-line bg-surface px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand/40"
+          >
+            {(Object.keys(SORT_LABEL) as Sort[]).map((k) => (
+              <option key={k} value={k}>
+                {SORT_LABEL[k]}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {jobs.isError && (

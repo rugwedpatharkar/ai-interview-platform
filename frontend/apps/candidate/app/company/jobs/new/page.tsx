@@ -9,6 +9,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import { CompanyShell } from "../../../../components/company-shell";
 import { useAuth } from "../../../../lib/auth";
+import { useDraftForm } from "../../../../lib/use-draft-form";
 import {
   EMPTY_JOB_FORM,
   type GateMode,
@@ -42,8 +43,24 @@ export default function PostJobPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const [v, setV] = useState<JobFormValues>(EMPTY_JOB_FORM);
-  const [skillsRaw, setSkillsRaw] = useState("");
+  // Draft persistence — a stray refresh mid-post no longer discards 20 minutes
+  // of role writing. Keyed by identity so a shared browser doesn't cross-leak
+  // drafts between recruiters on the same machine.
+  const draftKey = `job:new:${identity?.id ?? "anon"}`;
+  const draft = useDraftForm(draftKey, {
+    v: EMPTY_JOB_FORM,
+    skillsRaw: "",
+  });
+  const v = draft.values.v;
+  const skillsRaw = draft.values.skillsRaw;
+  const setV = (updater: JobFormValues | ((prev: JobFormValues) => JobFormValues)) =>
+    draft.setValues((s) => ({
+      ...s,
+      v: typeof updater === "function" ? (updater as (p: JobFormValues) => JobFormValues)(s.v) : updater,
+    }));
+  const setSkillsRaw = (next: string) => draft.setValues((s) => ({ ...s, skillsRaw: next }));
+  // Snapshot of pre-improve JD so the AI's edit can be reverted in one click.
+  const previousJdText = useRef<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [titleError, setTitleError] = useState<string | null>(null);
   // Sync latch: a form can fire submit twice (Enter + click) before React rerenders the
@@ -76,6 +93,8 @@ export default function PostJobPage() {
       });
     },
     onSuccess: (res) => {
+      // Clear the persisted draft — a saved job shouldn't rehydrate next visit.
+      draft.clear();
       toast.success("Job created");
       router.push(`/company/jobs/${res.jobId}`);
     },
@@ -86,14 +105,28 @@ export default function PostJobPage() {
   });
 
   const improve = useMutation({
-    mutationFn: () => api.jd.improveJd({ brief: v.jdText }),
+    mutationFn: () => {
+      // Snapshot BEFORE the mutation so we always have something to revert to
+      // even if the user clicks Improve twice in a row without reading the diff.
+      previousJdText.current = v.jdText;
+      return api.jd.improveJd({ brief: v.jdText });
+    },
     onSuccess: (draft) => {
       set("jdText", draft.jdText);
       setSuggestions(draft.suggestions);
-      toast.success("Draft improved");
+      toast.success("Draft improved · Revert available");
     },
     onError: (err) => toast.error(errorMessage(err)),
   });
+
+  const canRevertJd = previousJdText.current !== null;
+  const revertJd = () => {
+    if (previousJdText.current === null) return;
+    set("jdText", previousJdText.current);
+    previousJdText.current = null;
+    setSuggestions([]);
+    toast.info("Reverted to your original draft");
+  };
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -209,17 +242,29 @@ export default function PostJobPage() {
               />
             </Field>
             <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => improve.mutate()}
-                disabled={!v.jdText.trim() || improve.isPending}
-                className="ap-btn ap-btn-ghost ap-btn-sm self-start"
-              >
-                <Sparkles className="size-4" aria-hidden />
-                {improve.isPending ? "Improving…" : "Improve with AI"}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => improve.mutate()}
+                  disabled={!v.jdText.trim() || improve.isPending}
+                  className="ap-btn ap-btn-ghost ap-btn-sm"
+                >
+                  <Sparkles className="size-4" aria-hidden />
+                  {improve.isPending ? "Improving…" : "Improve with AI"}
+                </button>
+                {canRevertJd && (
+                  <button
+                    type="button"
+                    onClick={revertJd}
+                    className="ap-btn ap-btn-ghost ap-btn-sm"
+                  >
+                    Revert to my draft
+                  </button>
+                )}
+              </div>
               <span className="text-xs text-ink-3">
                 Polish the description with AI before posting.
+                {canRevertJd && " Your original is one click away."}
               </span>
             </div>
             {suggestions.length > 0 && (

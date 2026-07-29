@@ -27,6 +27,15 @@ export default function AnalyticsPage() {
     queryFn: () => api.analytics.getFunnelAnalytics({}),
   });
 
+  // The "no-ghosting" KPIs are the anti-ghosting product promise made
+  // measurable — pending review, stale-over-SLA, median response, response
+  // rate, decisions in the last 7 days. The RPC was already generated; the
+  // page just wasn't reading it. Render as a stat band above the funnel.
+  const noGhost = useAuthedQuery(token, {
+    queryKey: ["analytics", "no-ghosting"],
+    queryFn: () => api.analytics.getNoGhostingKpis({}),
+  });
+
   return (
     <CompanyShell>
       <header className="mb-6">
@@ -36,6 +45,8 @@ export default function AnalyticsPage() {
           Funnel and conversion across every published role — last 30 days.
         </p>
       </header>
+
+      {noGhost.data && <NoGhostingBand data={noGhost.data} />}
 
       {funnel.isLoading && <LoadingState />}
       {funnel.isError && (
@@ -55,6 +66,56 @@ export default function AnalyticsPage() {
           <FunnelView data={funnel.data} />
         ))}
     </CompanyShell>
+  );
+}
+
+/** Five-stat "how we're doing on the no-ghosting promise" band. Renders the
+ *  exact fields the getNoGhostingKpis RPC returns — no derivation, no window
+ *  filter (the RPC owns the window). */
+function NoGhostingBand({
+  data,
+}: {
+  data: {
+    pendingReview: number;
+    staleOverSla: number;
+    medianResponseHours: number;
+    responseRate: number;
+    decidedLast7d: number;
+  };
+}) {
+  const median = Number.isFinite(data.medianResponseHours)
+    ? data.medianResponseHours < 1
+      ? "<1h"
+      : `${Math.round(data.medianResponseHours)}h`
+    : "—";
+  const responsePct = Math.round(data.responseRate * 100);
+  const stats: Array<[string, string | number, string]> = [
+    ["Pending review", data.pendingReview, "Awaiting a first action"],
+    ["Stale > SLA", data.staleOverSla, "Older than 7 days"],
+    ["Median response", median, "Applied → first move"],
+    ["Response rate", `${responsePct}%`, "Applications you moved"],
+    ["Decided (7d)", data.decidedLast7d, "Final outcomes this week"],
+  ];
+  return (
+    <section className="ap-cell mb-6">
+      <p className="ap-eyebrow">No-ghosting</p>
+      <div
+        className="ap-stats mt-4"
+        style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}
+      >
+        {stats.map(([label, value, sub]) => (
+          <div key={label} className="ap-stat">
+            <div className="font-display text-2xl font-semibold tabular-nums text-ink-deep">
+              {value}
+            </div>
+            <div className="mt-1 text-[0.86rem] font-medium text-ink-2">
+              {label}
+            </div>
+            <div className="text-[0.72rem] text-ink-3">{sub}</div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
