@@ -82,12 +82,41 @@ export interface AlertProps
     VariantProps<typeof alertVariants> {
   /** Optional bold heading rendered above the body. */
   title?: ReactNode;
+  /** Skip the ARIA announcement — for purely decorative alerts. Rare. */
+  announce?: boolean;
 }
 
-export function Alert({ className, tone, title, children, ...props }: AlertProps) {
+export function Alert({
+  className,
+  tone,
+  title,
+  announce = true,
+  children,
+  ...props
+}: AlertProps) {
   const ToneIcon = toneIcon[tone ?? "info"];
+  // ARIA role by tone — WCAG allows role="alert" (assertive interruption) only
+  // for messages that require immediate attention. Everything else (info,
+  // success, warning) should be role="status" (polite) so a routine "Saved!"
+  // doesn't interrupt the screen reader mid-sentence.
+  const t = tone ?? "info";
+  const role = announce
+    ? t === "danger"
+      ? "alert"
+      : "status"
+    : undefined;
+  const ariaLive = announce
+    ? t === "danger"
+      ? "assertive"
+      : "polite"
+    : undefined;
   return (
-    <div role="alert" className={cn(alertVariants({ tone }), className)} {...props}>
+    <div
+      role={role}
+      aria-live={ariaLive}
+      className={cn(alertVariants({ tone }), className)}
+      {...props}
+    >
       <ToneIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1">
         {title && <p className="mb-0.5 font-medium">{title}</p>}

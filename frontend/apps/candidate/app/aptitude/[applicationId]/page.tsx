@@ -12,6 +12,7 @@ import {
   Progress,
   RadioGroup,
   RadioGroupItem,
+  SkipToContent,
   Spinner,
   Textarea,
   toast,
@@ -358,7 +359,11 @@ export default function AptitudePage() {
     run.isPending && run.variables?.id === s.id;
 
   return (
+    <>
+    <SkipToContent />
     <main
+      id="main-content"
+      tabIndex={-1}
       className={`mx-auto flex flex-col gap-6 p-6 ${hasCoding ? "max-w-3xl" : "max-w-xl"}`}
     >
       <header className="sticky top-0 z-10 -mx-6 flex flex-col gap-3 border-b border-border/60 bg-background/95 px-6 py-4 backdrop-blur">
@@ -556,6 +561,7 @@ export default function AptitudePage() {
         </Button>
       )}
     </main>
+    </>
   );
 }
 

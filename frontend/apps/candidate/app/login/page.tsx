@@ -41,6 +41,13 @@ function LoginInner() {
   const [busy, setBusy] = useState(false);
   // Prevents the mount-effect from racing the submit success path.
   const navigatingRef = useRef(false);
+  // AT users otherwise miss the error banner that appears above the form —
+  // move focus to it (tabIndex=-1) so the polite live region + focus land the
+  // failure message in the audio channel.
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
 
   const notice = sp.get("notice");
   const noticeText =
@@ -97,7 +104,11 @@ function LoginInner() {
     >
       <form onSubmit={onSubmit} className="mt-6 grid gap-4" noValidate>
         {noticeText && <Notice tone="info">{noticeText}</Notice>}
-        {error && <Notice tone="danger">{error}</Notice>}
+        {error && (
+          <div ref={errorRef} tabIndex={-1} className="focus:outline-none">
+            <Notice tone="danger">{error}</Notice>
+          </div>
+        )}
         <Field
           name="email"
           label="Work email"

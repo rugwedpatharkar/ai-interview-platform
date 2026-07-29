@@ -8,6 +8,7 @@ export {
 export { Input } from "./input.js";
 export { Label } from "./label.js";
 export { Textarea } from "./textarea.js";
+export { SkipToContent } from "./skip-to-content.js";
 export {
   Card,
   CardHeader,

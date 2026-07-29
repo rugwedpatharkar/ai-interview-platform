@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, ApIcon, Logo } from "@ip/ui";
+import { Alert, ApIcon, Logo, SkipToContent } from "@ip/ui";
 import {
   Code,
   ConnectError,
@@ -258,7 +258,9 @@ export default function InterviewPage() {
   if (!token) return null;
 
   return (
-    <main className="min-h-screen bg-background">
+    <>
+    <SkipToContent />
+    <main id="main-content" tabIndex={-1} className="min-h-screen bg-background">
       {/* Focused room top bar — Aptura mark + theme toggle. No sidebar. */}
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-4">
@@ -433,6 +435,7 @@ export default function InterviewPage() {
         )}
       </div>
     </main>
+    </>
   );
 }
 

@@ -18,6 +18,10 @@ export interface NotificationItemProps {
   notification: NotificationItemData;
   icon: LucideIcon; // resolved by the KIND_ICON map (Bell fallback)
   onClick?: () => void;
+  /** Deep link the notification points at. When present, the row renders as
+   *  a real anchor so screen readers announce "link" (not "button") and
+   *  Cmd-click / middle-click open in a new tab like any other link. */
+  href?: string;
   index?: number; // feed position — drives the capped mount-stagger delay
 }
 
@@ -48,25 +52,26 @@ function RelativeTime({ iso }: { iso: string }) {
   );
 }
 
-/** One feed row — icon-by-kind + subject + clamped body + relative time + unread dot. */
+/** One feed row — icon-by-kind + subject + clamped body + relative time + unread dot.
+ *  Renders as <a href> when `href` is set (semantic "link" for AT + Cmd-click),
+ *  falls back to <button> otherwise so click-only callers (mark-as-read) keep
+ *  their existing shape. */
 export function NotificationItem({
   notification: n,
   icon: Icon,
   onClick,
+  href,
   index = 0,
 }: NotificationItemProps) {
   const unread = n.readAt === null;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={`${n.subject} — ${unread ? "unread" : "read"}`}
-      style={{ animationDelay: `${Math.min(index, 6) * 40}ms` }}
-      className={cn(
-        "flex w-full animate-rise-in items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-surface-muted",
-        unread && "bg-surface-muted/40",
-      )}
-    >
+  const label = `${n.subject} — ${unread ? "unread" : "read"}`;
+  const className = cn(
+    "flex w-full animate-rise-in items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-surface-muted no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+    unread && "bg-surface-muted/40",
+  );
+  const style = { animationDelay: `${Math.min(index, 6) * 40}ms` };
+  const body = (
+    <>
       <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
         <Icon className="size-4" aria-hidden />
       </span>
@@ -80,6 +85,30 @@ export function NotificationItem({
       {unread && (
         <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" aria-hidden />
       )}
+    </>
+  );
+  if (href) {
+    return (
+      <a
+        href={href}
+        onClick={onClick}
+        aria-label={label}
+        style={style}
+        className={className}
+      >
+        {body}
+      </a>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      style={style}
+      className={className}
+    >
+      {body}
     </button>
   );
 }
