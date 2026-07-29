@@ -87,7 +87,8 @@ export function makeMockSavedJobsClient(): SavedJobsClient {
   };
 }
 
-type Api = ReturnType<typeof useAuth>["api"];
+import type { ApiClients } from "@ip/api-client";
+type Api = ApiClients;
 
 /** SavedJob (proto, int64 salaries) → SavedJobDTO (number). Saved jobs are user-scoped
  *  marketplace cards — coercing bigint → number is safe well past any plausible salary. */

@@ -5,7 +5,7 @@ import { errorMessage, useRequireRole } from "@ip/shared";
 import { useMutation } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { CompanyShell } from "../../../../components/company-shell";
 import { useAuth } from "../../../../lib/auth";
@@ -59,6 +59,10 @@ export default function PostJobPage() {
       v: typeof updater === "function" ? (updater as (p: JobFormValues) => JobFormValues)(s.v) : updater,
     }));
   const setSkillsRaw = (next: string) => draft.setValues((s) => ({ ...s, skillsRaw: next }));
+  // Parse once per skillsRaw change — was being recomputed on every render in
+  // three JSX sites AND on submit; memoising here keeps them in sync and drops
+  // the redundant work on unrelated re-renders.
+  const skills = useMemo(() => parseSkills(skillsRaw), [skillsRaw]);
   // Snapshot of pre-improve JD so the AI's edit can be reverted in one click.
   const previousJdText = useRef<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -88,7 +92,7 @@ export default function PostJobPage() {
         salaryMin: toBig(v.salaryMin),
         salaryMax: toBig(v.salaryMax),
         salaryCurrency: v.salaryCurrency || "",
-        skills: parseSkills(skillsRaw),
+        skills,
         gateMode: v.gateMode,
       });
     },
@@ -282,9 +286,9 @@ export default function PostJobPage() {
                 placeholder="react, typescript, go"
                 onChange={(e) => setSkillsRaw(e.target.value)}
               />
-              {parseSkills(skillsRaw).length > 0 && (
+              {skills.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {parseSkills(skillsRaw).map((s) => (
+                  {skills.map((s) => (
                     <Badge key={s} tone="neutral">{s}</Badge>
                   ))}
                 </div>

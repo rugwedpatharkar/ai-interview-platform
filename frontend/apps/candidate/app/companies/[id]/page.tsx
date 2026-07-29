@@ -39,18 +39,27 @@ export default async function CompanyPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const company = await companyProfile(id).catch((e) => {
-    if (e instanceof Error && e.message === "not_found") return null;
-    throw e; // genuine fetch failure → Next error boundary (error.tsx)
-  });
+  // Parallelise the two independent fetches — the profile and jobs sit behind
+  // different endpoints and neither depends on the other's result. Previously
+  // they ran serially, so the page's TTFB was profile-latency + jobs-latency
+  // when it only needed max(both). Preserves the "not_found → notFound()" and
+  // "jobs error → empty roles list" behaviour.
+  const [profileR, jobsR] = await Promise.allSettled([
+    companyProfile(id),
+    companyJobs(id),
+  ]);
+
+  const company =
+    profileR.status === "fulfilled"
+      ? profileR.value
+      : profileR.reason instanceof Error && profileR.reason.message === "not_found"
+        ? null
+        : (() => {
+            throw profileR.reason;
+          })();
   if (!company) notFound();
 
-  const { jobs } = await companyJobs(id).catch(() => ({
-    jobs: [],
-    total: 0,
-    page: 1,
-    pageSize: 24,
-  }));
+  const { jobs } = jobsR.status === "fulfilled" ? jobsR.value : { jobs: [] };
 
   return (
     <MarketingShell audience="applicants">

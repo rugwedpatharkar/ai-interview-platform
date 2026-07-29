@@ -1,6 +1,6 @@
 "use client";
 
-import { ConfirmDialog, ErrorState, LoadingState, toast } from "@ip/ui";
+import { Avatar, ConfirmDialog, ErrorState, LoadingState, toast } from "@ip/ui";
 import {
   TERMINAL_STATES,
   errorMessage,
@@ -245,7 +245,11 @@ export default function JobPipelinePage() {
                           aria-label={`Open ${candidateHandle(a.candidateUserId)}${scorePct !== null ? `, AI match ${scorePct}%` : ""}`}
                         >
                           <div className="flex items-center gap-2">
-                            <Avatar handle={candidateHandle(a.candidateUserId)} />
+                            <Avatar
+                              name={candidateHandle(a.candidateUserId)}
+                              size="sm"
+                              className="font-mono"
+                            />
                             <div className="min-w-0 flex-1">
                               <div className="font-mono text-xs font-semibold text-ink-deep">
                                 {candidateHandle(a.candidateUserId)}
@@ -312,14 +316,3 @@ function statePillJobStatus(status: string): string {
   return "ap-pill";
 }
 
-function Avatar({ handle }: { handle: string }) {
-  const initial = handle.slice(0, 2);
-  return (
-    <span
-      aria-hidden
-      className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-soft font-mono text-[0.65rem] font-bold text-brand-strong"
-    >
-      {initial}
-    </span>
-  );
-}

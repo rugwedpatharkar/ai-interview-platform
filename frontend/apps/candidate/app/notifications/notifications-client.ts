@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 
 import type { NotificationDTO } from "@ip/api-client";
-import type { useAuth } from "../../lib/auth";
 import type { Notification, NotificationsClient, NotificationsPage } from "./types";
 
 export const USE_MOCK = process.env.NEXT_PUBLIC_MOCK === "1";
@@ -66,7 +65,8 @@ export function iconForKind(kind: string): LucideIcon {
   return KIND_ICON[kind] ?? Bell;
 }
 
-type Api = ReturnType<typeof useAuth>["api"];
+import type { ApiClients } from "@ip/api-client";
+type Api = ApiClients;
 
 /** Real gRPC client over `api.notification.*`. NotificationService.List returns
  *  NotificationDTO[]; mapNotification narrows it to the app's Notification shape (nullable

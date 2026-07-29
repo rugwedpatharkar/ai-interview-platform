@@ -7,7 +7,6 @@
 // in two places: `senderRole` widens from string → `SenderSide` (server emits "candidate" |
 // "recruiter") and `readAt: ""` → `null` (the `mapMessage` normalizer below).
 
-import type { useAuth } from "../../lib/auth";
 import type {
   MessageDTO as ProtoMessage,
   ThreadDTO as ProtoThread,
@@ -47,7 +46,8 @@ export const listQueryKey = () => ["messages", "threads"] as const;
 export const threadQueryKey = (applicationId: string) =>
   ["messages", "thread", applicationId] as const;
 
-type Api = ReturnType<typeof useAuth>["api"];
+import type { ApiClients } from "@ip/api-client";
+type Api = ApiClients;
 
 /** Real gRPC client over `api.messaging.*`. The MessagesClient seam is what consumers depend on;
  *  this adapter just owns the proto ↔ DTO mapping (normalize empty strings, narrow senderRole). */

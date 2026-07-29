@@ -15,7 +15,7 @@ import {
   Skeleton,
   cn,
 } from "@ip/ui";
-import { errorMessage, useRequireAuth } from "@ip/shared";
+import { errorMessage, recordError, useRequireAuth } from "@ip/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Mail, MessageSquare, Search } from "lucide-react";
 import Link from "next/link";
@@ -91,8 +91,11 @@ function MessagesPageInner() {
         if (!cancelled) {
           queryClient.invalidateQueries({ queryKey: listQueryKey() });
         }
-      } catch {
+      } catch (err) {
         // Reading is non-blocking and best-effort; the poll will re-converge.
+        // Still log so a systematic markRead outage shows up in observability
+        // instead of quietly rotting.
+        if (err instanceof Error) recordError(err, { component: "messages:markRead" });
       }
     })();
     return () => {
