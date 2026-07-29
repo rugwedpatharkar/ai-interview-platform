@@ -38,4 +38,12 @@ Append-only. Newest at bottom. See `../README.md` for entry format.
 - Re-checked BUG-01 (TOTP status seam) and BUG-06 (email change requires password): neither seam landed in the FE waves; both still open. Their `it.fails` pins remain green (still expected-failing).
 - Next: audit `/profile`, `/applications/[id]`, `/schedule` for BUG-01 sister patterns; extend the smoke suite for the settings-tab URL sync (775d7f3) so a future regression trips it; probe recruiter productivity surfaces (wave 3).
 - blockers: no docker; no prod-build Playwright profile for BUG-07.
+- commits: 9b32ec9.
+
+## 2026-07-29 12:05 UTC — session-f6e0b0
+
+- Opened `handoffs/2026-07-29-qa-to-mgr-triage-batch.md` (to: MGR) to bundle the six `state=filed` bugs into a single triage roll-up with a suggested owner and severity ranking for each. QA never sets `assignee`; this handoff is a recommendation for the Manager to accept or reject when moving each bug to `state=triaged`.
+- Also flagged BUG-05 for closure — it's already `state=verified, verified_in=7eb1c96` and belongs in `bugs-closed.md` on the Manager's next pass.
+- Not opening additional bug ledger entries this iteration — waiting on triage before probing further would just backlog the queue.
+- blockers: waiting on Manager triage of the Critical + 3 Highs before continuing the hunt.
 - commits: (next).
