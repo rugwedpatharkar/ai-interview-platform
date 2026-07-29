@@ -20,4 +20,22 @@ Append-only. Newest at bottom. See `../README.md` for entry format.
 - Added `frontend/e2e/marketplace-search-url.spec.ts` with two `test.fail(...)` pins (green today; flips to unexpected pass when the fix lands).
 - Next: browser-driven audit of `/settings/*` (needs an auth seed), then `/company/branding` upload flow (needs BE to hit the presign path).
 - blockers: no docker → cannot drive real BE flows (auth, TOTP, upload, interview). Mock-only surfaces still testable.
-- commits: (next commit).
+- commits: 762e42b.
+
+## 2026-07-29 03:20 UTC — session-f6e0b0
+
+- Sister-pattern sweep on client-only state (looking for more BUG-01 shapes): found BUG-20260728-06 — `ChangeEmailDialog` never collects the current password, BE requires it → every email-change attempt fails against real BE with "invalid password". Mock hides it. Added `it.fails` pin.
+- CSP audit on d9add1a: found BUG-20260728-07 — prod CSP `img-src 'self' data:` and `connect-src 'self' <ADMIN> <AIAGENTS>` are too tight for the S3 data-plane. All logo `<img src=presignedS3>` fall back to initials silently; local `<img src=blob:>` previews are blocked; presigned PUT uploads are blocked (logo upload 100% broken in prod). Dev doesn't exercise the strict policy so smoke misses it. Pinning test deferred — needs a `next build && next start` Playwright profile that's not currently in place; handoff proposes adding it as part of the fix.
+- Handoffs opened: `2026-07-28-qa-high-email-change-broken.md`, `2026-07-28-qa-high-csp-blocks-s3.md`.
+- Next: audit `/profile`, `/applications/[id]`, and `/schedule` for similar seams; consider a broader FE state audit script.
+- blockers: no docker; no clean prod-build target for CSP verification (waiting on the Playwright profile).
+- commits: (next).
+
+## 2026-07-29 11:45 UTC — session-f6e0b0
+
+- Merged 22 FE-session commits. Re-ran the full regression floor: candidate Vitest 20/20, Playwright 11/11, backend lib 160/160, admin 552 + 1 xfailed, no regressions.
+- BUG-20260728-05 verified against `7eb1c96` ("feat(fe): sync marketplace filter/sort/page state to the URL"). Both Playwright pins unexpected-passed → converted `test.fail(...)` → `test(...)` in `frontend/e2e/marketplace-search-url.spec.ts` so they now guard the regression going forward. State moved to `verified`, `verified_in=7eb1c96`.
+- Re-checked BUG-01 (TOTP status seam) and BUG-06 (email change requires password): neither seam landed in the FE waves; both still open. Their `it.fails` pins remain green (still expected-failing).
+- Next: audit `/profile`, `/applications/[id]`, `/schedule` for BUG-01 sister patterns; extend the smoke suite for the settings-tab URL sync (775d7f3) so a future regression trips it; probe recruiter productivity surfaces (wave 3).
+- blockers: no docker; no prod-build Playwright profile for BUG-07.
+- commits: (next).

@@ -65,3 +65,19 @@ it.fails(
     expectTrue("settings.totpStatusSeamExists", hasSeam);
   },
 );
+
+// Pins BUG-20260728-06. The BE RequestEmailChange RPC requires current_password,
+// but the FE SettingsClient.requestEmailChange takes only (newEmail). ChangeEmailDialog
+// never prompts for a password, so every submission against the real BE fails with
+// "invalid password" from a form that never had a password field.
+//
+// `Function.length` is the arity of required params; the current mock is `async () =>`,
+// arity 0. Once the seam is fixed to `(newEmail, currentPassword) =>`, arity becomes 2
+// and this it.fails flips, prompting removal.
+it.fails(
+  "SettingsClient.requestEmailChange forwards a current password (pins BUG-20260728-06)",
+  () => {
+    const c: SettingsClient = makeMockSettingsClient();
+    expectTrue("settings.emailChange.hasPasswordArg", c.requestEmailChange.length >= 2);
+  },
+);
