@@ -8,7 +8,23 @@ const nextConfig: NextConfig = {
   // The workspace packages ship TypeScript source, so Next compiles them itself.
   transpilePackages: ["@ip/ui", "@ip/api-client", "@ip/shared"],
   experimental: {
-    optimizePackageImports: ["lucide-react"],
+    // Widen the modularizeImports-style rewrite to every big barrel this app
+    // imports from — Next tree-shakes the individual symbols at compile time,
+    // so every page pays only for the icons/components it actually uses.
+    optimizePackageImports: [
+      "lucide-react",
+      "@ip/ui",
+      "@ip/shared",
+      "@tanstack/react-query",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-checkbox",
+      "@radix-ui/react-radio-group",
+      "@radix-ui/react-label",
+    ],
   },
   async headers() {
     return [

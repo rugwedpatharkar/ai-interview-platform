@@ -71,6 +71,7 @@ function CodingSectionWithTimer({
   result,
   error,
   onExpire,
+  onAnnounce,
 }: {
   section: AssessmentSection;
   index: number;
@@ -82,8 +83,9 @@ function CodingSectionWithTimer({
   result?: RunResult;
   error?: string;
   onExpire: () => void;
+  onAnnounce?: (label: string) => void;
 }) {
-  const timeLeft = useCountdown(section.timeLimitS, onExpire);
+  const { display: timeLeft } = useCountdown(section.timeLimitS, onExpire, onAnnounce);
   return (
     <CodingSection
       section={section}
@@ -100,15 +102,47 @@ function CodingSectionWithTimer({
   );
 }
 
+// LocalStorage key for in-progress answers. Bump v1→v2 if the SectionAnswer
+// shape changes so a stale draft doesn't crash rehydration.
+const PROGRESS_KEY = (applicationId: string) => `aptitude.progress.v1.${applicationId}`;
+interface AptitudeDraft {
+  answers: Record<string, SectionAnswer>;
+  results: Record<string, RunResult>;
+}
+function readDraft(applicationId: string): AptitudeDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(PROGRESS_KEY(applicationId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (typeof parsed !== "object" || !parsed) return null;
+    const { answers, results } = parsed as AptitudeDraft;
+    if (typeof answers !== "object" || typeof results !== "object") return null;
+    return { answers, results };
+  } catch {
+    return null;
+  }
+}
+
 export default function AptitudePage() {
   const { api, token, ready } = useAuth();
   useRequireAuth(token, ready);
   const { applicationId } = useParams<{ applicationId: string }>();
   const coding = useCodingClient();
-  const [answers, setAnswers] = useState<Record<string, SectionAnswer>>({});
-  const [results, setResults] = useState<Record<string, RunResult>>({});
+  // Rehydrate any draft — this is the whole point of the localStorage mirror:
+  // a tab crash / accidental refresh on a one-shot proctored bank must not
+  // wipe the candidate's answers.
+  const [answers, setAnswers] = useState<Record<string, SectionAnswer>>(
+    () => readDraft(applicationId)?.answers ?? {},
+  );
+  const [results, setResults] = useState<Record<string, RunResult>>(
+    () => readDraft(applicationId)?.results ?? {},
+  );
   const startTracked = useRef(false);
   const startMs = useRef(Date.now());
+  // Screen-reader announcement channel — driven by the timer's threshold hook
+  // AND route-level events (submit ok, submit failed).
+  const [srAnnouncement, setSrAnnouncement] = useState("");
 
   const test = useQuery({
     queryKey: ["aptitude", applicationId],
@@ -235,6 +269,49 @@ export default function AptitudePage() {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [hasAnswers, submit.isSuccess]);
 
+  // Persist in-progress answers/results to localStorage so a tab crash or
+  // accidental refresh doesn't wipe them (the bank is one-shot — not
+  // recoverable server-side). Debounced by 500ms so a fast typist doesn't
+  // hammer localStorage on every keystroke. Cleared on successful submit.
+  useEffect(() => {
+    if (submit.isSuccess) return;
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          PROGRESS_KEY(applicationId),
+          JSON.stringify({ answers, results } satisfies AptitudeDraft),
+        );
+      } catch {
+        // localStorage full / disabled — losing the draft is bad but crashing is worse.
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [answers, results, applicationId, submit.isSuccess]);
+  useEffect(() => {
+    if (!submit.isSuccess) return;
+    try {
+      window.localStorage.removeItem(PROGRESS_KEY(applicationId));
+    } catch {
+      /* ignore */
+    }
+  }, [submit.isSuccess, applicationId]);
+
+  // Global test-level countdown: the largest per-section limit is the whole-
+  // test ceiling, since finishing early is fine but running out on any single
+  // section auto-submits the entire test. Displayed in the sticky header so a
+  // candidate always sees it regardless of scroll position.
+  const globalTimeLimit = sections.reduce(
+    (max, s) => Math.max(max, s.timeLimitS ?? 0),
+    0,
+  );
+  const { display: globalTimeDisplay, secondsLeft: globalSecondsLeft } = useCountdown(
+    globalTimeLimit > 0 ? globalTimeLimit : undefined,
+    () => {
+      if (!submit.isPending && !submit.isSuccess) submit.mutate();
+    },
+    (label) => setSrAnnouncement(label),
+  );
+
   if (!token) return null;
 
   if (submit.isSuccess) {
@@ -284,10 +361,25 @@ export default function AptitudePage() {
     <main
       className={`mx-auto flex flex-col gap-6 p-6 ${hasCoding ? "max-w-3xl" : "max-w-xl"}`}
     >
-      <header className="flex flex-col gap-3">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-          Assessment
-        </h1>
+      <header className="sticky top-0 z-10 -mx-6 flex flex-col gap-3 border-b border-border/60 bg-background/95 px-6 py-4 backdrop-blur">
+        <div className="flex items-baseline justify-between gap-4">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+            Assessment
+          </h1>
+          {globalTimeDisplay && (
+            <span
+              role="timer"
+              aria-label={`Time remaining: ${globalTimeDisplay}`}
+              className={`font-mono text-sm font-semibold tabular-nums ${
+                globalSecondsLeft !== null && globalSecondsLeft <= 60
+                  ? "text-danger"
+                  : "text-foreground"
+              }`}
+            >
+              {globalTimeDisplay}
+            </span>
+          )}
+        </div>
         {sections.length > 0 && (
           <div className="flex flex-col gap-2">
             <p className="text-sm tabular-nums text-muted-foreground">
@@ -300,6 +392,10 @@ export default function AptitudePage() {
           </div>
         )}
       </header>
+      {/* AT-only live region — announces "5 minutes remaining" etc as the timer crosses thresholds. */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {srAnnouncement}
+      </div>
 
       {test.isLoading && <LoadingState label="Loading your test…" />}
 

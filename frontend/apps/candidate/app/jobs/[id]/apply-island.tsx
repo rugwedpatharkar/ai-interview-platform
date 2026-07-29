@@ -86,7 +86,7 @@ export function ApplyIsland({ jobId }: { jobId: string }) {
     // buttons in the same position. One tier per element.
     return (
       <Link
-        href={`/login?next=/jobs/${jobId}`}
+        href={`/login?redirect=/jobs/${jobId}`}
         className="ap-btn ap-btn-primary self-start"
       >
         Sign in to apply

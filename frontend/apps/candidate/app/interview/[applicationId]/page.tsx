@@ -335,7 +335,13 @@ export default function InterviewPage() {
                 <span className="ap-hud-interviewer">
                   <span className="ap-dot" /> Iris · speaking
                 </span>
-                <span className="ap-hud-timer">{formatElapsed(elapsed)}</span>
+                <span
+                  role="timer"
+                  aria-label={`Interview elapsed: ${formatElapsed(elapsed)}`}
+                  className="ap-hud-timer"
+                >
+                  {formatElapsed(elapsed)}
+                </span>
                 {/* Self-view tile — fed by the LIVE local stream; tracks stay enabled.
                     Local playback volume is set to 0 (via the ref effect on mount) so the
                     candidate doesn't hear their own mic — this silences the local <video>

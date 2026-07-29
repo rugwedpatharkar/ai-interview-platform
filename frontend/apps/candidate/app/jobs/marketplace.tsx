@@ -12,7 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { FilterSidebar } from "../../components/filter-sidebar";
 import { JobCard } from "../../components/job-card";
@@ -42,14 +42,20 @@ export function Marketplace({
 }) {
   const router = useRouter();
   const [params, setParams] = useState<SearchJobsParams>(initialParams);
+  const [isPending, startTransition] = useTransition();
 
   // Mirror params into the URL so refresh, share, and back all restore the exact
   // result set the user was looking at. `scroll: false` prevents Next from
-  // resetting the scroll position on every filter tap.
+  // resetting the scroll position on every filter tap. Wrap the state update in
+  // a transition so a rapid keyboard flurry on the filter checkboxes doesn't
+  // block input while the (possibly-expensive) list re-render happens — React
+  // will keep the previous UI interactive and swap once the next frame is ready.
   const applyParams = (next: SearchJobsParams) => {
-    setParams(next);
-    const qs = toQuery(next);
-    router.replace(qs ? `/jobs?${qs}` : "/jobs", { scroll: false });
+    startTransition(() => {
+      setParams(next);
+      const qs = toQuery(next);
+      router.replace(qs ? `/jobs?${qs}` : "/jobs", { scroll: false });
+    });
   };
 
   // Any search / filter / sort change resets to page 1; only the pager moves pages.
@@ -100,11 +106,17 @@ export function Marketplace({
         <div className="flex min-w-0 flex-col gap-4">
           {q.data && (
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-sm text-muted-foreground" aria-live="polite">
+              <p
+                className={`text-sm text-muted-foreground transition-opacity ${
+                  isPending ? "opacity-60" : ""
+                }`}
+                aria-live="polite"
+              >
                 <span className="font-semibold tabular-nums text-foreground">
                   {q.data.total}
                 </span>{" "}
                 {q.data.total === 1 ? "role matches" : "roles match"}
+                {isPending && <span className="ml-2 text-xs">updating…</span>}
               </p>
               <span className="flex-1" />
               <div

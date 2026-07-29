@@ -1,10 +1,19 @@
 "use client";
 
 import { type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { useRequireRole } from "@ip/shared";
 
-import { Dashboard } from "../components/dashboard";
 import { useAuth } from "../lib/auth";
+
+// The dashboard is a signed-in-only surface. Every visitor to the marketing
+// landing was pulling ~40+ kB of dashboard code they never rendered. Lazy-load
+// so signed-out visitors pay nothing and signed-in candidates pay only once
+// the auth token has resolved and we know we're going to mount it.
+const Dashboard = dynamic(
+  () => import("../components/dashboard").then((m) => m.Dashboard),
+  { ssr: false, loading: () => null },
+);
 
 /**
  * Chooses between the marketing landing and the candidate dashboard at `/`.
