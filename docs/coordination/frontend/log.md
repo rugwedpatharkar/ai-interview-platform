@@ -63,3 +63,41 @@ Every commit stays in one pattern category (project rule). Ordered:
   (9 P0/P1 backend-required items + 5 P2 non-blocking)
 - `→ Manager`: `docs/coordination/handoffs/2026-07-28-fe-audit-complete.md`
   (this session's summary)
+
+## 2026-07-29 — modernization workflow + implementation waves
+
+Second pass — 8-dimension modernization audit via workflow
+`candidate-fe-audit-sweep` (109 findings, 14 deliverables under
+`docs/coordination/frontend/modernization/`). Then 6 implementation
+waves against the FE-only quick-wins:
+
+- `07fd159` Wave 1: candidate + a11y foundation (aptitude localStorage,
+   timer ARIA, auth Field aria-invalid, redirect wiring, marketplace
+   startTransition, dashboard dynamic import, QueryClient tuning,
+   widened optimizePackageImports).
+- `8514428` Wave 2: surface dark AI plumbing (dashboard recommendation
+   hydration, recruiter pipeline getJobRankedCandidates ranking, JD
+   skill-gap island, marketplace match-score chip).
+- `98bc85e` Wave 3: recruiter productivity P1s (advance-decision reason
+   dialog, talent debounced search, analytics no-ghosting KPIs band,
+   post-a-job draft persistence hook, JD-improve revert, jobs list
+   search + sort).
+- `47f276b` Wave 4: infra (RSC split of aperture chrome →
+   mega-nav/mega-footer/marketing-shell, landing bodies drop
+   "use client", seven new loading.tsx files).
+- `41dc085` Wave 5: a11y batch (Alert role by tone, NotificationItem
+   anchor semantic, SkipToContent primitive on interview + aptitude,
+   login error focus, onboarding step focus + step-3 skip).
+- `b02e423` Wave 6: DS + polish (companies/[id] parallel fetches,
+   latest-postings sort, Clash 700 preload, parseSkills memo,
+   ApiClients type consolidation across 5 files, markRead
+   recordError, Avatar deduped to @ip/ui).
+
+Verification: typecheck across @ip/shared + @ip/ui + @ip/candidate,
+`pnpm --filter @ip/candidate build` clean. Notable bundle drops:
+- Marketing/legal routes (pilot, waitlist, /status, /dpa, /privacy,
+  /terms, /trust, /sample-report, /what-we-dont-do, /hiring-teams):
+  ≤108 kB First Load JS — was 238-256 kB.
+- /login 156 kB (was 243 kB), /jobs 198 kB (was 250 kB),
+  /jobs/[id] 205 kB (was 247 kB), /interview 174 kB (was 246 kB).
+- 103 kB shared-chunk budget is the new floor.
