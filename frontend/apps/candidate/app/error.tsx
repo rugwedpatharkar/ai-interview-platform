@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, ErrorState } from "@ip/ui";
+import { ErrorState } from "@ip/ui";
 import { useEffect } from "react";
 
 export default function Error({
@@ -29,7 +29,6 @@ export default function Error({
           retry={reset}
         />
       </div>
-      <Button onClick={reset}>Try again</Button>
     </main>
   );
 }

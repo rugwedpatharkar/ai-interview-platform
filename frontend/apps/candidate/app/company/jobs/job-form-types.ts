@@ -1,8 +1,9 @@
 // Shared form shape for the candidate-side company create + edit job screens.
-// Current `api.jobs.createJob` only accepts `{ title, jdText }`; the marketplace
-// fields (city/region/country/remote/employment/salary/skills/gate_mode) and
-// `updateJob` aren't in the proto yet. The form codes against this shape now; when
-// `pnpm gen` widens `job_pb.ts`, only the submit adapter changes.
+// createJob now accepts the full marketplace field set (city/region/country/
+// remote/employment/salary/skills/gate_mode) via the widened proto — the earlier
+// submit adapter dropped everything except title, jdText, and skills, so a
+// recruiter's location, salary band, and gate choice all vanished silently.
+// updateJob still isn't in the proto; the edit screen keeps its shape here.
 
 export type RemoteMode = "remote" | "hybrid" | "onsite";
 export type EmploymentType = "full_time" | "contract" | "internship";

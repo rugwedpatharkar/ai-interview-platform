@@ -5,11 +5,14 @@ import { ApIcon, MarketingShell } from "@ip/ui";
 
 /** Candidate waitlist signup. Mailto fallback today; `forms.submitWaitlist` is TBD. */
 export function WaitlistClient() {
-  const [status, setStatus] = useState<"idle" | "submitting" | "done">("idle");
+  // Never auto-flip to a green "you're on the waitlist" screen. Whether the
+  // mailto: opened is not observable from this page, and browsers without a
+  // configured mail app fail silently — the previous shape claimed success and
+  // silently lost every one of those signups.
+  const [attempted, setAttempted] = useState(false);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setStatus("submitting");
     const form = e.currentTarget;
     const data = new FormData(form);
     const subject = `Aptura waitlist · ${data.get("email") || "(no email)"}`;
@@ -22,7 +25,7 @@ export function WaitlistClient() {
       subject,
     )}&body=${encodeURIComponent(body)}`;
     window.location.href = href;
-    setTimeout(() => setStatus("done"), 600);
+    setAttempted(true);
   }
 
   return (
@@ -64,49 +67,37 @@ export function WaitlistClient() {
             onSubmit={handleSubmit}
             className="rounded-3xl border border-line bg-surface p-6 shadow-[0_18px_56px_-28px_color-mix(in_oklch,var(--ink-deep)_28%,transparent)] lg:p-8"
           >
-            {status === "done" ? (
-              <div className="grid place-items-center gap-3 py-10 text-center">
-                <div className="grid size-14 place-items-center rounded-full bg-brand-soft text-brand">
-                  <ApIcon name="check" className="size-7" />
-                </div>
-                <h2
-                  className="text-[1.4rem] font-semibold text-ink-deep"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
-                  Mail composed in your client.
-                </h2>
-                <p className="max-w-[34ch] text-[0.94rem] text-ink-2">
-                  If your mail client didn&apos;t open, write to{" "}
+            <h2
+              className="text-[1.4rem] font-semibold text-ink-deep"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Join the waitlist
+            </h2>
+            <p className="mt-1.5 text-[0.92rem] text-ink-2">
+              One email. No tracking, no list-add.
+            </p>
+            <div className="mt-6 grid gap-4">
+              <Field name="email" type="email" label="Your email" required placeholder="you@example.com" />
+              <Field name="areas" label="Role areas (optional)" placeholder="e.g. backend · design · data" />
+              <Field name="location" label="Location (optional)" placeholder="e.g. Bangalore · remote · EU only" />
+            </div>
+            <button
+              type="submit"
+              className="ap-btn ap-btn-coral ap-btn-lg mt-7 w-full justify-center"
+            >
+              Open in your mail client
+            </button>
+            {attempted && (
+              <div className="mt-4 rounded-lg border border-line bg-surface-2 p-3 text-[0.86rem] text-ink-2">
+                <p className="font-medium text-ink-deep">Didn&apos;t open?</p>
+                <p className="mt-1">
+                  Some browsers can&apos;t launch mail apps. Write to{" "}
                   <a className="text-brand-strong" href="mailto:hello@aptura.app">
                     hello@aptura.app
-                  </a>
-                  .
+                  </a>{" "}
+                  with your email and role areas and we&apos;ll add you to the waitlist.
                 </p>
               </div>
-            ) : (
-              <>
-                <h2
-                  className="text-[1.4rem] font-semibold text-ink-deep"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
-                  Join the waitlist
-                </h2>
-                <p className="mt-1.5 text-[0.92rem] text-ink-2">
-                  One email. No tracking, no list-add.
-                </p>
-                <div className="mt-6 grid gap-4">
-                  <Field name="email" type="email" label="Your email" required placeholder="you@example.com" />
-                  <Field name="areas" label="Role areas (optional)" placeholder="e.g. backend · design · data" />
-                  <Field name="location" label="Location (optional)" placeholder="e.g. Bangalore · remote · EU only" />
-                </div>
-                <button
-                  type="submit"
-                  className="ap-btn ap-btn-coral ap-btn-lg mt-7 w-full justify-center"
-                  disabled={status === "submitting"}
-                >
-                  {status === "submitting" ? "Opening your mail client…" : "Join the waitlist"}
-                </button>
-              </>
             )}
           </form>
         </div>

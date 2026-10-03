@@ -18,6 +18,7 @@ import {
   Textarea,
   buttonVariants,
   cn,
+  toast,
 } from "@ip/ui";
 import {
   errorMessage,
@@ -116,13 +117,17 @@ export default function OutcomePage() {
   const { id } = useParams<{ id: string }>();
 
   // Same polling pattern as the company-side report page: while the report is still being
-  // generated, retry on 404 / transient. Stops as soon as we have data or a real error.
+  // generated, retry on 404 / transient. Bail after MAX_POLLS (~5 min at 3s each) so a
+  // report that never publishes stops burning battery + logs; the empty state we render
+  // below on isError already tells the candidate to check back later.
+  const MAX_POLLS = 100;
   const report = useAuthedQuery(token, {
     queryKey: ["report", id],
     retry: false,
     queryFn: () => api.reports.getReport({ applicationId: id }),
     refetchInterval: (query) => {
       if (query.state.status === "success") return false;
+      if (query.state.fetchFailureCount >= MAX_POLLS) return false;
       const err = query.state.error;
       return isNotFound(err) || isTransient(err) ? 3000 : false;
     },
@@ -431,19 +436,23 @@ function RescoreDialog({ applicationId }: { applicationId: string }) {
           </Button>
           <Button
             disabled={reason.trim().length < 10}
-            onClick={() => {
+            onClick={async () => {
               // Copy the draft to clipboard then navigate to the messages thread so the
               // candidate can paste and send. We don't auto-send here because the messages
               // client lives in /messages and the optimistic-send + receive-poll pattern
-              // shouldn't be duplicated.
+              // shouldn't be duplicated. If the clipboard write fails (insecure origin,
+              // permission denied, older browser) surface it so the candidate isn't left
+              // wondering why the paste target is empty.
+              let copied = true;
               try {
-                navigator.clipboard.writeText(reason.trim());
+                await navigator.clipboard.writeText(reason.trim());
               } catch {
-                // Clipboard may be unavailable in HTTP / older browsers — the navigation
-                // still opens the thread so the candidate can paste manually.
+                copied = false;
+                toast.warning("Couldn't copy the draft — retype it in the message thread.");
               }
               setOpen(false);
               router.push(`/messages/${applicationId}`);
+              if (copied) toast.success("Draft copied. Paste it into your message thread.");
             }}
           >
             Copy &amp; open messages

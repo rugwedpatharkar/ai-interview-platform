@@ -26,7 +26,6 @@ import {
   History,
   LayoutGrid,
   LogOut,
-  Mail,
   Settings,
   ShieldCheck,
   Users,
@@ -47,8 +46,10 @@ const NAV_HIRING: NavEntry[] = [
   { href: "/company/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
+// Messages is deliberately absent: the /company/messages route does not exist
+// (recruiter-side messaging surfaces live inside the applicant detail view for
+// now). Rebuild this entry when a top-level inbox actually lands.
 const NAV_WORKSPACE: NavEntry[] = [
-  { href: "/company/messages", label: "Messages", icon: Mail },
   { href: "/company/branding", label: "Branding", icon: Building2 },
   { href: "/company/team", label: "Team", icon: Users },
   { href: "/company/rubrics", label: "Rubrics", icon: ClipboardList },

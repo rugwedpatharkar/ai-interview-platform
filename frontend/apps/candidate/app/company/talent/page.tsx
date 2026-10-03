@@ -21,7 +21,7 @@ import {
 import { errorMessage, useAuthedQuery, useRequireRole } from "@ip/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Search, SearchX, Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { CompanyShell } from "../../../components/company-shell";
 import { useAuth } from "../../../lib/auth";
@@ -54,7 +54,23 @@ export default function TalentPage() {
   const [shown, setShown] = useState(PAGE);
   const [open, setOpen] = useState<CandidateHitDTO | null>(null);
 
-  const active = params.query.trim().length > 0;
+  // "Active" fires results-mode when EITHER keyword or a stage filter is set
+  // — the previous `active` gate only tripped on keyword, so picking Stage
+  // alone hid the empty-pool view forever without ever switching to results.
+  const active = params.query.trim().length > 0 || Boolean(params.stage);
+
+  // Debounce the keyword commit so results follow typing without a Search
+  // click. 250ms is short enough that Enter still feels instant and long
+  // enough to skip the mid-word request storm.
+  useEffect(() => {
+    const trimmed = draft.trim();
+    if (trimmed === params.query.trim()) return;
+    const id = window.setTimeout(() => {
+      setParams((p) => ({ ...p, query: trimmed }));
+      setShown(PAGE);
+    }, 250);
+    return () => window.clearTimeout(id);
+  }, [draft, params.query]);
 
   const pool = useAuthedQuery(token, {
     queryKey: ["talent"],
@@ -130,6 +146,8 @@ export default function TalentPage() {
                 </Select>
               </Field>
               <div className="flex gap-2">
+                {/* Keyword debouncing already commits on typing; the button
+                    stays as the visible affordance + AT-friendly submit path. */}
                 <button type="submit" className="ap-btn ap-btn-primary ap-btn-sm flex-1">
                   <Search className="size-4" aria-hidden /> Search
                 </button>

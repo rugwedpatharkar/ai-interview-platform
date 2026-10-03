@@ -1,12 +1,10 @@
 "use client";
 
 import { ApIcon } from "@ip/ui";
-import { errorMessage } from "@ip/shared";
+import { errorMessage, safeRedirect, track } from "@ip/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, type FormEvent, useEffect, useRef, useState } from "react";
-
-import { track } from "@ip/shared";
 
 import {
   AuthShell,
@@ -43,6 +41,13 @@ function LoginInner() {
   const [busy, setBusy] = useState(false);
   // Prevents the mount-effect from racing the submit success path.
   const navigatingRef = useRef(false);
+  // AT users otherwise miss the error banner that appears above the form —
+  // move focus to it (tabIndex=-1) so the polite live region + focus land the
+  // failure message in the audio channel.
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
 
   const notice = sp.get("notice");
   const noticeText =
@@ -52,11 +57,22 @@ function LoginInner() {
         ? "Account created. Verify your email, then sign in."
         : null;
 
+  // Where to land after sign-in: honour ?redirect= when it points at a same-origin
+  // path (safeRedirect blocks foreign origins and protocol-relative URLs), else
+  // fall back to the role's home. Recruiter deep links get bounced to /company
+  // anyway when the role guard runs on the target page.
+  const redirectTarget = safeRedirect(sp.get("redirect"));
+  function landing(role: string): string {
+    return redirectTarget ?? roleHome(role);
+  }
+
   // If a session reappears (second-tab login), bounce on mount.
   // Gated so it doesn't race the submit success path.
   useEffect(() => {
-    if (!navigatingRef.current && ready && identity) router.replace(roleHome(identity.role));
-  }, [ready, identity, router]);
+    if (!navigatingRef.current && ready && identity) router.replace(landing(identity.role));
+    // landing depends only on redirectTarget + roleHome, both stable across renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, identity, router, redirectTarget]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -70,7 +86,7 @@ function LoginInner() {
       track("auth.logged_in", { role, method: "password" });
       // Don't wait for the AuthProvider effect tick — read the role straight
       // from the freshly-persisted token and route.
-      router.push(roleHome(role));
+      router.push(landing(role));
     } catch (err) {
       setError(errorMessage(err));
       setBusy(false);
@@ -88,7 +104,11 @@ function LoginInner() {
     >
       <form onSubmit={onSubmit} className="mt-6 grid gap-4" noValidate>
         {noticeText && <Notice tone="info">{noticeText}</Notice>}
-        {error && <Notice tone="danger">{error}</Notice>}
+        {error && (
+          <div ref={errorRef} tabIndex={-1} className="focus:outline-none">
+            <Notice tone="danger">{error}</Notice>
+          </div>
+        )}
         <Field
           name="email"
           label="Work email"

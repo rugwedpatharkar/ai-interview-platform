@@ -5,10 +5,11 @@ import { errorMessage, useRequireRole } from "@ip/shared";
 import { useMutation } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { CompanyShell } from "../../../../components/company-shell";
 import { useAuth } from "../../../../lib/auth";
+import { useDraftForm } from "../../../../lib/use-draft-form";
 import {
   EMPTY_JOB_FORM,
   type GateMode,
@@ -42,8 +43,28 @@ export default function PostJobPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const [v, setV] = useState<JobFormValues>(EMPTY_JOB_FORM);
-  const [skillsRaw, setSkillsRaw] = useState("");
+  // Draft persistence — a stray refresh mid-post no longer discards 20 minutes
+  // of role writing. Keyed by identity so a shared browser doesn't cross-leak
+  // drafts between recruiters on the same machine.
+  const draftKey = `job:new:${identity?.id ?? "anon"}`;
+  const draft = useDraftForm(draftKey, {
+    v: EMPTY_JOB_FORM,
+    skillsRaw: "",
+  });
+  const v = draft.values.v;
+  const skillsRaw = draft.values.skillsRaw;
+  const setV = (updater: JobFormValues | ((prev: JobFormValues) => JobFormValues)) =>
+    draft.setValues((s) => ({
+      ...s,
+      v: typeof updater === "function" ? (updater as (p: JobFormValues) => JobFormValues)(s.v) : updater,
+    }));
+  const setSkillsRaw = (next: string) => draft.setValues((s) => ({ ...s, skillsRaw: next }));
+  // Parse once per skillsRaw change — was being recomputed on every render in
+  // three JSX sites AND on submit; memoising here keeps them in sync and drops
+  // the redundant work on unrelated re-renders.
+  const skills = useMemo(() => parseSkills(skillsRaw), [skillsRaw]);
+  // Snapshot of pre-improve JD so the AI's edit can be reverted in one click.
+  const previousJdText = useRef<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [titleError, setTitleError] = useState<string | null>(null);
   // Sync latch: a form can fire submit twice (Enter + click) before React rerenders the
@@ -53,9 +74,31 @@ export default function PostJobPage() {
     setV((p) => ({ ...p, [k]: val }));
 
   const create = useMutation({
-    mutationFn: () =>
-      api.jobs.createJob({ title: v.title.trim(), jdText: v.jdText, skills: parseSkills(skillsRaw) }),
+    mutationFn: () => {
+      // Salary inputs are text ("120000" or "") so we can distinguish empty from
+      // zero — the proto is int64/bigint so guard the empty case and coerce.
+      const toBig = (s: string): bigint => {
+        const n = Number(s);
+        return Number.isFinite(n) && n > 0 ? BigInt(Math.trunc(n)) : 0n;
+      };
+      return api.jobs.createJob({
+        title: v.title.trim(),
+        jdText: v.jdText,
+        city: v.city.trim(),
+        region: v.region.trim(),
+        country: v.country.trim(),
+        remoteMode: v.remoteMode || "",
+        employmentType: v.employmentType || "",
+        salaryMin: toBig(v.salaryMin),
+        salaryMax: toBig(v.salaryMax),
+        salaryCurrency: v.salaryCurrency || "",
+        skills,
+        gateMode: v.gateMode,
+      });
+    },
     onSuccess: (res) => {
+      // Clear the persisted draft — a saved job shouldn't rehydrate next visit.
+      draft.clear();
       toast.success("Job created");
       router.push(`/company/jobs/${res.jobId}`);
     },
@@ -66,14 +109,28 @@ export default function PostJobPage() {
   });
 
   const improve = useMutation({
-    mutationFn: () => api.jd.improveJd({ brief: v.jdText }),
+    mutationFn: () => {
+      // Snapshot BEFORE the mutation so we always have something to revert to
+      // even if the user clicks Improve twice in a row without reading the diff.
+      previousJdText.current = v.jdText;
+      return api.jd.improveJd({ brief: v.jdText });
+    },
     onSuccess: (draft) => {
       set("jdText", draft.jdText);
       setSuggestions(draft.suggestions);
-      toast.success("Draft improved");
+      toast.success("Draft improved · Revert available");
     },
     onError: (err) => toast.error(errorMessage(err)),
   });
+
+  const canRevertJd = previousJdText.current !== null;
+  const revertJd = () => {
+    if (previousJdText.current === null) return;
+    set("jdText", previousJdText.current);
+    previousJdText.current = null;
+    setSuggestions([]);
+    toast.info("Reverted to your original draft");
+  };
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -189,17 +246,29 @@ export default function PostJobPage() {
               />
             </Field>
             <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => improve.mutate()}
-                disabled={!v.jdText.trim() || improve.isPending}
-                className="ap-btn ap-btn-ghost ap-btn-sm self-start"
-              >
-                <Sparkles className="size-4" aria-hidden />
-                {improve.isPending ? "Improving…" : "Improve with AI"}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => improve.mutate()}
+                  disabled={!v.jdText.trim() || improve.isPending}
+                  className="ap-btn ap-btn-ghost ap-btn-sm"
+                >
+                  <Sparkles className="size-4" aria-hidden />
+                  {improve.isPending ? "Improving…" : "Improve with AI"}
+                </button>
+                {canRevertJd && (
+                  <button
+                    type="button"
+                    onClick={revertJd}
+                    className="ap-btn ap-btn-ghost ap-btn-sm"
+                  >
+                    Revert to my draft
+                  </button>
+                )}
+              </div>
               <span className="text-xs text-ink-3">
                 Polish the description with AI before posting.
+                {canRevertJd && " Your original is one click away."}
               </span>
             </div>
             {suggestions.length > 0 && (
@@ -217,9 +286,9 @@ export default function PostJobPage() {
                 placeholder="react, typescript, go"
                 onChange={(e) => setSkillsRaw(e.target.value)}
               />
-              {parseSkills(skillsRaw).length > 0 && (
+              {skills.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {parseSkills(skillsRaw).map((s) => (
+                  {skills.map((s) => (
                     <Badge key={s} tone="neutral">{s}</Badge>
                   ))}
                 </div>

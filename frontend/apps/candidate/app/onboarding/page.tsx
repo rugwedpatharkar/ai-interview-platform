@@ -93,6 +93,14 @@ export default function OnboardingPage() {
   const [data, setData] = useState<WizardData>(EMPTY);
   const [parsePolls, setParsePolls] = useState(0);
   const hydrated = useRef(false);
+  // Move focus + announce whenever the step changes — AT users otherwise had
+  // no signal that the wizard advanced (the URL doesn't change).
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const [stepAnnouncement, setStepAnnouncement] = useState("");
+  useEffect(() => {
+    stepHeadingRef.current?.focus();
+    setStepAnnouncement(`Step ${step} of 4`);
+  }, [step]);
 
   // Hydrate from localStorage exactly once on mount — server profile then fills any gaps
   // (so refreshing mid-wizard restores both the in-progress data and the step pointer).
@@ -279,22 +287,33 @@ export default function OnboardingPage() {
 
   if (!token) return null;
 
+  // Skip requirement on step 3 — the resume upload is aspirational, not a
+  // gate; the "Continue" label swaps to "Skip this step" when no resume
+  // was uploaded so the user knows they aren't losing anything.
   const canAdvance =
     step === 1
       ? data.interests.length > 0
       : step === 2
         ? Boolean(data.workPref) && data.location.trim().length > 0
         : step === 3
-          ? Boolean(profile.data?.resumeUploaded)
+          ? true
           : data.consentScreening;
 
   return (
     <CandidateShell>
       <div className="mx-auto flex max-w-2xl flex-col gap-6">
+        {/* AT-only live region — announces "Step N of 4" on transition. */}
+        <div role="status" aria-live="polite" className="sr-only">
+          {stepAnnouncement}
+        </div>
         {/* Heading */}
         <div className="flex flex-col gap-2">
           <span className="ap-eyebrow">Welcome to Aptura</span>
-          <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
+          <h1
+            ref={stepHeadingRef}
+            tabIndex={-1}
+            className="font-display text-3xl font-semibold tracking-tight text-foreground focus:outline-none"
+          >
             Let&rsquo;s set up your profile.
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -581,7 +600,11 @@ export default function OnboardingPage() {
             disabled={!canAdvance || save.isPending}
             loading={save.isPending}
           >
-            {step === 4 ? "Done" : "Continue"}
+            {step === 4
+              ? "Done"
+              : step === 3 && !profile.data?.resumeUploaded
+                ? "Skip this step"
+                : "Continue"}
             {step !== 4 && <ArrowRight className="size-4" aria-hidden />}
           </Button>
         </div>

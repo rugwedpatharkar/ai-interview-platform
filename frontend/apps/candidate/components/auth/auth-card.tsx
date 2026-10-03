@@ -98,6 +98,8 @@ export function Field({
   hint,
   trailing,
   disabled,
+  error,
+  autoFocus,
 }: {
   name: string;
   label: string;
@@ -111,10 +113,24 @@ export function Field({
   hint?: ReactNode;
   trailing?: ReactNode;
   disabled?: boolean;
+  /** Per-field validation message. Sets aria-invalid + aria-describedby and
+   *  paints a danger border so AT users know WHICH field is wrong, not just
+   *  that the form failed. Callers focus the offending input themselves via
+   *  `document.getElementById(fieldId(name))?.focus()`. */
+  error?: string | null;
+  autoFocus?: boolean;
 }) {
-  const id = `f-${name}`;
-  const base =
-    "w-full rounded-lg border border-line-2 bg-surface px-3.5 py-2.5 text-[1rem] text-ink placeholder:text-ink-3 transition-colors focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/45 disabled:cursor-not-allowed disabled:opacity-60";
+  const id = fieldId(name);
+  const errorId = `${id}-error`;
+  const hintId = `${id}-hint`;
+  const describedBy = [error ? errorId : null, hint ? hintId : null]
+    .filter(Boolean)
+    .join(" ") || undefined;
+  const base = `w-full rounded-lg border bg-surface px-3.5 py-2.5 text-[1rem] text-ink placeholder:text-ink-3 transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+    error
+      ? "border-danger focus:border-danger focus:ring-danger/40"
+      : "border-line-2 focus:border-brand focus:ring-brand/45"
+  }`;
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -139,12 +155,34 @@ export function Field({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          autoFocus={autoFocus}
           className={base}
         />
       </div>
-      {hint && <p className="mt-1.5 text-[0.78rem] text-ink-3">{hint}</p>}
+      {error && (
+        <p
+          id={errorId}
+          role="alert"
+          className="mt-1.5 text-[0.78rem] font-medium text-danger"
+        >
+          {error}
+        </p>
+      )}
+      {hint && (
+        <p id={hintId} className="mt-1.5 text-[0.78rem] text-ink-3">
+          {hint}
+        </p>
+      )}
     </div>
   );
+}
+
+/** Stable id builder — callers use it to focus the offending input on
+ *  submit failure: `document.getElementById(fieldId("email"))?.focus()`. */
+export function fieldId(name: string): string {
+  return `f-${name}`;
 }
 
 export function Notice({

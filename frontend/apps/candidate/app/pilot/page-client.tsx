@@ -8,11 +8,15 @@ import { ApIcon, MarketingShell } from "@ip/ui";
  * Submission seam: mailto fallback today; backend `forms.submitPilot` is TBD.
  */
 export function PilotClient() {
-  const [status, setStatus] = useState<"idle" | "submitting" | "done">("idle");
+  // Only two real states here — the mailto: is a best-effort handoff to the
+  // user's mail client. We used to flip to "done" 600ms after firing the mailto,
+  // which showed a green success even when no mail client was configured (mobile
+  // Chrome with no default handler, corporate desktops, etc.) and silently lost
+  // the lead. Keep the form visible; surface a persistent copy-fallback below.
+  const [attempted, setAttempted] = useState(false);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setStatus("submitting");
     const form = e.currentTarget;
     const data = new FormData(form);
     const subject = `Aptura pilot · ${data.get("company") || "(no company)"}`;
@@ -30,7 +34,7 @@ export function PilotClient() {
       subject,
     )}&body=${encodeURIComponent(body)}`;
     window.location.href = href;
-    setTimeout(() => setStatus("done"), 600);
+    setAttempted(true);
   }
 
   return (
@@ -74,64 +78,52 @@ export function PilotClient() {
             onSubmit={handleSubmit}
             className="rounded-3xl border border-line bg-surface p-6 shadow-[0_18px_56px_-28px_color-mix(in_oklch,var(--ink-deep)_28%,transparent)] lg:p-8"
           >
-            {status === "done" ? (
-              <div className="grid place-items-center gap-3 py-10 text-center">
-                <div className="grid size-14 place-items-center rounded-full bg-brand-soft text-brand">
-                  <ApIcon name="check" className="size-7" />
-                </div>
-                <h2
-                  className="text-[1.4rem] font-semibold text-ink-deep"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
-                  Mail composed in your client.
-                </h2>
-                <p className="max-w-[34ch] text-[0.94rem] text-ink-2">
-                  If your mail client didn&apos;t open, write to{" "}
+            <h2
+              className="text-[1.4rem] font-semibold text-ink-deep"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Tell us about the role.
+            </h2>
+            <p className="mt-1.5 text-[0.92rem] text-ink-2">
+              Two minutes. No sales call required.
+            </p>
+            <div className="mt-6 grid gap-4">
+              <Field name="company" label="Company" required placeholder="Acme Inc." />
+              <Field name="name" label="Your name" required placeholder="First & last" />
+              <Field name="role" label="Role you'd pilot" required placeholder="e.g. Senior Backend Engineer" />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field name="teamSize" label="Team size" type="number" placeholder="e.g. 60" />
+                <Field name="when" label="You'd start" placeholder="e.g. in 2 weeks" />
+              </div>
+              <Field name="ats" label="ATS in use today" placeholder="e.g. Greenhouse · Lever · Workday · none" />
+              <Field
+                name="context"
+                label="Anything else?"
+                placeholder="The shape of the role, what you've tried, what's broken..."
+                as="textarea"
+              />
+            </div>
+            <button
+              type="submit"
+              className="ap-btn ap-btn-primary ap-btn-lg mt-7 w-full justify-center"
+            >
+              Open in your mail client
+            </button>
+            {attempted && (
+              <div className="mt-4 rounded-lg border border-line bg-surface-2 p-3 text-[0.86rem] text-ink-2">
+                <p className="font-medium text-ink-deep">Didn&apos;t open?</p>
+                <p className="mt-1">
+                  Some browsers can&apos;t launch mail apps. Write to{" "}
                   <a className="text-brand-strong" href="mailto:hello@aptura.app">
                     hello@aptura.app
-                  </a>
-                  .
+                  </a>{" "}
+                  with the details above and we&apos;ll get back to you.
                 </p>
               </div>
-            ) : (
-              <>
-                <h2
-                  className="text-[1.4rem] font-semibold text-ink-deep"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
-                  Tell us about the role.
-                </h2>
-                <p className="mt-1.5 text-[0.92rem] text-ink-2">
-                  Two minutes. No sales call required.
-                </p>
-                <div className="mt-6 grid gap-4">
-                  <Field name="company" label="Company" required placeholder="Acme Inc." />
-                  <Field name="name" label="Your name" required placeholder="First & last" />
-                  <Field name="role" label="Role you'd pilot" required placeholder="e.g. Senior Backend Engineer" />
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field name="teamSize" label="Team size" type="number" placeholder="e.g. 60" />
-                    <Field name="when" label="You'd start" placeholder="e.g. in 2 weeks" />
-                  </div>
-                  <Field name="ats" label="ATS in use today" placeholder="e.g. Greenhouse · Lever · Workday · none" />
-                  <Field
-                    name="context"
-                    label="Anything else?"
-                    placeholder="The shape of the role, what you've tried, what's broken..."
-                    as="textarea"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="ap-btn ap-btn-primary ap-btn-lg mt-7 w-full justify-center"
-                  disabled={status === "submitting"}
-                >
-                  {status === "submitting" ? "Opening your mail client…" : "Send pilot request"}
-                </button>
-                <p className="mt-3 text-center text-[0.78rem] text-ink-3">
-                  Submits as email today. No tracking, no auto-add to lists.
-                </p>
-              </>
             )}
+            <p className="mt-3 text-center text-[0.78rem] text-ink-3">
+              Submits as email today. No tracking, no auto-add to lists.
+            </p>
           </form>
         </div>
       </section>

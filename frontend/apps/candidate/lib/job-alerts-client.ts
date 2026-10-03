@@ -127,7 +127,8 @@ function toProtoFilters(f: AlertFilters):
   };
 }
 
-type Api = ReturnType<typeof useAuth>["api"];
+import type { ApiClients } from "@ip/api-client";
+type Api = ApiClients;
 
 /** Real gRPC client over `api.jobAlerts.*`. The sweep is BE-owned; the FE only CRUD-s the
  *  alert definition. */

@@ -31,14 +31,14 @@ export default function GlobalError({
           textAlign: "center",
           fontFamily:
             "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
-          background: "#15161e",
-          color: "#f7f7f9",
+          background: "#f7f8fb",
+          color: "#15161e",
         }}
       >
         <h1 style={{ fontSize: "1.5rem", fontWeight: 600, margin: 0 }}>
           Something went wrong
         </h1>
-        <p style={{ maxWidth: "28rem", color: "#a0a3b1", margin: 0 }}>
+        <p style={{ maxWidth: "28rem", color: "#5a5d6a", margin: 0 }}>
           The app hit an unexpected error. Please try again.
         </p>
         <button

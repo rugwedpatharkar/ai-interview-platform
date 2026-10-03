@@ -78,24 +78,24 @@ export default function PracticePage() {
           </div>
 
           <aside className="ap-def-panel ap-def-panel--privacy flex flex-col gap-3">
-            <span className="ap-eyebrow">What practice looks like</span>
-            <h3 className="ap-h4">Same shape as the real interview — without the stakes.</h3>
+            <span className="ap-eyebrow">What practice looks like today</span>
+            <h3 className="ap-h4">A text warm-up for the real interview — same rubric, none of the stakes.</h3>
             <ul className="ap-def-list ap-def-list--privacy">
               <li>
-                <Video className="size-4" aria-hidden />
-                Camera and mic on — same proctoring engine, no recording shared.
-              </li>
-              <li>
                 <Mic className="size-4" aria-hidden />
-                Iris asks 3–4 questions in your role's competency frame.
+                Iris asks a few written questions in your role&apos;s competency frame.
               </li>
               <li>
                 <Eye className="size-4" aria-hidden />
-                Captions on by default · session is read-only afterwards.
+                You type your answers. No camera, no mic, no proctoring in practice.
               </li>
               <li>
                 <Shield className="size-4" aria-hidden />
-                You see growth feedback. No employer ever does.
+                You see growth feedback afterward. No employer ever does.
+              </li>
+              <li>
+                <Video className="size-4" aria-hidden />
+                Camera + mic land when practice mirrors the live interview UI (roadmap).
               </li>
             </ul>
           </aside>

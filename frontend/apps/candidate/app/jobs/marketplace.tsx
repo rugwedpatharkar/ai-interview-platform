@@ -11,13 +11,16 @@ import {
   SearchX,
   Sparkles,
 } from "lucide-react";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
+import { useAuthedQuery } from "@ip/shared";
 
 import { FilterSidebar } from "../../components/filter-sidebar";
 import { JobCard } from "../../components/job-card";
 import { JobSearchBar } from "../../components/job-search-bar";
 import { SaveJobButton } from "../../components/save-job-button";
-import { query } from "./search-client";
+import { useAuth } from "../../lib/auth";
+import { query, toQuery } from "./search-client";
 import type { SearchJobsParams, SearchJobsResult } from "./types";
 
 const sameParams = (a: SearchJobsParams, b: SearchJobsParams) =>
@@ -39,10 +42,43 @@ export function Marketplace({
   initial: SearchJobsResult | null;
   initialParams: SearchJobsParams;
 }) {
+  const router = useRouter();
+  const { api, token } = useAuth();
   const [params, setParams] = useState<SearchJobsParams>(initialParams);
+  const [isPending, startTransition] = useTransition();
+
+  // AI Matcher scores — fetched once per session for signed-in candidates so
+  // every card can paint a "N% match" chip without a per-card round-trip.
+  // Signed-out visitors skip this query entirely (marketplace is public).
+  const recommendations = useAuthedQuery(token, {
+    queryKey: ["recommendations"],
+    queryFn: () => api.recommendations.getCandidateRecommendations({}),
+    staleTime: 5 * 60_000,
+  });
+  const scoreByJob = useMemo(() => {
+    const m = new Map<string, { score: number; reasons: string[] }>();
+    for (const match of recommendations.data?.matches ?? []) {
+      m.set(match.jobId, { score: match.score, reasons: match.reasons });
+    }
+    return m;
+  }, [recommendations.data]);
+
+  // Mirror params into the URL so refresh, share, and back all restore the exact
+  // result set the user was looking at. `scroll: false` prevents Next from
+  // resetting the scroll position on every filter tap. Wrap the state update in
+  // a transition so a rapid keyboard flurry on the filter checkboxes doesn't
+  // block input while the (possibly-expensive) list re-render happens — React
+  // will keep the previous UI interactive and swap once the next frame is ready.
+  const applyParams = (next: SearchJobsParams) => {
+    startTransition(() => {
+      setParams(next);
+      const qs = toQuery(next);
+      router.replace(qs ? `/jobs?${qs}` : "/jobs", { scroll: false });
+    });
+  };
 
   // Any search / filter / sort change resets to page 1; only the pager moves pages.
-  const setFilters = (next: SearchJobsParams) => setParams({ ...next, page: 1 });
+  const setFilters = (next: SearchJobsParams) => applyParams({ ...next, page: 1 });
 
   const q = useQuery({
     queryKey: ["public-jobs", params],
@@ -59,7 +95,7 @@ export function Marketplace({
   const pageSize = q.data?.pageSize ?? 24;
   const totalPages = q.data ? Math.max(1, Math.ceil(q.data.total / pageSize)) : 1;
   const goToPage = (next: number) => {
-    setParams({ ...params, page: next });
+    applyParams({ ...params, page: next });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -89,11 +125,17 @@ export function Marketplace({
         <div className="flex min-w-0 flex-col gap-4">
           {q.data && (
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-sm text-muted-foreground" aria-live="polite">
+              <p
+                className={`text-sm text-muted-foreground transition-opacity ${
+                  isPending ? "opacity-60" : ""
+                }`}
+                aria-live="polite"
+              >
                 <span className="font-semibold tabular-nums text-foreground">
                   {q.data.total}
                 </span>{" "}
                 {q.data.total === 1 ? "role matches" : "roles match"}
+                {isPending && <span className="ml-2 text-xs">updating…</span>}
               </p>
               <span className="flex-1" />
               <div
@@ -157,19 +199,24 @@ export function Marketplace({
             />
           )}
 
-          {jobs.map((j, i) => (
-            <div
-              key={j.jobId}
-              className="animate-rise-in"
-              style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
-            >
-              <JobCard
-                job={j}
-                bestMatch={i === 0 && (params.sort ?? "relevance") === "relevance"}
-                action={<SaveJobButton jobId={j.jobId} />}
-              />
-            </div>
-          ))}
+          {jobs.map((j, i) => {
+            const match = scoreByJob.get(j.jobId);
+            return (
+              <div
+                key={j.jobId}
+                className="animate-rise-in"
+                style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+              >
+                <JobCard
+                  job={j}
+                  bestMatch={i === 0 && (params.sort ?? "relevance") === "relevance"}
+                  action={<SaveJobButton jobId={j.jobId} />}
+                  matchScore={match?.score}
+                  topReason={match?.reasons[0]}
+                />
+              </div>
+            );
+          })}
 
           {q.data && totalPages > 1 && (
             <nav

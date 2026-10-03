@@ -178,7 +178,13 @@ export default function CompanyDashboardPage() {
           )}
           {!jobs.isLoading && jobList.length > 0 && (
             <ul className="grid gap-2">
-              {jobList.slice(0, 4).map((job) => (
+              {/* "Latest postings" — sort by postedAt desc, then take 4.
+                  Previously took the first 4 in listJobs order, which surfaced
+                  whatever the API returned first (usually created_at asc). */}
+              {[...jobList]
+                .sort((a, b) => (b.postedAt ?? "").localeCompare(a.postedAt ?? ""))
+                .slice(0, 4)
+                .map((job) => (
                 <li key={job.jobId}>
                   <Link
                     href={`/company/jobs/${job.jobId}`}

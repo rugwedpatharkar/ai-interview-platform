@@ -36,7 +36,8 @@ function isFailedPrecondition(err: unknown): boolean {
   return err instanceof ConnectError && err.code === Code.FailedPrecondition;
 }
 
-type Api = ReturnType<typeof useAuth>["api"];
+import type { ApiClients } from "@ip/api-client";
+type Api = ApiClients;
 
 /** Build a real PracticeClient backed by the ai-agents gRPC transport. Snake_case ↔ camelCase
  *  mapping happens here so the shared FE types stay stable. */

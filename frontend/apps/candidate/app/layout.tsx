@@ -46,6 +46,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             CDN is blocked there). Preload the two above-the-fold faces to cut FOUT. */}
         <link rel="preload" href="/fonts/general-sans-400.woff2" as="font" type="font/woff2" crossOrigin="" />
         <link rel="preload" href="/fonts/clash-display-600.woff2" as="font" type="font/woff2" crossOrigin="" />
+        {/* Clash 700 backs .ap-h1 above-the-fold — preload to avoid the
+            weight-substitution flash on the marketing landing hero. */}
+        <link rel="preload" href="/fonts/clash-display-700.woff2" as="font" type="font/woff2" crossOrigin="" />
       </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         {/* Aperture mark + icon sprite mounted once for <svg><use href="#…" /></svg>. */}

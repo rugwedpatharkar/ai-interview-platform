@@ -3,15 +3,15 @@
 import { Skeleton } from "@ip/ui";
 import { useQuery } from "@tanstack/react-query";
 
+import { companyJobs } from "../../companies/[id]/company-client";
 import { JobCard } from "../../../components/job-card";
 import { SaveJobButton } from "../../../components/save-job-button";
-import { query as searchJobs } from "../search-client";
 
-/** "Similar roles" strip below the JD. v3 wants the page to feel actionable — if the role
- *  doesn't fit, the page should still send the visitor somewhere useful. Today we fetch
- *  other published roles at the same company (the closest "similar" proxy we have without
- *  the embeddings-based recommender on the public surface); the seam is the marketplace
- *  search client so when a public `similarRoles(id)` endpoint lands, only this hook swaps. */
+/** "Similar roles" strip below the JD. Today "similar" == other open roles at the same
+ *  company (the closest proxy we have on the public surface without embeddings). The
+ *  companies endpoint is company-scoped, so we get real peers even when the marketplace
+ *  spans many companies — the previous shape fetched 6 platform-wide jobs and
+ *  post-filtered, which almost never returned anything on a real catalog. */
 export function SimilarRoles({
   companyId,
   excludeJobId,
@@ -21,15 +21,12 @@ export function SimilarRoles({
 }) {
   const q = useQuery({
     queryKey: ["similar-roles", companyId, excludeJobId],
-    // Without a "by company" filter on the public search yet, broaden by a single keyword
-    // would over-narrow; just use the marketplace and post-filter by companyId. Cheap, and
-    // it never returns a result that wouldn't appear in the public catalog.
-    queryFn: ({ signal }) => searchJobs({ pageSize: 6 }, signal),
+    queryFn: () => companyJobs(companyId),
     staleTime: 60_000,
   });
 
   const peers = (q.data?.jobs ?? [])
-    .filter((j) => j.companyId === companyId && j.jobId !== excludeJobId)
+    .filter((j) => j.jobId !== excludeJobId)
     .slice(0, 3);
 
   // No skeleton + no empty state — "similar roles" is an enhancement, not a primary surface.
